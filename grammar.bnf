@@ -1,0 +1,84 @@
+<item> ::= <expr> | <def>
+
+<def> ::= "type" <ws>+ <ident> <ws>+ "=" <ws>+ <recordDef> | <sumDef> | <productDef> | <aliasDef>
+
+<recordDef> ::= "{" <ws>* <ident> <ws>* ":" <ws>* <hint> <ws>* ("," <ws>* <ident> <ws>* ":" <ws>* <hint> <ws>*)* "}"
+
+<sumDef> ::= <ident> (<ws>+ ":" <hint>)? (<ws>+ "|" <ws>+ <ident> (<ws>+ ":" <hint>)?)+
+
+<productDef> ::= <ident> (<ws>+ ":" <hint>)? (<ws>+ "*" <ws>+ <ident> (<ws>+ ":" <hint>)?)+
+
+<aliasDef> ::= <fullHint>
+
+<expr> ::= <or>
+
+<or> ::= <and> (<ws>* "||" <ws>* <and>)*
+
+<and> ::= <eq> (<ws>* "&&" <ws>* <eq>)*
+
+<eq> ::= <cmp> (<ws>* ("=" | "!=") <ws>* <cmp>)?
+
+<cmp> ::= <term> (<ws>* ("<" | ">" | "<=" | ">=") <ws>* <term>)*
+
+<term> ::= <factor> (<ws>* ("+" | "-") <ws>* <factor>)*
+
+<factor> ::= <power> (<ws>* ("*" | "/" | "%") <ws>* <power>)*
+
+<power> ::= <unary> (<ws>* "^" <ws>* <unary>)*
+
+<unary> ::= <apply> | ("-" | "!") <unary>
+
+<apply> ::= <atom> (<ws>+ <atom>)*
+
+<atom> ::= <ident> | <lit> | <if> | <let> | "(" <expr> ")"
+
+<let> ::= "let" <ws>+ <ident> (<ws>+ "(" <ident> <ws>+ ":" <ws>+ <fullHint> ")" | <ws>+ <ident>)* 
+    (<ws>+ ":" <ws>+ <fullHint>)? <ws>+ "=" <ws>+ <expr> (<ws>+ "in" <ws>+ <expr>)?
+
+<if> ::= "if" <ws>+ <expr> <ws>+ "then" <ws>+ <expr> 
+    (<ws>+ "elif" <ws>+ <expr> <ws>+ "then" <ws>+ <expr>)* <ws>+ "else" <ws>+ <expr>
+
+<lit> ::= <int> 
+| <float> 
+| <string> 
+| <char> 
+| <bool> 
+| <lambda>
+
+<lambda> ::= "fn" 
+(<ws>+ <ident> 
+| <ws>+ "(" <ident> <ws>+ ":" <ws>+ <fullHint> ")")+ 
+(<ws>+ ":" <ws>+ <scopedHint>)? <ws>+ "->" <ws>+ <expr>
+
+<fullHint> ::= <scopedHint> (<ws>+ ("->" | "*") <ws>+ <fullHint>)*
+
+<scopedHint> ::= <hint> 
+| "(" <fullHint> (<ws>+ ("->" | "*") <ws>+ <fullHint>)+ ")"
+| "(" <fullHint>* ")"
+| "[" <fullHint> "]"
+
+<hint> ::= <ident>
+
+<string> ::= "\"" <ascii>* "\""
+
+<char> ::= "'" <ascii> "'"
+
+<ascii> ::= <letterOrDigit> | <ws>
+
+<ident> ::= <letter> <letterOrDigit>*
+
+<letterOrDigit> ::= <letter> | <digit>
+
+<letter> ::= "_" | [a-z] | [A-Z]
+
+<bool> ::= "true" | "false"
+
+<float> ::= <int> "." <digit>+
+
+<int> ::= "0" | <nonzero> <digit>*
+
+<nonzero> ::= [1-9]
+
+<digit> ::= "0" | <nonzero>
+
+<ws> ::= " " | "\n" | "\t" | "\r"
