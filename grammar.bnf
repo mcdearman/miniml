@@ -1,12 +1,12 @@
-<item> ::= <expr> | <def>
+<item> ::= <expr> | <data>
 
-<def> ::= "type" <ws>+ <ident> <ws>+ "=" <ws>+ <recordDef> | <sumDef> | <aliasDef>
+<data> ::= "data" <ws>+ <ident> <ws>+ "=" <ws>+ (<recordDef> | <sumDef>)
 
-<recordDef> ::= "{" <ws>* <ident> <ws>* ":" <ws>* <hint> <ws>* ("," <ws>* <ident> <ws>* ":" <ws>* <hint> <ws>*)* "}"
+<recordDef> ::= "{" <ws>* <ident> <ws>* ("," <ws>* <ident> <ws>*)* "}"
 
-<sumDef> ::= <ident> (<ws>+ ":" <hint>)? (<ws>+ "|" <ws>+ <ident> (<ws>+ ":" <hint>)?)+
+<sumDef> ::= <ident> (<ws>+ <variant>)* (<ws>+ "|" <ws>+ <ident> (<ws>+ <variant>)*)*
 
-<aliasDef> ::= <fullHint>
+<variant> ::= <ident> | <recordDef>
 
 <expr> ::= <or>
 
@@ -30,11 +30,10 @@
 
 <atom> ::= <ident> | <lit> | <if> | <let> | "(" <expr> ")"
 
-<let> ::= "let" <ws>+ <ident> (<ws>+ "(" <ident> <ws>+ ":" <ws>+ <fullHint> ")" | <ws>+ <ident>)* 
-    (<ws>+ ":" <ws>+ <fullHint>)? <ws>+ "=" <ws>+ <expr> (<ws>+ "in" <ws>+ <expr>)?
+<let> ::= "let" <ws>+ <ident>+ <ws>+ "=" <ws>+ <expr> (<ws>+ "in" <ws>+ <expr>)?
 
 <if> ::= "if" <ws>+ <expr> <ws>+ "then" <ws>+ <expr> 
-    (<ws>+ "elif" <ws>+ <expr> <ws>+ "then" <ws>+ <expr>)* <ws>+ "else" <ws>+ <expr>
+    (<ws>+ "elif" <ws>+ <expr> <ws>+ "then" <ws>+ <expr>)* (<ws>+ "else" <ws>+ <expr>)?
 
 <lit> ::= <int> 
 | <float> 
@@ -43,19 +42,7 @@
 | <bool> 
 | <lambda>
 
-<lambda> ::= "fn" 
-(<ws>+ <ident> 
-| <ws>+ "(" <ident> <ws>+ ":" <ws>+ <fullHint> ")")+ 
-(<ws>+ ":" <ws>+ <scopedHint>)? <ws>+ "->" <ws>+ <expr>
-
-<fullHint> ::= <scopedHint> (<ws>+ ("->" | "*") <ws>+ <fullHint>)*
-
-<scopedHint> ::= <hint> 
-| "(" <fullHint> (<ws>+ ("->" | "*") <ws>+ <fullHint>)+ ")"
-| "(" <fullHint>* ")"
-| "[" <fullHint> "]"
-
-<hint> ::= <ident>
+<lambda> ::= "\\" <ws>+ <ident>+ <ws>+ "->" <ws>+ <expr>
 
 <string> ::= "\"" <ascii>* "\""
 
