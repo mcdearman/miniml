@@ -1,12 +1,10 @@
 <item> ::= <expr> | <def>
 
-<def> ::= "type" <ws>+ <ident> <ws>+ "=" <ws>+ <recordDef> | <sumDef> | <productDef> | <aliasDef>
+<def> ::= "type" <ws>+ <ident> <ws>+ "=" <ws>+ <recordDef> | <sumDef> | <aliasDef>
 
 <recordDef> ::= "{" <ws>* <ident> <ws>* ":" <ws>* <hint> <ws>* ("," <ws>* <ident> <ws>* ":" <ws>* <hint> <ws>*)* "}"
 
 <sumDef> ::= <ident> (<ws>+ ":" <hint>)? (<ws>+ "|" <ws>+ <ident> (<ws>+ ":" <hint>)?)+
-
-<productDef> ::= <ident> (<ws>+ ":" <hint>)? (<ws>+ "*" <ws>+ <ident> (<ws>+ ":" <hint>)?)+
 
 <aliasDef> ::= <fullHint>
 
