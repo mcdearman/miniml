@@ -1,0 +1,25 @@
+---
+source: src/parser/tests.rs
+expression: ast
+---
+Expr(
+    Infix {
+        op: Leq,
+        lhs: Lit(
+            Int(
+                InternedString(1),
+            ),
+        ),
+        rhs: Infix {
+            op: Add,
+            lhs: Lit(
+                Int(
+                    InternedString(2),
+                ),
+            ),
+            rhs: Ident(
+                InternedString(x),
+            ),
+        },
+    },
+)

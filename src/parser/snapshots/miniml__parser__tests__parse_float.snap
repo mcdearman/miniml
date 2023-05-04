@@ -1,0 +1,11 @@
+---
+source: src/parser/tests.rs
+expression: ast
+---
+Expr(
+    Lit(
+        Float(
+            InternedString(5.23),
+        ),
+    ),
+)

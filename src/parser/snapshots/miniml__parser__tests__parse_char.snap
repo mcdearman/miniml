@@ -1,0 +1,11 @@
+---
+source: src/parser/tests.rs
+expression: ast
+---
+Expr(
+    Lit(
+        Char(
+            'a',
+        ),
+    ),
+)

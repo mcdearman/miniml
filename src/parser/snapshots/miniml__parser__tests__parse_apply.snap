@@ -1,0 +1,19 @@
+---
+source: src/parser/tests.rs
+expression: ast
+---
+Expr(
+    Apply(
+        Apply(
+            Ident(
+                InternedString(f),
+            ),
+            Ident(
+                InternedString(x),
+            ),
+        ),
+        Ident(
+            InternedString(y),
+        ),
+    ),
+)

@@ -1,0 +1,23 @@
+---
+source: src/parser/tests.rs
+expression: ast
+---
+Expr(
+    If {
+        cond: Lit(
+            Bool(
+                true,
+            ),
+        ),
+        then: Lit(
+            Int(
+                InternedString(1),
+            ),
+        ),
+        else_: Lit(
+            Int(
+                InternedString(2),
+            ),
+        ),
+    },
+)

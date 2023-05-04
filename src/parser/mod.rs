@@ -6,6 +6,8 @@ use std::{
     ops::{Index, Range},
 };
 
+mod tests;
+
 #[derive(Logos, Debug, Clone, PartialEq, Eq)]
 pub enum TokenKind {
     Eof,
@@ -106,8 +108,8 @@ pub enum TokenKind {
     Pub,
     #[token("let")]
     Let,
-    #[token("type")]
-    Type,
+    #[token("data")]
+    Data,
     #[token("match")]
     Match,
     #[token("if")]
@@ -253,9 +255,6 @@ macro_rules! T {
     [:] => {
        $crate::parser::TokenKind::Colon
     };
-    [package] => {
-       $crate::parser::TokenKind::Package
-    };
     [mod] => {
        $crate::parser::TokenKind::Module
     };
@@ -268,8 +267,8 @@ macro_rules! T {
     [let] => {
        $crate::parser::TokenKind::Let
     };
-    [type] => {
-       $crate::parser::TokenKind::Type
+    [data] => {
+       $crate::parser::TokenKind::Data
     };
     [match] => {
        $crate::parser::TokenKind::Match
@@ -344,7 +343,7 @@ impl Display for TokenKind {
                 T![use] => "use",
                 T![pub] => "pub",
                 T![let] => "let",
-                T![type] => "type",
+                T![data] => "data",
                 T![match] => "match",
                 T![if] => "if",
                 T![then] => "then",
@@ -440,7 +439,7 @@ pub enum Item {
 pub enum Data {
     Record {
         name: InternedString,
-        fields: Vec<(InternedString, Type)>,
+        fields: Vec<Expr>,
     },
 }
 
@@ -651,10 +650,449 @@ impl<'src> Parser<'src> {
     }
 
     pub fn item(&mut self) -> Result<Item> {
+        match self.peek().value {
+            T![data] => Ok(Item::Data(self.data()?)),
+            _ => Ok(Item::Expr(self.expr()?)),
+        }
+    }
+
+    fn data(&mut self) -> Result<Data> {
         todo!()
     }
 
     fn expr(&mut self) -> Result<Expr> {
-        todo!()
+        self.or()
+    }
+
+    fn or(&mut self) -> Result<Expr> {
+        let lhs = self.and()?;
+        match self.peek().value {
+            T![||] => {
+                self.consume(T![||]);
+                let rhs = self.and()?;
+                Ok(Expr::Infix {
+                    op: InfixOp::Or,
+                    lhs: Box::new(lhs),
+                    rhs: Box::new(rhs),
+                })
+            }
+            _ => Ok(lhs),
+        }
+    }
+
+    fn and(&mut self) -> Result<Expr> {
+        let lhs = self.eq()?;
+        match self.peek().value {
+            T![&&] => {
+                self.consume(T![&&]);
+                let rhs = self.eq()?;
+                Ok(Expr::Infix {
+                    op: InfixOp::And,
+                    lhs: Box::new(lhs),
+                    rhs: Box::new(rhs),
+                })
+            }
+            _ => Ok(lhs),
+        }
+    }
+
+    fn eq(&mut self) -> Result<Expr> {
+        let lhs = self.cmp()?;
+        match self.peek().value {
+            T![=] => {
+                self.consume(T![=]);
+                let rhs = self.cmp()?;
+                Ok(Expr::Infix {
+                    lhs: Box::new(lhs),
+                    op: InfixOp::Eq,
+                    rhs: Box::new(rhs),
+                })
+            }
+            T![!=] => {
+                self.consume(T![!=]);
+                let rhs = self.cmp()?;
+                Ok(Expr::Infix {
+                    lhs: Box::new(lhs),
+                    op: InfixOp::Neq,
+                    rhs: Box::new(rhs),
+                })
+            }
+            _ => Ok(lhs),
+        }
+    }
+
+    fn cmp(&mut self) -> Result<Expr> {
+        let lhs = self.term()?;
+        match self.peek().value {
+            T![<] => {
+                self.consume(T![<]);
+                let rhs = self.term()?;
+                Ok(Expr::Infix {
+                    lhs: Box::new(lhs),
+                    op: InfixOp::Lss,
+                    rhs: Box::new(rhs),
+                })
+            }
+            T![>] => {
+                self.consume(T![>]);
+                let rhs = self.term()?;
+                Ok(Expr::Infix {
+                    lhs: Box::new(lhs),
+                    op: InfixOp::Gtr,
+                    rhs: Box::new(rhs),
+                })
+            }
+            T![<=] => {
+                self.consume(T![<=]);
+                let rhs = self.term()?;
+                Ok(Expr::Infix {
+                    lhs: Box::new(lhs),
+                    op: InfixOp::Leq,
+                    rhs: Box::new(rhs),
+                })
+            }
+            T![>=] => {
+                self.consume(T![>=]);
+                let rhs = self.term()?;
+                Ok(Expr::Infix {
+                    lhs: Box::new(lhs),
+                    op: InfixOp::Geq,
+                    rhs: Box::new(rhs),
+                })
+            }
+            _ => Ok(lhs),
+        }
+    }
+
+    fn term(&mut self) -> Result<Expr> {
+        let mut lhs = self.factor()?;
+        loop {
+            match self.peek().value {
+                T![+] => {
+                    self.consume(T![+]);
+                    let rhs = self.factor()?;
+                    lhs = Expr::Infix {
+                        lhs: Box::new(lhs),
+                        op: InfixOp::Add,
+                        rhs: Box::new(rhs),
+                    };
+                }
+                T![-] => {
+                    self.consume(T![-]);
+                    let rhs = self.factor()?;
+                    lhs = Expr::Infix {
+                        lhs: Box::new(lhs),
+                        op: InfixOp::Sub,
+                        rhs: Box::new(rhs),
+                    };
+                }
+                _ => break,
+            }
+        }
+        Ok(lhs)
+    }
+
+    fn factor(&mut self) -> Result<Expr> {
+        let mut lhs = self.power()?;
+        loop {
+            match self.peek().value {
+                T![*] => {
+                    self.consume(T![*]);
+                    let rhs = self.power()?;
+                    lhs = Expr::Infix {
+                        lhs: Box::new(lhs),
+                        op: InfixOp::Mul,
+                        rhs: Box::new(rhs),
+                    };
+                }
+                T![/] => {
+                    self.consume(T![/]);
+                    let rhs = self.power()?;
+                    lhs = Expr::Infix {
+                        lhs: Box::new(lhs),
+                        op: InfixOp::Div,
+                        rhs: Box::new(rhs),
+                    };
+                }
+                T![%] => {
+                    self.consume(T![%]);
+                    let rhs = self.power()?;
+                    lhs = Expr::Infix {
+                        lhs: Box::new(lhs),
+                        op: InfixOp::Mod,
+                        rhs: Box::new(rhs),
+                    };
+                }
+                _ => break,
+            }
+        }
+        Ok(lhs)
+    }
+
+    fn power(&mut self) -> Result<Expr> {
+        let mut lhs = self.unary()?;
+        while self.at(T![^]) {
+            self.consume(T![^]);
+            let rhs = self.unary()?;
+            lhs = Expr::Infix {
+                lhs: Box::new(lhs),
+                op: InfixOp::Pow,
+                rhs: Box::new(rhs),
+            };
+        }
+        Ok(lhs)
+    }
+
+    fn unary(&mut self) -> Result<Expr> {
+        match self.peek().value {
+            T![!] => {
+                self.consume(T![!]);
+                let rhs = self.unary()?;
+                Ok(Expr::Prefix {
+                    op: PrefixOp::Not,
+                    expr: Box::new(rhs),
+                })
+            }
+            T![-] => {
+                self.consume(T![-]);
+                let rhs = self.unary()?;
+                Ok(Expr::Prefix {
+                    op: PrefixOp::Neg,
+                    expr: Box::new(rhs),
+                })
+            }
+            _ => self.apply(),
+        }
+    }
+
+    fn apply(&mut self) -> Result<Expr> {
+        let lhs = self.atom()?;
+        let mut args = vec![];
+        loop {
+            match self.peek().value {
+                T![ident]
+                | T![int]
+                | T![float]
+                | T![str]
+                | T![char]
+                | T![bool]
+                | T![lambda]
+                | T![if]
+                | T![let]
+                | T!['('] => {
+                    let arg = self.atom()?;
+                    args.push(arg);
+                }
+                _ => break,
+            }
+        }
+        Ok(self.curry_apply(args.into_iter(), lhs))
+    }
+
+    fn atom(&mut self) -> Result<Expr> {
+        let tok = self.peek();
+        match tok.value {
+            T![if] => self.if_(),
+            T![let] => self.let_(),
+            T![int] | T![float] | T![str] | T![char] | T![bool] | T![lambda] => self.lit(),
+            T![ident] => Ok(Expr::Ident(self.ident()?)),
+            T!['('] => {
+                self.consume(T!['(']);
+                let expr = self.expr()?;
+                self.consume(T![')']);
+                Ok(expr)
+            }
+            _ => Err(ParserError(format!(
+                "Unexpected token in atom got `{:?}` - `{}`",
+                self.peek(),
+                self.text(tok)
+            ))),
+        }
+    }
+
+    fn let_(&mut self) -> Result<Expr> {
+        self.consume(T![let]);
+        let name = self.ident()?;
+        let mut params = vec![];
+        while !self.at(T![=]) {
+            let tok = self.peek();
+            match tok.value {
+                T![ident] => params.push(self.ident()?),
+                T!['('] => {
+                    self.consume(T!['(']);
+                    let p = self.ident()?;
+                    self.consume(T![')']);
+                    params.push(p);
+                }
+                _ => {
+                    return Err(ParserError(format!(
+                        "Unexpected token in let got `{:?}` - `{}`",
+                        self.peek(),
+                        self.text(tok)
+                    )))
+                }
+            }
+        }
+
+        self.consume(T![=]);
+
+        if params.is_empty() {
+            self.let_bind(name)
+        } else {
+            self.let_fn(name, params)
+        }
+    }
+
+    fn let_bind(&mut self, name: InternedString) -> Result<Expr> {
+        let val = self.expr()?;
+        if self.at(T![in]) {
+            self.consume(T![in]);
+            let body = self.expr()?;
+            Ok(Expr::Let {
+                name,
+                value: Box::new(val),
+                body: Some(Box::new(body)),
+            })
+        } else {
+            Ok(Expr::Let {
+                name,
+                value: Box::new(val),
+                body: None,
+            })
+        }
+    }
+
+    fn let_fn(&mut self, name: InternedString, params: Vec<InternedString>) -> Result<Expr> {
+        let val = self.expr()?;
+        if self.at(T![in]) {
+            self.consume(T![in]);
+            let body = self.expr()?;
+            Ok(Expr::Let {
+                name,
+                value: Box::new(self.curry_fn(params.into_iter().rev(), val)?),
+                body: Some(Box::new(body)),
+            })
+        } else {
+            Ok(Expr::Let {
+                name,
+                value: Box::new(self.curry_fn(params.into_iter().rev(), val)?),
+                body: None,
+            })
+        }
+    }
+
+    fn if_(&mut self) -> Result<Expr> {
+        self.consume(T![if]);
+        let cond = self.expr()?;
+        self.consume(T![then]);
+        let then = self.expr()?;
+        let mut elifs = vec![];
+        while self.at(T![elif]) {
+            self.consume(T![elif]);
+            let cond = self.expr()?;
+            self.consume(T![then]);
+            let then = self.expr()?;
+            elifs.push((cond, then));
+        }
+        self.consume(T![else]);
+        let else_ = self.expr()?;
+
+        let top_else = elifs
+            .into_iter()
+            .fold(else_, |acc, (elif_cond, elif_then)| Expr::If {
+                cond: Box::new(elif_cond),
+                then: Box::new(elif_then),
+                else_: Box::new(acc),
+            });
+        Ok(Expr::If {
+            cond: Box::new(cond),
+            then: Box::new(then),
+            else_: Box::new(top_else),
+        })
+    }
+
+    fn lit(&mut self) -> Result<Expr> {
+        match self.peek().value {
+            T![int] => self.int(),
+            T![float] => self.float(),
+            T![str] => self.string(),
+            T![char] => self.char(),
+            T![bool] => self.bool(),
+            T![lambda] => self.lambda(),
+            _ => Err(ParserError(format!("Unexpected token: {:?}", self.peek()))),
+        }
+    }
+
+    fn int(&mut self) -> Result<Expr> {
+        let token = self.next();
+        let text = self.text(token);
+        Ok(Expr::Lit(Lit::Int(InternedString::from(&*text))))
+    }
+
+    fn float(&mut self) -> Result<Expr> {
+        let token = self.next();
+        let text = self.text(token);
+        Ok(Expr::Lit(Lit::Float(InternedString::from(&*text))))
+    }
+
+    fn string(&mut self) -> Result<Expr> {
+        let token = self.next();
+        let text = self.text(token);
+        Ok(Expr::Lit(Lit::String(InternedString::from(
+            &text[1..(text.len() - 1)],
+        ))))
+    }
+
+    fn char(&mut self) -> Result<Expr> {
+        let token = self.next();
+        let text = self.text(token);
+        Ok(Expr::Lit(Lit::Char(text.chars().nth(1).ok_or(
+            ParserError("Invalid character literal".to_string()),
+        )?)))
+    }
+
+    fn bool(&mut self) -> Result<Expr> {
+        let token = self.next();
+        let text = self.text(token);
+        match text {
+            "true" => Ok(Expr::Lit(Lit::Bool(true))),
+            "false" => Ok(Expr::Lit(Lit::Bool(false))),
+            _ => return Err(ParserError(format!("Invalid boolean literal: {}", text))),
+        }
+    }
+
+    fn lambda(&mut self) -> Result<Expr> {
+        self.consume(T![lambda]);
+        let mut params = vec![];
+        while !self.at(T![->]) {
+            params.push(self.ident()?);
+        }
+
+        self.consume(T![->]);
+
+        let body = self.expr()?;
+
+        self.curry_fn(params.into_iter().rev(), body)
+    }
+
+    fn ident(&mut self) -> Result<InternedString> {
+        let token = self.next();
+        let text = self.text(token);
+        Ok(InternedString::from(text))
+    }
+
+    fn curry_fn(
+        &mut self,
+        mut params: impl Iterator<Item = InternedString>,
+        body: Expr,
+    ) -> Result<Expr> {
+        Ok(params.fold(body, |acc, p| Expr::Lambda {
+            param: p,
+            body: Box::new(acc),
+        }))
+    }
+
+    fn curry_apply(&mut self, args: impl Iterator<Item = Expr>, func: Expr) -> Expr {
+        args.fold(func, |acc, arg| Expr::Apply(Box::new(acc), Box::new(arg)))
     }
 }
