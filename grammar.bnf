@@ -2,6 +2,27 @@
 
 <structDef> ::= "struct" <ws>+ <ident> <ws>+ "=" <ws>+ "{" <ws>* <ident> <ws>* ("," <ws>* <ident> <ws>*)* "}"
 
+<pattern> ::= <ident> 
+| <listPattern> 
+| <tuplePattern> 
+| <mapPattern> 
+| <wildcard> 
+| <lit> 
+| <structPattern> 
+| <unit>
+
+<structPattern> ::= <ident> <ws>+ "{" <ws>* <ident> <ws>* ("," <ws>* <ident> <ws>*)* "}"
+
+<listPattern> ::= "[" <ws>* <pattern> (<ws>* "," <ws>* <pattern>)* <ws>* "]"
+
+<tuplePattern> ::= "(" <ws>* <pattern> (<ws>* "," <ws>* <pattern>)* <ws>* ")"
+
+<mapPattern> ::= "{" <ws>* <string> ":" <ws>* <pattern> (<ws>* "," <ws>* <string> ":" <ws>* <pattern>)* <ws>* "}"
+
+<wildcard> ::= "_"
+
+<unit> ::= "()"
+
 <expr> ::= <or>
 
 <or> ::= <and> (<ws>* "||" <ws>* <and>)*

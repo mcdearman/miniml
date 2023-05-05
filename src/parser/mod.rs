@@ -659,6 +659,31 @@ impl From<TokenKind> for InfixOp {
     }
 }
 
+#[derive(Debug, Clone, PartialEq)]
+pub enum Pattern {
+    Ident(InternedString),
+    Lit(Lit),
+    Tuple(Tuple),
+    Map(Map),
+    Struct(Struct),
+    Wildcard,
+    Unit,
+}
+
+impl Display for Pattern {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Pattern::Ident(i) => write!(f, "{}", i),
+            Pattern::Lit(l) => write!(f, "{}", l),
+            Pattern::Tuple(t) => write!(f, "{}", t),
+            Pattern::Map(m) => write!(f, "{}", m),
+            Pattern::Struct(s) => write!(f, "{}", s),
+            Pattern::Wildcard => write!(f, "_"),
+            Pattern::Unit => write!(f, "()"),
+        }
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct ParserError(pub String);
 
