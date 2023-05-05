@@ -2,26 +2,6 @@
 
 <structDef> ::= "struct" <ws>+ <ident> <ws>+ "=" <ws>+ "{" <ws>* <ident> <ws>* ("," <ws>* <ident> <ws>*)* "}"
 
-<pattern> ::= <ident> 
-| <listPattern> 
-| <tuplePattern> 
-| <mapPattern> 
-| <wildcard> 
-| <lit> 
-| <structPattern> 
-| <unit>
-
-<structPattern> ::= <ident> <ws>+ "{" <ws>* <ident> <ws>* ("," <ws>* <ident> <ws>*)* "}"
-
-<listPattern> ::= "[" <ws>* <pattern> (<ws>* "," <ws>* <pattern>)* <ws>* "]"
-
-<tuplePattern> ::= "(" <ws>* <pattern> (<ws>* "," <ws>* <pattern>)* <ws>* ")"
-
-<mapPattern> ::= "{" <ws>* <string> ":" <ws>* <pattern> (<ws>* "," <ws>* <string> ":" <ws>* <pattern>)* <ws>* "}"
-
-<wildcard> ::= "_"
-
-<unit> ::= "()"
 
 <expr> ::= <or>
 
@@ -49,6 +29,23 @@
 
 <if> ::= "if" <ws>+ <expr> <ws>+ "then" <ws>+ <expr> 
     (<ws>+ "elif" <ws>+ <expr> <ws>+ "then" <ws>+ <expr>)* (<ws>+ "else" <ws>+ <expr>)?
+
+<pattern> ::= <ident> 
+| <listPattern> 
+| <tuplePattern> 
+| <mapPattern> 
+| <wildcard> 
+| <lit> 
+| <structPattern> 
+| <unit>
+
+<structPattern> ::= <ident> <ws>+ "{" <ws>* <ident> <ws>* ("=" <ws>* <pattern>)? <ws>* ("," <ws>* <ident> ("=" <ws>* <pattern>)? <ws>*)* "}"
+
+<listPattern> ::= "[" <ws>* <pattern> (<ws>* "," <ws>* <pattern>)* <ws>* "]"
+
+<tuplePattern> ::= "(" <ws>* <pattern> (<ws>* "," <ws>* <pattern>)* <ws>* ")"
+
+<mapPattern> ::= "{" <ws>* <string> ":" <ws>* <pattern> (<ws>* "," <ws>* <string> ":" <ws>* <pattern>)* <ws>* "}"
 
 <lit> ::= <int> 
 | <float> 
@@ -78,7 +75,7 @@
 
 <letterOrDigit> ::= <letter> | <digit>
 
-<letter> ::= "_" | [a-z] | [A-Z]
+<letter> ::= <wildcard> | [a-z] | [A-Z]
 
 <bool> ::= "true" | "false"
 
@@ -91,3 +88,7 @@
 <digit> ::= "0" | <nonzero>
 
 <ws> ::= " " | "\n" | "\t" | "\r"
+
+<wildcard> ::= "_"
+
+<unit> ::= "()"
