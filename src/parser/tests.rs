@@ -125,3 +125,10 @@ fn parse_hello_world() {
     let ast = Parser::new(input).item().expect("failed to parse");
     insta::assert_debug_snapshot!(ast);
 }
+
+#[test]
+fn parse_struct_def() {
+    let input = "struct Point { x, y }";
+    let ast = Parser::new(input).item().expect("failed to parse");
+    insta::assert_debug_snapshot!(ast);
+}

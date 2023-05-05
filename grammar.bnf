@@ -1,12 +1,6 @@
-<item> ::= <expr> | <data>
+<item> ::= <expr> | <structDef>
 
-<data> ::= "data" <ws>+ <ident> <ws>+ "=" <ws>+ (<recordDef> | <sumDef>)
-
-<recordDef> ::= "{" <ws>* <ident> <ws>* ("," <ws>* <ident> <ws>*)* "}"
-
-<sumDef> ::= <ident> (<ws>+ <variant>)* (<ws>+ "|" <ws>+ <ident> (<ws>+ <variant>)*)*
-
-<variant> ::= <ident> | <recordDef>
+<structDef> ::= "struct" <ws>+ <ident> <ws>+ "=" <ws>+ "{" <ws>* <ident> <ws>* ("," <ws>* <ident> <ws>*)* "}"
 
 <expr> ::= <or>
 
@@ -41,8 +35,17 @@
 | <char> 
 | <bool> 
 | <lambda>
+| <list>
+| <tuple>
+| <map>
 
 <lambda> ::= "\\" <ws>+ <ident>+ <ws>+ "->" <ws>+ <expr>
+
+<list> ::= "[" <ws>* <expr> (<ws>* "," <ws>* <expr>)* <ws>* "]"
+
+<tuple> ::= "(" <ws>* <expr> (<ws>* "," <ws>* <expr>)* <ws>* ")"
+
+<map> ::= "{" <ws>* <string> ":" <ws>* <expr> (<ws>* "," <ws>* <string> ":" <ws>* <expr>)* <ws>* "}"
 
 <string> ::= "\"" <ascii>* "\""
 

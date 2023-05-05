@@ -1,8 +1,10 @@
-use crate::intern::InternedString;
+use crate::{intern::InternedString, list::List};
 use logos::{Lexer, Logos};
 use num_complex::Complex64;
 use std::{
+    collections::HashMap,
     fmt::Display,
+    hash::Hash,
     ops::{Index, Range},
 };
 
@@ -108,8 +110,8 @@ pub enum TokenKind {
     Pub,
     #[token("let")]
     Let,
-    #[token("data")]
-    Data,
+    #[token("struct")]
+    Struct,
     #[token("match")]
     Match,
     #[token("if")]
@@ -267,8 +269,8 @@ macro_rules! T {
     [let] => {
        $crate::parser::TokenKind::Let
     };
-    [data] => {
-       $crate::parser::TokenKind::Data
+    [struct] => {
+       $crate::parser::TokenKind::Struct
     };
     [match] => {
        $crate::parser::TokenKind::Match
@@ -343,7 +345,7 @@ impl Display for TokenKind {
                 T![use] => "use",
                 T![pub] => "pub",
                 T![let] => "let",
-                T![data] => "data",
+                T![struct] => "struct",
                 T![match] => "match",
                 T![if] => "if",
                 T![then] => "then",
@@ -427,39 +429,20 @@ impl<T> From<(T, Span)> for Spanned<T> {
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Item {
-    Data(Data),
+    Struct(StructDef),
     Expr(Expr),
 }
 
 #[derive(Debug, Clone, PartialEq)]
-// pub struct Data {
-//     pub name: InternedString,
-//     pub variants: Vec<Variant>,
-// }
-pub enum Data {
-    Record {
-        name: InternedString,
-        fields: Vec<Expr>,
-    },
-}
-
-#[derive(Debug, Clone, PartialEq)]
-pub struct Variant {
-    pub name: InternedString,
-    pub fields: Vec<InternedString>,
+pub struct StructDef {
+    name: InternedString,
+    fields: Vec<InternedString>,
 }
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Expr {
     Ident(InternedString),
     Lit(Lit),
-    List(Vec<Self>),
-    Record(Vec<(InternedString, Self)>),
-    Sum {
-        constructor: InternedString,
-        arg: Box<Self>,
-    },
-    Product(Vec<Self>),
     Prefix {
         op: PrefixOp,
         expr: Box<Self>,
@@ -474,10 +457,6 @@ pub enum Expr {
         value: Box<Self>,
         body: Option<Box<Self>>,
     },
-    Lambda {
-        param: InternedString,
-        body: Box<Self>,
-    },
     Apply(Box<Self>, Box<Self>),
     If {
         cond: Box<Self>,
@@ -485,6 +464,26 @@ pub enum Expr {
         else_: Box<Self>,
     },
     Unit,
+}
+
+impl Display for Expr {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Expr::Ident(i) => write!(f, "{}", i),
+            Expr::Lit(l) => write!(f, "{}", l),
+            Expr::Prefix { op, expr } => write!(f, "({} {})", op, expr),
+            Expr::Infix { op, lhs, rhs } => write!(f, "({} {} {})", lhs, op, rhs),
+            Expr::Let { name, value, body } => match body {
+                Some(body) => write!(f, "(let {} = {} in {})", name, value, body),
+                None => write!(f, "(let {} = {})", name, value),
+            },
+            Expr::Apply(lhs, rhs) => write!(f, "({} {})", lhs, rhs),
+            Expr::If { cond, then, else_ } => {
+                write!(f, "(if {} then {} else {})", cond, then, else_)
+            }
+            Expr::Unit => write!(f, "()"),
+        }
+    }
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -495,6 +494,14 @@ pub enum Lit {
     String(InternedString),
     Char(char),
     Bool(bool),
+    List(List<Expr>),
+    Tuple(Tuple),
+    Map(Map),
+    Struct(Struct),
+    Lambda {
+        param: InternedString,
+        body: Box<Expr>,
+    },
 }
 
 impl Display for Lit {
@@ -506,7 +513,63 @@ impl Display for Lit {
             Lit::String(i) => write!(f, "{}", i),
             Lit::Char(i) => write!(f, "{}", i),
             Lit::Bool(i) => write!(f, "{}", i),
+            Lit::List(l) => write!(f, "{}", l),
+            Lit::Tuple(t) => write!(f, "{:?}", t),
+            Lit::Map(m) => write!(f, "{}", m),
+            Lit::Struct(s) => write!(f, "{}", s),
+            Lit::Lambda { param, body } => write!(f, "(\\{} -> {})", param, body),
         }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct Tuple {
+    items: Vec<Expr>,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct Map {
+    pub items: HashMap<InternedString, Expr>,
+}
+
+impl Display for Map {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let map = self.clone();
+        write!(f, "{{")?;
+        while let Some((key, value)) = map.items.clone().into_iter().next() {
+            write!(f, "{}: {}", key, value)?;
+        }
+        write!(f, "}}")
+    }
+}
+
+impl Display for Tuple {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "(")?;
+        while let Some(item) = self.items.clone().into_iter().next() {
+            write!(f, "{}", item)?;
+        }
+        write!(f, ")")
+    }
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct Struct {
+    name: InternedString,
+    fields: HashMap<InternedString, Expr>,
+}
+
+impl Display for Struct {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let struct_ = self.clone();
+        write!(f, "{} {{", struct_.name)?;
+        for (key, value) in struct_.fields.clone() {
+            write!(f, "{}: {}", key, value)?;
+            if struct_.fields.keys().last().unwrap() != &key {
+                write!(f, ", ")?;
+            }
+        }
+        write!(f, "}}")
     }
 }
 
@@ -514,6 +577,15 @@ impl Display for Lit {
 pub enum PrefixOp {
     Neg,
     Not,
+}
+
+impl Display for PrefixOp {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            PrefixOp::Neg => write!(f, "-"),
+            PrefixOp::Not => write!(f, "!"),
+        }
+    }
 }
 
 impl From<TokenKind> for PrefixOp {
@@ -542,6 +614,27 @@ pub enum InfixOp {
     Geq,
     And,
     Or,
+}
+
+impl Display for InfixOp {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            InfixOp::Add => write!(f, "+"),
+            InfixOp::Sub => write!(f, "-"),
+            InfixOp::Mul => write!(f, "*"),
+            InfixOp::Div => write!(f, "/"),
+            InfixOp::Mod => write!(f, "%"),
+            InfixOp::Pow => write!(f, "^"),
+            InfixOp::Eq => write!(f, "="),
+            InfixOp::Neq => write!(f, "!="),
+            InfixOp::Lss => write!(f, "<"),
+            InfixOp::Gtr => write!(f, ">"),
+            InfixOp::Leq => write!(f, "<="),
+            InfixOp::Geq => write!(f, ">="),
+            InfixOp::And => write!(f, "&&"),
+            InfixOp::Or => write!(f, "||"),
+        }
+    }
 }
 
 impl From<TokenKind> for InfixOp {
@@ -651,13 +744,26 @@ impl<'src> Parser<'src> {
 
     pub fn item(&mut self) -> Result<Item> {
         match self.peek().value {
-            T![data] => Ok(Item::Data(self.data()?)),
+            T![struct] => Ok(Item::Struct(self.struct_def()?)),
             _ => Ok(Item::Expr(self.expr()?)),
         }
     }
 
-    fn data(&mut self) -> Result<Data> {
-        todo!()
+    fn struct_def(&mut self) -> Result<StructDef> {
+        self.consume(T![struct]);
+        let name = self.ident()?;
+        let mut fields = vec![];
+        self.consume(T!['{']);
+        while !self.at(T!['}']) {
+            fields.push(self.ident()?);
+            if !self.at(T!['}']) {
+                self.consume(T![,]);
+            }
+        }
+        Ok(StructDef {
+            name,
+            fields: fields,
+        })
     }
 
     fn expr(&mut self) -> Result<Expr> {
@@ -1075,6 +1181,48 @@ impl<'src> Parser<'src> {
         self.curry_fn(params.into_iter().rev(), body)
     }
 
+    fn list(&mut self) -> Result<Expr> {
+        self.consume(T!['[']);
+        let mut items = vec![];
+        while !self.at(T![']']) {
+            items.push(self.expr()?);
+            if !self.at(T![']']) {
+                self.consume(T![,]);
+            }
+        }
+        self.consume(T![']']);
+        Ok(Expr::Lit(Lit::List(items.into())))
+    }
+
+    fn tuple(&mut self) -> Result<Expr> {
+        self.consume(T!['(']);
+        let mut items = vec![];
+        while !self.at(T![')']) {
+            items.push(self.expr()?);
+            if !self.at(T![')']) {
+                self.consume(T![,]);
+            }
+        }
+        self.consume(T![')']);
+        Ok(Expr::Lit(Lit::Tuple(Tuple { items })))
+    }
+
+    fn map(&mut self) -> Result<Expr> {
+        self.consume(T!['{']);
+        let mut items = HashMap::new();
+        while !self.at(T!['}']) {
+            let key = self.ident()?;
+            self.consume(T![:]);
+            let value = self.expr()?;
+            items.insert(key, value);
+            if !self.at(T!['}']) {
+                self.consume(T![,]);
+            }
+        }
+        self.consume(T!['}']);
+        Ok(Expr::Lit(Lit::Map(Map { items })))
+    }
+
     fn ident(&mut self) -> Result<InternedString> {
         let token = self.next();
         let text = self.text(token);
@@ -1086,9 +1234,11 @@ impl<'src> Parser<'src> {
         mut params: impl Iterator<Item = InternedString>,
         body: Expr,
     ) -> Result<Expr> {
-        Ok(params.fold(body, |acc, p| Expr::Lambda {
-            param: p,
-            body: Box::new(acc),
+        Ok(params.fold(body, |acc, p| {
+            Expr::Lit(Lit::Lambda {
+                param: p,
+                body: Box::new(acc),
+            })
         }))
     }
 
