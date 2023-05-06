@@ -59,6 +59,7 @@ pub enum Instr {
     StoreConst(Value),
     StoreVar(Value),
     Alloc(u64),
+    Neg,
     Add,
     Sub,
     Mul,
@@ -148,9 +149,17 @@ impl VM {
                 Instr::StoreVar(value) => {
                     self.stack.push(value);
                 }
+                Instr::Neg => {
+                    let a = self.pop();
+                    match a {
+                        Value::Int(a) => self.push(Value::Int(-a)),
+                        Value::Float(a) => self.push(Value::Float(-a)),
+                        _ => panic!("Invalid operand type"),
+                    }
+                }
                 Instr::Add => {
-                    let a = self.pop().expect("Stack underflow");
-                    let b = self.pop().expect("Stack underflow");
+                    let a = self.pop();
+                    let b = self.pop();
                     match (a, b) {
                         (Value::Int(a), Value::Int(b)) => self.push(Value::Int(a + b)),
                         (Value::Float(a), Value::Float(b)) => self.push(Value::Float(a + b)),
@@ -158,8 +167,8 @@ impl VM {
                     }
                 }
                 Instr::Sub => {
-                    let a = self.pop().expect("Stack underflow");
-                    let b = self.pop().expect("Stack underflow");
+                    let a = self.pop();
+                    let b = self.pop();
                     match (a, b) {
                         (Value::Int(a), Value::Int(b)) => self.push(Value::Int(a - b)),
                         (Value::Float(a), Value::Float(b)) => self.push(Value::Float(a - b)),
@@ -167,8 +176,8 @@ impl VM {
                     }
                 }
                 Instr::Mul => {
-                    let a = self.pop().expect("Stack underflow");
-                    let b = self.pop().expect("Stack underflow");
+                    let a = self.pop();
+                    let b = self.pop();
                     match (a, b) {
                         (Value::Int(a), Value::Int(b)) => self.push(Value::Int(a * b)),
                         (Value::Float(a), Value::Float(b)) => self.push(Value::Float(a * b)),
@@ -176,8 +185,8 @@ impl VM {
                     }
                 }
                 Instr::Div => {
-                    let a = self.pop().expect("Stack underflow");
-                    let b = self.pop().expect("Stack underflow");
+                    let a = self.pop();
+                    let b = self.pop();
                     match (a, b) {
                         (Value::Int(a), Value::Int(b)) => self.push(Value::Int(a / b)),
                         (Value::Float(a), Value::Float(b)) => self.push(Value::Float(a / b)),
@@ -323,17 +332,18 @@ impl VM {
             2 => Instr::StoreConst(self.read_value()),
             3 => Instr::StoreVar(self.read_value()),
             4 => Instr::Alloc(u64::from_le_bytes(self.read_8_bytes())),
-            5 => Instr::Add,
-            6 => Instr::Sub,
-            7 => Instr::Mul,
-            8 => Instr::Div,
-            9 => Instr::Eq,
-            10 => Instr::Neq,
-            11 => Instr::Lt,
-            12 => Instr::Gt,
-            13 => Instr::Jump,
-            14 => Instr::Jeq,
-            15 => Instr::Halt,
+            5 => Instr::Neg,
+            6 => Instr::Add,
+            7 => Instr::Sub,
+            8 => Instr::Mul,
+            9 => Instr::Div,
+            10 => Instr::Eq,
+            11 => Instr::Neq,
+            12 => Instr::Lt,
+            13 => Instr::Gt,
+            14 => Instr::Jump,
+            15 => Instr::Jeq,
+            16 => Instr::Halt,
             _ => panic!("Invalid opcode"),
         }
     }
@@ -342,7 +352,7 @@ impl VM {
         self.stack.push(value);
     }
 
-    fn pop(&mut self) -> Result<Value> {
-        self.stack.pop().ok_or("Stack underflow".into())
+    fn pop(&mut self) -> Value {
+        self.stack.pop().expect("Stack underflow")
     }
 }

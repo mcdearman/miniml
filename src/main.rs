@@ -1,3 +1,4 @@
+mod compiler;
 mod intern;
 mod list;
 mod parser;

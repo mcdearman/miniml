@@ -2,7 +2,6 @@
 
 <structDef> ::= "struct" <ws>+ <ident> <ws>+ "=" <ws>+ "{" <ws>* <ident> <ws>* ("," <ws>* <ident> <ws>*)* "}"
 
-
 <expr> ::= <or>
 
 <or> ::= <and> (<ws>* "||" <ws>* <and>)*
