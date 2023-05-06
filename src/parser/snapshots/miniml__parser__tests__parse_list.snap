@@ -1,0 +1,40 @@
+---
+source: src/parser/tests.rs
+expression: ast
+---
+Expr(
+    Lit(
+        List(
+            List {
+                head: Some(
+                    Node {
+                        data: Lit(
+                            Int(
+                                InternedString(1),
+                            ),
+                        ),
+                        next: Some(
+                            Node {
+                                data: Lit(
+                                    Int(
+                                        InternedString(2),
+                                    ),
+                                ),
+                                next: Some(
+                                    Node {
+                                        data: Lit(
+                                            Int(
+                                                InternedString(3),
+                                            ),
+                                        ),
+                                        next: None,
+                                    },
+                                ),
+                            },
+                        ),
+                    },
+                ),
+            },
+        ),
+    ),
+)

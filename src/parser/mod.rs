@@ -1010,7 +1010,9 @@ impl<'src> Parser<'src> {
                 | T![lambda]
                 | T![if]
                 | T![let]
-                | T!['('] => {
+                | T!['(']
+                | T!['[']
+                | T!['{'] => {
                     let arg = self.atom()?;
                     args.push(arg);
                 }
@@ -1025,7 +1027,15 @@ impl<'src> Parser<'src> {
         match tok.value {
             T![if] => self.if_(),
             T![let] => self.let_(),
-            T![int] | T![float] | T![str] | T![char] | T![bool] | T![lambda] => self.lit(),
+            T![int]
+            | T![float]
+            | T![str]
+            | T![char]
+            | T![bool]
+            | T![lambda]
+            | T!['[']
+            | T!['(']
+            | T!['{'] => self.lit(),
             T![ident] => Ok(Expr::Ident(self.ident()?)),
             T!['('] => {
                 self.consume(T!['(']);
@@ -1150,6 +1160,9 @@ impl<'src> Parser<'src> {
             T![char] => self.char(),
             T![bool] => self.bool(),
             T![lambda] => self.lambda(),
+            T!['['] => self.list(),
+            T!['('] => self.tuple(),
+            T!['{'] => self.map(),
             _ => Err(ParserError(format!("Unexpected token: {:?}", self.peek()))),
         }
     }

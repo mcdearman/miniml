@@ -23,6 +23,14 @@ impl From<&str> for InternedString {
     }
 }
 
+impl From<String> for InternedString {
+    fn from(name: String) -> Self {
+        Self {
+            key: unsafe { INTERNER.get_or_intern(name) },
+        }
+    }
+}
+
 impl Debug for InternedString {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "InternedString({})", unsafe {

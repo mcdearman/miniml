@@ -1,0 +1,29 @@
+---
+source: src/parser/tests.rs
+expression: ast
+---
+Expr(
+    Lit(
+        Map(
+            Map {
+                items: {
+                    InternedString(z): Lit(
+                        Int(
+                            InternedString(3),
+                        ),
+                    ),
+                    InternedString(x): Lit(
+                        Int(
+                            InternedString(1),
+                        ),
+                    ),
+                    InternedString(y): Lit(
+                        Int(
+                            InternedString(2),
+                        ),
+                    ),
+                },
+            },
+        ),
+    ),
+)

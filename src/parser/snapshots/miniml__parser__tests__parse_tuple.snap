@@ -1,0 +1,29 @@
+---
+source: src/parser/tests.rs
+expression: ast
+---
+Expr(
+    Lit(
+        Tuple(
+            Tuple {
+                items: [
+                    Lit(
+                        Int(
+                            InternedString(1),
+                        ),
+                    ),
+                    Lit(
+                        Int(
+                            InternedString(2),
+                        ),
+                    ),
+                    Lit(
+                        Int(
+                            InternedString(3),
+                        ),
+                    ),
+                ],
+            },
+        ),
+    ),
+)
