@@ -488,8 +488,8 @@ impl Display for Expr {
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Lit {
-    Int(InternedString),
-    Float(InternedString),
+    Int(Int),
+    Float(Float),
     Complex(Complex64),
     String(InternedString),
     Char(char),
@@ -508,9 +508,9 @@ impl Display for Lit {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Lit::Int(i) => write!(f, "{}", i),
-            Lit::Float(i) => write!(f, "{}", i),
-            Lit::Complex(i) => write!(f, "{}", i),
-            Lit::String(i) => write!(f, "{}", i),
+            Lit::Float(f) => write!(f, "{}", f),
+            Lit::Complex(c) => write!(f, "{}", c),
+            Lit::String(s) => write!(f, "{}", s),
             Lit::Char(i) => write!(f, "{}", i),
             Lit::Bool(i) => write!(f, "{}", i),
             Lit::List(l) => write!(f, "{}", l),
@@ -519,6 +519,55 @@ impl Display for Lit {
             Lit::Struct(s) => write!(f, "{}", s),
             Lit::Lambda { param, body } => write!(f, "(\\{} -> {})", param, body),
         }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct Int {
+    pub value: i64,
+    pub radix: u8,
+}
+
+impl Display for Int {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self.radix {
+            2 => write!(f, "0b{:b}", self.value),
+            8 => write!(f, "0o{:o}", self.value),
+            10 => write!(f, "{}", self.value),
+            16 => write!(f, "0x{:x}", self.value),
+            _ => panic!("Invalid radix: {}", self.radix),
+        }
+    }
+}
+
+impl From<String> for Int {
+    fn from(s: String) -> Self {
+        let radix = if s.starts_with("0b") {
+            2u8
+        } else if s.starts_with("0o") {
+            8u8
+        } else if s.starts_with("0x") {
+            16u8
+        } else {
+            10u8
+        };
+        let value = i64::from_str_radix(&s[2..], radix as u32).expect("Invalid integer");
+        Self { value, radix }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct Float(pub f64);
+
+impl Display for Float {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.0)
+    }
+}
+
+impl From<String> for Float {
+    fn from(s: String) -> Self {
+        Self(s.parse().expect("Invalid float"))
     }
 }
 
@@ -1170,13 +1219,13 @@ impl<'src> Parser<'src> {
     fn int(&mut self) -> Result<Expr> {
         let token = self.next();
         let text = self.text(token);
-        Ok(Expr::Lit(Lit::Int(InternedString::from(&*text))))
+        Ok(Expr::Lit(Lit::Int(Int::from(text.to_string()))))
     }
 
     fn float(&mut self) -> Result<Expr> {
         let token = self.next();
         let text = self.text(token);
-        Ok(Expr::Lit(Lit::Float(InternedString::from(&*text))))
+        Ok(Expr::Lit(Lit::Float(Float::from(text.to_string()))))
     }
 
     fn string(&mut self) -> Result<Expr> {
