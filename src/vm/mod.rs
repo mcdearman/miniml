@@ -54,11 +54,13 @@ impl Display for Value {
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Instr {
-    LoadConst(u8),
-    LoadVar(u8),
-    StoreConst(Value),
-    StoreVar(Value),
-    Alloc(u64),
+    // LoadConst(u8),
+    // LoadVar(u8),
+    // StoreConst(Value),
+    // StoreVar(Value),
+    Alloc(Value),
+    Push(Value),
+    Pop,
     Neg,
     Add,
     Sub,

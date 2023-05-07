@@ -27,7 +27,7 @@ pub fn compile_expr(ast: &Expr) -> Result<Vec<u8>> {
 
 fn compile_lit(lit: &Lit) -> Result<Vec<u8>> {
     match lit {
-        // Lit::Int(i) => Ok(vec![0x01, *i]),
+        Lit::Int(i) => Ok(vec![0x01, *i]),
         // Lit::Float(f) => Ok(vec![0x02, *f]),
         // Lit::Bool(b) => Ok(vec![0x02, *b as u8]),
         // Lit::Char(c) => Ok(vec![0x03, *c as u8]),

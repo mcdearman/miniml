@@ -3,7 +3,7 @@ use logos::{Lexer, Logos};
 use num_complex::Complex64;
 use std::{
     collections::HashMap,
-    fmt::Display,
+    fmt::{Display, Write},
     hash::Hash,
     ops::{Index, Range},
 };
@@ -508,7 +508,7 @@ impl Display for Lit {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Lit::Int(i) => write!(f, "{}", i),
-            Lit::Float(f) => write!(f, "{}", f),
+            Lit::Float(fl) => write!(f, "{}", fl),
             Lit::Complex(c) => write!(f, "{}", c),
             Lit::String(s) => write!(f, "{}", s),
             Lit::Char(i) => write!(f, "{}", i),
