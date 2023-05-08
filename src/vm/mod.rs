@@ -71,6 +71,8 @@ pub enum Instr {
     Lt,
     Gt,
     Jump,
+    Call,
+    Return,
     Jeq,
     Halt,
 }
