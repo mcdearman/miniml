@@ -54,18 +54,25 @@ impl Display for Value {
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Instr {
-    // LoadConst(u8),
-    // LoadVar(u8),
-    // StoreConst(Value),
-    // StoreVar(Value),
-    Alloc(Value),
+    Load(u16),
+    Store(Value),
+    LoadConst(u16),
+    StoreConst(Value),
     Push(Value),
     Pop,
+    Dup,
+    Swap,
+    Drop,
     Neg,
     Add,
     Sub,
     Mul,
     Div,
+    Mod,
+    And,
+    Or,
+    Xor,
+    Not,
     Eq,
     Neq,
     Lt,
@@ -80,10 +87,12 @@ pub enum Instr {
 impl Display for Instr {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            // Instr::LoadConst => write!(f, "LOADC"),
-            // Instr::LoadVar => write!(f, "LOADV"),
-            // Instr::StoreConst => write!(f, "STOREC"),
-            // Instr::StoreVar => write!(f, "STOREV"),
+            Instr::Load(addr) => write!(f, "LOADV"),
+            Instr::Store(Value) => write!(f, "STOREV"),
+            Instr::LoadConst(addr) => write!(f, "LOADC"),
+            Instr::StoreConst(value) => write!(f, "STOREC"),
+            Instr::Push(value) => write!(f, "PUSH {}", value),
+            Instr::Pop => write!(f, "POP"),
             Instr::Add => write!(f, "ADD"),
             Instr::Sub => write!(f, "SUB"),
             Instr::Mul => write!(f, "MUL"),
@@ -104,7 +113,14 @@ pub struct VM {
     program: Vec<u8>,
     constants: Vec<Value>,
     stack: Vec<Value>,
+    frames: Vec<CallFrame>,
     heap: Vec<Value>,
+}
+
+pub struct CallFrame {
+    pc: usize,
+    stack_base: usize,
+    stack_top: usize,
 }
 
 #[derive(Debug, Clone, PartialEq)]
