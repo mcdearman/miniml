@@ -77,27 +77,27 @@ pub enum Instr {
     Halt,
 }
 
-// impl Display for Instr {
-//     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-//         match self {
-//             Instr::LoadConst => write!(f, "LOADC"),
-//             Instr::LoadVar => write!(f, "LOADV"),
-//             Instr::StoreConst => write!(f, "STOREC"),
-//             Instr::StoreVar => write!(f, "STOREV"),
-//             Instr::Add => write!(f, "ADD"),
-//             Instr::Sub => write!(f, "SUB"),
-//             Instr::Mul => write!(f, "MUL"),
-//             Instr::Div => write!(f, "DIV"),
-//             Instr::Eq => write!(f, "EQ"),
-//             Instr::Neq => write!(f, "NEQ"),
-//             Instr::Lt => write!(f, "LT"),
-//             Instr::Gt => write!(f, "GT"),
-//             Instr::Jump => write!(f, "JMP"),
-//             Instr::Jeq => write!(f, "JEQ"),
-//             Instr::Halt => write!(f, "HALT"),
-//         }
-//     }
-// }
+impl Display for Instr {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            // Instr::LoadConst => write!(f, "LOADC"),
+            // Instr::LoadVar => write!(f, "LOADV"),
+            // Instr::StoreConst => write!(f, "STOREC"),
+            // Instr::StoreVar => write!(f, "STOREV"),
+            Instr::Add => write!(f, "ADD"),
+            Instr::Sub => write!(f, "SUB"),
+            Instr::Mul => write!(f, "MUL"),
+            Instr::Div => write!(f, "DIV"),
+            Instr::Eq => write!(f, "EQ"),
+            Instr::Neq => write!(f, "NEQ"),
+            Instr::Lt => write!(f, "LT"),
+            Instr::Gt => write!(f, "GT"),
+            Instr::Jump => write!(f, "JMP"),
+            Instr::Jeq => write!(f, "JEQ"),
+            Instr::Halt => write!(f, "HALT"),
+        }
+    }
+}
 
 pub struct VM {
     pc: usize,
@@ -229,7 +229,6 @@ impl VM {
             5 => self.read_list(),
             6 => self.read_tuple(),
             7 => self.read_map(),
-
             _ => panic!("Invalid value type"),
         }
     }
