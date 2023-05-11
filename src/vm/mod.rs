@@ -1,6 +1,7 @@
+use crate::{intern::InternedString, list::List};
 use std::{collections::HashMap, fmt::Display};
 
-use crate::{intern::InternedString, list::List};
+mod gc;
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Value {
@@ -134,23 +135,6 @@ pub struct CallFrame {
     stack_top: usize,
 }
 
-// pub struct Thread {
-//     /// An array of CallFrames
-//     frames: CellPtr<CallFrameList>,
-//     /// An array of pointers any object type
-//     stack: CellPtr<List>,
-//     /// The current stack base pointer
-//     stack_base: Cell<ArraySize>,
-//     /// A dict that should only contain Number keys and Upvalue values. This is a mapping of
-//     /// absolute stack indeces to Upvalue objects where stack values are closed over.
-//     upvalues: CellPtr<Dict>,
-//     /// A dict that should only contain Symbol keys but any type as values
-//     globals: CellPtr<Dict>,
-//     /// The current instruction location
-//     instr: CellPtr<InstructionStream>,
-// }
-
-
 #[derive(Debug, Clone, PartialEq)]
 pub struct RuntimeError(pub String);
 
@@ -261,6 +245,13 @@ impl VM {
         bytes.copy_from_slice(&self.program[self.pc..self.pc + 8]);
         self.pc += 8;
         bytes
+    }
+
+    fn read_u16(&mut self) -> u16 {
+        let mut bytes = [0; 2];
+        bytes.copy_from_slice(&self.program[self.pc..self.pc + 2]);
+        self.pc += 2;
+        u16::from_le_bytes(bytes)
     }
 
     fn read_value(&mut self) -> Value {
@@ -375,11 +366,11 @@ impl VM {
     fn read_instr(&mut self) -> Instr {
         let byte = self.read_byte();
         match byte {
-            0 => Instr::LoadConst(self.read_byte()),
-            1 => Instr::LoadVar(self.read_byte()),
+            1 => Instr::Load(self.read_u16()),
+            3 => Instr::Store(self.read_value()),
+            0 => Instr::LoadConst(self.read_u16()),
             2 => Instr::StoreConst(self.read_value()),
-            3 => Instr::StoreVar(self.read_value()),
-            4 => Instr::Alloc(u64::from_le_bytes(self.read_8_bytes())),
+            // 4 => Instr::Alloc(u64::from_le_bytes(self.read_8_bytes())),
             5 => Instr::Neg,
             6 => Instr::Add,
             7 => Instr::Sub,

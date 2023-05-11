@@ -24,7 +24,7 @@ pub enum TokenKind {
     #[regex(r#"([1-9]\d*|0)"#, priority = 2)]
     Int,
     #[regex(r#"((\d+(\.\d+))|(\.\d+))([Ee](\+|-)?\d+)?"#, priority = 1)]
-    Float,
+    Real,
     #[regex(r#"((\d+(\.\d+)?)|(\.\d+))([Ee](\+|-)?\d+)?i"#, priority = 0)]
     Imag,
     #[regex(r#"'\w'"#)]
@@ -146,8 +146,8 @@ macro_rules! T {
     [int] => {
        $crate::parser::TokenKind::Int
     };
-    [float] => {
-       $crate::parser::TokenKind::Float
+    [real] => {
+       $crate::parser::TokenKind::Real
     };
     [imag] => {
        $crate::parser::TokenKind::Imag
@@ -304,7 +304,7 @@ impl Display for TokenKind {
                 T![comment] => "Comment",
                 T![ident] => "Ident",
                 T![int] => "Int",
-                T![float] => "Float",
+                T![real] => "Float",
                 T![imag] => "Imag",
                 T![char] => "Char",
                 T![str] => "String",
@@ -489,7 +489,7 @@ impl Display for Expr {
 #[derive(Debug, Clone, PartialEq)]
 pub enum Lit {
     Int(Int),
-    Float(Float),
+    Real(Real),
     Complex(Complex64),
     String(InternedString),
     Char(char),
@@ -508,7 +508,7 @@ impl Display for Lit {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Lit::Int(i) => write!(f, "{}", i),
-            Lit::Float(fl) => write!(f, "{}", fl),
+            Lit::Real(r) => write!(f, "{}", r),
             Lit::Complex(c) => write!(f, "{}", c),
             Lit::String(s) => write!(f, "{}", s),
             Lit::Char(i) => write!(f, "{}", i),
@@ -557,15 +557,15 @@ impl From<String> for Int {
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct Float(pub f64);
+pub struct Real(pub f64);
 
-impl Display for Float {
+impl Display for Real {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}", self.0)
     }
 }
 
-impl From<String> for Float {
+impl From<String> for Real {
     fn from(s: String) -> Self {
         Self(s.parse().expect("Invalid float"))
     }
@@ -1052,7 +1052,7 @@ impl<'src> Parser<'src> {
             match self.peek().value {
                 T![ident]
                 | T![int]
-                | T![float]
+                | T![real]
                 | T![str]
                 | T![char]
                 | T![bool]
@@ -1077,7 +1077,7 @@ impl<'src> Parser<'src> {
             T![if] => self.if_(),
             T![let] => self.let_(),
             T![int]
-            | T![float]
+            | T![real]
             | T![str]
             | T![char]
             | T![bool]
@@ -1204,7 +1204,7 @@ impl<'src> Parser<'src> {
     fn lit(&mut self) -> Result<Expr> {
         match self.peek().value {
             T![int] => self.int(),
-            T![float] => self.float(),
+            T![real] => self.float(),
             T![str] => self.string(),
             T![char] => self.char(),
             T![bool] => self.bool(),
@@ -1225,7 +1225,7 @@ impl<'src> Parser<'src> {
     fn float(&mut self) -> Result<Expr> {
         let token = self.next();
         let text = self.text(token);
-        Ok(Expr::Lit(Lit::Float(Float::from(text.to_string()))))
+        Ok(Expr::Lit(Lit::Real(Real::from(text.to_string()))))
     }
 
     fn string(&mut self) -> Result<Expr> {
