@@ -134,6 +134,23 @@ pub struct CallFrame {
     stack_top: usize,
 }
 
+// pub struct Thread {
+//     /// An array of CallFrames
+//     frames: CellPtr<CallFrameList>,
+//     /// An array of pointers any object type
+//     stack: CellPtr<List>,
+//     /// The current stack base pointer
+//     stack_base: Cell<ArraySize>,
+//     /// A dict that should only contain Number keys and Upvalue values. This is a mapping of
+//     /// absolute stack indeces to Upvalue objects where stack values are closed over.
+//     upvalues: CellPtr<Dict>,
+//     /// A dict that should only contain Symbol keys but any type as values
+//     globals: CellPtr<Dict>,
+//     /// The current instruction location
+//     instr: CellPtr<InstructionStream>,
+// }
+
+
 #[derive(Debug, Clone, PartialEq)]
 pub struct RuntimeError(pub String);
 
