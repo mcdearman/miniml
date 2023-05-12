@@ -493,6 +493,13 @@ impl Display for Expr {
             Expr::If { cond, then, else_ } => {
                 write!(f, "(if {} then {} else {})", cond, then, else_)
             }
+            Expr::Match { expr, arms } => {
+                write!(f, "(match {} with ", expr)?;
+                for arm in arms {
+                    write!(f, "{}", arm)?;
+                }
+                write!(f, ")")
+            }
             Expr::Unit => write!(f, "()"),
         }
     }
@@ -638,6 +645,12 @@ impl Display for Record {
 pub struct MatchArm {
     pub pattern: Pattern,
     pub expr: Expr,
+}
+
+impl Display for MatchArm {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{} => {}", self.pattern, self.expr)
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -1190,7 +1203,7 @@ impl<'src> Parser<'src> {
             | T![lambda]
             | T!['[']
             | T!['(']
-            | T!['{'] => Ok(Expr::Lit(self.lit()?)),
+            | T!['{'] => self.lit(),
             T![ident] => Ok(Expr::Ident(self.ident()?)),
             T!['('] => {
                 self.consume(T!['(']);
@@ -1389,7 +1402,7 @@ impl<'src> Parser<'src> {
         Ok(Pattern::Map(MapPattern { items }))
     }
 
-    fn lit(&mut self) -> Result<Lit> {
+    fn lit(&mut self) -> Result<Expr> {
         match self.peek().value {
             T![int] => Ok(Lit::Int(self.int()?)),
             T![real] => Ok(Lit::Real(self.real()?)),
