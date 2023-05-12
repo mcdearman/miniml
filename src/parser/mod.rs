@@ -1,6 +1,8 @@
 use crate::{intern::InternedString, list::List};
 use logos::{Lexer, Logos};
+use num_bigint::BigInt;
 use num_complex::Complex64;
+use num_rational::Rational64;
 use std::{
     collections::HashMap,
     fmt::{Display, Write},
@@ -110,10 +112,12 @@ pub enum TokenKind {
     Pub,
     #[token("let")]
     Let,
-    #[token("struct")]
-    Struct,
+    #[token("data")]
+    Data,
     #[token("match")]
     Match,
+    #[token("with")]
+    With,
     #[token("if")]
     If,
     #[token("then")]
@@ -269,11 +273,14 @@ macro_rules! T {
     [let] => {
        $crate::parser::TokenKind::Let
     };
-    [struct] => {
-       $crate::parser::TokenKind::Struct
+    [data] => {
+       $crate::parser::TokenKind::Data
     };
     [match] => {
        $crate::parser::TokenKind::Match
+    };
+    [with] => {
+       $crate::parser::TokenKind::With
     };
     [if] => {
        $crate::parser::TokenKind::If
@@ -345,8 +352,9 @@ impl Display for TokenKind {
                 T![use] => "use",
                 T![pub] => "pub",
                 T![let] => "let",
-                T![struct] => "struct",
+                T![data] => "data",
                 T![match] => "match",
+                T![with] => "with",
                 T![if] => "if",
                 T![then] => "then",
                 T![else] => "else",
@@ -429,12 +437,12 @@ impl<T> From<(T, Span)> for Spanned<T> {
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Item {
-    Struct(StructDef),
+    Data(Data),
     Expr(Expr),
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct StructDef {
+pub struct Data {
     name: InternedString,
     fields: Vec<InternedString>,
 }
@@ -462,6 +470,10 @@ pub enum Expr {
         cond: Box<Self>,
         then: Box<Self>,
         else_: Box<Self>,
+    },
+    Match {
+        expr: Box<Self>,
+        arms: Vec<MatchArm>,
     },
     Unit,
 }
@@ -497,7 +509,7 @@ pub enum Lit {
     List(List<Expr>),
     Tuple(Tuple),
     Map(Map),
-    Struct(Struct),
+    Record(Record),
     Lambda {
         param: InternedString,
         body: Box<Expr>,
@@ -516,7 +528,7 @@ impl Display for Lit {
             Lit::List(l) => write!(f, "{}", l),
             Lit::Tuple(t) => write!(f, "{:?}", t),
             Lit::Map(m) => write!(f, "{}", m),
-            Lit::Struct(s) => write!(f, "{}", s),
+            Lit::Record(r) => write!(f, "{}", r),
             Lit::Lambda { param, body } => write!(f, "(\\{} -> {})", param, body),
         }
     }
@@ -603,12 +615,12 @@ impl Display for Tuple {
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct Struct {
+pub struct Record {
     name: InternedString,
     fields: HashMap<InternedString, Expr>,
 }
 
-impl Display for Struct {
+impl Display for Record {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let struct_ = self.clone();
         write!(f, "{} {{", struct_.name)?;
@@ -620,6 +632,12 @@ impl Display for Struct {
         }
         write!(f, "}}")
     }
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct MatchArm {
+    pub pattern: Pattern,
+    pub expr: Expr,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -711,10 +729,18 @@ impl From<TokenKind> for InfixOp {
 #[derive(Debug, Clone, PartialEq)]
 pub enum Pattern {
     Ident(InternedString),
-    Lit(Lit),
-    Tuple(Tuple),
-    Map(Map),
-    Struct(Struct),
+    Int(Int),
+    BigInt(BigInt),
+    Real(Real),
+    Complex(Complex64),
+    Rational(Rational64),
+    Bool(bool),
+    Str(InternedString),
+    Char(char),
+    List(ListPattern),
+    Tuple(TuplePattern),
+    Map(MapPattern),
+    Record(RecordPattern),
     Wildcard,
     Unit,
 }
@@ -723,13 +749,93 @@ impl Display for Pattern {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Pattern::Ident(i) => write!(f, "{}", i),
-            Pattern::Lit(l) => write!(f, "{}", l),
+            Pattern::Int(i) => write!(f, "{}", i),
+            Pattern::BigInt(i) => write!(f, "{}", i),
+            Pattern::Real(r) => write!(f, "{}", r),
+            Pattern::Complex(c) => write!(f, "{}", c),
+            Pattern::Rational(r) => write!(f, "{}", r),
+            Pattern::Bool(b) => write!(f, "{}", b),
+            Pattern::Str(s) => write!(f, "{}", s),
+            Pattern::Char(c) => write!(f, "{}", c),
+            Pattern::List(l) => write!(f, "{}", l),
             Pattern::Tuple(t) => write!(f, "{}", t),
             Pattern::Map(m) => write!(f, "{}", m),
-            Pattern::Struct(s) => write!(f, "{}", s),
+            Pattern::Record(r) => write!(f, "{}", r),
             Pattern::Wildcard => write!(f, "_"),
             Pattern::Unit => write!(f, "()"),
         }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct ListPattern {
+    pub items: Vec<Pattern>,
+}
+
+impl Display for ListPattern {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "[")?;
+        for (i, item) in self.items.iter().enumerate() {
+            if i != 0 {
+                write!(f, ", ")?;
+            }
+            write!(f, "{}", item)?;
+        }
+        write!(f, "]")
+    }
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct TuplePattern {
+    pub items: Vec<Pattern>,
+}
+
+impl Display for TuplePattern {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "(")?;
+        for (i, item) in self.items.iter().enumerate() {
+            if i != 0 {
+                write!(f, ", ")?;
+            }
+            write!(f, "{}", item)?;
+        }
+        write!(f, ")")
+    }
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct MapPattern {
+    pub items: Vec<(Pattern, Pattern)>,
+}
+
+impl Display for MapPattern {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{{")?;
+        for (i, (key, value)) in self.items.iter().enumerate() {
+            if i != 0 {
+                write!(f, ", ")?;
+            }
+            write!(f, "{}: {}", key, value)?;
+        }
+        write!(f, "}}")
+    }
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct RecordPattern {
+    pub items: Vec<(InternedString, Pattern)>,
+}
+
+impl Display for RecordPattern {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{{")?;
+        for (i, (key, value)) in self.items.iter().enumerate() {
+            if i != 0 {
+                write!(f, ", ")?;
+            }
+            write!(f, "{}: {}", key, value)?;
+        }
+        write!(f, "}}")
     }
 }
 
@@ -818,13 +924,13 @@ impl<'src> Parser<'src> {
 
     pub fn item(&mut self) -> Result<Item> {
         match self.peek().value {
-            T![struct] => Ok(Item::Struct(self.struct_def()?)),
+            T![data] => Ok(Item::Data(self.data()?)),
             _ => Ok(Item::Expr(self.expr()?)),
         }
     }
 
-    fn struct_def(&mut self) -> Result<StructDef> {
-        self.consume(T![struct]);
+    fn data(&mut self) -> Result<Data> {
+        self.consume(T![data]);
         let name = self.ident()?;
         let mut fields = vec![];
         self.consume(T!['{']);
@@ -834,7 +940,7 @@ impl<'src> Parser<'src> {
                 self.consume(T![,]);
             }
         }
-        Ok(StructDef {
+        Ok(Data {
             name,
             fields: fields,
         })
@@ -1084,7 +1190,7 @@ impl<'src> Parser<'src> {
             | T![lambda]
             | T!['[']
             | T!['(']
-            | T!['{'] => self.lit(),
+            | T!['{'] => Ok(Expr::Lit(self.lit()?)),
             T![ident] => Ok(Expr::Ident(self.ident()?)),
             T!['('] => {
                 self.consume(T!['(']);
@@ -1201,57 +1307,135 @@ impl<'src> Parser<'src> {
         })
     }
 
-    fn lit(&mut self) -> Result<Expr> {
+    fn match_(&mut self) -> Result<Expr> {
+        self.consume(T![match]);
+        let expr = self.expr()?;
+        self.consume(T![with]);
+        let mut arms = vec![];
+        while !self.at(T![|]) {
+            let pattern = self.pattern()?;
+            self.consume(T![->]);
+            let expr = self.expr()?;
+            arms.push(MatchArm { pattern, expr });
+        }
+        Ok(Expr::Match {
+            expr: Box::new(expr),
+            arms,
+        })
+    }
+
+    fn pattern(&mut self) -> Result<Pattern> {
         match self.peek().value {
-            T![int] => self.int(),
-            T![real] => self.float(),
-            T![str] => self.string(),
-            T![char] => self.char(),
-            T![bool] => self.bool(),
+            T![ident] => Ok(Pattern::Ident(self.ident()?)),
+            T![int] => todo!(),
+            T![real] => todo!(),
+            T![str] => todo!(),
+            T![char] => todo!(),
+            T![bool] => todo!(),
+            T!['['] => self.list_pattern(),
+            T!['('] => self.tuple_pattern(),
+            T!['{'] => self.map_pattern(),
+            _ => Err(ParserError(format!(
+                "Unexpected token in pattern got `{:?}` - `{}`",
+                self.peek(),
+                self.text(self.peek())
+            ))),
+        }
+    }
+
+    fn int_pattern(&mut self) -> Result<Pattern> {
+        Ok(Pattern::Int(self.int()?))
+    }
+
+    fn list_pattern(&mut self) -> Result<Pattern> {
+        self.consume(T!['[']);
+        let mut items = vec![];
+        while !self.at(T![']']) {
+            items.push(self.pattern()?);
+            if !self.at(T![']']) {
+                self.consume(T![,]);
+            }
+        }
+        self.consume(T![']']);
+        Ok(Pattern::List(ListPattern { items }))
+    }
+
+    fn tuple_pattern(&mut self) -> Result<Pattern> {
+        self.consume(T!['(']);
+        let mut items = vec![];
+        while !self.at(T![')']) {
+            items.push(self.pattern()?);
+            if !self.at(T![')']) {
+                self.consume(T![,]);
+            }
+        }
+        self.consume(T![')']);
+        Ok(Pattern::Tuple(TuplePattern { items }))
+    }
+
+    fn map_pattern(&mut self) -> Result<Pattern> {
+        self.consume(T!['{']);
+        let mut items = vec![];
+        while !self.at(T!['}']) {
+            let key = self.pattern()?;
+            self.consume(T![:]);
+            let value = self.pattern()?;
+            items.push((key, value));
+            if !self.at(T!['}']) {
+                self.consume(T![,]);
+            }
+        }
+        self.consume(T!['}']);
+        Ok(Pattern::Map(MapPattern { items }))
+    }
+
+    fn lit(&mut self) -> Result<Lit> {
+        match self.peek().value {
+            T![int] => Ok(Lit::Int(self.int()?)),
+            T![real] => Ok(Lit::Real(self.real()?)),
+            T![str] => Ok(Lit::String(self.string()?)),
+            T![char] => Ok(Lit::Char(self.char()?)),
+            T![bool] => Ok(Lit::Bool(self.bool()?)),
             T![lambda] => self.lambda(),
-            T!['['] => self.list(),
-            T!['('] => self.tuple(),
-            T!['{'] => self.map(),
+            T!['['] => Ok(Lit::List(self.list()?)),
+            T!['('] => Ok(Lit::Tuple(self.tuple()?)),
+            T!['{'] => Ok(Lit::Map(self.map()?)),
             _ => Err(ParserError(format!("Unexpected token: {:?}", self.peek()))),
         }
     }
 
-    fn int(&mut self) -> Result<Expr> {
+    fn int(&mut self) -> Result<Int> {
         let token = self.next();
         let text = self.text(token);
-        Ok(Expr::Lit(Lit::Int(Int::from(text.to_string()))))
+        Ok(Int::from(text.to_string()))
     }
 
-    fn float(&mut self) -> Result<Expr> {
+    fn real(&mut self) -> Result<Real> {
         let token = self.next();
         let text = self.text(token);
-        Ok(Expr::Lit(Lit::Real(Real::from(text.to_string()))))
+        Ok(Real::from(text.to_string()))
     }
 
-    fn string(&mut self) -> Result<Expr> {
+    fn string(&mut self) -> Result<InternedString> {
         let token = self.next();
         let text = self.text(token);
-        Ok(Expr::Lit(Lit::String(InternedString::from(
-            &text[1..(text.len() - 1)],
-        ))))
+        Ok(InternedString::from(&text[1..(text.len() - 1)]))
     }
 
-    fn char(&mut self) -> Result<Expr> {
+    fn char(&mut self) -> Result<char> {
         let token = self.next();
         let text = self.text(token);
-        Ok(Expr::Lit(Lit::Char(text.chars().nth(1).ok_or(
-            ParserError("Invalid character literal".to_string()),
-        )?)))
+        Ok(text
+            .chars()
+            .nth(1)
+            .ok_or(ParserError("Invalid character literal".to_string()))?)
     }
 
-    fn bool(&mut self) -> Result<Expr> {
+    fn bool(&mut self) -> Result<bool> {
         let token = self.next();
         let text = self.text(token);
-        match text {
-            "true" => Ok(Expr::Lit(Lit::Bool(true))),
-            "false" => Ok(Expr::Lit(Lit::Bool(false))),
-            _ => return Err(ParserError(format!("Invalid boolean literal: {}", text))),
-        }
+        text.parse()
+            .map_err(|_| ParserError(format!("Invalid boolean literal: {}", text)))
     }
 
     fn lambda(&mut self) -> Result<Expr> {
@@ -1268,7 +1452,7 @@ impl<'src> Parser<'src> {
         self.curry_fn(params.into_iter().rev(), body)
     }
 
-    fn list(&mut self) -> Result<Expr> {
+    fn list(&mut self) -> Result<List<Expr>> {
         self.consume(T!['[']);
         let mut items = vec![];
         while !self.at(T![']']) {
@@ -1278,10 +1462,10 @@ impl<'src> Parser<'src> {
             }
         }
         self.consume(T![']']);
-        Ok(Expr::Lit(Lit::List(items.into())))
+        Ok(items.into())
     }
 
-    fn tuple(&mut self) -> Result<Expr> {
+    fn tuple(&mut self) -> Result<Tuple> {
         self.consume(T!['(']);
         let mut items = vec![];
         while !self.at(T![')']) {
@@ -1291,10 +1475,10 @@ impl<'src> Parser<'src> {
             }
         }
         self.consume(T![')']);
-        Ok(Expr::Lit(Lit::Tuple(Tuple { items })))
+        Ok(Tuple { items })
     }
 
-    fn map(&mut self) -> Result<Expr> {
+    fn map(&mut self) -> Result<Map> {
         self.consume(T!['{']);
         let mut items = HashMap::new();
         while !self.at(T!['}']) {
@@ -1307,7 +1491,7 @@ impl<'src> Parser<'src> {
             }
         }
         self.consume(T!['}']);
-        Ok(Expr::Lit(Lit::Map(Map { items })))
+        Ok(Map { items })
     }
 
     fn ident(&mut self) -> Result<InternedString> {

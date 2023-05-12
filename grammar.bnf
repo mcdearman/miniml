@@ -1,6 +1,6 @@
-<item> ::= <expr> | <structDef>
+<item> ::= <expr> | <data>
 
-<structDef> ::= "struct" <ws>+ <ident> <ws>+ "=" <ws>+ "{" <ws>* <ident> <ws>* ("," <ws>* <ident> <ws>*)* "}"
+<data> ::= "data" <ws>+ <ident> <ws>+ "=" <ws>+ "{" <ws>* <ident> <ws>* ("," <ws>* <ident> <ws>*)* "}"
 
 <expr> ::= <or>
 
@@ -22,12 +22,15 @@
 
 <apply> ::= <atom> (<ws>+ <atom>)*
 
-<atom> ::= <ident> | <lit> | <if> | <let> | "(" <expr> ")"
+<atom> ::= <ident> | <lit> | <if> | <let> | <match> | "(" <expr> ")"
 
 <let> ::= "let" <ws>+ <ident>+ <ws>+ "=" <ws>+ <expr> (<ws>+ "in" <ws>+ <expr>)?
 
 <if> ::= "if" <ws>+ <expr> <ws>+ "then" <ws>+ <expr> 
     (<ws>+ "elif" <ws>+ <expr> <ws>+ "then" <ws>+ <expr>)* (<ws>+ "else" <ws>+ <expr>)?
+
+<match> ::= "match" <ws>+ <expr> <ws>+ "with" <ws>+ <pattern> <ws>+ "->" <ws>+ <expr> 
+    (<ws>+ "|" <ws>+ <pattern> <ws>+ "->" <ws>+ <expr>)*
 
 <pattern> ::= <ident> 
 | <listPattern> 
