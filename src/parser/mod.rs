@@ -112,6 +112,8 @@ pub enum TokenKind {
     Pub,
     #[token("let")]
     Let,
+    #[token("rec")]
+    Rec,
     #[token("data")]
     Data,
     #[token("match")]
@@ -273,6 +275,9 @@ macro_rules! T {
     [let] => {
        $crate::parser::TokenKind::Let
     };
+    [rec] => {
+       $crate::parser::TokenKind::Rec
+    };
     [data] => {
        $crate::parser::TokenKind::Data
     };
@@ -352,6 +357,7 @@ impl Display for TokenKind {
                 T![use] => "use",
                 T![pub] => "pub",
                 T![let] => "let",
+                T![rec] => "rec",
                 T![data] => "data",
                 T![match] => "match",
                 T![with] => "with",
@@ -438,13 +444,42 @@ impl<T> From<(T, Span)> for Spanned<T> {
 #[derive(Debug, Clone, PartialEq)]
 pub enum Item {
     Data(Data),
+    Decl(Decl),
     Expr(Expr),
+}
+
+impl Display for Item {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Item::Data(data) => write!(f, "{}", data),
+            Item::Decl(decl) => write!(f, "{}", decl),
+            Item::Expr(expr) => write!(f, "{}", expr),
+        }
+    }
 }
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Data {
     name: InternedString,
     fields: Vec<InternedString>,
+}
+
+impl Display for Data {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "data {} {}", self.name, self.fields.join(" "))
+    }
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct Decl {
+    pub pattern: Pattern,
+    pub value: Expr,
+}
+
+impl Display for Decl {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "let {} = {}", self.pattern, self.value)
+    }
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -463,7 +498,7 @@ pub enum Expr {
     Let {
         name: InternedString,
         value: Box<Self>,
-        body: Option<Box<Self>>,
+        body: Box<Self>,
     },
     Apply(Box<Self>, Box<Self>),
     If {
@@ -485,10 +520,7 @@ impl Display for Expr {
             Expr::Lit(l) => write!(f, "{}", l),
             Expr::Prefix { op, expr } => write!(f, "({} {})", op, expr),
             Expr::Infix { op, lhs, rhs } => write!(f, "({} {} {})", lhs, op, rhs),
-            Expr::Let { name, value, body } => match body {
-                Some(body) => write!(f, "(let {} = {} in {})", name, value, body),
-                None => write!(f, "(let {} = {})", name, value),
-            },
+            Expr::Let { name, value, body } => write!(f, "(let {} = {} in {})", name, value, body),
             Expr::Apply(lhs, rhs) => write!(f, "({} {})", lhs, rhs),
             Expr::If { cond, then, else_ } => {
                 write!(f, "(if {} then {} else {})", cond, then, else_)
@@ -517,10 +549,7 @@ pub enum Lit {
     Tuple(Tuple),
     Map(Map),
     Record(Record),
-    Lambda {
-        param: InternedString,
-        body: Box<Expr>,
-    },
+    Lambda(Lambda),
 }
 
 impl Display for Lit {
@@ -536,7 +565,7 @@ impl Display for Lit {
             Lit::Tuple(t) => write!(f, "{:?}", t),
             Lit::Map(m) => write!(f, "{}", m),
             Lit::Record(r) => write!(f, "{}", r),
-            Lit::Lambda { param, body } => write!(f, "(\\{} -> {})", param, body),
+            Lit::Lambda(l) => write!(f, "{}", l),
         }
     }
 }
@@ -638,6 +667,18 @@ impl Display for Record {
             }
         }
         write!(f, "}}")
+    }
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct Lambda {
+    pub param: InternedString,
+    pub body: Box<Expr>,
+}
+
+impl Display for Lambda {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "\\{} -> {}", self.param, self.body)
     }
 }
 
@@ -1203,7 +1244,7 @@ impl<'src> Parser<'src> {
             | T![lambda]
             | T!['[']
             | T!['(']
-            | T!['{'] => self.lit(),
+            | T!['{'] => Ok(Expr::Lit(self.lit()?)),
             T![ident] => Ok(Expr::Ident(self.ident()?)),
             T!['('] => {
                 self.consume(T!['(']);
@@ -1254,40 +1295,26 @@ impl<'src> Parser<'src> {
 
     fn let_bind(&mut self, name: InternedString) -> Result<Expr> {
         let val = self.expr()?;
-        if self.at(T![in]) {
-            self.consume(T![in]);
-            let body = self.expr()?;
-            Ok(Expr::Let {
-                name,
-                value: Box::new(val),
-                body: Some(Box::new(body)),
-            })
-        } else {
-            Ok(Expr::Let {
-                name,
-                value: Box::new(val),
-                body: None,
-            })
-        }
+        self.consume(T![in]);
+        let body = self.expr()?;
+        Ok(Expr::Let {
+            name,
+            value: Box::new(val),
+            body: Box::new(body),
+        })
     }
 
     fn let_fn(&mut self, name: InternedString, params: Vec<InternedString>) -> Result<Expr> {
         let val = self.expr()?;
-        if self.at(T![in]) {
-            self.consume(T![in]);
-            let body = self.expr()?;
-            Ok(Expr::Let {
-                name,
-                value: Box::new(self.curry_fn(params.into_iter().rev(), val)?),
-                body: Some(Box::new(body)),
-            })
-        } else {
-            Ok(Expr::Let {
-                name,
-                value: Box::new(self.curry_fn(params.into_iter().rev(), val)?),
-                body: None,
-            })
-        }
+        self.consume(T![in]);
+        let body = self.expr()?;
+        Ok(Expr::Let {
+            name,
+            value: Box::new(Expr::Lit(Lit::Lambda(
+                self.curry_fn(params.into_iter().rev(), val)?,
+            ))),
+            body: Box::new(body),
+        })
     }
 
     fn if_(&mut self) -> Result<Expr> {
@@ -1402,14 +1429,14 @@ impl<'src> Parser<'src> {
         Ok(Pattern::Map(MapPattern { items }))
     }
 
-    fn lit(&mut self) -> Result<Expr> {
+    fn lit(&mut self) -> Result<Lit> {
         match self.peek().value {
             T![int] => Ok(Lit::Int(self.int()?)),
             T![real] => Ok(Lit::Real(self.real()?)),
             T![str] => Ok(Lit::String(self.string()?)),
             T![char] => Ok(Lit::Char(self.char()?)),
             T![bool] => Ok(Lit::Bool(self.bool()?)),
-            T![lambda] => self.lambda(),
+            T![lambda] => Ok(Lit::Lambda(self.lambda()?)),
             T!['['] => Ok(Lit::List(self.list()?)),
             T!['('] => Ok(Lit::Tuple(self.tuple()?)),
             T!['{'] => Ok(Lit::Map(self.map()?)),
@@ -1451,7 +1478,7 @@ impl<'src> Parser<'src> {
             .map_err(|_| ParserError(format!("Invalid boolean literal: {}", text)))
     }
 
-    fn lambda(&mut self) -> Result<Expr> {
+    fn lambda(&mut self) -> Result<Lambda> {
         self.consume(T![lambda]);
         let mut params = vec![];
         while !self.at(T![->]) {
@@ -1517,13 +1544,21 @@ impl<'src> Parser<'src> {
         &mut self,
         mut params: impl Iterator<Item = InternedString>,
         body: Expr,
-    ) -> Result<Expr> {
-        Ok(params.fold(body, |acc, p| {
-            Expr::Lit(Lit::Lambda {
+    ) -> Result<Lambda> {
+        let last = params.last().ok_or(ParserError(
+            "Cannot create a lambda with no parameters".to_string(),
+        ))?;
+        let rest = params.filter(|p| p != &last);
+        let b = rest.fold(body, |acc, p| {
+            Expr::Lit(Lit::Lambda(Lambda {
                 param: p,
                 body: Box::new(acc),
-            })
-        }))
+            }))
+        });
+        Ok(Lambda {
+            param: last,
+            body: Box::new(b),
+        })
     }
 
     fn curry_apply(&mut self, args: impl Iterator<Item = Expr>, func: Expr) -> Expr {
