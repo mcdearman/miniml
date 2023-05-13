@@ -40,10 +40,10 @@
 | <mapPattern> 
 | <wildcard> 
 | <lit> 
-| <structPattern> 
+| <recordPattern> 
 | <unit>
 
-<structPattern> ::= <ident> <ws>+ "{" <ws>* <ident> <ws>* ("=" <ws>* <pattern>)? <ws>* ("," <ws>* <ident> ("=" <ws>* <pattern>)? <ws>*)* "}"
+<recordPattern> ::= <ident> <ws>+ "{" <ws>* <ident> <ws>* ("=" <ws>* <pattern>)? <ws>* ("," <ws>* <ident> ("=" <ws>* <pattern>)? <ws>*)* "}"
 
 <listPattern> ::= "[" <ws>* <pattern> (<ws>* "," <ws>* <pattern>)* <ws>* "]"
 

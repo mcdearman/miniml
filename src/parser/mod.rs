@@ -1228,7 +1228,7 @@ impl<'src> Parser<'src> {
                 _ => break,
             }
         }
-        Ok(self.curry_apply(args.into_iter(), lhs))
+        Ok(self.curry_apply(args, lhs))
     }
 
     fn atom(&mut self) -> Result<Expr> {
@@ -1310,9 +1310,7 @@ impl<'src> Parser<'src> {
         let body = self.expr()?;
         Ok(Expr::Let {
             name,
-            value: Box::new(Expr::Lit(Lit::Lambda(
-                self.curry_fn(params.into_iter().rev(), val)?,
-            ))),
+            value: Box::new(Expr::Lit(Lit::Lambda(self.curry_fn(params, val)?))),
             body: Box::new(body),
         })
     }
@@ -1365,7 +1363,8 @@ impl<'src> Parser<'src> {
     }
 
     fn pattern(&mut self) -> Result<Pattern> {
-        match self.peek().value {
+        let tok = self.peek();
+        match tok.value {
             T![ident] => Ok(Pattern::Ident(self.ident()?)),
             T![int] => todo!(),
             T![real] => todo!(),
@@ -1378,7 +1377,7 @@ impl<'src> Parser<'src> {
             _ => Err(ParserError(format!(
                 "Unexpected token in pattern got `{:?}` - `{}`",
                 self.peek(),
-                self.text(self.peek())
+                self.text(tok)
             ))),
         }
     }
@@ -1489,7 +1488,7 @@ impl<'src> Parser<'src> {
 
         let body = self.expr()?;
 
-        self.curry_fn(params.into_iter().rev(), body)
+        self.curry_fn(params, body)
     }
 
     fn list(&mut self) -> Result<List<Expr>> {
@@ -1540,28 +1539,25 @@ impl<'src> Parser<'src> {
         Ok(InternedString::from(text))
     }
 
-    fn curry_fn(
-        &mut self,
-        mut params: impl Iterator<Item = InternedString>,
-        body: Expr,
-    ) -> Result<Lambda> {
-        let last = params.last().ok_or(ParserError(
+    fn curry_fn(&mut self, params: Vec<InternedString>, body: Expr) -> Result<Lambda> {
+        let last = params.first().ok_or(ParserError(
             "Cannot create a lambda with no parameters".to_string(),
         ))?;
-        let rest = params.filter(|p| p != &last);
-        let b = rest.fold(body, |acc, p| {
+        let iter = params.clone().into_iter().rev().filter(|p| p != last);
+        let b = iter.fold(body, |acc, p| {
             Expr::Lit(Lit::Lambda(Lambda {
                 param: p,
                 body: Box::new(acc),
             }))
         });
         Ok(Lambda {
-            param: last,
+            param: last.clone(),
             body: Box::new(b),
         })
     }
 
-    fn curry_apply(&mut self, args: impl Iterator<Item = Expr>, func: Expr) -> Expr {
-        args.fold(func, |acc, arg| Expr::Apply(Box::new(acc), Box::new(arg)))
+    fn curry_apply(&mut self, args: Vec<Expr>, func: Expr) -> Expr {
+        args.into_iter()
+            .fold(func, |acc, arg| Expr::Apply(Box::new(acc), Box::new(arg)))
     }
 }
