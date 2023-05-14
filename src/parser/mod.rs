@@ -23,7 +23,7 @@ pub enum TokenKind {
     Comment,
     #[regex(r##"([A-Za-z]|_)([A-Za-z]|_|\d)*"##)]
     Ident,
-    #[regex(r#"([1-9]\d*|0)"#, priority = 2)]
+    #[regex(r#"(0b[0-1]+)|(0o[0-7]+)|(0x[0-9a-fA-F]+)|([1-9]\d*|0)"#, priority = 2)]
     Int,
     #[regex(r#"((\d+(\.\d+))|(\.\d+))([Ee](\+|-)?\d+)?"#, priority = 1)]
     Real,
@@ -496,7 +496,7 @@ pub enum Expr {
         rhs: Box<Self>,
     },
     Let {
-        name: InternedString,
+        pattern: Pattern,
         value: Box<Self>,
         body: Box<Self>,
     },
@@ -520,10 +520,14 @@ impl Display for Expr {
             Expr::Lit(l) => write!(f, "{}", l),
             Expr::Prefix { op, expr } => write!(f, "({} {})", op, expr),
             Expr::Infix { op, lhs, rhs } => write!(f, "({} {} {})", lhs, op, rhs),
-            Expr::Let { name, value, body } => write!(f, "(let {} = {} in {})", name, value, body),
+            Expr::Let {
+                pattern,
+                value,
+                body,
+            } => write!(f, "let {} = {} in {}", pattern, value, body),
             Expr::Apply(lhs, rhs) => write!(f, "({} {})", lhs, rhs),
             Expr::If { cond, then, else_ } => {
-                write!(f, "(if {} then {} else {})", cond, then, else_)
+                write!(f, "if {} then {} else {}", cond, then, else_)
             }
             Expr::Match { expr, arms } => {
                 write!(f, "(match {} with ", expr)?;
@@ -572,35 +576,73 @@ impl Display for Lit {
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Int {
-    pub value: i64,
-    pub radix: u8,
+    pub value: BigInt,
+    pub radix: Radix,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum Radix {
+    Bin,
+    Oct,
+    Dec,
+    Hex,
 }
 
 impl Display for Int {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self.radix {
-            2 => write!(f, "0b{:b}", self.value),
-            8 => write!(f, "0o{:o}", self.value),
-            10 => write!(f, "{}", self.value),
-            16 => write!(f, "0x{:x}", self.value),
-            _ => panic!("Invalid radix: {}", self.radix),
+            Radix::Bin => write!(f, "0b{:b}", self.value),
+            Radix::Oct => write!(f, "0o{:o}", self.value),
+            Radix::Dec => write!(f, "{}", self.value),
+            Radix::Hex => write!(f, "0x{:x}", self.value),
         }
     }
 }
 
-impl From<String> for Int {
-    fn from(s: String) -> Self {
-        let radix = if s.starts_with("0b") {
-            2u8
+impl TryFrom<String> for Int {
+    type Error = ParserError;
+
+    fn try_from(s: String) -> std::result::Result<Self, Self::Error> {
+        if s.starts_with("0b") {
+            Ok(Self {
+                value: BigInt::parse_bytes(
+                    s.strip_prefix("0b")
+                        .expect("expected integer prefix")
+                        .as_bytes(),
+                    2,
+                )
+                .ok_or(ParserError::new("Invalid binary integer literal"))?,
+                radix: Radix::Bin,
+            })
         } else if s.starts_with("0o") {
-            8u8
+            Ok(Self {
+                value: BigInt::parse_bytes(
+                    s.strip_prefix("0o")
+                        .expect("expected integer prefix")
+                        .as_bytes(),
+                    8,
+                )
+                .ok_or(ParserError::new("Invalid octal integer literal"))?,
+                radix: Radix::Oct,
+            })
         } else if s.starts_with("0x") {
-            16u8
+            Ok(Self {
+                value: BigInt::parse_bytes(
+                    s.strip_prefix("0x")
+                        .expect("expected integer prefix")
+                        .as_bytes(),
+                    16,
+                )
+                .ok_or(ParserError::new("Invalid hexadecimal integer literal"))?,
+                radix: Radix::Hex,
+            })
         } else {
-            10u8
-        };
-        let value = i64::from_str_radix(&s[2..], radix as u32).expect("Invalid integer");
-        Self { value, radix }
+            Ok(Self {
+                value: BigInt::parse_bytes(s.as_bytes(), 10)
+                    .ok_or(ParserError::new("Invalid decimal integer literal"))?,
+                radix: Radix::Dec,
+            })
+        }
     }
 }
 
@@ -1262,7 +1304,7 @@ impl<'src> Parser<'src> {
 
     fn let_(&mut self) -> Result<Expr> {
         self.consume(T![let]);
-        let name = self.ident()?;
+        let pattern = self.pattern()?;
         let mut params = vec![];
         while !self.at(T![=]) {
             let tok = self.peek();
@@ -1287,29 +1329,29 @@ impl<'src> Parser<'src> {
         self.consume(T![=]);
 
         if params.is_empty() {
-            self.let_bind(name)
+            self.let_bind(pattern)
         } else {
-            self.let_fn(name, params)
+            self.let_fn(pattern, params)
         }
     }
 
-    fn let_bind(&mut self, name: InternedString) -> Result<Expr> {
+    fn let_bind(&mut self, pattern: Pattern) -> Result<Expr> {
         let val = self.expr()?;
         self.consume(T![in]);
         let body = self.expr()?;
         Ok(Expr::Let {
-            name,
+            pattern,
             value: Box::new(val),
             body: Box::new(body),
         })
     }
 
-    fn let_fn(&mut self, name: InternedString, params: Vec<InternedString>) -> Result<Expr> {
+    fn let_fn(&mut self, pattern: Pattern, params: Vec<InternedString>) -> Result<Expr> {
         let val = self.expr()?;
         self.consume(T![in]);
         let body = self.expr()?;
         Ok(Expr::Let {
-            name,
+            pattern,
             value: Box::new(Expr::Lit(Lit::Lambda(self.curry_fn(params, val)?))),
             body: Box::new(body),
         })
@@ -1401,6 +1443,10 @@ impl<'src> Parser<'src> {
 
     fn tuple_pattern(&mut self) -> Result<Pattern> {
         self.consume(T!['(']);
+        if self.at(T![')']) {
+            self.consume(T![')']);
+            return Ok(Pattern::Unit);
+        }
         let mut items = vec![];
         while !self.at(T![')']) {
             items.push(self.pattern()?);
@@ -1446,7 +1492,7 @@ impl<'src> Parser<'src> {
     fn int(&mut self) -> Result<Int> {
         let token = self.next();
         let text = self.text(token);
-        Ok(Int::from(text.to_string()))
+        Ok(Int::from(text.to_string().try_into()?))
     }
 
     fn real(&mut self) -> Result<Real> {
@@ -1467,7 +1513,7 @@ impl<'src> Parser<'src> {
         Ok(text
             .chars()
             .nth(1)
-            .ok_or(ParserError("Invalid character literal".to_string()))?)
+            .ok_or(ParserError::new("Invalid character literal"))?)
     }
 
     fn bool(&mut self) -> Result<bool> {

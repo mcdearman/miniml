@@ -9,17 +9,26 @@ Expr(
                 items: [
                     Lit(
                         Int(
-                            InternedString(1),
+                            Int {
+                                value: 1,
+                                radix: Dec,
+                            },
                         ),
                     ),
                     Lit(
                         Int(
-                            InternedString(2),
+                            Int {
+                                value: 2,
+                                radix: Dec,
+                            },
                         ),
                     ),
                     Lit(
                         Int(
-                            InternedString(3),
+                            Int {
+                                value: 3,
+                                radix: Dec,
+                            },
                         ),
                     ),
                 ],

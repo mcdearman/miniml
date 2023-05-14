@@ -8,6 +8,27 @@ fn parse_int() {
 }
 
 #[test]
+fn parse_binary() {
+    let input = "0b101010";
+    let ast = Parser::new(input).item().expect("failed to parse");
+    insta::assert_debug_snapshot!(ast);
+}
+
+#[test]
+fn parse_octal() {
+    let input = "0o755";
+    let ast = Parser::new(input).item().expect("failed to parse");
+    insta::assert_debug_snapshot!(ast);
+}
+
+#[test]
+fn parse_hex() {
+    let input = "0xdeadbeef";
+    let ast = Parser::new(input).item().expect("failed to parse");
+    insta::assert_debug_snapshot!(ast);
+}
+
+#[test]
 fn parse_float() {
     let input = "5.23";
     let ast = Parser::new(input).item().expect("failed to parse");

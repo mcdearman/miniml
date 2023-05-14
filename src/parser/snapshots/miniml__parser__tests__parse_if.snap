@@ -11,12 +11,18 @@ Expr(
         ),
         then: Lit(
             Int(
-                InternedString(1),
+                Int {
+                    value: 1,
+                    radix: Dec,
+                },
             ),
         ),
         else_: Lit(
             Int(
-                InternedString(2),
+                Int {
+                    value: 2,
+                    radix: Dec,
+                },
             ),
         ),
     },

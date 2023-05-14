@@ -7,14 +7,20 @@ Expr(
         op: Eq,
         lhs: Lit(
             Int(
-                InternedString(1),
+                Int {
+                    value: 1,
+                    radix: Dec,
+                },
             ),
         ),
         rhs: Infix {
             op: Add,
             lhs: Lit(
                 Int(
-                    InternedString(2),
+                    Int {
+                        value: 2,
+                        radix: Dec,
+                    },
                 ),
             ),
             rhs: Ident(

@@ -4,8 +4,10 @@ expression: ast
 ---
 Expr(
     Lit(
-        Float(
-            InternedString(5.23),
+        Real(
+            Real(
+                5.23,
+            ),
         ),
     ),
 )

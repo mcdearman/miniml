@@ -6,8 +6,8 @@ Expr(
     Lit(
         Int(
             Int {
-                value: 523,
-                radix: Dec,
+                value: 3735928559,
+                radix: Hex,
             },
         ),
     ),

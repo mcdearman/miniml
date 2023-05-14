@@ -7,28 +7,40 @@ Expr(
         op: Add,
         lhs: Lit(
             Int(
-                InternedString(1),
+                Int {
+                    value: 1,
+                    radix: Dec,
+                },
             ),
         ),
         rhs: Infix {
             op: Mul,
             lhs: Lit(
                 Int(
-                    InternedString(2),
+                    Int {
+                        value: 2,
+                        radix: Dec,
+                    },
                 ),
             ),
             rhs: Infix {
                 op: Pow,
                 lhs: Lit(
                     Int(
-                        InternedString(3),
+                        Int {
+                            value: 3,
+                            radix: Dec,
+                        },
                     ),
                 ),
                 rhs: Prefix {
                     op: Neg,
                     expr: Lit(
                         Int(
-                            InternedString(4),
+                            Int {
+                                value: 4,
+                                radix: Dec,
+                            },
                         ),
                     ),
                 },

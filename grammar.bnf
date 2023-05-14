@@ -2,7 +2,11 @@
 
 <data> ::= "data" <ws>+ <ident> <ws>+ "=" <ws>+ "{" <ws>* <ident> <ws>* ("," <ws>* <ident> <ws>*)* "}"
 
-<decl> ::= "let" (<ws>+ "rec")? <ws>+ <pattern> (<ws>+ <ident>)* <ws>+ "=" <ws>+ <expr>
+<decl> ::= "let" (<ws>+ "rec")? <ws>+ <declBind> | <declFn>
+
+<declBind> ::= <pattern> <ws>+ "=" <ws>+ <expr>
+
+<declFn> ::= <ident> (<ws>+ <letPattern>)+ <ws>+ "=" <ws>+ <expr>
 
 <expr> ::= <or>
 
@@ -26,30 +30,49 @@
 
 <atom> ::= <ident> | <lit> | <if> | <let> | <match> | "(" <expr> ")"
 
-<let> ::= "let" (<ws>+ "rec")? <ws>+ <pattern> (<ws>+ <ident>)* <ws>+ "=" <ws>+ <expr> <ws>+ "in" <ws>+ <expr>?
+<let> ::= "let" (<ws>+ "rec")? <ws>+ <letBind> | <letFn>
+
+<letBind> ::= <pattern> <ws>+ "=" <ws>+ <expr> <ws>+ "in" <ws>+ <expr>?
+
+<letFn> ::= <ident> (<ws>+ <letPattern>)+ <ws>+ "=" <ws>+ <expr> <ws>+ "in" <ws>+ <expr>?
 
 <if> ::= "if" <ws>+ <expr> <ws>+ "then" <ws>+ <expr> 
     (<ws>+ "elif" <ws>+ <expr> <ws>+ "then" <ws>+ <expr>)* (<ws>+ "else" <ws>+ <expr>)?
 
-<match> ::= "match" <ws>+ <expr> <ws>+ "with" <ws>+ <pattern> <ws>+ "->" <ws>+ <expr> 
-    (<ws>+ "|" <ws>+ <pattern> <ws>+ "->" <ws>+ <expr>)*
+<match> ::= "match" <ws>+ <expr> <ws>+ "with" <ws>+ <fullPattern> <ws>+ "->" <ws>+ <expr> 
+    (<ws>+ "|" <ws>+ <fullPattern> <ws>+ "->" <ws>+ <expr>)*
 
-<pattern> ::= <ident> 
-| <listPattern> 
-| <tuplePattern> 
-| <mapPattern> 
-| <wildcard> 
+<fullPattern> ::= <ident> 
 | <lit> 
-| <recordPattern> 
+| <fullListPattern> 
+| <fullTuplePattern> 
+| <fullTapPattern> 
+| <fullRecordPattern> 
+| <wildcard> 
 | <unit>
 
-<recordPattern> ::= <ident> <ws>+ "{" <ws>* <ident> <ws>* ("=" <ws>* <pattern>)? <ws>* ("," <ws>* <ident> ("=" <ws>* <pattern>)? <ws>*)* "}"
+<fullListPattern> ::= "[" <ws>* <pattern> (<ws>* "," <ws>* <pattern>)* <ws>* "]"
 
-<listPattern> ::= "[" <ws>* <pattern> (<ws>* "," <ws>* <pattern>)* <ws>* "]"
+<fullTuplePattern> ::= "(" <ws>* <pattern> (<ws>* "," <ws>* <pattern>)* <ws>* ")"
 
-<tuplePattern> ::= "(" <ws>* <pattern> (<ws>* "," <ws>* <pattern>)* <ws>* ")"
+<fullMapPattern> ::= "{" <ws>* <string> ":" <ws>* <pattern> (<ws>* "," <ws>* <string> ":" <ws>* <pattern>)* <ws>* "}"
 
-<mapPattern> ::= "{" <ws>* <string> ":" <ws>* <pattern> (<ws>* "," <ws>* <string> ":" <ws>* <pattern>)* <ws>* "}"
+<fullRecordPattern> ::= <ident> <ws>+ "{" <ws>* <ident> <ws>* ("=" <ws>* <pattern>)? <ws>* ("," <ws>* <ident> ("=" <ws>* <pattern>)? <ws>*)* "}"
+
+<letPattern> ::= <ident>
+| <letListPattern>
+| <letTuplePattern>
+| <letTapPattern>
+| <wildcard>
+| <unit>
+
+<letRecordPattern> ::= <ident> <ws>+ "{" <ws>* <ident> <ws>* ("=" <ws>* <letPattern>)? <ws>* ("," <ws>* <ident> ("=" <ws>* <letPattern>)? <ws>*)* "}"
+
+<letListPattern> ::= "[" <ws>* <letPattern> (<ws>* "," <ws>* <letPattern>)* <ws>* "]"
+
+<letTuplePattern> ::= "(" <ws>* <letPattern> (<ws>* "," <ws>* <letPattern>)* <ws>* ")"
+
+<letMapPattern> ::= "{" <ws>* <string> ":" <ws>* <letPattern> (<ws>* "," <ws>* <string> ":" <ws>* <letPattern>)* <ws>* "}"
 
 <lit> ::= <int> 
 | <float> 
