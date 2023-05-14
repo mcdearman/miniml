@@ -2,9 +2,9 @@
 
 <data> ::= "data" <ws>+ <ident> <ws>+ "=" <ws>+ "{" <ws>* <ident> <ws>* ("," <ws>* <ident> <ws>*)* "}"
 
-<decl> ::= "let" (<ws>+ "rec")? <ws>+ <declBind> | <declFn>
+<decl> ::= "let" (<ws>+ "rec")? <ws>+ (<declBind> | <declFn>)
 
-<declBind> ::= <pattern> <ws>+ "=" <ws>+ <expr>
+<declBind> ::= <letPattern> <ws>+ "=" <ws>+ <expr>
 
 <declFn> ::= <ident> (<ws>+ <letPattern>)+ <ws>+ "=" <ws>+ <expr>
 
@@ -30,9 +30,9 @@
 
 <atom> ::= <ident> | <lit> | <if> | <let> | <match> | "(" <expr> ")"
 
-<let> ::= "let" (<ws>+ "rec")? <ws>+ <letBind> | <letFn>
+<let> ::= "let" (<ws>+ "rec")? <ws>+ (<letBind> | <letFn>)
 
-<letBind> ::= <pattern> <ws>+ "=" <ws>+ <expr> <ws>+ "in" <ws>+ <expr>?
+<letBind> ::= <letPattern> <ws>+ "=" <ws>+ <expr> <ws>+ "in" <ws>+ <expr>?
 
 <letFn> ::= <ident> (<ws>+ <letPattern>)+ <ws>+ "=" <ws>+ <expr> <ws>+ "in" <ws>+ <expr>?
 
@@ -46,23 +46,23 @@
 | <lit> 
 | <fullListPattern> 
 | <fullTuplePattern> 
-| <fullTapPattern> 
+| <fullMapPattern> 
 | <fullRecordPattern> 
 | <wildcard> 
 | <unit>
 
-<fullListPattern> ::= "[" <ws>* <pattern> (<ws>* "," <ws>* <pattern>)* <ws>* "]"
+<fullListPattern> ::= "[" <ws>* <fullPattern> (<ws>* "," <ws>* <fullPattern>)* <ws>* "]"
 
-<fullTuplePattern> ::= "(" <ws>* <pattern> (<ws>* "," <ws>* <pattern>)* <ws>* ")"
+<fullTuplePattern> ::= "(" <ws>* <fullPattern> (<ws>* "," <ws>* <fullPattern>)* <ws>* ")"
 
-<fullMapPattern> ::= "{" <ws>* <string> ":" <ws>* <pattern> (<ws>* "," <ws>* <string> ":" <ws>* <pattern>)* <ws>* "}"
+<fullMapPattern> ::= "{" <ws>* <string> ":" <ws>* <fullPattern> (<ws>* "," <ws>* <string> ":" <ws>* <fullPattern>)* <ws>* "}"
 
-<fullRecordPattern> ::= <ident> <ws>+ "{" <ws>* <ident> <ws>* ("=" <ws>* <pattern>)? <ws>* ("," <ws>* <ident> ("=" <ws>* <pattern>)? <ws>*)* "}"
+<fullRecordPattern> ::= <ident> <ws>+ "{" <ws>* <ident> <ws>* ("=" <ws>* <fullPattern>)? <ws>* ("," <ws>* <ident> ("=" <ws>* <fullPattern>)? <ws>*)* "}"
 
 <letPattern> ::= <ident>
 | <letListPattern>
 | <letTuplePattern>
-| <letTapPattern>
+| <letMapPattern>
 | <wildcard>
 | <unit>
 

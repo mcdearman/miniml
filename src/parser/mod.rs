@@ -5,7 +5,7 @@ use num_complex::Complex64;
 use num_rational::Rational64;
 use std::{
     collections::HashMap,
-    fmt::{Display, Write},
+    fmt::Display,
     hash::Hash,
     ops::{Index, Range},
 };
@@ -831,7 +831,7 @@ pub enum Pattern {
     Complex(Complex64),
     Rational(Rational64),
     Bool(bool),
-    Str(InternedString),
+    String(InternedString),
     Char(char),
     List(ListPattern),
     Tuple(TuplePattern),
@@ -851,7 +851,7 @@ impl Display for Pattern {
             Pattern::Complex(c) => write!(f, "{}", c),
             Pattern::Rational(r) => write!(f, "{}", r),
             Pattern::Bool(b) => write!(f, "{}", b),
-            Pattern::Str(s) => write!(f, "{}", s),
+            Pattern::String(s) => write!(f, "{}", s),
             Pattern::Char(c) => write!(f, "{}", c),
             Pattern::List(l) => write!(f, "{}", l),
             Pattern::Tuple(t) => write!(f, "{}", t),
@@ -1393,7 +1393,7 @@ impl<'src> Parser<'src> {
         self.consume(T![with]);
         let mut arms = vec![];
         while !self.at(T![|]) {
-            let pattern = self.pattern()?;
+            let pattern = self.full_pattern()?;
             self.consume(T![->]);
             let expr = self.expr()?;
             arms.push(MatchArm { pattern, expr });
@@ -1404,18 +1404,18 @@ impl<'src> Parser<'src> {
         })
     }
 
-    fn pattern(&mut self) -> Result<Pattern> {
+    fn full_pattern(&mut self) -> Result<Pattern> {
         let tok = self.peek();
         match tok.value {
             T![ident] => Ok(Pattern::Ident(self.ident()?)),
-            T![int] => todo!(),
-            T![real] => todo!(),
-            T![str] => todo!(),
-            T![char] => todo!(),
-            T![bool] => todo!(),
-            T!['['] => self.list_pattern(),
-            T!['('] => self.tuple_pattern(),
-            T!['{'] => self.map_pattern(),
+            T![int] => Ok(Pattern::Int(self.int()?)),
+            T![real] => Ok(Pattern::Real(self.real()?)),
+            T![str] => Ok(Pattern::String(self.string()?)),
+            T![char] => Ok(Pattern::Char(self.char()?)),
+            T![bool] => Ok(Pattern::Bool(self.bool()?)),
+            T!['['] => self.full_list_pattern(),
+            T!['('] => self.full_tuple_pattern(),
+            T!['{'] => self.full_map_pattern(),
             _ => Err(ParserError(format!(
                 "Unexpected token in pattern got `{:?}` - `{}`",
                 self.peek(),
@@ -1424,15 +1424,11 @@ impl<'src> Parser<'src> {
         }
     }
 
-    fn int_pattern(&mut self) -> Result<Pattern> {
-        Ok(Pattern::Int(self.int()?))
-    }
-
-    fn list_pattern(&mut self) -> Result<Pattern> {
+    fn full_list_pattern(&mut self) -> Result<Pattern> {
         self.consume(T!['[']);
         let mut items = vec![];
         while !self.at(T![']']) {
-            items.push(self.pattern()?);
+            items.push(self.full_pattern()?);
             if !self.at(T![']']) {
                 self.consume(T![,]);
             }
@@ -1441,7 +1437,7 @@ impl<'src> Parser<'src> {
         Ok(Pattern::List(ListPattern { items }))
     }
 
-    fn tuple_pattern(&mut self) -> Result<Pattern> {
+    fn full_tuple_pattern(&mut self) -> Result<Pattern> {
         self.consume(T!['(']);
         if self.at(T![')']) {
             self.consume(T![')']);
@@ -1449,7 +1445,7 @@ impl<'src> Parser<'src> {
         }
         let mut items = vec![];
         while !self.at(T![')']) {
-            items.push(self.pattern()?);
+            items.push(self.full_pattern()?);
             if !self.at(T![')']) {
                 self.consume(T![,]);
             }
@@ -1458,13 +1454,13 @@ impl<'src> Parser<'src> {
         Ok(Pattern::Tuple(TuplePattern { items }))
     }
 
-    fn map_pattern(&mut self) -> Result<Pattern> {
+    fn full_map_or_record_pattern(&mut self) -> Result<Pattern> {
         self.consume(T!['{']);
         let mut items = vec![];
         while !self.at(T!['}']) {
-            let key = self.pattern()?;
+            let key = self.full_pattern()?;
             self.consume(T![:]);
-            let value = self.pattern()?;
+            let value = self.full_pattern()?;
             items.push((key, value));
             if !self.at(T!['}']) {
                 self.consume(T![,]);
@@ -1472,6 +1468,42 @@ impl<'src> Parser<'src> {
         }
         self.consume(T!['}']);
         Ok(Pattern::Map(MapPattern { items }))
+    }
+
+    fn full_record_pattern(&mut self) -> Result<Pattern> {
+        self.consume(T!['{']);
+        let mut items = vec![];
+        while !self.at(T!['}']) {
+            let key = self.ident()?;
+            self.consume(T![:]);
+            let value = self.full_pattern()?;
+            items.push((key, value));
+            if !self.at(T!['}']) {
+                self.consume(T![,]);
+            }
+        }
+        self.consume(T!['}']);
+        Ok(Pattern::Record(RecordPattern { items }))
+    }
+
+    fn let_pattern(&mut self) -> Result<Pattern> {
+        let tok = self.peek();
+        match tok.value {
+            T![ident] => Ok(Pattern::Ident(self.ident()?)),
+            T![int] => Ok(Pattern::Int(self.int()?)),
+            T![real] => Ok(Pattern::Real(self.real()?)),
+            T![str] => Ok(Pattern::String(self.string()?)),
+            T![char] => Ok(Pattern::Char(self.char()?)),
+            T![bool] => Ok(Pattern::Bool(self.bool()?)),
+            T!['['] => self.let_list_pattern(),
+            T!['('] => self.let_tuple_pattern(),
+            T!['{'] => self.let_map_pattern(),
+            _ => Err(ParserError(format!(
+                "Unexpected token in pattern got `{:?}` - `{}`",
+                self.peek(),
+                self.text(tok)
+            ))),
+        }
     }
 
     fn lit(&mut self) -> Result<Lit> {
