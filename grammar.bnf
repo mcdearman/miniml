@@ -4,7 +4,7 @@
 
 <decl> ::= <letDecl> | <fnDecl>
 
-<letDecl> ::= <let>
+<letDecl> ::= "let" <ws>+ <pattern> <ws>+ "=" <ws>+ <expr>
 
 <fnDecl> ::= "fn" <ws>+ <ident> (<ws>+ <pattern>)+ <ws>+ "=" <ws>+ <expr>
 
@@ -32,7 +32,7 @@
 
 <atom> ::= <ident> | <lit> | <if> | <let> | <match> | "(" <expr> ")"
 
-<let_expr> ::= <letDecl> <ws>+ "in" <ws>+ <expr>?
+<let> ::= <letDecl> <ws>+ "in" <ws>+ <expr>?
 
 <fn> ::= <fnDecl> <ws>+ "in" <ws>+ <expr>?
 

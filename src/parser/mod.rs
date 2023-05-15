@@ -482,6 +482,8 @@ impl Display for Decl {
     }
 }
 
+
+/// A dummy type to store a let-binding that may be either a declaration or an expression.
 #[derive(Debug, Clone, PartialEq)]
 pub enum LetKind {
     Decl(Decl),
