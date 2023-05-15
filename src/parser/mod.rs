@@ -482,7 +482,6 @@ impl Display for Decl {
     }
 }
 
-
 /// A dummy type to store a let-binding that may be either a declaration or an expression.
 #[derive(Debug, Clone, PartialEq)]
 pub enum LetKind {
@@ -666,6 +665,25 @@ pub struct Tuple {
     items: Vec<Expr>,
 }
 
+impl Display for Tuple {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "(")?;
+        while let Some(item) = self.items.clone().into_iter().next() {
+            write!(f, "{}", item)?;
+        }
+        write!(f, ")")
+    }
+}
+
+impl IntoIterator for Tuple {
+    type Item = Expr;
+    type IntoIter = std::vec::IntoIter<Self::Item>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.items.into_iter()
+    }
+}
+
 #[derive(Debug, Clone, PartialEq)]
 pub struct Map {
     pub items: HashMap<InternedString, Expr>,
@@ -682,13 +700,12 @@ impl Display for Map {
     }
 }
 
-impl Display for Tuple {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "(")?;
-        while let Some(item) = self.items.clone().into_iter().next() {
-            write!(f, "{}", item)?;
-        }
-        write!(f, ")")
+impl IntoIterator for Map {
+    type Item = (InternedString, Expr);
+    type IntoIter = std::collections::hash_map::IntoIter<InternedString, Expr>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.items.into_iter()
     }
 }
 
@@ -844,8 +861,6 @@ pub enum Pattern {
     Ident(InternedString),
     Int(Int),
     BigInt(BigInt),
-    Real(Real),
-    Complex(Complex64),
     Rational(Rational64),
     Bool(bool),
     String(InternedString),
@@ -864,8 +879,6 @@ impl Display for Pattern {
             Pattern::Ident(i) => write!(f, "{}", i),
             Pattern::Int(i) => write!(f, "{}", i),
             Pattern::BigInt(i) => write!(f, "{}", i),
-            Pattern::Real(r) => write!(f, "{}", r),
-            Pattern::Complex(c) => write!(f, "{}", c),
             Pattern::Rational(r) => write!(f, "{}", r),
             Pattern::Bool(b) => write!(f, "{}", b),
             Pattern::String(s) => write!(f, "{}", s),
@@ -1460,7 +1473,6 @@ impl<'src> Parser<'src> {
         match tok.value {
             T![ident] => Ok(Pattern::Ident(self.ident()?)),
             T![int] => Ok(Pattern::Int(self.int()?)),
-            T![real] => Ok(Pattern::Real(self.real()?)),
             T![str] => Ok(Pattern::String(self.string()?)),
             T![char] => Ok(Pattern::Char(self.char()?)),
             T![bool] => Ok(Pattern::Bool(self.bool()?)),

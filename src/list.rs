@@ -41,6 +41,17 @@ impl<T> Iterator for List<T> {
     }
 }
 
+impl<T> FromIterator<T> for List<T> {
+    fn from_iter<I: IntoIterator<Item = T>>(iter: I) -> Self {
+        iter.into_iter().fold(Self::NIL, |list, data| {
+            Self::new(Some(Box::new(Node {
+                data,
+                next: list.head,
+            })))
+        })
+    }
+}
+
 impl<T> From<Vec<T>> for List<T> {
     fn from(v: Vec<T>) -> Self {
         v.into_iter().rev().fold(Self::NIL, |list, data| {
