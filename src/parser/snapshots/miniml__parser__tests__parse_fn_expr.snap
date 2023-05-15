@@ -1,0 +1,63 @@
+---
+source: src/parser/tests.rs
+expression: ast
+---
+Expr(
+    Let(
+        LetExpr {
+            pattern: Ident(
+                InternedString(f),
+            ),
+            value: Lit(
+                Lambda(
+                    Lambda {
+                        param: Ident(
+                            InternedString(x),
+                        ),
+                        body: Lit(
+                            Lambda(
+                                Lambda {
+                                    param: Ident(
+                                        InternedString(y),
+                                    ),
+                                    body: Infix {
+                                        op: Add,
+                                        lhs: Ident(
+                                            InternedString(x),
+                                        ),
+                                        rhs: Ident(
+                                            InternedString(y),
+                                        ),
+                                    },
+                                },
+                            ),
+                        ),
+                    },
+                ),
+            ),
+            body: Apply(
+                Apply(
+                    Ident(
+                        InternedString(f),
+                    ),
+                    Lit(
+                        Int(
+                            Int {
+                                value: 1,
+                                radix: Dec,
+                            },
+                        ),
+                    ),
+                ),
+                Lit(
+                    Int(
+                        Int {
+                            value: 2,
+                            radix: Dec,
+                        },
+                    ),
+                ),
+            ),
+        },
+    ),
+)

@@ -112,8 +112,8 @@ pub enum TokenKind {
     Pub,
     #[token("let")]
     Let,
-    #[token("rec")]
-    Rec,
+    #[token("fn")]
+    Fn,
     #[token("data")]
     Data,
     #[token("match")]
@@ -275,8 +275,8 @@ macro_rules! T {
     [let] => {
        $crate::parser::TokenKind::Let
     };
-    [rec] => {
-       $crate::parser::TokenKind::Rec
+    [fn] => {
+       $crate::parser::TokenKind::Fn
     };
     [data] => {
        $crate::parser::TokenKind::Data
@@ -357,7 +357,7 @@ impl Display for TokenKind {
                 T![use] => "use",
                 T![pub] => "pub",
                 T![let] => "let",
-                T![rec] => "rec",
+                T![fn] => "fn",
                 T![data] => "data",
                 T![match] => "match",
                 T![with] => "with",
@@ -473,13 +473,19 @@ impl Display for Data {
 #[derive(Debug, Clone, PartialEq)]
 pub struct Decl {
     pub pattern: Pattern,
-    pub value: Expr,
+    pub value: Box<Expr>,
 }
 
 impl Display for Decl {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "let {} = {}", self.pattern, self.value)
     }
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum LetKind {
+    Decl(Decl),
+    Expr(Expr),
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -495,11 +501,7 @@ pub enum Expr {
         lhs: Box<Self>,
         rhs: Box<Self>,
     },
-    Let {
-        pattern: Pattern,
-        value: Box<Self>,
-        body: Box<Self>,
-    },
+    Let(LetExpr),
     Apply(Box<Self>, Box<Self>),
     If {
         cond: Box<Self>,
@@ -520,14 +522,10 @@ impl Display for Expr {
             Expr::Lit(l) => write!(f, "{}", l),
             Expr::Prefix { op, expr } => write!(f, "({} {})", op, expr),
             Expr::Infix { op, lhs, rhs } => write!(f, "({} {} {})", lhs, op, rhs),
-            Expr::Let {
-                pattern,
-                value,
-                body,
-            } => write!(f, "let {} = {} in {}", pattern, value, body),
+            Expr::Let(l) => write!(f, "{}", l),
             Expr::Apply(lhs, rhs) => write!(f, "({} {})", lhs, rhs),
             Expr::If { cond, then, else_ } => {
-                write!(f, "if {} then {} else {}", cond, then, else_)
+                write!(f, "(if {} then {} else {})", cond, then, else_)
             }
             Expr::Match { expr, arms } => {
                 write!(f, "(match {} with ", expr)?;
@@ -714,7 +712,7 @@ impl Display for Record {
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Lambda {
-    pub param: InternedString,
+    pub param: Pattern,
     pub body: Box<Expr>,
 }
 
@@ -819,6 +817,23 @@ impl From<TokenKind> for InfixOp {
             T![||] => InfixOp::Or,
             _ => panic!("Not an infix operator: {:?}", token),
         }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct LetExpr {
+    pub pattern: Pattern,
+    pub value: Box<Expr>,
+    pub body: Box<Expr>,
+}
+
+impl Display for LetExpr {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "(let {} = {} in {})",
+            self.pattern, self.value, self.body
+        )
     }
 }
 
@@ -1021,6 +1036,14 @@ impl<'src> Parser<'src> {
     pub fn item(&mut self) -> Result<Item> {
         match self.peek().value {
             T![data] => Ok(Item::Data(self.data()?)),
+            T![let] => match self.let_()? {
+                LetKind::Decl(decl) => Ok(Item::Decl(decl)),
+                LetKind::Expr(expr) => Ok(Item::Expr(expr)),
+            },
+            T![fn] => match self.fn_()? {
+                LetKind::Decl(decl) => Ok(Item::Decl(decl)),
+                LetKind::Expr(expr) => Ok(Item::Expr(expr)),
+            },
             _ => Ok(Item::Expr(self.expr()?)),
         }
     }
@@ -1028,6 +1051,7 @@ impl<'src> Parser<'src> {
     fn data(&mut self) -> Result<Data> {
         self.consume(T![data]);
         let name = self.ident()?;
+        self.consume(T![=]);
         let mut fields = vec![];
         self.consume(T!['{']);
         while !self.at(T!['}']) {
@@ -1036,10 +1060,73 @@ impl<'src> Parser<'src> {
                 self.consume(T![,]);
             }
         }
-        Ok(Data {
-            name,
-            fields: fields,
+        Ok(Data { name, fields })
+    }
+
+    fn let_(&mut self) -> Result<LetKind> {
+        self.consume(T![let]);
+        let pattern = self.pattern()?;
+
+        self.consume(T![=]);
+
+        let value = self.expr()?;
+
+        if self.at(T![in]) {
+            self.consume(T![in]);
+            let body = self.expr()?;
+            Ok(LetKind::Expr(Expr::Let(LetExpr {
+                pattern,
+                value: Box::new(value),
+                body: Box::new(body),
+            })))
+        } else {
+            Ok(LetKind::Decl(Decl {
+                pattern,
+                value: Box::new(value),
+            }))
+        }
+    }
+
+    fn let_decl(&mut self) -> Result<Decl> {
+        self.consume(T![let]);
+        let pattern = self.pattern()?;
+        self.consume(T![=]);
+        let value = self.expr()?;
+        Ok(Decl {
+            pattern,
+            value: Box::new(value),
         })
+    }
+
+    fn fn_decl(&mut self) -> Result<Decl> {
+        self.consume(T![fn]);
+        let name = self.ident()?;
+        let mut params = vec![];
+        while !self.at(T![=]) {
+            params.push(self.pattern()?);
+        }
+        self.consume(T![=]);
+        let inner = self.expr()?;
+        let value = self.curry_fn(params, inner)?;
+        Ok(Decl {
+            pattern: Pattern::Ident(name),
+            value: Box::new(Expr::Lit(Lit::Lambda(value))),
+        })
+    }
+
+    fn fn_(&mut self) -> Result<LetKind> {
+        let decl = self.fn_decl()?;
+        if self.at(T![in]) {
+            self.consume(T![in]);
+            let body = self.expr()?;
+            Ok(LetKind::Expr(Expr::Let(LetExpr {
+                pattern: decl.pattern,
+                value: decl.value,
+                body: Box::new(body),
+            })))
+        } else {
+            Ok(LetKind::Decl(decl))
+        }
     }
 
     fn expr(&mut self) -> Result<Expr> {
@@ -1277,7 +1364,8 @@ impl<'src> Parser<'src> {
         let tok = self.peek();
         match tok.value {
             T![if] => self.if_(),
-            T![let] => self.let_(),
+            T![let] => self.let_expr(),
+            T![fn] => self.fn_expr(),
             T![int]
             | T![real]
             | T![str]
@@ -1302,59 +1390,20 @@ impl<'src> Parser<'src> {
         }
     }
 
-    fn let_(&mut self) -> Result<Expr> {
-        self.consume(T![let]);
-        let pattern = self.pattern()?;
-        let mut params = vec![];
-        while !self.at(T![=]) {
-            let tok = self.peek();
-            match tok.value {
-                T![ident] => params.push(self.ident()?),
-                T!['('] => {
-                    self.consume(T!['(']);
-                    let p = self.ident()?;
-                    self.consume(T![')']);
-                    params.push(p);
-                }
-                _ => {
-                    return Err(ParserError(format!(
-                        "Unexpected token in let got `{:?}` - `{}`",
-                        self.peek(),
-                        self.text(tok)
-                    )))
-                }
-            }
-        }
-
-        self.consume(T![=]);
-
-        if params.is_empty() {
-            self.let_bind(pattern)
-        } else {
-            self.let_fn(pattern, params)
+    fn let_expr(&mut self) -> Result<Expr> {
+        let kind = self.let_()?;
+        match kind {
+            LetKind::Expr(expr) => Ok(expr),
+            _ => Err(ParserError::new("Expected a let expression")),
         }
     }
 
-    fn let_bind(&mut self, pattern: Pattern) -> Result<Expr> {
-        let val = self.expr()?;
-        self.consume(T![in]);
-        let body = self.expr()?;
-        Ok(Expr::Let {
-            pattern,
-            value: Box::new(val),
-            body: Box::new(body),
-        })
-    }
-
-    fn let_fn(&mut self, pattern: Pattern, params: Vec<InternedString>) -> Result<Expr> {
-        let val = self.expr()?;
-        self.consume(T![in]);
-        let body = self.expr()?;
-        Ok(Expr::Let {
-            pattern,
-            value: Box::new(Expr::Lit(Lit::Lambda(self.curry_fn(params, val)?))),
-            body: Box::new(body),
-        })
+    fn fn_expr(&mut self) -> Result<Expr> {
+        let kind = self.fn_()?;
+        match kind {
+            LetKind::Expr(expr) => Ok(expr),
+            _ => Err(ParserError::new("Expected a function expression")),
+        }
     }
 
     fn if_(&mut self) -> Result<Expr> {
@@ -1454,7 +1503,7 @@ impl<'src> Parser<'src> {
         Ok(Pattern::Tuple(TuplePattern { items }))
     }
 
-    fn full_map_or_record_pattern(&mut self) -> Result<Pattern> {
+    fn full_map_pattern(&mut self) -> Result<Pattern> {
         self.consume(T!['{']);
         let mut items = vec![];
         while !self.at(T!['}']) {
@@ -1486,24 +1535,65 @@ impl<'src> Parser<'src> {
         Ok(Pattern::Record(RecordPattern { items }))
     }
 
-    fn let_pattern(&mut self) -> Result<Pattern> {
+    fn pattern(&mut self) -> Result<Pattern> {
         let tok = self.peek();
         match tok.value {
             T![ident] => Ok(Pattern::Ident(self.ident()?)),
-            T![int] => Ok(Pattern::Int(self.int()?)),
-            T![real] => Ok(Pattern::Real(self.real()?)),
-            T![str] => Ok(Pattern::String(self.string()?)),
-            T![char] => Ok(Pattern::Char(self.char()?)),
-            T![bool] => Ok(Pattern::Bool(self.bool()?)),
-            T!['['] => self.let_list_pattern(),
-            T!['('] => self.let_tuple_pattern(),
-            T!['{'] => self.let_map_pattern(),
+            T!['['] => self.list_pattern(),
+            T!['('] => self.tuple_pattern(),
+            T!['{'] => self.map_pattern(),
             _ => Err(ParserError(format!(
                 "Unexpected token in pattern got `{:?}` - `{}`",
                 self.peek(),
                 self.text(tok)
             ))),
         }
+    }
+
+    fn list_pattern(&mut self) -> Result<Pattern> {
+        self.consume(T!['[']);
+        let mut items = vec![];
+        while !self.at(T![']']) {
+            items.push(self.pattern()?);
+            if !self.at(T![']']) {
+                self.consume(T![,]);
+            }
+        }
+        self.consume(T![']']);
+        Ok(Pattern::List(ListPattern { items }))
+    }
+
+    fn tuple_pattern(&mut self) -> Result<Pattern> {
+        self.consume(T!['(']);
+        if self.at(T![')']) {
+            self.consume(T![')']);
+            return Ok(Pattern::Unit);
+        }
+        let mut items = vec![];
+        while !self.at(T![')']) {
+            items.push(self.pattern()?);
+            if !self.at(T![')']) {
+                self.consume(T![,]);
+            }
+        }
+        self.consume(T![')']);
+        Ok(Pattern::Tuple(TuplePattern { items }))
+    }
+
+    fn map_pattern(&mut self) -> Result<Pattern> {
+        self.consume(T!['{']);
+        let mut items = vec![];
+        while !self.at(T!['}']) {
+            let key = self.pattern()?;
+            self.consume(T![:]);
+            let value = self.pattern()?;
+            items.push((key, value));
+            if !self.at(T!['}']) {
+                self.consume(T![,]);
+            }
+        }
+        self.consume(T!['}']);
+        Ok(Pattern::Map(MapPattern { items }))
     }
 
     fn lit(&mut self) -> Result<Lit> {
@@ -1559,7 +1649,7 @@ impl<'src> Parser<'src> {
         self.consume(T![lambda]);
         let mut params = vec![];
         while !self.at(T![->]) {
-            params.push(self.ident()?);
+            params.push(self.pattern()?);
         }
 
         self.consume(T![->]);
@@ -1617,7 +1707,7 @@ impl<'src> Parser<'src> {
         Ok(InternedString::from(text))
     }
 
-    fn curry_fn(&mut self, params: Vec<InternedString>, body: Expr) -> Result<Lambda> {
+    fn curry_fn(&mut self, params: Vec<Pattern>, body: Expr) -> Result<Lambda> {
         let last = params.first().ok_or(ParserError(
             "Cannot create a lambda with no parameters".to_string(),
         ))?;

@@ -71,8 +71,29 @@ fn parse_if() {
 }
 
 #[test]
-fn parse_let() {
+fn parse_let_decl() {
     let input = "let x = 1";
+    let ast = Parser::new(input).item().expect("failed to parse");
+    insta::assert_debug_snapshot!(ast);
+}
+
+#[test]
+fn parse_let_expr() {
+    let input = "let x = 1 in x + 1";
+    let ast = Parser::new(input).item().expect("failed to parse");
+    insta::assert_debug_snapshot!(ast);
+}
+
+#[test]
+fn parse_fn_decl() {
+    let input = "fn f x y = x + y";
+    let ast = Parser::new(input).item().expect("failed to parse");
+    insta::assert_debug_snapshot!(ast);
+}
+
+#[test]
+fn parse_fn_expr() {
+    let input = "fn f x y = x + y in f 1 2";
     let ast = Parser::new(input).item().expect("failed to parse");
     insta::assert_debug_snapshot!(ast);
 }
@@ -161,16 +182,16 @@ fn parse_tuple() {
     insta::assert_debug_snapshot!(ast);
 }
 
-#[test]
-fn parse_map() {
-    let input = "{ x: 1, y: 2, z: 3 }";
-    let ast = Parser::new(input).item().expect("failed to parse");
-    insta::assert_debug_snapshot!(ast);
-}
+// #[test]
+// fn parse_map() {
+//     let input = "{ x: 1, y: 2, z: 3 }";
+//     let ast = Parser::new(input).item().expect("failed to parse");
+//     insta::assert_debug_snapshot!(ast);
+// }
 
 #[test]
-fn parse_struct_def() {
-    let input = "struct Point { x, y }";
+fn parse_data() {
+    let input = "data Point = { x, y }";
     let ast = Parser::new(input).item().expect("failed to parse");
     insta::assert_debug_snapshot!(ast);
 }

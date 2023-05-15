@@ -2,11 +2,13 @@
 
 <data> ::= "data" <ws>+ <ident> <ws>+ "=" <ws>+ "{" <ws>* <ident> <ws>* ("," <ws>* <ident> <ws>*)* "}"
 
-<decl> ::= "let" (<ws>+ "rec")? <ws>+ (<declBind> | <declFn>)
+<decl> ::= <letDecl> | <fnDecl>
 
-<declBind> ::= <letPattern> <ws>+ "=" <ws>+ <expr>
+<letDecl> ::= <let>
 
-<declFn> ::= <ident> (<ws>+ <letPattern>)+ <ws>+ "=" <ws>+ <expr>
+<fnDecl> ::= "fn" <ws>+ <ident> (<ws>+ <pattern>)+ <ws>+ "=" <ws>+ <expr>
+
+<let> ::= "let" <ws>+ <pattern> <ws>+ "=" <ws>+ <expr>
 
 <expr> ::= <or>
 
@@ -30,11 +32,9 @@
 
 <atom> ::= <ident> | <lit> | <if> | <let> | <match> | "(" <expr> ")"
 
-<let> ::= "let" (<ws>+ "rec")? <ws>+ (<letBind> | <letFn>)
+<let_expr> ::= <letDecl> <ws>+ "in" <ws>+ <expr>?
 
-<letBind> ::= <letPattern> <ws>+ "=" <ws>+ <expr> <ws>+ "in" <ws>+ <expr>?
-
-<letFn> ::= <ident> (<ws>+ <letPattern>)+ <ws>+ "=" <ws>+ <expr> <ws>+ "in" <ws>+ <expr>?
+<fn> ::= <fnDecl> <ws>+ "in" <ws>+ <expr>?
 
 <if> ::= "if" <ws>+ <expr> <ws>+ "then" <ws>+ <expr> 
     (<ws>+ "elif" <ws>+ <expr> <ws>+ "then" <ws>+ <expr>)* (<ws>+ "else" <ws>+ <expr>)?
@@ -42,11 +42,10 @@
 <match> ::= "match" <ws>+ <expr> <ws>+ "with" <ws>+ <fullPattern> <ws>+ "->" <ws>+ <expr> 
     (<ws>+ "|" <ws>+ <fullPattern> <ws>+ "->" <ws>+ <expr>)*
 
-<fullPattern> ::= <ident> 
+<fullPattern> ::= <pattern>
 | <lit> 
 | <fullListPattern> 
 | <fullTuplePattern> 
-| <fullMapPattern> 
 | <fullRecordPattern> 
 | <wildcard> 
 | <unit>
@@ -55,24 +54,20 @@
 
 <fullTuplePattern> ::= "(" <ws>* <fullPattern> (<ws>* "," <ws>* <fullPattern>)* <ws>* ")"
 
-<fullMapPattern> ::= "{" <ws>* <string> ":" <ws>* <fullPattern> (<ws>* "," <ws>* <string> ":" <ws>* <fullPattern>)* <ws>* "}"
+<fullRecordPattern> ::= "{" <ws>* <ident> <ws>* ("=" <ws>* <fullPattern>)? <ws>* ("," <ws>* <ident> ("=" <ws>* <fullPattern>)? <ws>*)* "}"
 
-<fullRecordPattern> ::= <ident> <ws>+ "{" <ws>* <ident> <ws>* ("=" <ws>* <fullPattern>)? <ws>* ("," <ws>* <ident> ("=" <ws>* <fullPattern>)? <ws>*)* "}"
-
-<letPattern> ::= <ident>
+<pattern> ::= <ident>
 | <letListPattern>
 | <letTuplePattern>
-| <letMapPattern>
+| <letRecordPattern>
 | <wildcard>
 | <unit>
 
-<letRecordPattern> ::= <ident> <ws>+ "{" <ws>* <ident> <ws>* ("=" <ws>* <letPattern>)? <ws>* ("," <ws>* <ident> ("=" <ws>* <letPattern>)? <ws>*)* "}"
+<listPattern> ::= "[" <ws>* <pattern> (<ws>* "," <ws>* <pattern>)* <ws>* "]"
 
-<letListPattern> ::= "[" <ws>* <letPattern> (<ws>* "," <ws>* <letPattern>)* <ws>* "]"
+<tuplePattern> ::= "(" <ws>* <pattern> (<ws>* "," <ws>* <pattern>)* <ws>* ")"
 
-<letTuplePattern> ::= "(" <ws>* <letPattern> (<ws>* "," <ws>* <letPattern>)* <ws>* ")"
-
-<letMapPattern> ::= "{" <ws>* <string> ":" <ws>* <letPattern> (<ws>* "," <ws>* <string> ":" <ws>* <letPattern>)* <ws>* "}"
+<recordPattern> ::= "{" <ws>* <ident> <ws>* ("=" <ws>* <pattern>)? <ws>* ("," <ws>* <ident> ("=" <ws>* <pattern>)? <ws>*)* "}"
 
 <lit> ::= <int> 
 | <float> 

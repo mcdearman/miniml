@@ -6,7 +6,9 @@ Expr(
     Lit(
         Lambda(
             Lambda {
-                param: InternedString(x),
+                param: Ident(
+                    InternedString(x),
+                ),
                 body: Lit(
                     Int(
                         Int {
