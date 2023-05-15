@@ -5,8 +5,6 @@ use std::{
     fmt::{Debug, Display},
 };
 
-use crate::parser::Int;
-
 pub static mut INTERNER: Lazy<ThreadedRodeo> = Lazy::new(|| ThreadedRodeo::default());
 
 #[derive(Clone, PartialEq, Eq, Hash)]

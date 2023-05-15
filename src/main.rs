@@ -1,7 +1,9 @@
+use interpreter::{eval, Env, Lambda, Value};
+use parser::{
+    ast::{Expr, Item, Lit, Pattern},
+    Parser,
+};
 use std::{cell::RefCell, rc::Rc};
-
-use interpreter::{eval, Env};
-use parser::Parser;
 
 mod compiler;
 mod intern;
@@ -11,13 +13,23 @@ mod parser;
 mod vm;
 
 fn main() {
-    let input = "\"Hello, World!\"";
+    let input = "id \"Hello, World!\"";
     let ast = Parser::new(input).item().expect("failed to parse");
+    let env = Rc::new(RefCell::new(Env::new()));
+    env.borrow_mut().define(
+        "id".into(),
+        Value::Lambda(Lambda {
+            env: env.clone(),
+            param: Pattern::Ident("x".into()),
+            body: Box::new(Expr::Lit(Lit::String("Hello, World!".into()))),
+        }),
+    );
     match ast {
-        parser::Item::Data(_) => todo!(),
-        parser::Item::Decl(_) => todo!(),
-        parser::Item::Expr(e) => {
-            println!("{:?}", eval(Rc::new(RefCell::new(Env::new())), &e));
+        Item::Data(_) => todo!(),
+        Item::Decl(_) => todo!(),
+        Item::Expr(e) => {
+            println!("{:?}", e);
+            println!("{}", eval(env.clone(), &e).expect("failed to eval"));
         }
     }
 }
