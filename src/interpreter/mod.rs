@@ -352,6 +352,7 @@ pub fn eval(env: Rc<RefCell<Env>>, expr: &Expr) -> Result<Value> {
             InfixOp::Or => todo!(),
         },
         Expr::Let(LetExpr {
+            rec,
             pattern,
             value,
             body,
@@ -363,7 +364,7 @@ pub fn eval(env: Rc<RefCell<Env>>, expr: &Expr) -> Result<Value> {
             for (name, value) in ds.bindings {
                 let_env.borrow_mut().define(name, value);
             }
-            todo!()
+            eval(let_env, &*&body)
         }
         Expr::Apply(fun, arg) => match eval(env.clone(), &fun)? {
             Value::Lambda(Lambda {
@@ -381,7 +382,13 @@ pub fn eval(env: Rc<RefCell<Env>>, expr: &Expr) -> Result<Value> {
             }
             _ => Err(RuntimeError::new("cannot apply non-lambda value")),
         },
-        Expr::If { cond, then, else_ } => todo!(),
+        Expr::If { cond, then, else_ } => {
+            if eval(env.clone(), &*cond)? == Value::Bool(true) {
+                eval(env.clone(), &*then)
+            } else {
+                eval(env.clone(), &*else_)
+            }
+        }
         Expr::Match { expr, arms } => todo!(),
         Expr::Unit => Ok(Value::Unit),
     }

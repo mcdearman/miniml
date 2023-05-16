@@ -416,6 +416,7 @@ impl From<TokenKind> for InfixOp {
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct LetExpr {
+    pub rec: bool,
     pub pattern: Pattern,
     pub value: Box<Expr>,
     pub body: Box<Expr>,
@@ -425,8 +426,11 @@ impl Display for LetExpr {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(
             f,
-            "(let {} = {} in {})",
-            self.pattern, self.value, self.body
+            "(let {}{} = {} in {})",
+            if self.rec { "rec " } else { "" },
+            self.pattern,
+            self.value,
+            self.body
         )
     }
 }

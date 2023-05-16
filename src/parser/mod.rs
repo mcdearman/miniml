@@ -141,6 +141,7 @@ impl<'src> Parser<'src> {
             self.consume(T![in]);
             let body = self.expr()?;
             Ok(LetKind::Expr(Expr::Let(LetExpr {
+                rec: false,
                 pattern,
                 value: Box::new(value),
                 body: Box::new(body),
@@ -186,6 +187,7 @@ impl<'src> Parser<'src> {
             self.consume(T![in]);
             let body = self.expr()?;
             Ok(LetKind::Expr(Expr::Let(LetExpr {
+                rec: true,
                 pattern: decl.pattern,
                 value: decl.value,
                 body: Box::new(body),
