@@ -5,6 +5,7 @@ use crate::{
 };
 use num_bigint::BigInt;
 use num_complex::Complex64;
+use num_rational::BigRational;
 use std::{cell::RefCell, collections::HashMap, fmt::Display, rc::Rc};
 
 pub mod repl;
@@ -49,6 +50,7 @@ impl Env {
 #[derive(Debug, Clone, PartialEq)]
 pub enum Value {
     Int(Int),
+    Rational(BigRational),
     Real(f64),
     Complex(Complex64),
     String(InternedString),
@@ -66,6 +68,13 @@ impl Value {
     pub fn int(&self) -> Option<Int> {
         match self {
             Self::Int(i) => Some(i.clone()),
+            _ => None,
+        }
+    }
+
+    pub fn rational(&self) -> Option<BigRational> {
+        match self {
+            Self::Rational(r) => Some(r.clone()),
             _ => None,
         }
     }
@@ -145,6 +154,7 @@ impl Display for Value {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Value::Int(i) => write!(f, "{}", i),
+            Value::Rational(r) => write!(f, "{}", r),
             Value::Real(r) => write!(f, "{}", r),
             Value::Complex(c) => write!(f, "{}", c),
             Value::String(s) => write!(f, "{}", s),
@@ -208,6 +218,7 @@ pub fn eval(env: Rc<RefCell<Env>>, expr: &Expr) -> Result<Value> {
             .ok_or(RuntimeError(format!("undefined variable: {}", name))),
         Expr::Lit(l) => match l {
             Lit::Int(l) => Ok(Value::Int(Int { value: l.value })),
+            Lit::Rational(r) => Ok(Value::Rational(r)),
             Lit::Real(r) => Ok(Value::Real(r.0)),
             Lit::Complex(c) => Ok(Value::Complex(c)),
             Lit::String(s) => Ok(Value::String(s)),
@@ -406,12 +417,65 @@ fn destructure_pattern(pattern: &Pattern, value: &Value) -> Option<DestructureRe
                 }
             }
         }),
-        Pattern::BigInt(_) => todo!(),
-        Pattern::Rational(_) => todo!(),
-        Pattern::Bool(_) => todo!(),
-        Pattern::String(_) => todo!(),
-        Pattern::Char(_) => todo!(),
-        Pattern::List(_) => todo!(),
+        Pattern::Rational(r) => value.rational().map(|z| {
+            if r == &z {
+                DestructureResult {
+                    bindings: HashMap::new(),
+                    rest: Some(Value::Rational(z.clone())),
+                }
+            } else {
+                DestructureResult {
+                    bindings: HashMap::new(),
+                    rest: None,
+                }
+            }
+        }),
+        Pattern::Bool(b) => value.bool().map(|z| {
+            if b == &z {
+                DestructureResult {
+                    bindings: HashMap::new(),
+                    rest: Some(Value::Bool(z.clone())),
+                }
+            } else {
+                DestructureResult {
+                    bindings: HashMap::new(),
+                    rest: None,
+                }
+            }
+        }),
+        Pattern::String(s) => value.string().map(|z| {
+            if s == &z {
+                DestructureResult {
+                    bindings: HashMap::new(),
+                    rest: Some(Value::String(z.clone())),
+                }
+            } else {
+                DestructureResult {
+                    bindings: HashMap::new(),
+                    rest: None,
+                }
+            }
+        }),
+        Pattern::Char(c) => value.char().map(|z| {
+            if c == &z {
+                DestructureResult {
+                    bindings: HashMap::new(),
+                    rest: Some(Value::Char(z.clone())),
+                }
+            } else {
+                DestructureResult {
+                    bindings: HashMap::new(),
+                    rest: None,
+                }
+            }
+        }),
+        Pattern::List(l) => {
+            if let Some(v) = value.list() {
+                todo!()
+            } else {
+                None
+            }
+        }
         Pattern::Tuple(_) => todo!(),
         Pattern::Map(_) => todo!(),
         Pattern::Record(r) => {

@@ -2,7 +2,7 @@ use super::{token::TokenKind, ParserError};
 use crate::{intern::InternedString, list::List, T};
 use num_bigint::BigInt;
 use num_complex::Complex64;
-use num_rational::Rational64;
+use num_rational::{BigRational, Rational64};
 use std::{collections::HashMap, fmt::Display};
 
 #[derive(Debug, Clone, PartialEq)]
@@ -107,6 +107,7 @@ impl Display for Expr {
 #[derive(Debug, Clone, PartialEq)]
 pub enum Lit {
     Int(Int),
+    Rational(BigRational),
     Real(Real),
     Complex(Complex64),
     String(InternedString),
@@ -123,6 +124,7 @@ impl Display for Lit {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Lit::Int(i) => write!(f, "{}", i),
+            Lit::Rational(r) => write!(f, "{}", r),
             Lit::Real(r) => write!(f, "{}", r),
             Lit::Complex(c) => write!(f, "{}", c),
             Lit::String(s) => write!(f, "{}", s),
@@ -433,11 +435,10 @@ impl Display for LetExpr {
 pub enum Pattern {
     Ident(InternedString),
     Int(Int),
-    BigInt(BigInt),
-    Rational(Rational64),
-    Bool(bool),
+    Rational(BigRational),
     String(InternedString),
     Char(char),
+    Bool(bool),
     List(ListPattern),
     Tuple(TuplePattern),
     Map(MapPattern),
@@ -451,11 +452,10 @@ impl Display for Pattern {
         match self {
             Pattern::Ident(i) => write!(f, "{}", i),
             Pattern::Int(i) => write!(f, "{}", i),
-            Pattern::BigInt(i) => write!(f, "{}", i),
             Pattern::Rational(r) => write!(f, "{}", r),
-            Pattern::Bool(b) => write!(f, "{}", b),
             Pattern::String(s) => write!(f, "{}", s),
             Pattern::Char(c) => write!(f, "{}", c),
+            Pattern::Bool(b) => write!(f, "{}", b),
             Pattern::List(l) => write!(f, "{}", l),
             Pattern::Tuple(t) => write!(f, "{}", t),
             Pattern::Map(m) => write!(f, "{}", m),
