@@ -107,8 +107,8 @@ impl<'src> Parser<'src> {
                 LetKind::Expr(expr) => Ok(Item::Expr(expr)),
             },
             T![fn] => match self.fn_()? {
-                LetKind::Decl(decl) => Ok(Item::Decl(decl)),
-                LetKind::Expr(expr) => Ok(Item::Expr(expr)),
+                FnKind::Decl(decl) => Ok(Item::Decl(decl)),
+                FnKind::Expr(expr) => Ok(Item::Expr(expr)),
             },
             _ => Ok(Item::Expr(self.expr()?)),
         }
@@ -141,16 +141,15 @@ impl<'src> Parser<'src> {
             self.consume(T![in]);
             let body = self.expr()?;
             Ok(LetKind::Expr(Expr::Let(LetExpr {
-                rec: false,
                 pattern,
                 value: Box::new(value),
                 body: Box::new(body),
             })))
         } else {
-            Ok(LetKind::Decl(Decl {
+            Ok(LetKind::Decl(Decl::Let(LetDecl {
                 pattern,
                 value: Box::new(value),
-            }))
+            })))
         }
     }
 
@@ -159,13 +158,13 @@ impl<'src> Parser<'src> {
         let pattern = self.pattern()?;
         self.consume(T![=]);
         let value = self.expr()?;
-        Ok(Decl {
+        Ok(Decl::Let(LetDecl {
             pattern,
             value: Box::new(value),
-        })
+        }))
     }
 
-    fn fn_decl(&mut self) -> Result<Decl> {
+    fn fn_decl(&mut self) -> Result<FnDecl> {
         self.consume(T![fn]);
         let name = self.ident()?;
         let mut params = vec![];
@@ -175,25 +174,24 @@ impl<'src> Parser<'src> {
         self.consume(T![=]);
         let inner = self.expr()?;
         let value = self.curry_fn(params, inner)?;
-        Ok(Decl {
-            pattern: Pattern::Ident(name),
+        Ok(FnDecl {
+            name: name.clone(),
             value: Box::new(Expr::Lit(Lit::Lambda(value))),
         })
     }
 
-    fn fn_(&mut self) -> Result<LetKind> {
+    fn fn_(&mut self) -> Result<FnKind> {
         let decl = self.fn_decl()?;
         if self.at(T![in]) {
             self.consume(T![in]);
             let body = self.expr()?;
-            Ok(LetKind::Expr(Expr::Let(LetExpr {
-                rec: true,
-                pattern: decl.pattern,
+            Ok(FnKind::Expr(Expr::Fn(FnExpr {
+                name: decl.name,
                 value: decl.value,
                 body: Box::new(body),
             })))
         } else {
-            Ok(LetKind::Decl(decl))
+            Ok(FnKind::Decl(Decl::Fn(decl)))
         }
     }
 
@@ -469,7 +467,7 @@ impl<'src> Parser<'src> {
     fn fn_expr(&mut self) -> Result<Expr> {
         let kind = self.fn_()?;
         match kind {
-            LetKind::Expr(expr) => Ok(expr),
+            FnKind::Expr(expr) => Ok(expr),
             _ => Err(ParserError::new("Expected a function expression")),
         }
     }

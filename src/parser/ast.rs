@@ -3,7 +3,7 @@ use crate::{intern::InternedString, list::List, T};
 use num_bigint::BigInt;
 use num_complex::Complex64;
 use num_rational::{BigRational, Rational64};
-use std::{collections::HashMap, fmt::Display};
+use std::{borrow::Borrow, collections::HashMap, fmt::Display};
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Item {
@@ -35,20 +35,53 @@ impl Display for Data {
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct Decl {
-    pub pattern: Pattern,
-    pub value: Box<Expr>,
+pub enum Decl {
+    Let(LetDecl),
+    Fn(FnDecl),
 }
 
 impl Display for Decl {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Decl::Let(l) => write!(f, "{}", l),
+            Decl::Fn(fun) => write!(f, "{}", fun),
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct LetDecl {
+    pub pattern: Pattern,
+    pub value: Box<Expr>,
+}
+
+impl Display for LetDecl {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "let {} = {}", self.pattern, self.value)
+    }
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct FnDecl {
+    pub name: InternedString,
+    pub value: Box<Expr>,
+}
+
+impl Display for FnDecl {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "fn {} = {}", self.name, self.value)
     }
 }
 
 /// A dummy type to store a let-binding that may be either a declaration or an expression.
 #[derive(Debug, Clone, PartialEq)]
 pub enum LetKind {
+    Decl(Decl),
+    Expr(Expr),
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum FnKind {
     Decl(Decl),
     Expr(Expr),
 }
@@ -67,6 +100,7 @@ pub enum Expr {
         rhs: Box<Self>,
     },
     Let(LetExpr),
+    Fn(FnExpr),
     Apply(Box<Self>, Box<Self>),
     If {
         cond: Box<Self>,
@@ -88,6 +122,7 @@ impl Display for Expr {
             Expr::Prefix { op, expr } => write!(f, "({} {})", op, expr),
             Expr::Infix { op, lhs, rhs } => write!(f, "({} {} {})", lhs, op, rhs),
             Expr::Let(l) => write!(f, "{}", l),
+            Expr::Fn(fun) => write!(f, "{}", fun),
             Expr::Apply(lhs, rhs) => write!(f, "({} {})", lhs, rhs),
             Expr::If { cond, then, else_ } => {
                 write!(f, "(if {} then {} else {})", cond, then, else_)
@@ -416,7 +451,6 @@ impl From<TokenKind> for InfixOp {
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct LetExpr {
-    pub rec: bool,
     pub pattern: Pattern,
     pub value: Box<Expr>,
     pub body: Box<Expr>,
@@ -426,12 +460,22 @@ impl Display for LetExpr {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(
             f,
-            "(let {}{} = {} in {})",
-            if self.rec { "rec " } else { "" },
-            self.pattern,
-            self.value,
-            self.body
+            "(let {} = {} in {})",
+            self.pattern, self.value, self.body
         )
+    }
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct FnExpr {
+    pub name: InternedString,
+    pub value: Box<Expr>,
+    pub body: Box<Expr>,
+}
+
+impl Display for FnExpr {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "(fn {} = {} in {})", self.name, self.value, self.body)
     }
 }
 

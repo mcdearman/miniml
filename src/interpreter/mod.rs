@@ -1,7 +1,7 @@
 use crate::{
     intern::InternedString,
     list::List,
-    parser::ast::{Expr, InfixOp, LetExpr, Lit, Pattern, PrefixOp},
+    parser::ast::{Expr, FnExpr, InfixOp, LetExpr, Lit, Pattern, PrefixOp},
 };
 use num_bigint::BigInt;
 use num_complex::Complex64;
@@ -352,7 +352,6 @@ pub fn eval(env: Rc<RefCell<Env>>, expr: &Expr) -> Result<Value> {
             InfixOp::Or => todo!(),
         },
         Expr::Let(LetExpr {
-            rec,
             pattern,
             value,
             body,
@@ -364,7 +363,43 @@ pub fn eval(env: Rc<RefCell<Env>>, expr: &Expr) -> Result<Value> {
             for (name, value) in ds.bindings {
                 let_env.borrow_mut().define(name, value);
             }
-            eval(let_env, &*&body)
+            eval(let_env, &*body)
+        }
+        Expr::Fn(FnExpr { name, value, body }) => {
+            let fn_env = Env::create_child(env.clone());
+            fn_env.borrow_mut().define(
+                name,
+                Value::Lambda(Lambda {
+                    env: lambda_env,
+                    param,
+                    body: lam_body,
+                }),
+            );
+            let lam = eval(fn_env.clone(), &value)?;
+            match lam.clone() {
+                Value::Lambda(Lambda {
+                    env: lambda_env,
+                    param,
+                    body: lam_body,
+                }) => {
+                    let ds = destructure_pattern(&param, &lam)
+                        .ok_or(RuntimeError::new("failed to destructure value"))?;
+                    let fn_env = Env::create_child(env.clone());
+                    for (name, value) in ds.bindings {
+                        lambda_env.borrow_mut().define(name, value);
+                    }
+                    lambda_env.clone().borrow_mut().define(
+                        name.clone(),
+                        Value::Lambda(Lambda {
+                            env: lambda_env.clone(),
+                            param: param.clone(),
+                            body: lam_body.clone(),
+                        }),
+                    );
+                    eval(fn_env, &*body)
+                }
+                _ => Err(RuntimeError::new("cannot define non-lambda value")),
+            }
         }
         Expr::Apply(fun, arg) => match eval(env.clone(), &fun)? {
             Value::Lambda(Lambda {
@@ -372,8 +407,8 @@ pub fn eval(env: Rc<RefCell<Env>>, expr: &Expr) -> Result<Value> {
                 param,
                 body,
             }) => {
-                let arg = eval(env.clone(), &arg)?;
-                let ds = destructure_pattern(&param, &arg)
+                let varg = eval(env.clone(), &arg)?;
+                let ds = destructure_pattern(&param, &varg)
                     .ok_or(RuntimeError::new("failed to destructure argument"))?;
                 for (name, value) in ds.bindings {
                     lambda_env.borrow_mut().define(name, value);
