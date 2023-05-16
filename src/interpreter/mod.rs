@@ -7,6 +7,9 @@ use num_bigint::BigInt;
 use num_complex::Complex64;
 use std::{cell::RefCell, collections::HashMap, fmt::Display, rc::Rc};
 
+pub mod repl;
+mod test;
+
 #[derive(Debug, Clone, PartialEq)]
 pub struct Env {
     pub bindings: HashMap<InternedString, Value>,
@@ -244,50 +247,42 @@ pub fn eval(env: Rc<RefCell<Env>>, expr: &Expr) -> Result<Value> {
                 (Value::Int(l), Value::Int(r)) => Ok(Value::Int(Int {
                     value: l.value + r.value,
                 })),
-                (Expr::Lit(Lit::Real(l)), Expr::Lit(Lit::Real(r))) => Ok(Value::Real(l.0 + r.0)),
-                (Expr::Lit(Lit::Complex(l)), Expr::Lit(Lit::Complex(r))) => {
-                    Ok(Value::Complex(l + r))
-                }
+                (Value::Real(l), Value::Real(r)) => Ok(Value::Real(l + r)),
+                (Value::Complex(l), Value::Complex(r)) => Ok(Value::Complex(l + r)),
                 _ => Err(RuntimeError::new("cannot add non-numeric values")),
             },
             InfixOp::Sub => match (eval(env.clone(), &*lhs)?, eval(env.clone(), &*rhs)?) {
-                (Expr::Lit(Lit::Int(l)), Expr::Lit(Lit::Int(r))) => Ok(Value::Int(Int {
+                (Value::Int(l), Value::Int(r)) => Ok(Value::Int(Int {
                     value: l.value - r.value,
                 })),
-                (Expr::Lit(Lit::Real(l)), Expr::Lit(Lit::Real(r))) => Ok(Value::Real(l.0 - r.0)),
-                (Expr::Lit(Lit::Complex(l)), Expr::Lit(Lit::Complex(r))) => {
-                    Ok(Value::Complex(l - r))
-                }
+                (Value::Real(l), Value::Real(r)) => Ok(Value::Real(l - r)),
+                (Value::Complex(l), Value::Complex(r)) => Ok(Value::Complex(l - r)),
                 _ => Err(RuntimeError::new("cannot subtract non-numeric values")),
             },
             InfixOp::Mul => match (eval(env.clone(), &*lhs)?, eval(env.clone(), &*rhs)?) {
-                (Expr::Lit(Lit::Int(l)), Expr::Lit(Lit::Int(r))) => Ok(Value::Int(Int {
+                (Value::Int(l), Value::Int(r)) => Ok(Value::Int(Int {
                     value: l.value * r.value,
                 })),
-                (Expr::Lit(Lit::Real(l)), Expr::Lit(Lit::Real(r))) => Ok(Value::Real(l.0 * r.0)),
-                (Expr::Lit(Lit::Complex(l)), Expr::Lit(Lit::Complex(r))) => {
-                    Ok(Value::Complex(l * r))
-                }
+                (Value::Real(l), Value::Real(r)) => Ok(Value::Real(l * r)),
+                (Value::Complex(l), Value::Complex(r)) => Ok(Value::Complex(l * r)),
                 _ => Err(RuntimeError::new("cannot multiply non-numeric values")),
             },
             InfixOp::Div => match (eval(env.clone(), &*lhs)?, eval(env.clone(), &*rhs)?) {
-                (Expr::Lit(Lit::Int(l)), Expr::Lit(Lit::Int(r))) => Ok(Value::Int(Int {
+                (Value::Int(l), Value::Int(r)) => Ok(Value::Int(Int {
                     value: l.value / r.value,
                 })),
-                (Expr::Lit(Lit::Real(l)), Expr::Lit(Lit::Real(r))) => Ok(Value::Real(l.0 / r.0)),
-                (Expr::Lit(Lit::Complex(l)), Expr::Lit(Lit::Complex(r))) => {
-                    Ok(Value::Complex(l / r))
-                }
+                (Value::Real(l), Value::Real(r)) => Ok(Value::Real(l / r)),
+                (Value::Complex(l), Value::Complex(r)) => Ok(Value::Complex(l / r)),
                 _ => Err(RuntimeError::new("cannot divide non-numeric values")),
             },
             InfixOp::Mod => match (eval(env.clone(), &*lhs)?, eval(env.clone(), &*rhs)?) {
-                (Expr::Lit(Lit::Int(l)), Expr::Lit(Lit::Int(r))) => Ok(Value::Int(Int {
+                (Value::Int(l), Value::Int(r)) => Ok(Value::Int(Int {
                     value: l.value % r.value,
                 })),
                 _ => Err(RuntimeError::new("cannot modulo non-integer values")),
             },
             InfixOp::Pow => match (eval(env.clone(), &*lhs)?, eval(env.clone(), &*rhs)?) {
-                (Expr::Lit(Lit::Int(l)), Expr::Lit(Lit::Int(r))) => r
+                (Value::Int(l), Value::Int(r)) => r
                     .value
                     .to_str_radix(10)
                     .parse()
@@ -299,31 +294,40 @@ pub fn eval(env: Rc<RefCell<Env>>, expr: &Expr) -> Result<Value> {
                     .unwrap_or_else(|_| {
                         Err(RuntimeError::new("cannot exponentiate non-integer values"))
                     }),
-                (Expr::Lit(Lit::Real(l)), Expr::Lit(Lit::Real(r))) => {
-                    Ok(Value::Real(l.0.powf(r.0)))
-                }
-                (Expr::Lit(Lit::Complex(l)), Expr::Lit(Lit::Complex(r))) => {
-                    Ok(Value::Complex(l.powc(r)))
-                }
+                (Value::Real(l), Value::Real(r)) => Ok(Value::Real(l.powf(r))),
+                (Value::Complex(l), Value::Complex(r)) => Ok(Value::Complex(l.powc(r))),
                 _ => Err(RuntimeError::new("cannot exponentiate non-numeric values")),
             },
             InfixOp::Eq => match (eval(env.clone(), &*lhs)?, eval(env.clone(), &*rhs)?) {
-                (Expr::Lit(Lit::Int(l)), Expr::Lit(Lit::Int(r))) => {
-                    Ok(Value::Bool(l.value == r.value))
-                }
-                (Expr::Lit(Lit::Real(l)), Expr::Lit(Lit::Real(r))) => Ok(Value::Bool(l.0 == r.0)),
-                (Expr::Lit(Lit::Complex(l)), Expr::Lit(Lit::Complex(r))) => Ok(Value::Bool(l == r)),
-                (Expr::Lit(Lit::String(l)), Expr::Lit(Lit::String(r))) => Ok(Value::Bool(l == r)),
-                (Expr::Lit(Lit::Char(l)), Expr::Lit(Lit::Char(r))) => Ok(Value::Bool(l == r)),
-                (Expr::Lit(Lit::Bool(l)), Expr::Lit(Lit::Bool(r))) => Ok(Value::Bool(l == r)),
-                (Expr::Lit(Lit::List(l)), Expr::Lit(Lit::List(r))) => Ok(Value::Bool(l == r)),
-                (Expr::Lit(Lit::Tuple(l)), Expr::Lit(Lit::Tuple(r))) => Ok(Value::Bool(l == r)),
-                (Expr::Lit(Lit::Map(l)), Expr::Lit(Lit::Map(r))) => Ok(Value::Bool(l == r)),
-                (Expr::Lit(Lit::Record(l)), Expr::Lit(Lit::Record(r))) => Ok(Value::Bool(l == r)),
-                (Expr::Lit(Lit::Lambda(l)), Expr::Lit(Lit::Lambda(r))) => Ok(Value::Bool(l == r)),
+                (Value::Int(l), Value::Int(r)) => Ok(Value::Bool(l.value == r.value)),
+                (Value::Real(l), Value::Real(r)) => Ok(Value::Bool(l == r)),
+                (Value::Complex(l), Value::Complex(r)) => Ok(Value::Bool(l == r)),
+                (Value::String(l), Value::String(r)) => Ok(Value::Bool(l == r)),
+                (Value::Char(l), Value::Char(r)) => Ok(Value::Bool(l == r)),
+                (Value::Bool(l), Value::Bool(r)) => Ok(Value::Bool(l == r)),
+                (Value::List(l), Value::List(r)) => Ok(Value::Bool(l == r)),
+                (Value::Tuple(l), Value::Tuple(r)) => Ok(Value::Bool(l == r)),
+                (Value::Map(l), Value::Map(r)) => Ok(Value::Bool(l == r)),
+                (Value::Record(l), Value::Record(r)) => Ok(Value::Bool(l == r)),
+                (Value::Lambda(l), Value::Lambda(r)) => Ok(Value::Bool(l == r)),
+                (Value::Unit, Value::Unit) => Ok(Value::Bool(true)),
                 _ => Ok(Value::Bool(false)),
             },
-            InfixOp::Neq => todo!(),
+            InfixOp::Neq => match (eval(env.clone(), &*lhs)?, eval(env.clone(), &*rhs)?) {
+                (Value::Int(l), Value::Int(r)) => Ok(Value::Bool(l.value != r.value)),
+                (Value::Real(l), Value::Real(r)) => Ok(Value::Bool(l != r)),
+                (Value::Complex(l), Value::Complex(r)) => Ok(Value::Bool(l != r)),
+                (Value::String(l), Value::String(r)) => Ok(Value::Bool(l != r)),
+                (Value::Char(l), Value::Char(r)) => Ok(Value::Bool(l != r)),
+                (Value::Bool(l), Value::Bool(r)) => Ok(Value::Bool(l != r)),
+                (Value::List(l), Value::List(r)) => Ok(Value::Bool(l != r)),
+                (Value::Tuple(l), Value::Tuple(r)) => Ok(Value::Bool(l != r)),
+                (Value::Map(l), Value::Map(r)) => Ok(Value::Bool(l != r)),
+                (Value::Record(l), Value::Record(r)) => Ok(Value::Bool(l != r)),
+                (Value::Lambda(l), Value::Lambda(r)) => Ok(Value::Bool(l != r)),
+                (Value::Unit, Value::Unit) => Ok(Value::Bool(true)),
+                _ => Ok(Value::Bool(false)),
+            },
             InfixOp::Lss => match (eval(env.clone(), &*lhs)?, eval(env.clone(), &*rhs)?) {
                 (Value::Int(l), Value::Int(r)) => Ok(Value::Bool(l.value < r.value)),
                 (Value::Real(l), Value::Real(r)) => Ok(Value::Bool(l < r)),

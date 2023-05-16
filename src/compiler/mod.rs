@@ -1,4 +1,4 @@
-use crate::parser::{Expr, Lit};
+use crate::parser::ast::{Expr, Lit};
 use std::fmt::Display;
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]

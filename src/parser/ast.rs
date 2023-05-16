@@ -24,8 +24,8 @@ impl Display for Item {
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Data {
-    name: InternedString,
-    fields: Vec<InternedString>,
+    pub name: InternedString,
+    pub fields: Vec<InternedString>,
 }
 
 impl Display for Data {
@@ -226,7 +226,7 @@ impl From<String> for Real {
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Tuple {
-    items: Vec<Expr>,
+    pub items: Vec<Expr>,
 }
 
 impl Display for Tuple {
