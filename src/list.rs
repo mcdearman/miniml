@@ -20,7 +20,7 @@ where
 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "[")?;
-        while let Some(data) = self.clone().into_iter().next() {
+        while let Some(data) = self.clone().next() {
             write!(f, "{}", data)?;
         }
         write!(f, "]")
