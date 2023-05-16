@@ -13,7 +13,8 @@ mod parser;
 mod vm;
 
 fn main() {
-    let input = "id \"Hello, World!\"";
+    // let input = "id \"Hello, World!\"";
+    let input = "fn gcd a b = if b = 0 then a else gcd b (a % b) in gcd 18 24";
     let ast = Parser::new(input).item().expect("failed to parse");
     let env = Rc::new(RefCell::new(Env::new()));
     env.borrow_mut().define(
