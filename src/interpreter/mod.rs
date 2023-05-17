@@ -250,8 +250,18 @@ pub fn eval(env: Rc<RefCell<Env>>, expr: &Expr) -> Result<Value> {
             })),
         },
         Expr::Prefix { op, expr } => match op {
-            PrefixOp::Neg => todo!(),
-            PrefixOp::Not => todo!(),
+            PrefixOp::Neg => match eval(env.clone(), &*expr)? {
+                Value::Int(i) => Ok(Value::Int(Int {
+                    value: -i.value.clone(),
+                })),
+                Value::Real(r) => Ok(Value::Real(-r)),
+                Value::Complex(c) => Ok(Value::Complex(-c)),
+                _ => Err(RuntimeError::new("cannot negate non-numeric values")),
+            },
+            PrefixOp::Not => match eval(env.clone(), &*expr)? {
+                Value::Bool(b) => Ok(Value::Bool(!b)),
+                _ => Err(RuntimeError::new("cannot negate non-boolean values")),
+            },
         },
         Expr::Infix { op, lhs, rhs } => match op {
             InfixOp::Add => match (eval(env.clone(), &*lhs)?, eval(env.clone(), &*rhs)?) {
@@ -365,42 +375,40 @@ pub fn eval(env: Rc<RefCell<Env>>, expr: &Expr) -> Result<Value> {
             }
             eval(let_env, &*body)
         }
-        Expr::Fn(FnExpr { name, value, body }) => {
-            let fn_env = Env::create_child(env.clone());
-            fn_env.borrow_mut().define(
-                name,
-                Value::Lambda(Lambda {
-                    env: lambda_env,
-                    param,
-                    body: lam_body,
-                }),
-            );
-            let lam = eval(fn_env.clone(), &value)?;
-            match lam.clone() {
-                Value::Lambda(Lambda {
-                    env: lambda_env,
-                    param,
-                    body: lam_body,
-                }) => {
-                    let ds = destructure_pattern(&param, &lam)
-                        .ok_or(RuntimeError::new("failed to destructure value"))?;
-                    let fn_env = Env::create_child(env.clone());
-                    for (name, value) in ds.bindings {
-                        lambda_env.borrow_mut().define(name, value);
-                    }
-                    lambda_env.clone().borrow_mut().define(
-                        name.clone(),
-                        Value::Lambda(Lambda {
-                            env: lambda_env.clone(),
-                            param: param.clone(),
-                            body: lam_body.clone(),
-                        }),
-                    );
-                    eval(fn_env, &*body)
+        Expr::Fn(FnExpr { name, value, body }) => match lam.clone() {
+            Value::Lambda(Lambda {
+                env: lambda_env,
+                param,
+                body: lam_body,
+            }) => {
+                let lam = eval(fn_env.clone(), &value)?;
+                let ds = destructure_pattern(&param, &lam)
+                    .ok_or(RuntimeError::new("failed to destructure value"))?;
+                let fn_env = Env::create_child(env.clone());
+                for (name, value) in ds.bindings {
+                    lambda_env.borrow_mut().define(name, value);
                 }
-                _ => Err(RuntimeError::new("cannot define non-lambda value")),
+                let fn_env = Env::create_child(env.clone());
+                fn_env.borrow_mut().define(
+                    name,
+                    Value::Lambda(Lambda {
+                        env: lambda_env,
+                        param,
+                        body: lam_body,
+                    }),
+                );
+                lambda_env.clone().borrow_mut().define(
+                    name.clone(),
+                    Value::Lambda(Lambda {
+                        env: lambda_env.clone(),
+                        param: param.clone(),
+                        body: lam_body.clone(),
+                    }),
+                );
+                eval(fn_env, &*body)
             }
-        }
+            _ => Err(RuntimeError::new("cannot define non-lambda value")),
+        },
         Expr::Apply(fun, arg) => match eval(env.clone(), &fun)? {
             Value::Lambda(Lambda {
                 env: lambda_env,
