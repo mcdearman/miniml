@@ -41,6 +41,12 @@ impl<T> Iterator for List<T> {
     }
 }
 
+impl<T> ExactSizeIterator for List<T> {
+    fn len(&self) -> usize {
+        self.clone().fold(0, |acc, _| acc + 1)
+    }
+}
+
 impl<T> FromIterator<T> for List<T> {
     fn from_iter<I: IntoIterator<Item = T>>(iter: I) -> Self {
         iter.into_iter().fold(Self::NIL, |list, data| {

@@ -542,7 +542,7 @@ fn destructure_pattern(pattern: &Pattern, value: &Value) -> Option<DestructureRe
                 None
             }
         }
-        Pattern::Tuple(_) => todo!(),
+        Pattern::Tuple(t) => todo!(),
         Pattern::Map(_) => todo!(),
         Pattern::Record(r) => {
             todo!()
