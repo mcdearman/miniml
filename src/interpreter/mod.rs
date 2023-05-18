@@ -3,6 +3,7 @@ use crate::{
     list::List,
     parser::ast::{Expr, FnExpr, InfixOp, LetExpr, Lit, Pattern, PrefixOp},
 };
+use itertools::join;
 use num_bigint::BigInt;
 use num_complex::Complex64;
 use num_rational::BigRational;
@@ -361,11 +362,32 @@ pub fn eval(env: Rc<RefCell<Env>>, expr: &Expr) -> Result<Value> {
                 (Value::Complex(l), Value::Complex(r)) => Ok(Value::Bool(l.norm() < r.norm())),
                 _ => Err(RuntimeError::new("cannot compare non-numeric values")),
             },
-            InfixOp::Gtr => todo!(),
-            InfixOp::Leq => todo!(),
-            InfixOp::Geq => todo!(),
-            InfixOp::And => todo!(),
-            InfixOp::Or => todo!(),
+            InfixOp::Gtr => match (eval(env.clone(), &*lhs)?, eval(env.clone(), &*rhs)?) {
+                (Value::Int(l), Value::Int(r)) => Ok(Value::Bool(l.value > r.value)),
+                (Value::Real(l), Value::Real(r)) => Ok(Value::Bool(l > r)),
+                (Value::Complex(l), Value::Complex(r)) => Ok(Value::Bool(l.norm() > r.norm())),
+                _ => Err(RuntimeError::new("cannot compare non-numeric values")),
+            },
+            InfixOp::Leq => match (eval(env.clone(), &*lhs)?, eval(env.clone(), &*rhs)?) {
+                (Value::Int(l), Value::Int(r)) => Ok(Value::Bool(l.value <= r.value)),
+                (Value::Real(l), Value::Real(r)) => Ok(Value::Bool(l <= r)),
+                (Value::Complex(l), Value::Complex(r)) => Ok(Value::Bool(l.norm() <= r.norm())),
+                _ => Err(RuntimeError::new("cannot compare non-numeric values")),
+            },
+            InfixOp::Geq => match (eval(env.clone(), &*lhs)?, eval(env.clone(), &*rhs)?) {
+                (Value::Int(l), Value::Int(r)) => Ok(Value::Bool(l.value >= r.value)),
+                (Value::Real(l), Value::Real(r)) => Ok(Value::Bool(l >= r)),
+                (Value::Complex(l), Value::Complex(r)) => Ok(Value::Bool(l.norm() >= r.norm())),
+                _ => Err(RuntimeError::new("cannot compare non-numeric values")),
+            },
+            InfixOp::And => match (eval(env.clone(), &*lhs)?, eval(env.clone(), &*rhs)?) {
+                (Value::Bool(l), Value::Bool(r)) => Ok(Value::Bool(l && r)),
+                _ => Err(RuntimeError::new("cannot and non-boolean values")),
+            },
+            InfixOp::Or => match (eval(env.clone(), &*lhs)?, eval(env.clone(), &*rhs)?) {
+                (Value::Bool(l), Value::Bool(r)) => Ok(Value::Bool(l || r)),
+                _ => Err(RuntimeError::new("cannot or non-boolean values")),
+            },
         },
         Expr::Let(LetExpr {
             pattern,
@@ -409,14 +431,13 @@ pub fn eval(env: Rc<RefCell<Env>>, expr: &Expr) -> Result<Value> {
                 body,
             }) => {
                 let varg = eval(env.clone(), &arg)?;
-                // println!("varg {:?}", varg);
                 let ds = destructure_pattern(&param, &varg)
                     .ok_or(RuntimeError::new("failed to destructure argument"))?;
-                for (name, value) in ds.bindings {
-                    println!("name {:?} value {:?}", name, value);
-                    lambda_env.borrow_mut().define(name, value);
+                let arg_env = Env::create_child(lambda_env.clone());
+                for (name, value) in ds.bindings.clone() {
+                    arg_env.borrow_mut().define(name, value);
                 }
-                eval(lambda_env.clone(), &*body)
+                eval(arg_env.clone(), &*body)
             }
             _ => Err(RuntimeError::new("cannot apply non-lambda value")),
         },
