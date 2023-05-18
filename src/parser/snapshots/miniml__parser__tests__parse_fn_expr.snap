@@ -3,11 +3,9 @@ source: src/parser/tests.rs
 expression: ast
 ---
 Expr(
-    Let(
-        LetExpr {
-            pattern: Ident(
-                InternedString(f),
-            ),
+    Fn(
+        FnExpr {
+            name: InternedString(f),
             value: Lit(
                 Lambda(
                     Lambda {

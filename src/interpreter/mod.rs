@@ -296,12 +296,18 @@ pub fn eval(env: Rc<RefCell<Env>>, expr: &Expr) -> Result<Value> {
                 (Value::Complex(l), Value::Complex(r)) => Ok(Value::Complex(l / r)),
                 _ => Err(RuntimeError::new("cannot divide non-numeric values")),
             },
-            InfixOp::Mod => match (eval(env.clone(), &*lhs)?, eval(env.clone(), &*rhs)?) {
-                (Value::Int(l), Value::Int(r)) => Ok(Value::Int(Int {
-                    value: l.value % r.value,
-                })),
-                _ => Err(RuntimeError::new("cannot modulo non-integer values")),
-            },
+            InfixOp::Mod => {
+                let (lv, rv) = (eval(env.clone(), &*lhs)?, eval(env.clone(), &*rhs)?);
+                match (lv.clone(), rv.clone()) {
+                    (Value::Int(l), Value::Int(r)) => Ok(Value::Int(Int {
+                        value: l.value % r.value,
+                    })),
+                    _ => Err(RuntimeError(format!(
+                        "cannot modulo non-integer values {:?} % {:?}",
+                        lv, rv
+                    ))),
+                }
+            }
             InfixOp::Pow => match (eval(env.clone(), &*lhs)?, eval(env.clone(), &*rhs)?) {
                 (Value::Int(l), Value::Int(r)) => r
                     .value
@@ -375,29 +381,13 @@ pub fn eval(env: Rc<RefCell<Env>>, expr: &Expr) -> Result<Value> {
             }
             eval(let_env, &*body)
         }
-        Expr::Fn(FnExpr { name, value, body }) => match lam.clone() {
+        Expr::Fn(FnExpr { name, value, body }) => match eval(env.clone(), &*value)? {
             Value::Lambda(Lambda {
                 env: lambda_env,
                 param,
                 body: lam_body,
             }) => {
-                let lam = eval(fn_env.clone(), &value)?;
-                let ds = destructure_pattern(&param, &lam)
-                    .ok_or(RuntimeError::new("failed to destructure value"))?;
-                let fn_env = Env::create_child(env.clone());
-                for (name, value) in ds.bindings {
-                    lambda_env.borrow_mut().define(name, value);
-                }
-                let fn_env = Env::create_child(env.clone());
-                fn_env.borrow_mut().define(
-                    name,
-                    Value::Lambda(Lambda {
-                        env: lambda_env,
-                        param,
-                        body: lam_body,
-                    }),
-                );
-                lambda_env.clone().borrow_mut().define(
+                lambda_env.borrow_mut().define(
                     name.clone(),
                     Value::Lambda(Lambda {
                         env: lambda_env.clone(),
@@ -405,7 +395,10 @@ pub fn eval(env: Rc<RefCell<Env>>, expr: &Expr) -> Result<Value> {
                         body: lam_body.clone(),
                     }),
                 );
-                eval(fn_env, &*body)
+                let lam = eval(lambda_env.clone(), &value)?;
+                let body_env = Env::create_child(env.clone());
+                body_env.borrow_mut().define(name, lam);
+                eval(body_env, &*body)
             }
             _ => Err(RuntimeError::new("cannot define non-lambda value")),
         },
@@ -416,9 +409,11 @@ pub fn eval(env: Rc<RefCell<Env>>, expr: &Expr) -> Result<Value> {
                 body,
             }) => {
                 let varg = eval(env.clone(), &arg)?;
+                // println!("varg {:?}", varg);
                 let ds = destructure_pattern(&param, &varg)
                     .ok_or(RuntimeError::new("failed to destructure argument"))?;
                 for (name, value) in ds.bindings {
+                    println!("name {:?} value {:?}", name, value);
                     lambda_env.borrow_mut().define(name, value);
                 }
                 eval(lambda_env.clone(), &*body)

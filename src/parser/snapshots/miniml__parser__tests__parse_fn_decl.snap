@@ -3,36 +3,36 @@ source: src/parser/tests.rs
 expression: ast
 ---
 Decl(
-    Decl {
-        pattern: Ident(
-            InternedString(f),
-        ),
-        value: Lit(
-            Lambda(
-                Lambda {
-                    param: Ident(
-                        InternedString(x),
-                    ),
-                    body: Lit(
-                        Lambda(
-                            Lambda {
-                                param: Ident(
-                                    InternedString(y),
-                                ),
-                                body: Infix {
-                                    op: Add,
-                                    lhs: Ident(
-                                        InternedString(x),
-                                    ),
-                                    rhs: Ident(
+    Fn(
+        FnDecl {
+            name: InternedString(f),
+            value: Lit(
+                Lambda(
+                    Lambda {
+                        param: Ident(
+                            InternedString(x),
+                        ),
+                        body: Lit(
+                            Lambda(
+                                Lambda {
+                                    param: Ident(
                                         InternedString(y),
                                     ),
+                                    body: Infix {
+                                        op: Add,
+                                        lhs: Ident(
+                                            InternedString(x),
+                                        ),
+                                        rhs: Ident(
+                                            InternedString(y),
+                                        ),
+                                    },
                                 },
-                            },
+                            ),
                         ),
-                    ),
-                },
+                    },
+                ),
             ),
-        ),
-    },
+        },
+    ),
 )

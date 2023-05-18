@@ -432,21 +432,23 @@ impl<'src> Parser<'src> {
             T![if] => self.if_(),
             T![let] => self.let_expr(),
             T![fn] => self.fn_expr(),
-            T![int]
-            | T![real]
-            | T![str]
-            | T![char]
-            | T![bool]
-            | T![lambda]
-            | T!['[']
-            | T!['(']
-            | T!['{'] => Ok(Expr::Lit(self.lit()?)),
+            T![int] | T![real] | T![str] | T![char] | T![bool] | T![lambda] | T!['['] | T!['{'] => {
+                Ok(Expr::Lit(self.lit()?))
+            }
             T![ident] => Ok(Expr::Ident(self.ident()?)),
             T!['('] => {
                 self.consume(T!['(']);
                 let expr = self.expr()?;
-                self.consume(T![')']);
-                Ok(expr)
+                if self.at(T![,]) {
+                    self.consume(T![,]);
+                    let mut items = vec![expr.clone()];
+                    items.append(&mut self.tuple_items()?);
+                    self.consume(T![')']);
+                    Ok(Expr::Lit(Lit::Tuple(Tuple { items })))
+                } else {
+                    self.consume(T![')']);
+                    Ok(expr)
+                }
             }
             _ => Err(ParserError(format!(
                 "Unexpected token in atom got `{:?}` - `{}`",
@@ -739,6 +741,12 @@ impl<'src> Parser<'src> {
 
     fn tuple(&mut self) -> Result<Tuple> {
         self.consume(T!['(']);
+        let items = self.tuple_items()?;
+        self.consume(T![')']);
+        Ok(Tuple { items })
+    }
+
+    fn tuple_items(&mut self) -> Result<Vec<Expr>> {
         let mut items = vec![];
         while !self.at(T![')']) {
             items.push(self.expr()?);
@@ -746,8 +754,7 @@ impl<'src> Parser<'src> {
                 self.consume(T![,]);
             }
         }
-        self.consume(T![')']);
-        Ok(Tuple { items })
+        Ok(items)
     }
 
     fn map(&mut self) -> Result<Map> {

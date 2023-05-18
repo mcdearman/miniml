@@ -182,6 +182,13 @@ fn parse_tuple() {
     insta::assert_debug_snapshot!(ast);
 }
 
+#[test]
+fn parse_gcd() {
+    let input = "fn gcd a b = if b = 0 then a else gcd b (a % b) in gcd 18 24";
+    let ast = Parser::new(input).item().expect("failed to parse");
+    insta::assert_debug_snapshot!(ast);
+}
+
 // #[test]
 // fn parse_map() {
 //     let input = "{ x: 1, y: 2, z: 3 }";

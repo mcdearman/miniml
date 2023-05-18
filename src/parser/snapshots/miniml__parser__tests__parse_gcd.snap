@@ -1,0 +1,90 @@
+---
+source: src/parser/tests.rs
+expression: ast
+---
+Expr(
+    Fn(
+        FnExpr {
+            name: InternedString(gcd),
+            value: Lit(
+                Lambda(
+                    Lambda {
+                        param: Ident(
+                            InternedString(a),
+                        ),
+                        body: Lit(
+                            Lambda(
+                                Lambda {
+                                    param: Ident(
+                                        InternedString(b),
+                                    ),
+                                    body: If {
+                                        cond: Infix {
+                                            op: Eq,
+                                            lhs: Ident(
+                                                InternedString(b),
+                                            ),
+                                            rhs: Lit(
+                                                Int(
+                                                    Int {
+                                                        value: 0,
+                                                        radix: Dec,
+                                                    },
+                                                ),
+                                            ),
+                                        },
+                                        then: Ident(
+                                            InternedString(a),
+                                        ),
+                                        else_: Apply(
+                                            Apply(
+                                                Ident(
+                                                    InternedString(gcd),
+                                                ),
+                                                Ident(
+                                                    InternedString(b),
+                                                ),
+                                            ),
+                                            Infix {
+                                                op: Mod,
+                                                lhs: Ident(
+                                                    InternedString(a),
+                                                ),
+                                                rhs: Ident(
+                                                    InternedString(b),
+                                                ),
+                                            },
+                                        ),
+                                    },
+                                },
+                            ),
+                        ),
+                    },
+                ),
+            ),
+            body: Apply(
+                Apply(
+                    Ident(
+                        InternedString(gcd),
+                    ),
+                    Lit(
+                        Int(
+                            Int {
+                                value: 18,
+                                radix: Dec,
+                            },
+                        ),
+                    ),
+                ),
+                Lit(
+                    Int(
+                        Int {
+                            value: 24,
+                            radix: Dec,
+                        },
+                    ),
+                ),
+            ),
+        },
+    ),
+)
