@@ -1,9 +1,8 @@
 use crate::{
     intern::InternedString,
     list::List,
-    parser::ast::{Expr, FnExpr, InfixOp, LetExpr, Lit, Pattern, PrefixOp},
+    parser::ast::{Decl, Expr, FnExpr, InfixOp, LetExpr, Lit, MatchArm, Pattern, PrefixOp},
 };
-use itertools::join;
 use num_bigint::BigInt;
 use num_complex::Complex64;
 use num_rational::BigRational;
@@ -448,7 +447,33 @@ pub fn eval(env: Rc<RefCell<Env>>, expr: &Expr) -> Result<Value> {
                 eval(env.clone(), &*else_)
             }
         }
-        Expr::Match { expr, arms } => todo!(),
+        Expr::Match { expr, arms } => match eval(env.clone(), &*expr)? {
+            Value::Int(i) => arms
+                .iter()
+                .filter(|MatchArm { pattern, expr: _ }| {
+                    destructure_pattern(pattern, &Value::Int(i.clone())).is_some()
+                })
+                .next()
+                .map(
+                    |MatchArm {
+                         pattern: _,
+                         expr: e,
+                     }| eval(env.clone(), &*e),
+                )
+                .unwrap_or_else(|| Err(RuntimeError::new("failed to match value"))),
+            Value::Rational(_) => todo!(),
+            Value::Real(_) => todo!(),
+            Value::Complex(_) => todo!(),
+            Value::String(_) => todo!(),
+            Value::Char(_) => todo!(),
+            Value::Bool(_) => todo!(),
+            Value::List(_) => todo!(),
+            Value::Tuple(_) => todo!(),
+            Value::Map(_) => todo!(),
+            Value::Record(_) => todo!(),
+            Value::Lambda(_) => todo!(),
+            Value::Unit => todo!(),
+        },
         Expr::Unit => Ok(Value::Unit),
     }
 }
@@ -537,12 +562,52 @@ fn destructure_pattern(pattern: &Pattern, value: &Value) -> Option<DestructureRe
         }),
         Pattern::List(l) => {
             if let Some(v) = value.list() {
-                todo!()
+                if v.len() == l.items.len() {
+                    let mut bindings = HashMap::new();
+                    for (p, v) in l.items.iter().zip(v) {
+                        if let Some(ds) = destructure_pattern(p, &v) {
+                            for (name, value) in ds.bindings {
+                                bindings.insert(name, value);
+                            }
+                        } else {
+                            return None;
+                        }
+                    }
+                    Some(DestructureResult {
+                        bindings,
+                        rest: None,
+                    })
+                } else {
+                    None
+                }
             } else {
                 None
             }
         }
-        Pattern::Tuple(t) => todo!(),
+        Pattern::Tuple(t) => {
+            if let Some(v) = value.tuple() {
+                if v.len() == t.items.len() {
+                    let mut bindings = HashMap::new();
+                    for (p, v) in t.items.iter().zip(v) {
+                        if let Some(ds) = destructure_pattern(p, &v) {
+                            for (name, value) in ds.bindings {
+                                bindings.insert(name, value);
+                            }
+                        } else {
+                            return None;
+                        }
+                    }
+                    Some(DestructureResult {
+                        bindings,
+                        rest: None,
+                    })
+                } else {
+                    None
+                }
+            } else {
+                None
+            }
+        }
         Pattern::Map(_) => todo!(),
         Pattern::Record(r) => {
             todo!()
@@ -552,5 +617,43 @@ fn destructure_pattern(pattern: &Pattern, value: &Value) -> Option<DestructureRe
             rest: None,
         }),
         Pattern::Unit => todo!(),
+    }
+}
+
+pub fn handle_decl(env: Rc<RefCell<Env>>, decl: &Decl) -> Result<()> {
+    match decl {
+        Decl::Let(l) => {
+            let val = eval(env.clone(), &l.value)?;
+            let ds = destructure_pattern(&l.pattern, &val)
+                .ok_or(RuntimeError::new("failed to destructure value"))?;
+            for (name, value) in ds.bindings {
+                env.borrow_mut().define(name, value);
+            }
+            Ok(())
+        }
+        Decl::Fn(f) => match &eval(env.clone(), &f.value)? {
+            val @ Value::Lambda(Lambda {
+                env: lambda_env,
+                param,
+                body,
+            }) => {
+                lambda_env.borrow_mut().define(f.name.clone(), val.clone());
+                let lam = eval(lambda_env.clone(), &f.value)?;
+                let body_env = Env::create_child(env.clone());
+                body_env.borrow_mut().define(f.name.clone(), lam);
+                env.borrow_mut().define(
+                    f.name.clone(),
+                    Value::Lambda(Lambda {
+                        env: body_env.clone(),
+                        param: param.clone(),
+                        body: body.clone(),
+                    }),
+                );
+                Ok(())
+            }
+            _ => Err(RuntimeError::new(
+                "cannot define non-lambda value with `fn`",
+            )),
+        },
     }
 }

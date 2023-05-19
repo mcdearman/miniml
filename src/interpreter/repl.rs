@@ -1,5 +1,5 @@
 use crate::{
-    interpreter::{eval, Env},
+    interpreter::{eval, handle_decl, Env},
     parser::{ast::Item, Parser},
 };
 use std::{
@@ -20,8 +20,11 @@ pub fn repl() {
             .expect("failed to read from stdin");
         match Parser::new(&src).item() {
             Ok(item) => match item.clone() {
-                Item::Data(_) => todo!(),
-                Item::Decl(_) => todo!(),
+                Item::Data(d) => todo!(),
+                Item::Decl(d) => match handle_decl(env.clone(), &d) {
+                    Ok(()) => println!("{}", d),
+                    Err(e) => eprintln!("Runtime Error: {}", e),
+                },
                 Item::Expr(e) => match eval(env.clone(), &e) {
                     Ok(v) => println!("{}", v),
                     Err(e) => eprintln!("Runtime Error: {}", e),

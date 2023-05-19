@@ -41,7 +41,7 @@ impl<T> Iterator for List<T> {
     }
 }
 
-impl<T> ExactSizeIterator for List<T> {
+impl<T: Clone> ExactSizeIterator for List<T> {
     fn len(&self) -> usize {
         self.clone().fold(0, |acc, _| acc + 1)
     }
