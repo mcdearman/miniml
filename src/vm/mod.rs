@@ -367,10 +367,9 @@ impl VM {
         let byte = self.read_byte();
         match byte {
             1 => Instr::Load(self.read_u16()),
-            3 => Instr::Store(self.read_value()),
-            0 => Instr::LoadConst(self.read_u16()),
-            2 => Instr::StoreConst(self.read_value()),
-            // 4 => Instr::Alloc(u64::from_le_bytes(self.read_8_bytes())),
+            2 => Instr::Store(self.read_value()),
+            3 => Instr::LoadConst(self.read_u16()),
+            4 => Instr::StoreConst(self.read_value()),
             5 => Instr::Neg,
             6 => Instr::Add,
             7 => Instr::Sub,
