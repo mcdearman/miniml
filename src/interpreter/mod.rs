@@ -420,7 +420,7 @@ pub fn eval(env: Rc<RefCell<Env>>, expr: &Expr) -> Result<Value> {
                 let lam = eval(lambda_env.clone(), &value)?;
                 let body_env = Env::create_child(env.clone());
                 body_env.borrow_mut().define(name, lam);
-                eval(body_env, &*body)
+                eval(body_env.clone(), &*body)
             }
             _ => Err(RuntimeError::new("cannot define non-lambda value")),
         },
