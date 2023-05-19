@@ -1,5 +1,7 @@
 use std::fmt::Display;
 
+use itertools::join;
+
 /// A singly-linked list with owned nodes.
 #[derive(Debug, Clone, Default, PartialEq)]
 pub struct List<T> {
@@ -20,9 +22,7 @@ where
 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "[")?;
-        while let Some(data) = self.clone().next() {
-            write!(f, "{}", data)?;
-        }
+        write!(f, "{}", join(self.clone(), ", "))?;
         write!(f, "]")
     }
 }

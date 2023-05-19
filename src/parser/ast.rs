@@ -1,5 +1,6 @@
 use super::{token::TokenKind, ParserError};
 use crate::{intern::InternedString, list::List, T};
+use itertools::join;
 use num_bigint::BigInt;
 use num_complex::Complex64;
 use num_rational::{BigRational, Rational64};
@@ -166,7 +167,7 @@ impl Display for Lit {
             Lit::Char(i) => write!(f, "{}", i),
             Lit::Bool(i) => write!(f, "{}", i),
             Lit::List(l) => write!(f, "{}", l),
-            Lit::Tuple(t) => write!(f, "{:?}", t),
+            Lit::Tuple(t) => write!(f, "{}", t),
             Lit::Map(m) => write!(f, "{}", m),
             Lit::Record(r) => write!(f, "{}", r),
             Lit::Lambda(l) => write!(f, "{}", l),
@@ -269,9 +270,7 @@ pub struct Tuple {
 impl Display for Tuple {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "(")?;
-        while let Some(item) = self.items.clone().into_iter().next() {
-            write!(f, "{}", item)?;
-        }
+        write!(f, "{}", join(self.clone().items, ", "))?;
         write!(f, ")")
     }
 }
