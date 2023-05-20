@@ -2,10 +2,7 @@
 -- https://en.wikipedia.org/wiki/Ackermann_function
 -- https://en.wikipedia.org/wiki/Primitive_recursive_function
 fn ack m n = 
-  println "ack";
   if m = 0 then n + 1
   elif n = 0 then ack (m - 1) 1
   else ack (m - 1) (ack m (n - 1))
-
--- miniml> ack 3 4
--- 125
+in ack 2 73
