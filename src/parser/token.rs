@@ -96,12 +96,14 @@ pub enum TokenKind {
     #[token(":")]
     Colon,
 
-    #[token("import")]
-    Module,
-    #[token("use")]
-    Use,
     #[token("pub")]
     Pub,
+    #[token("mod")]
+    Module,
+    #[token("end")]
+    End,
+    #[token("use")]
+    Use,
     #[token("let")]
     Let,
     #[token("fn")]
@@ -255,14 +257,17 @@ macro_rules! T {
     [:] => {
        $crate::parser::token::TokenKind::Colon
     };
+    [pub] => {
+       $crate::parser::token::TokenKind::Pub
+    };
     [mod] => {
        $crate::parser::token::TokenKind::Module
     };
+    [end] => {
+       $crate::parser::token::TokenKind::End
+    };
     [use] => {
        $crate::parser::token::TokenKind::Use
-    };
-    [pub] => {
-       $crate::parser::token::TokenKind::Pub
     };
     [let] => {
        $crate::parser::token::TokenKind::Let
@@ -345,9 +350,10 @@ impl Display for TokenKind {
                 T![;] => ";",
                 T![;;] => ";;",
                 T![:] => ":",
-                T![mod] => "mod",
-                T![use] => "use",
                 T![pub] => "pub",
+                T![mod] => "mod",
+                T![end] => "end",
+                T![use] => "use",
                 T![let] => "let",
                 T![fn] => "fn",
                 T![data] => "data",

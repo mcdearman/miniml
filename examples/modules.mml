@@ -1,0 +1,17 @@
+-- public module
+pub mod List
+  pub data List a = Nil | Cons a (List a)
+  pub data Cons 
+
+  -- length :: List a -> Int
+  pub fn length xs =
+    match xs with
+      Nil -> 0
+      Cons x xs' -> 1 + length xs'
+
+  -- map :: (a -> b) -> List a -> List b
+  pub fn map f xs =
+    match xs with
+      Nil -> Nil
+      Cons x xs' -> Cons (f x) (map f xs')
+end
