@@ -1,5 +1,5 @@
-use super::value::Value;
-use std::fmt::Display;
+use super::{chunk::Chunk, value::Value};
+use std::{fmt::Display, io::Write};
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Instr {
@@ -65,5 +65,17 @@ impl Display for Instr {
             Instr::Jeq => write!(f, "JEQ"),
             Instr::Halt => write!(f, "HALT"),
         }
+    }
+}
+
+impl Instr {
+    pub fn dissassemble<W: Write>(
+        &self,
+        chunk: &Chunk,
+        offset: usize,
+        output: &mut W,
+    ) -> core::result::Result<(), std::io::Error> {
+        write!(output, "{:04} ", offset)?;
+        todo!()
     }
 }
