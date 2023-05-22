@@ -32,6 +32,11 @@ impl Chunk {
     pub fn emit(&mut self, instr: Instr) {
         self.write(instr)
     }
+
+    // pub fn emit_constant(&mut self, constant: Value) {
+    //     let idx = self.add_constant(constant);
+    //     self.emit(Instr::LoadConst(idx));
+    // }
 }
 
 impl Display for Chunk {

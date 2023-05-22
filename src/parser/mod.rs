@@ -5,6 +5,7 @@ use logos::{Lexer, Logos};
 use num_bigint::BigInt;
 use num_complex::Complex64;
 use num_rational::Rational64;
+use std::fmt::Debug;
 use std::{
     collections::HashMap,
     fmt::Display,
@@ -13,6 +14,7 @@ use std::{
 };
 
 pub mod ast;
+pub mod cst;
 mod tests;
 pub mod token;
 

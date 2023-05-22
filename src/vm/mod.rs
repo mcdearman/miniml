@@ -1,9 +1,8 @@
-use crate::{intern::InternedString, list::List};
-use std::{collections::HashMap, fmt::Display};
+use std::{cell::RefCell, collections::HashMap, rc::Rc};
 
 use self::{
     instr::Instr,
-    value::{Struct, Value},
+    value::{Record, Value},
 };
 
 pub mod chunk;
@@ -17,7 +16,7 @@ pub struct VM {
     constants: Vec<Value>,
     stack: Vec<Value>,
     frames: Vec<CallFrame>,
-    heap: Vec<Value>,
+    heap: Vec<Rc<Value>>,
 }
 
 pub struct CallFrame {
@@ -73,6 +72,21 @@ impl VM {
                 Instr::StoreConst(value) => {
                     self.constants.push(value);
                 }
+                Instr::Push(value) => {
+                    self.stack.push(value.clone());
+                }
+                Instr::Pop => {
+                    self.stack.pop();
+                }
+                Instr::Dup => {
+                    let top = self.stack.len() - 1;
+                    let value = self.stack[top].clone();
+                    self.stack.push(value);
+                }
+                Instr::Swap => {
+                    let top = self.stack.len() - 1;
+                    self.stack.swap(top, top - 1);
+                }
                 Instr::Neg => {
                     let a = self.pop();
                     match a {
@@ -116,6 +130,78 @@ impl VM {
                         (Value::Float(a), Value::Float(b)) => self.push(Value::Float(a / b)),
                         _ => panic!("Invalid operand types"),
                     }
+                }
+                Instr::And => {
+                    let a = self.pop();
+                    let b = self.pop();
+                    match (a, b) {
+                        (Value::Bool(a), Value::Bool(b)) => self.push(Value::Bool(a && b)),
+                        _ => panic!("Invalid operand types"),
+                    }
+                }
+                Instr::Or => {
+                    let a = self.pop();
+                    let b = self.pop();
+                    match (a, b) {
+                        (Value::Bool(a), Value::Bool(b)) => self.push(Value::Bool(a || b)),
+                        _ => panic!("Invalid operand types"),
+                    }
+                }
+                Instr::Xor => {
+                    let a = self.pop();
+                    let b = self.pop();
+                    match (a, b) {
+                        (Value::Bool(a), Value::Bool(b)) => self.push(Value::Bool(a ^ b)),
+                        _ => panic!("Invalid operand types"),
+                    }
+                }
+                Instr::Not => {
+                    let a = self.pop();
+                    match a {
+                        Value::Bool(a) => self.push(Value::Bool(!a)),
+                        _ => panic!("Invalid operand type"),
+                    }
+                }
+                Instr::Eq => {
+                    let a = self.pop();
+                    let b = self.pop();
+                    self.push(Value::Bool(a == b));
+                }
+                Instr::Neq => {
+                    let a = self.pop();
+                    let b = self.pop();
+                    self.push(Value::Bool(a != b));
+                }
+                Instr::Lt => {
+                    let a = self.pop();
+                    let b = self.pop();
+                    match (a, b) {
+                        (Value::Int(a), Value::Int(b)) => self.push(Value::Bool(a < b)),
+                        (Value::Float(a), Value::Float(b)) => self.push(Value::Bool(a < b)),
+                        _ => panic!("Invalid operand types"),
+                    }
+                }
+                Instr::Gt => {
+                    let a = self.pop();
+                    let b = self.pop();
+                    match (a, b) {
+                        (Value::Int(a), Value::Int(b)) => self.push(Value::Bool(a > b)),
+                        (Value::Float(a), Value::Float(b)) => self.push(Value::Bool(a > b)),
+                        _ => panic!("Invalid operand types"),
+                    }
+                }
+                Instr::Jump(addr) => {
+                    self.pc = addr as usize;
+                }
+                Instr::Call(addr) => {
+                    let stack_base = self.stack.len();
+                    let stack_top = stack_base + 1;
+                    self.frames.push(CallFrame {
+                        pc: self.pc,
+                        stack_base,
+                        stack_top,
+                    });
+                    self.pc = addr as usize;
                 }
                 Instr::Halt => break,
                 _ => {
@@ -234,7 +320,7 @@ impl VM {
         Value::Map(map)
     }
 
-    fn read_struct(&mut self) -> Value {
+    fn read_record(&mut self) -> Value {
         let name = match self.read_value() {
             Value::Symbol(s) => s,
             _ => panic!("Invalid struct name"),
@@ -251,7 +337,7 @@ impl VM {
             let value = self.read_value();
             fields.insert(key.into(), value);
         }
-        Value::Struct(Struct { name, fields })
+        Value::Record(Record { name, fields })
     }
 
     fn read_instr(&mut self) -> Instr {
@@ -261,18 +347,29 @@ impl VM {
             2 => Instr::Store(self.read_value()),
             3 => Instr::LoadConst(self.read_u16()),
             4 => Instr::StoreConst(self.read_value()),
-            5 => Instr::Neg,
-            6 => Instr::Add,
-            7 => Instr::Sub,
-            8 => Instr::Mul,
-            9 => Instr::Div,
-            10 => Instr::Eq,
-            11 => Instr::Neq,
-            12 => Instr::Lt,
-            13 => Instr::Gt,
-            14 => Instr::Jump,
-            15 => Instr::Jeq,
-            16 => Instr::Halt,
+            5 => Instr::Push(self.read_value()),
+            6 => Instr::Pop,
+            7 => Instr::Dup,
+            8 => Instr::Swap,
+            9 => Instr::Drop,
+            10 => Instr::Neg,
+            11 => Instr::Add,
+            12 => Instr::Sub,
+            13 => Instr::Mul,
+            14 => Instr::Div,
+            15 => Instr::And,
+            16 => Instr::Or,
+            17 => Instr::Xor,
+            18 => Instr::Not,
+            19 => Instr::Eq,
+            20 => Instr::Neq,
+            21 => Instr::Lt,
+            22 => Instr::Gt,
+            23 => Instr::Jump(self.read_u16()),
+            24 => Instr::Call(self.read_u16()),
+            25 => Instr::Return,
+            26 => Instr::Jeq(self.read_u16()),
+            27 => Instr::Halt,
             _ => panic!("Invalid opcode"),
         }
     }

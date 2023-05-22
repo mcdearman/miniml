@@ -11,7 +11,7 @@ pub enum Value {
     List(List<Value>),
     Tuple(Vec<Value>),
     Map(HashMap<InternedString, Value>),
-    Struct(Struct),
+    Record(Record),
     Nil,
 }
 
@@ -26,19 +26,19 @@ impl Display for Value {
             Value::List(l) => write!(f, "{:?}", l.clone()),
             Value::Tuple(t) => write!(f, "{:?}", t),
             Value::Map(m) => write!(f, "{:?}", m),
-            Value::Struct(s) => write!(f, "{}", s),
+            Value::Record(r) => write!(f, "{}", r),
             Value::Nil => write!(f, "nil"),
         }
     }
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct Struct {
+pub struct Record {
     pub name: InternedString,
     pub fields: HashMap<InternedString, Value>,
 }
 
-impl Display for Struct {
+impl Display for Record {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{} {{", self.name)?;
         for (i, (key, value)) in self.fields.iter().enumerate() {

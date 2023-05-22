@@ -26,10 +26,10 @@ pub enum Instr {
     Neq,
     Lt,
     Gt,
-    Jump,
-    Call,
+    Jump(u16),
+    Call(u16),
     Return,
-    Jeq,
+    Jeq(u16),
     Halt,
 }
 
@@ -59,10 +59,10 @@ impl Display for Instr {
             Instr::Neq => write!(f, "NEQ"),
             Instr::Lt => write!(f, "LT"),
             Instr::Gt => write!(f, "GT"),
-            Instr::Jump => write!(f, "JMP"),
-            Instr::Call => write!(f, "CALL"),
+            Instr::Jump(addr) => write!(f, "JMP {}", addr),
+            Instr::Call(addr) => write!(f, "CALL {}", addr),
             Instr::Return => write!(f, "RET"),
-            Instr::Jeq => write!(f, "JEQ"),
+            Instr::Jeq(addr) => write!(f, "JEQ {}", addr),
             Instr::Halt => write!(f, "HALT"),
         }
     }
