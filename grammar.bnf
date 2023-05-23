@@ -1,14 +1,4 @@
-<item> ::= <data> | <decl> | <expr>
-
-<data> ::= "data" <ws>+ <ident> <ws>+ "=" <ws>+ "{" <ws>* <ident> <ws>* ("," <ws>* <ident> <ws>*)* "}"
-
-<decl> ::= <letDecl> | <fnDecl>
-
-<letDecl> ::= "let" <ws>+ <pattern> <ws>+ "=" <ws>+ <expr>
-
-<fnDecl> ::= "fn" <ws>+ <ident> (<ws>+ <pattern>)+ <ws>+ "=" <ws>+ <expr>
-
-<let> ::= "let" <ws>+ <pattern> <ws>+ "=" <ws>+ <expr>
+<prog> ::= <expr>+
 
 <expr> ::= <or>
 
@@ -28,68 +18,18 @@
 
 <unary> ::= <apply> | ("-" | "!") <unary>
 
-<apply> ::= <atom> (<ws>+ <atom>)*
+<apply> ::= <atom> <ws>+ <apply>
 
 <atom> ::= <ident> | <lit> | <if> | <let> | "(" <expr> ")"
 
-<let> ::= <letDecl> <ws>+ "in" <ws>+ <expr>?
-
-<fn> ::= <fnDecl> <ws>+ "in" <ws>+ <expr>?
+<let> ::= "let" <ident> <ws>+ "=" <ws>+ <expr> <ws>+ "in" <ws>+ <expr>
 
 <if> ::= "if" <ws>+ <expr> <ws>+ "then" <ws>+ <expr> 
     (<ws>+ "elif" <ws>+ <expr> <ws>+ "then" <ws>+ <expr>)* (<ws>+ "else" <ws>+ <expr>)?
 
-<match> ::= "match" <ws>+ <expr> <ws>+ "with" <ws>+ <fullPattern> <ws>+ "->" <ws>+ <expr> 
-    (<ws>+ "|" <ws>+ <fullPattern> <ws>+ "->" <ws>+ <expr>)*
-
-<fullPattern> ::= <pattern>
-| <lit> 
-| <fullListPattern> 
-| <fullTuplePattern> 
-| <fullRecordPattern> 
-| <wildcard> 
-| <unit>
-
-<fullListPattern> ::= "[" <ws>* <fullPattern> (<ws>* "," <ws>* <fullPattern>)* <ws>* "]"
-
-<fullTuplePattern> ::= "(" <ws>* <fullPattern> (<ws>* "," <ws>* <fullPattern>)* <ws>* ")"
-
-<fullRecordPattern> ::= "{" <ws>* <ident> <ws>* ("=" <ws>* <fullPattern>)? <ws>* ("," <ws>* <ident> ("=" <ws>* <fullPattern>)? <ws>*)* "}"
-
-<pattern> ::= <ident>
-| <letListPattern>
-| <letTuplePattern>
-| <letRecordPattern>
-| <wildcard>
-| <unit>
-
-<listPattern> ::= "[" <ws>* <pattern> (<ws>* "," <ws>* <pattern>)* <ws>* "]"
-
-<tuplePattern> ::= "(" <ws>* <pattern> (<ws>* "," <ws>* <pattern>)* <ws>* ")"
-
-<recordPattern> ::= "{" <ws>* <ident> <ws>* ("=" <ws>* <pattern>)? <ws>* ("," <ws>* <ident> ("=" <ws>* <pattern>)? <ws>*)* "}"
-
-<lit> ::= <int> 
-| <float> 
-| <string> 
-| <char> 
-| <bool> 
-| <lambda>
-| <list>
-| <tuple>
-| <map>
+<lit> ::= <int> | <bool> | <lambda>
 
 <lambda> ::= "\\" <ws>+ <ident>+ <ws>+ "->" <ws>+ <expr>
-
-<list> ::= "[" <ws>* <expr> (<ws>* "," <ws>* <expr>)* <ws>* "]"
-
-<tuple> ::= "(" <ws>* <expr> (<ws>* "," <ws>* <expr>)* <ws>* ")"
-
-<map> ::= "{" <ws>* <string> ":" <ws>* <expr> (<ws>* "," <ws>* <string> ":" <ws>* <expr>)* <ws>* "}"
-
-<string> ::= "\"" <ascii>* "\""
-
-<char> ::= "'" <ascii> "'"
 
 <ascii> ::= <letterOrDigit> | <ws>
 
@@ -100,8 +40,6 @@
 <letter> ::= <wildcard> | [a-z] | [A-Z]
 
 <bool> ::= "true" | "false"
-
-<float> ::= <int> "." <digit>+
 
 <int> ::= "0" | <nonzero> <digit>*
 
