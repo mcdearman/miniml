@@ -25,7 +25,8 @@
 <let> ::= "let" <ident> <ws>+ "=" <ws>+ <expr> <ws>+ "in" <ws>+ <expr>
 
 <if> ::= "if" <ws>+ <expr> <ws>+ "then" <ws>+ <expr> 
-    (<ws>+ "elif" <ws>+ <expr> <ws>+ "then" <ws>+ <expr>)* (<ws>+ "else" <ws>+ <expr>)?
+    (<ws>+ "elif" <ws>+ <expr> <ws>+ "then" <ws>+ <expr>)* 
+    (<ws>+ "else" <ws>+ <expr>)
 
 <lit> ::= <int> | <bool> | <lambda>
 
