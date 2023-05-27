@@ -2,36 +2,4 @@ fn gcd a b =
   if b = 0 then a 
   else gcd b (a % b)
 
--- bytecode asm for gcd
-; Constants:
-.const 0        ; Int(0)
-.const 1        ; Int(1)
 
-; Instructions:
-; Function: gcd(a, b)
-load_const 0    ; Load constant 0 (value: 0) into stack
-store 1         ; Store value from stack at index 1 (variable 'a')
-load_const 1    ; Load constant 1 (value: 1) into stack
-store 2         ; Store value from stack at index 2 (variable 'b')
-
-; if b = 0 then a
-load 2          ; Load value at index 2 (variable 'b') into stack
-load_const 0    ; Load constant 0 (value: 0) into stack
-eq              ; Compare top two stack values for equality
-jeq else_label  ; Jump to else_label if the equality condition is true
-
-; Return a
-load 1          ; Load value at index 1 (variable 'a') into stack
-ret             ; Return value from stack
-
-else_label:
-; gcd b (a % b)
-load 2          ; Load value at index 2 (variable 'b') into stack
-load 1          ; Load value at index 1 (variable 'a') into stack
-mod             ; Compute the modulus of the top two stack values
-store 2         ; Store value from stack at index 2 (variable 'b')
-
-swap            ; Swap the top two stack values
-call gcd        ; Call the gcd function
-
-ret             ; Return value from stack
