@@ -1,7 +1,6 @@
 use std::{cell::RefCell, rc::Rc};
 
 use clap::Parser;
-use interpreter::{eval, repl::repl};
 use parser::ast::Item;
 
 mod compiler;
@@ -38,6 +37,4 @@ mod vm;
 //     }
 // }
 
-fn main() {
-    
-}
+fn main() {}
