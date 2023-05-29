@@ -2,17 +2,17 @@
 
 <expr> ::= <or>
 
-<or> ::= <and> (<ws>* "||" <ws>* <or>)?
+<or> ::= <and> (<ws>* "||" <ws>* <and>)*
 
-<and> ::= <eq> (<ws>* "&&" <ws>* <and>)?
+<and> ::= <eq> (<ws>* "&&" <ws>* <eq>)*
 
 <eq> ::= <cmp> (<ws>* ("=" | "!=") <ws>* <cmp>)?
 
-<cmp> ::= <term> (<ws>* ("<" | ">" | "<=" | ">=") <ws>* <cmp>)
+<cmp> ::= <term> (<ws>* ("<" | ">" | "<=" | ">=") <ws>* <term>)*
 
-<term> ::= <factor> (<ws>* ("+" | "-") <ws>* <term>)?
+<term> ::= <factor> (<ws>* ("+" | "-") <ws>* <factor>)*
 
-<factor> ::= <power> (<ws>* ("*" | "/" | "%") <ws>* <factor>)?
+<factor> ::= <power> (<ws>* ("*" | "/" | "%") <ws>* <power>)*
 
 <power> ::= <unary> (<ws>* "^" <ws>* <unary>)*
 
@@ -20,7 +20,7 @@
 
 <apply> ::= <atom> <ws>+ <apply>
 
-<atom> ::= <ident> | <lit> | <if> | <let> | "(" <expr> ")"
+<atom> ::= <ident> | <lit> | <if> | <let> | <match> | "(" <expr> ")"
 
 <let> ::= "let" <ident> <ws>+ "=" <ws>+ <expr> <ws>+ "in" <ws>+ <expr>
 
