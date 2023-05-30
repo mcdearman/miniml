@@ -6,8 +6,3 @@ fn ack m n =
   elif n = 0 then ack (m - 1) 1
   else ack (m - 1) (ack m (n - 1))
 in ack 2 73
-
-fn ack (m : int) (n : int) : int =
-  if m = 0 then n + 1
-  elif n = 0 then ack (m - 1) 1
-  else ack (m - 1) (ack m (n - 1))
