@@ -7,7 +7,6 @@ use self::{
 };
 
 pub mod chunk;
-pub mod gc;
 pub mod instr;
 pub mod value;
 

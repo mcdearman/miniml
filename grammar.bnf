@@ -4,11 +4,9 @@
 
 <or> ::= <and> (<ws>* "||" <ws>* <and>)*
 
-<and> ::= <eq> (<ws>* "&&" <ws>* <eq>)*
+<and> ::= <cmp> (<ws>* "&&" <ws>* <cmp>)*
 
-<eq> ::= <cmp> (<ws>* ("=" | "!=") <ws>* <cmp>)?
-
-<cmp> ::= <term> (<ws>* ("<" | ">" | "<=" | ">=") <ws>* <term>)*
+<cmp> ::= <term> (<ws>* ("<" | ">" | "<=" | ">=" | "=" | "!=") <ws>* <term>)*
 
 <term> ::= <factor> (<ws>* ("+" | "-") <ws>* <factor>)*
 
