@@ -9,8 +9,9 @@ pub struct Node {
 #[derive(Debug, Clone, PartialEq)]
 pub enum SyntaxKind {
     Item,
-    Data,
     Decl,
+    Mod,
+    Data,
     Expr,
     Logical,
     Cmp,

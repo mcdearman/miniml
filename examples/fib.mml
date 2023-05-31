@@ -1,0 +1,12 @@
+fn fib n = 
+  if n <= 1 then n
+  else fib (n - 1) + fib (n - 2)
+
+fn fib_memo n m = 
+  if n <= 1 then n
+  elif Map.contains n m then m[n]
+  else let r = fib_memo (n - 1) m + fib_memo (n - 2) m in
+    let _ Map.insert n r m in
+    r
+
+fib_memo 10 {0:0, 1:1}

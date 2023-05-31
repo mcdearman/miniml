@@ -1,8 +1,14 @@
-<item> ::= <data> | <decl> | <expr>
+<item> ::= <decl> | <expr>
 
-<data> ::= "data" <ws>+ <ident> <ws>+ "=" <ws>+ "{" <ws>* <ident> <ws>* ("," <ws>* <ident> <ws>*)* "}"
+<decl> ::= <mod> | <data> | <letDecl> | <fnDecl>
 
-<decl> ::= <let> | <fn>
+<mod> ::= ("pub" <ws>+)? "mod" <ws>+ <ident> <ws>+ "{" <ws>* <decl> <ws>* "}"
+
+<data> ::= ("pub" <ws>+)? "data" <ws>+ <ident> <ws>+ "=" <ws>+ "{" <ws>* <ident> <ws>* ("," <ws>* <ident> <ws>*)* "}"
+
+<letDecl> ::= ("pub" <ws>+)? <let>
+
+<fnDecl> ::= ("pub" <ws>+)? <fn>
 
 <expr> ::= <logical>
 
