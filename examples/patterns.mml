@@ -15,7 +15,7 @@ let { x, y } = { x: 1, y: 2 }
 let [x, ...xs] = [1, 2, 3]
 
 -- match
-let x = Point { x: 1, y: 2 }
+let x = Point 1 2
 match x with
   | { x, y } -> x + y
   | _ -> 0

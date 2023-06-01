@@ -1,17 +1,59 @@
 -- public module
-pub mod List
-  pub data List a = Nil | Cons a (List a)
-  pub data Cons 
+pub mod List =
+  pub data Cons = data
+  pub data Nil
 
-  -- length :: List a -> Int
-  pub fn length xs =
+  -- [len] takes a list [xs] and returns the number of elements in [xs].
+  -- len :: List a -> Int
+  pub fn len xs =
     match xs with
       Nil -> 0
-      Cons x xs' -> 1 + length xs'
+      Cons x -> 1 + len x
 
+  -- [map] takes a function [f] and a list [xs] and returns the list of
+  -- the results of applying [f] to each element of [xs].
   -- map :: (a -> b) -> List a -> List b
   pub fn map f xs =
     match xs with
       Nil -> Nil
-      Cons x xs' -> Cons (f x) (map f xs')
+      Cons x -> Cons (map f x)
+
+  -- [filter] takes a predicate [f] and a list [xs] and returns the 
+  -- list of all elements [x] in [xs] such that [f x] is [True].
+  -- filter :: (a -> Bool) -> List a -> List a
+  pub fn filter f xs =
+    match xs with
+      Nil -> Nil
+      Cons x ->
+        if f x then
+          Cons (filter f x)
+        else
+          filter f x
+
+  -- [foldl] takes a binary operator [f], a starting value [z], and a list [xs],
+  -- and returns the result of inserting [f] between successive elements of [xs],
+  -- starting with [z] to the left of the leftmost element of [xs].
+  -- foldl :: (a -> b -> a) -> a -> List b -> a
+  pub fn foldl f z xs =
+    match xs with
+      Nil -> z
+      Cons x -> foldl f (f z x) x
+
+  -- [foldr] takes a binary operator [f], a starting value [z], and a list [xs],
+  -- and returns the result of inserting [f] between successive elements of [xs],
+  -- starting with the rightmost element of [xs] to the right of [z].
+  -- foldr :: (a -> b -> b) -> b -> List a -> b
+  pub fn foldr f z xs =
+    match xs with
+      Nil -> z
+      Cons x -> f x (foldr f z x)
+  
+  -- [reduce] takes a binary operator [f] and a list [xs] and returns the result
+  -- of inserting [f] between successive elements of [xs], starting with the
+  -- leftmost element of [xs].
+  -- reduce :: (a -> a -> a) -> List a -> a
+  pub fn reduce f xs =
+    match xs with
+      Nil -> error "reduce: empty list"
+      Cons x -> foldl f x x
 end
