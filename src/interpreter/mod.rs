@@ -461,16 +461,124 @@ pub fn eval(env: Rc<RefCell<Env>>, expr: &Expr) -> Result<Value> {
                      }| eval(env.clone(), &*e),
                 )
                 .unwrap_or_else(|| Err(RuntimeError::new("failed to match value"))),
-            Value::Rational(_) => todo!(),
-            Value::Real(_) => todo!(),
-            Value::Complex(_) => todo!(),
-            Value::String(_) => todo!(),
-            Value::Char(_) => todo!(),
-            Value::Bool(_) => todo!(),
-            Value::List(_) => todo!(),
-            Value::Tuple(_) => todo!(),
+            Value::Rational(r) => arms
+                .iter()
+                .filter(|MatchArm { pattern, expr: _ }| {
+                    destructure_pattern(pattern, &Value::Rational(r.clone())).is_some()
+                })
+                .next()
+                .map(
+                    |MatchArm {
+                         pattern: _,
+                         expr: e,
+                     }| eval(env.clone(), &*e),
+                )
+                .unwrap_or_else(|| Err(RuntimeError::new("failed to match value"))),
+            Value::Real(r) => arms
+                .iter()
+                .filter(|MatchArm { pattern, expr: _ }| {
+                    destructure_pattern(pattern, &Value::Real(r.clone())).is_some()
+                })
+                .next()
+                .map(
+                    |MatchArm {
+                         pattern: _,
+                         expr: e,
+                     }| eval(env.clone(), &*e),
+                )
+                .unwrap_or_else(|| Err(RuntimeError::new("failed to match value"))),
+            Value::Complex(c) => arms
+                .iter()
+                .filter(|MatchArm { pattern, expr: _ }| {
+                    destructure_pattern(pattern, &Value::Complex(c.clone())).is_some()
+                })
+                .next()
+                .map(
+                    |MatchArm {
+                         pattern: _,
+                         expr: e,
+                     }| eval(env.clone(), &*e),
+                )
+                .unwrap_or_else(|| Err(RuntimeError::new("failed to match value"))),
+            Value::String(s) => arms
+                .iter()
+                .filter(|MatchArm { pattern, expr: _ }| {
+                    destructure_pattern(pattern, &Value::String(s.clone())).is_some()
+                })
+                .next()
+                .map(
+                    |MatchArm {
+                         pattern: _,
+                         expr: e,
+                     }| eval(env.clone(), &*e),
+                )
+                .unwrap_or_else(|| Err(RuntimeError::new("failed to match value"))),
+            Value::Char(c) => arms
+                .iter()
+                .filter(|MatchArm { pattern, expr: _ }| {
+                    destructure_pattern(pattern, &Value::Char(c.clone())).is_some()
+                })
+                .next()
+                .map(
+                    |MatchArm {
+                         pattern: _,
+                         expr: e,
+                     }| eval(env.clone(), &*e),
+                )
+                .unwrap_or_else(|| Err(RuntimeError::new("failed to match value"))),
+            Value::Bool(b) => arms
+                .iter()
+                .filter(|MatchArm { pattern, expr: _ }| {
+                    destructure_pattern(pattern, &Value::Bool(b.clone())).is_some()
+                })
+                .next()
+                .map(
+                    |MatchArm {
+                         pattern: _,
+                         expr: e,
+                     }| eval(env.clone(), &*e),
+                )
+                .unwrap_or_else(|| Err(RuntimeError::new("failed to match value"))),
+            Value::List(l) => arms
+                .iter()
+                .filter(|MatchArm { pattern, expr: _ }| {
+                    destructure_pattern(pattern, &Value::List(l.clone())).is_some()
+                })
+                .next()
+                .map(
+                    |MatchArm {
+                         pattern: _,
+                         expr: e,
+                     }| eval(env.clone(), &*e),
+                )
+                .unwrap_or_else(|| Err(RuntimeError::new("failed to match value"))),
+            Value::Tuple(t) => arms
+                .iter()
+                .filter(|MatchArm { pattern, expr: _ }| {
+                    destructure_pattern(pattern, &Value::Tuple(t.clone())).is_some()
+                })
+                .next()
+                .map(
+                    |MatchArm {
+                         pattern: _,
+                         expr: e,
+                     }| eval(env.clone(), &*e),
+                )
+                .unwrap_or_else(|| Err(RuntimeError::new("failed to match value"))),
             Value::Map(_) => todo!(),
-            Value::Record(_) => todo!(),
+            Value::Record(r) => arms
+                .iter()
+                .filter(|MatchArm { pattern, expr: _ }| {
+                    destructure_pattern(pattern, &Value::Record(r.clone())).is_some()
+                })
+                .next()
+                .map(
+                    |MatchArm {
+                         pattern: _,
+                         expr: e,
+                     }| eval(env.clone(), &*e),
+                )
+                .unwrap_or_else(|| Err(RuntimeError::new("failed to match value"))),
             Value::Lambda(_) => todo!(),
             Value::Unit => todo!(),
         },
