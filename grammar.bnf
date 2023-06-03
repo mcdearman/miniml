@@ -14,13 +14,13 @@
 
 <logical> ::= <cmp> (<ws>* ("&&" | "||") <ws>* <logical>)?
 
-<cmp> ::= <term> (<ws>* ("<" | ">" | "<=" | ">=" | "=" | "!=") <ws>* <cmp>)
+<cmp> ::= <term> (<ws>* ("<" | ">" | "<=" | ">=" | "=" | "!=") <ws>* <term>)*
 
 <term> ::= <factor> (<ws>* ("+" | "-") <ws>* <term>)?
 
 <factor> ::= <power> (<ws>* ("*" | "/" | "%") <ws>* <factor>)?
 
-<power> ::= <unary> (<ws>* "^" <ws>* <unary>)*
+<power> ::= <unary> (<ws>* "^" <ws>* <power>)?
 
 <unary> ::= <apply> | ("-" | "!") <unary>
 
