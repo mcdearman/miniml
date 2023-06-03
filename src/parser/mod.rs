@@ -15,6 +15,7 @@ use std::{
 
 pub mod ast;
 pub mod cst;
+pub mod events;
 mod tests;
 pub mod token;
 
