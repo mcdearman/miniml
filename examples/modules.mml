@@ -1,6 +1,6 @@
 -- public module
 pub mod List =
-  pub data Cons = data
+  pub data Cons = a
   pub data Nil
 
   -- [len] takes a list [xs] and returns the number of elements in [xs].
