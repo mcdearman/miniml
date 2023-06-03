@@ -10,7 +10,9 @@
 
 <fnDecl> ::= ("pub" <ws>+)? <fn>
 
-<expr> ::= <logical>
+<expr> ::= <stmt>
+
+<stmt> ::= <logical> (<ws>* ";" <ws>* <stmt>)?
 
 <logical> ::= <cmp> (<ws>* ("&&" | "||") <ws>* <logical>)?
 
@@ -26,9 +28,7 @@
 
 <apply> ::= <atom> (<ws>+ <atom>)*
 
-<atom> ::= <ident> | <lit> | <if> | <let> | <letForEffect> | "(" <expr> ")"
-
-<letForEffect> ::= <expr> ";"
+<atom> ::= <ident> | <lit> | <if> | <let> | "(" <expr> ")"
 
 <letExpr> ::= <let> <ws>+ "in" <ws>+ <expr>?
 
