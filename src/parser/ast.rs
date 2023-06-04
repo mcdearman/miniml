@@ -4,7 +4,7 @@ use itertools::join;
 use num_bigint::BigInt;
 use num_complex::Complex64;
 use num_rational::{BigRational, Rational64};
-use std::{borrow::Borrow, collections::HashMap, fmt::Display};
+use std::{collections::HashMap, fmt::Display};
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Item {

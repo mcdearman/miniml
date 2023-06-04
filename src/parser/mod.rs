@@ -1,12 +1,15 @@
-use self::ast::*;
-use self::cst::Node;
+use self::cst::{Node, SyntaxKind};
+use self::event::MarkOpened;
 use self::token::*;
+use self::{ast::*, event::Event};
+use crate::parser::cst::Child;
 use crate::{intern::InternedString, list::List, T};
 use logos::{Lexer, Logos};
 use num_bigint::BigInt;
 use num_complex::Complex64;
 use num_rational::Rational64;
 use std::{
+    cell::Cell,
     collections::HashMap,
     fmt::Display,
     hash::Hash,
@@ -15,7 +18,7 @@ use std::{
 
 pub mod ast;
 pub mod cst;
-pub mod events;
+pub mod event;
 mod tests;
 pub mod token;
 
@@ -40,6 +43,8 @@ pub struct Parser<'src> {
     src: &'src str,
     logos: Lexer<'src, TokenKind>,
     peek: Option<Token>,
+    fuel: Cell<u32>,
+    events: Vec<Event>,
 }
 
 impl<'src> Parser<'src> {
@@ -48,7 +53,71 @@ impl<'src> Parser<'src> {
             src,
             logos: TokenKind::lexer(src),
             peek: None,
+            fuel: Cell::new(256),
+            events: vec![],
         }
+    }
+
+    fn open(&mut self) -> MarkOpened {
+        let mark = MarkOpened {
+            index: self.events.len(),
+        };
+        self.events.push(Event::Open {
+            kind: SyntaxKind::Error,
+        });
+        mark
+    }
+
+    fn close(&mut self, m: MarkOpened, kind: SyntaxKind) {
+        self.events[m.index] = Event::Open { kind };
+        self.events.push(Event::Close);
+    }
+
+    fn advance(&mut self) {
+        assert!(!self.eof());
+        self.fuel.set(256);
+        self.events.push(Event::Advance);
+        self.next();
+    }
+
+    fn eof(&mut self) -> bool {
+        self.at(T![EOF])
+    }
+
+    fn nth(&self, lookahead: usize) -> TokenKind {
+        if self.fuel.get() == 0 {
+            panic!("Parser out of fuel");
+        }
+        self.fuel.set(self.fuel.get() - 1);
+        self.logos.clone().nth(lookahead).map_or(T![EOF], |t| t)
+    }
+
+    fn at(&mut self, kind: TokenKind) -> bool {
+        self.peek().value == kind
+    }
+
+    fn eat(&mut self, expected: TokenKind) -> bool {
+        if self.at(expected) {
+            self.advance();
+            true
+        } else {
+            false
+        }
+    }
+
+    fn expect(&mut self, expected: TokenKind) {
+        if self.eat(expected) {
+            return;
+        } else {
+            eprintln!("Expected {:?} got {:?}", expected, self.peek());
+        }
+    }
+
+    fn advance_with_error(&mut self, error: &str) {
+        let m = self.open();
+        eprintln!("{}", error);
+        self.advance();
+        self.close(m, SyntaxKind::Error)
     }
 
     pub fn tokenize(&mut self) -> Vec<Token> {
@@ -89,18 +158,34 @@ impl<'src> Parser<'src> {
         }
     }
 
-    fn at(&mut self, kind: TokenKind) -> bool {
-        self.peek().value == kind
+    fn build_tree(&self) -> Node {
+        let mut events = self.events.clone();
+        let mut stack = vec![];
+
+        assert!(matches!(events.pop(), Some(Event::Close)));
+
+        for e in events {
+            match e {
+                Event::Open { kind } => {
+                    stack.push(Node {
+                        kind,
+                        children: vec![],
+                    });
+                }
+                Event::Close => {
+                    let node = stack.pop().unwrap();
+                    stack.last_mut().unwrap().children.push(Child::Node(node));
+                }
+                Event::Advance => {
+                    let token = self.next();
+                    stack.last_mut().unwrap().children.push(Child::Token(token));
+                }
+            }
+        }
+        todo!()
     }
 
-    fn consume(&mut self, expected: TokenKind) {
-        let token = self.next();
-        assert_eq!(
-            token.value, expected,
-            "Expected to consume `{}`, but found `{:?}`",
-            expected, token
-        );
-    }
+    // parsing functions
 
     pub fn item(&mut self) -> Result<Item> {
         match self.peek().value {

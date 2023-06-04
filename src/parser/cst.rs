@@ -3,7 +3,7 @@ use crate::intern::InternedString;
 #[derive(Debug, Clone, PartialEq)]
 pub struct Node {
     pub kind: SyntaxKind,
-    pub children: Vec<NodeOrToken>,
+    pub children: Vec<Child>,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -58,7 +58,7 @@ pub struct Token {
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub enum NodeOrToken {
+pub enum Child {
     Node(Node),
     Token(Token),
 }
