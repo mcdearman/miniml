@@ -1,5 +1,7 @@
 use crate::intern::InternedString;
 
+use super::token::TokenKind;
+
 #[derive(Debug, Clone, PartialEq)]
 pub struct Node {
     pub kind: SyntaxKind,
@@ -8,6 +10,7 @@ pub struct Node {
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum SyntaxKind {
+    File,
     Item,
     Decl,
     Mod,
@@ -53,7 +56,7 @@ pub enum SyntaxKind {
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Token {
-    pub kind: SyntaxKind,
+    pub kind: TokenKind,
     pub text: InternedString,
 }
 

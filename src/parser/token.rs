@@ -411,30 +411,36 @@ impl Index<Span> for str {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct Spanned<T> {
+pub struct Token {
+    pub kind: TokenKind,
     pub span: Span,
-    pub value: T,
 }
 
-impl<T> Spanned<T> {
-    pub fn new(span: Span, value: T) -> Self {
-        Self { span, value }
-    }
-}
+// #[derive(Debug, Clone, PartialEq, Eq)]
+// pub struct Spanned<T> {
+//     pub span: Span,
+//     pub value: T,
+// }
 
-impl<T> Display for Spanned<T>
-where
-    T: Display,
-{
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{} {}", self.span, self.value)
-    }
-}
+// impl<T> Spanned<T> {
+//     pub fn new(span: Span, value: T) -> Self {
+//         Self { span, value }
+//     }
+// }
 
-pub type Token = Spanned<TokenKind>;
+// impl<T> Display for Spanned<T>
+// where
+//     T: Display,
+// {
+//     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+//         write!(f, "{} {}", self.span, self.value)
+//     }
+// }
 
-impl<T> From<(T, Span)> for Spanned<T> {
-    fn from((value, span): (T, Span)) -> Self {
-        Self { span, value }
-    }
-}
+// pub type Token = Spanned<TokenKind>;
+
+// impl<T> From<(T, Span)> for Spanned<T> {
+//     fn from((value, span): (T, Span)) -> Self {
+//         Self { span, value }
+//     }
+// }
