@@ -1,4 +1,4 @@
-use super::cst::SyntaxKind;
+use super::{ast::Map, cst::SyntaxKind};
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Event {
