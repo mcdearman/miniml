@@ -14,7 +14,9 @@
 
 <stmt> ::= <logical> (<ws>* ";" <ws>* <stmt>)?
 
-<logical> ::= <cmp> (<ws>* ("&&" | "||") <ws>* <logical>)?
+<or> ::= <and> (<ws>* "||" <ws>* <or>)?
+
+<and> ::= <cmp> (<ws>* "&&" <ws>* <and>)?
 
 <cmp> ::= <term> (<ws>* ("<" | ">" | "<=" | ">=" | "=" | "!=") <ws>* <term>)*
 
@@ -58,6 +60,8 @@
 
 <fullRecordPattern> ::= "{" <ws>* <ident> <ws>* ("=" <ws>* <fullPattern>)? <ws>* ("," <ws>* <ident> ("=" <ws>* <fullPattern>)? <ws>*)* "}"
 
+<fullConsPattern> ::= "[" <ws>* <fullPattern> (<ws>* "," <ws>* <fullPattern>)* <ws>+ "::" <ws>+ <ident> <ws>* "]"
+
 <letPattern> ::= <ident>
 | <letListPattern>
 | <letTuplePattern>
@@ -70,6 +74,8 @@
 <letTuplePattern> ::= "(" <ws>* <letPattern> (<ws>* "," <ws>* <letPattern>)* <ws>* ")"
 
 <letRecordPattern> ::= "{" <ws>* <ident> <ws>* ("=" <ws>* <letPattern>)? <ws>* ("," <ws>* <ident> ("=" <ws>* <letPattern>)? <ws>*)* "}"
+
+<letConsPattern> ::= <letPattern> <ws>+ "::" <ws>+ (<letConsPattern> | <ident>)
 
 <lit> ::= <int> 
 | <real> 
