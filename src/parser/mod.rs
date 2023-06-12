@@ -93,7 +93,7 @@ impl<'src> Parser<'src> {
     }
 
     fn at(&mut self, kind: TokenKind) -> bool {
-        self.peek().value == kind
+        self.peek().kind == kind
     }
 
     fn eat(&mut self, expected: TokenKind) -> bool {
@@ -124,7 +124,10 @@ impl<'src> Parser<'src> {
         self.logos
             .clone()
             .spanned()
-            .map(|(t, s)| Token::from((t, s.into())))
+            .map(|(t, s)| Token {
+                kind: t,
+                span: s.into(),
+            })
             .collect()
     }
 
@@ -157,7 +160,10 @@ impl<'src> Parser<'src> {
                 span: Span::new(0, 0),
             },
             Some((T![comment], _)) => self.generate(),
-            Some((t, s)) => Token::from((t, s.into())),
+            Some((t, s)) => Token {
+                kind: t,
+                span: s.into(),
+            },
         }
     }
 
@@ -204,687 +210,351 @@ impl<'src> Parser<'src> {
     pub fn item(&mut self) {
         let m = self.open();
 
-        match self.peek().value {
-            T![data] => self.data(),
-            T![let] => match self.let_()? {
-                LetKind::Decl(decl) => Ok(Item::Decl(decl)),
-                LetKind::Expr(expr) => Ok(Item::Expr(expr)),
-            },
-            T![fn] => match self.fn_()? {
-                FnKind::Decl(decl) => Ok(Item::Decl(decl)),
-                FnKind::Expr(expr) => Ok(Item::Expr(expr)),
-            },
-            _ => Ok(Item::Expr(self.expr()?)),
+        match self.peek().kind {
+            // T![data] => self.data(),
+            // T![let] => match self.let_() {
+            //     LetKind::Decl(decl) => Ok(Item::Decl(decl)),
+            //     LetKind::Expr(expr) => Ok(Item::Expr(expr)),
+            // },
+            // T![fn] => match self.fn_()? {
+            //     FnKind::Decl(decl) => Ok(Item::Decl(decl)),
+            //     FnKind::Expr(expr) => Ok(Item::Expr(expr)),
+            // },
+            _ => self.expr(),
         }
 
         self.close(m, SyntaxKind::Item);
     }
 
-    fn data(&mut self) {
-        let m = self.open();
+    // fn data(&mut self) {
+    //     let m = self.open();
 
-        self.eat(T![data]);
-        self.expect(T![ident]);
-        self.eat(T![=]);
-        let mut fields = vec![];
-        self.eat(T!['{']);
-        while !self.at(T!['}']) {
-            self.ident();
-            self.eat(T![,]);
-        }
+    //     self.eat(T![data]);
+    //     self.expect(T![ident]);
+    //     self.eat(T![=]);
+    //     let mut fields = vec![];
+    //     self.eat(T!['{']);
+    //     while !self.at(T!['}']) {
+    //         self.ident();
+    //         self.eat(T![,]);
+    //     }
 
-        self.close(m, SyntaxKind::Data);
+    //     self.close(m, SyntaxKind::Data);
+    // }
+
+    fn expr(&mut self) {
+        self.pipe()
     }
 
-    // fn let_(&mut self) -> Result<LetKind> {
-    //     self.consume(T![let]);
-    //     let pattern = self.pattern()?;
+    // <pipe> ::= <stmt> (<ws>* "|>" <ws>* <pipe>)?
+    fn pipe(&mut self) {
+        let m = self.open();
 
-    //     self.consume(T![=]);
+        self.stmt();
 
-    //     let value = self.expr()?;
+        if self.eat(T![|>]) {
+            self.pipe();
+        }
 
-    //     if self.at(T![in]) {
-    //         self.consume(T![in]);
-    //         let body = self.expr()?;
-    //         Ok(LetKind::Expr(Expr::Let(LetExpr {
-    //             pattern,
-    //             value: Box::new(value),
-    //             body: Box::new(body),
-    //         })))
-    //     } else {
-    //         Ok(LetKind::Decl(Decl::Let(LetDecl {
-    //             pattern,
-    //             value: Box::new(value),
-    //         })))
-    //     }
-    // }
+        self.close(m, SyntaxKind::Expr);
+    }
 
-    // fn let_decl(&mut self) -> Result<Decl> {
-    //     self.consume(T![let]);
-    //     let pattern = self.pattern()?;
-    //     self.consume(T![=]);
-    //     let value = self.expr()?;
-    //     Ok(Decl::Let(LetDecl {
-    //         pattern,
-    //         value: Box::new(value),
-    //     }))
-    // }
+    // <stmt> ::= <or> (<ws>* ";" <ws>* <stmt>)?
+    fn stmt(&mut self) {
+        let m = self.open();
 
-    // fn fn_decl(&mut self) -> Result<FnDecl> {
-    //     self.consume(T![fn]);
-    //     let name = self.ident()?;
-    //     let mut params = vec![];
-    //     while !self.at(T![=]) {
-    //         params.push(self.pattern()?);
-    //     }
-    //     self.consume(T![=]);
-    //     let inner = self.expr()?;
-    //     let value = self.curry_fn(params, inner)?;
-    //     Ok(FnDecl {
-    //         name: name.clone(),
-    //         value: Box::new(Expr::Lit(Lit::Lambda(value))),
-    //     })
-    // }
+        self.or();
 
-    // fn fn_(&mut self) -> Result<FnKind> {
-    //     let decl = self.fn_decl()?;
-    //     if self.at(T![in]) {
-    //         self.consume(T![in]);
-    //         let body = self.expr()?;
-    //         Ok(FnKind::Expr(Expr::Fn(FnExpr {
-    //             name: decl.name,
-    //             value: decl.value,
-    //             body: Box::new(body),
-    //         })))
-    //     } else {
-    //         Ok(FnKind::Decl(Decl::Fn(decl)))
-    //     }
-    // }
+        if self.eat(T![;]) {
+            self.stmt();
+        }
 
-    // fn expr(&mut self) -> Result<Expr> {
-    //     self.or()
-    // }
+        self.close(m, SyntaxKind::Expr);
+    }
 
-    // fn or(&mut self) -> Result<Expr> {
-    //     let lhs = self.and()?;
-    //     match self.peek().value {
-    //         T![||] => {
-    //             self.consume(T![||]);
-    //             let rhs = self.and()?;
-    //             Ok(Expr::Infix {
-    //                 op: InfixOp::Or,
-    //                 lhs: Box::new(lhs),
-    //                 rhs: Box::new(rhs),
-    //             })
-    //         }
-    //         _ => Ok(lhs),
-    //     }
-    // }
+    fn or(&mut self) {
+        let m = self.open();
 
-    // fn and(&mut self) -> Result<Expr> {
-    //     let lhs = self.eq()?;
-    //     match self.peek().value {
-    //         T![&&] => {
-    //             self.consume(T![&&]);
-    //             let rhs = self.eq()?;
-    //             Ok(Expr::Infix {
-    //                 op: InfixOp::And,
-    //                 lhs: Box::new(lhs),
-    //                 rhs: Box::new(rhs),
-    //             })
-    //         }
-    //         _ => Ok(lhs),
-    //     }
-    // }
+        self.and();
 
-    // fn eq(&mut self) -> Result<Expr> {
-    //     let lhs = self.cmp()?;
-    //     match self.peek().value {
-    //         T![=] => {
-    //             self.consume(T![=]);
-    //             let rhs = self.cmp()?;
-    //             Ok(Expr::Infix {
-    //                 lhs: Box::new(lhs),
-    //                 op: InfixOp::Eq,
-    //                 rhs: Box::new(rhs),
-    //             })
-    //         }
-    //         T![!=] => {
-    //             self.consume(T![!=]);
-    //             let rhs = self.cmp()?;
-    //             Ok(Expr::Infix {
-    //                 lhs: Box::new(lhs),
-    //                 op: InfixOp::Neq,
-    //                 rhs: Box::new(rhs),
-    //             })
-    //         }
-    //         _ => Ok(lhs),
-    //     }
-    // }
+        if self.eat(T![||]) {
+            self.or();
+        }
 
-    // fn cmp(&mut self) -> Result<Expr> {
-    //     let lhs = self.term()?;
-    //     match self.peek().value {
-    //         T![<] => {
-    //             self.consume(T![<]);
-    //             let rhs = self.term()?;
-    //             Ok(Expr::Infix {
-    //                 lhs: Box::new(lhs),
-    //                 op: InfixOp::Lss,
-    //                 rhs: Box::new(rhs),
-    //             })
-    //         }
-    //         T![>] => {
-    //             self.consume(T![>]);
-    //             let rhs = self.term()?;
-    //             Ok(Expr::Infix {
-    //                 lhs: Box::new(lhs),
-    //                 op: InfixOp::Gtr,
-    //                 rhs: Box::new(rhs),
-    //             })
-    //         }
-    //         T![<=] => {
-    //             self.consume(T![<=]);
-    //             let rhs = self.term()?;
-    //             Ok(Expr::Infix {
-    //                 lhs: Box::new(lhs),
-    //                 op: InfixOp::Leq,
-    //                 rhs: Box::new(rhs),
-    //             })
-    //         }
-    //         T![>=] => {
-    //             self.consume(T![>=]);
-    //             let rhs = self.term()?;
-    //             Ok(Expr::Infix {
-    //                 lhs: Box::new(lhs),
-    //                 op: InfixOp::Geq,
-    //                 rhs: Box::new(rhs),
-    //             })
-    //         }
-    //         _ => Ok(lhs),
-    //     }
-    // }
+        self.close(m, SyntaxKind::Or);
+    }
 
-    // fn term(&mut self) -> Result<Expr> {
-    //     let mut lhs = self.factor()?;
-    //     loop {
-    //         match self.peek().value {
-    //             T![+] => {
-    //                 self.consume(T![+]);
-    //                 let rhs = self.factor()?;
-    //                 lhs = Expr::Infix {
-    //                     lhs: Box::new(lhs),
-    //                     op: InfixOp::Add,
-    //                     rhs: Box::new(rhs),
-    //                 };
-    //             }
-    //             T![-] => {
-    //                 self.consume(T![-]);
-    //                 let rhs = self.factor()?;
-    //                 lhs = Expr::Infix {
-    //                     lhs: Box::new(lhs),
-    //                     op: InfixOp::Sub,
-    //                     rhs: Box::new(rhs),
-    //                 };
-    //             }
-    //             _ => break,
-    //         }
-    //     }
-    //     Ok(lhs)
-    // }
+    fn and(&mut self) {
+        let m = self.open();
 
-    // fn factor(&mut self) -> Result<Expr> {
-    //     let mut lhs = self.power()?;
-    //     loop {
-    //         match self.peek().value {
-    //             T![*] => {
-    //                 self.consume(T![*]);
-    //                 let rhs = self.power()?;
-    //                 lhs = Expr::Infix {
-    //                     lhs: Box::new(lhs),
-    //                     op: InfixOp::Mul,
-    //                     rhs: Box::new(rhs),
-    //                 };
-    //             }
-    //             T![/] => {
-    //                 self.consume(T![/]);
-    //                 let rhs = self.power()?;
-    //                 lhs = Expr::Infix {
-    //                     lhs: Box::new(lhs),
-    //                     op: InfixOp::Div,
-    //                     rhs: Box::new(rhs),
-    //                 };
-    //             }
-    //             T![%] => {
-    //                 self.consume(T![%]);
-    //                 let rhs = self.power()?;
-    //                 lhs = Expr::Infix {
-    //                     lhs: Box::new(lhs),
-    //                     op: InfixOp::Mod,
-    //                     rhs: Box::new(rhs),
-    //                 };
-    //             }
-    //             _ => break,
-    //         }
-    //     }
-    //     Ok(lhs)
-    // }
+        self.cmp();
 
-    // fn power(&mut self) -> Result<Expr> {
-    //     let mut lhs = self.unary()?;
-    //     while self.at(T![^]) {
-    //         self.consume(T![^]);
-    //         let rhs = self.unary()?;
-    //         lhs = Expr::Infix {
-    //             lhs: Box::new(lhs),
-    //             op: InfixOp::Pow,
-    //             rhs: Box::new(rhs),
-    //         };
-    //     }
-    //     Ok(lhs)
-    // }
+        if self.eat(T![&&]) {
+            self.and();
+        }
 
-    // fn unary(&mut self) -> Result<Expr> {
-    //     match self.peek().value {
-    //         T![!] => {
-    //             self.consume(T![!]);
-    //             let rhs = self.unary()?;
-    //             Ok(Expr::Prefix {
-    //                 op: PrefixOp::Not,
-    //                 expr: Box::new(rhs),
-    //             })
-    //         }
-    //         T![-] => {
-    //             self.consume(T![-]);
-    //             let rhs = self.unary()?;
-    //             Ok(Expr::Prefix {
-    //                 op: PrefixOp::Neg,
-    //                 expr: Box::new(rhs),
-    //             })
-    //         }
-    //         _ => self.apply(),
-    //     }
-    // }
+        self.close(m, SyntaxKind::And);
+    }
 
-    // fn apply(&mut self) -> Result<Expr> {
-    //     let lhs = self.atom()?;
-    //     let mut args = vec![];
-    //     loop {
-    //         match self.peek().value {
-    //             T![ident]
-    //             | T![int]
-    //             | T![real]
-    //             | T![str]
-    //             | T![char]
-    //             | T![bool]
-    //             | T![lambda]
-    //             | T![if]
-    //             | T![let]
-    //             | T!['(']
-    //             | T!['[']
-    //             | T!['{'] => {
-    //                 let arg = self.atom()?;
-    //                 args.push(arg);
-    //             }
-    //             _ => break,
-    //         }
-    //     }
-    //     Ok(self.curry_apply(args, lhs))
-    // }
+    // <cmp> ::= <term> (<ws>* ("<" | ">" | "<=" | ">=" | "=" | "!=") <ws>* <cmp>)?
+    fn cmp(&mut self) {
+        let m = self.open();
 
-    // fn atom(&mut self) -> Result<Expr> {
-    //     let tok = self.peek();
-    //     match tok.value {
-    //         T![if] => self.if_(),
-    //         T![let] => self.let_expr(),
-    //         T![fn] => self.fn_expr(),
-    //         T![int] | T![real] | T![str] | T![char] | T![bool] | T![lambda] | T!['['] | T!['{'] => {
-    //             Ok(Expr::Lit(self.lit()?))
-    //         }
-    //         T![ident] => Ok(Expr::Ident(self.ident()?)),
-    //         T!['('] => {
-    //             self.consume(T!['(']);
-    //             let expr = self.expr()?;
-    //             if self.at(T![,]) {
-    //                 self.consume(T![,]);
-    //                 let mut items = vec![expr.clone()];
-    //                 items.append(&mut self.tuple_items()?);
-    //                 self.consume(T![')']);
-    //                 Ok(Expr::Lit(Lit::Tuple(Tuple { items })))
-    //             } else {
-    //                 self.consume(T![')']);
-    //                 Ok(expr)
-    //             }
-    //         }
-    //         _ => Err(ParserError(format!(
-    //             "Unexpected token in atom got `{:?}` - `{}`",
-    //             self.peek(),
-    //             self.text(tok)
-    //         ))),
-    //     }
-    // }
+        self.term();
 
-    // fn let_expr(&mut self) -> Result<Expr> {
-    //     let kind = self.let_()?;
-    //     match kind {
-    //         LetKind::Expr(expr) => Ok(expr),
-    //         _ => Err(ParserError::new("Expected a let expression")),
-    //     }
-    // }
+        if self.eat(T![<])
+            || self.eat(T![>])
+            || self.eat(T![<=])
+            || self.eat(T![>=])
+            || self.eat(T![=])
+            || self.eat(T![!=])
+        {
+            self.cmp();
+        }
 
-    // fn fn_expr(&mut self) -> Result<Expr> {
-    //     let kind = self.fn_()?;
-    //     match kind {
-    //         FnKind::Expr(expr) => Ok(expr),
-    //         _ => Err(ParserError::new("Expected a function expression")),
-    //     }
-    // }
+        self.close(m, SyntaxKind::Cmp);
+    }
 
-    // fn if_(&mut self) -> Result<Expr> {
-    //     self.consume(T![if]);
-    //     let cond = self.expr()?;
-    //     self.consume(T![then]);
-    //     let then = self.expr()?;
-    //     let mut elifs = vec![];
-    //     while self.at(T![elif]) {
-    //         self.consume(T![elif]);
-    //         let cond = self.expr()?;
-    //         self.consume(T![then]);
-    //         let then = self.expr()?;
-    //         elifs.push((cond, then));
-    //     }
-    //     self.consume(T![else]);
-    //     let else_ = self.expr()?;
+    // <term> ::= <factor> (<ws>* ("+" | "-") <ws>* <term>)?
+    fn term(&mut self) {
+        let m = self.open();
 
-    //     let top_else = elifs
-    //         .into_iter()
-    //         .fold(else_, |acc, (elif_cond, elif_then)| Expr::If {
-    //             cond: Box::new(elif_cond),
-    //             then: Box::new(elif_then),
-    //             else_: Box::new(acc),
-    //         });
-    //     Ok(Expr::If {
-    //         cond: Box::new(cond),
-    //         then: Box::new(then),
-    //         else_: Box::new(top_else),
-    //     })
-    // }
+        self.factor();
 
-    // fn match_(&mut self) -> Result<Expr> {
-    //     self.consume(T![match]);
-    //     let expr = self.expr()?;
-    //     self.consume(T![with]);
-    //     let mut arms = vec![];
-    //     while !self.at(T![|]) {
-    //         let pattern = self.full_pattern()?;
-    //         self.consume(T![->]);
-    //         let expr = self.expr()?;
-    //         arms.push(MatchArm { pattern, expr });
-    //     }
-    //     Ok(Expr::Match {
-    //         expr: Box::new(expr),
-    //         arms,
-    //     })
-    // }
+        if self.eat(T![+]) || self.eat(T![-]) {
+            self.term();
+        }
 
-    // fn full_pattern(&mut self) -> Result<Pattern> {
-    //     let tok = self.peek();
-    //     match tok.value {
-    //         T![ident] => Ok(Pattern::Ident(self.ident()?)),
-    //         T![int] => Ok(Pattern::Int(self.int()?)),
-    //         T![str] => Ok(Pattern::String(self.string()?)),
-    //         T![char] => Ok(Pattern::Char(self.char()?)),
-    //         T![bool] => Ok(Pattern::Bool(self.bool()?)),
-    //         T!['['] => self.full_list_pattern(),
-    //         T!['('] => self.full_tuple_pattern(),
-    //         T!['{'] => self.full_map_pattern(),
-    //         _ => Err(ParserError(format!(
-    //             "Unexpected token in pattern got `{:?}` - `{}`",
-    //             self.peek(),
-    //             self.text(tok)
-    //         ))),
-    //     }
-    // }
+        self.close(m, SyntaxKind::Term);
+    }
 
-    // fn full_list_pattern(&mut self) -> Result<Pattern> {
-    //     self.consume(T!['[']);
-    //     let mut items = vec![];
-    //     while !self.at(T![']']) {
-    //         items.push(self.full_pattern()?);
-    //         if !self.at(T![']']) {
-    //             self.consume(T![,]);
-    //         }
-    //     }
-    //     self.consume(T![']']);
-    //     Ok(Pattern::List(ListPattern { items }))
-    // }
+    // <factor> ::= <power> (<ws>* ("*" | "/" | "%") <ws>* <factor>)?
+    fn factor(&mut self) {
+        let m = self.open();
 
-    // fn full_tuple_pattern(&mut self) -> Result<Pattern> {
-    //     self.consume(T!['(']);
-    //     if self.at(T![')']) {
-    //         self.consume(T![')']);
-    //         return Ok(Pattern::Unit);
-    //     }
-    //     let mut items = vec![];
-    //     while !self.at(T![')']) {
-    //         items.push(self.full_pattern()?);
-    //         if !self.at(T![')']) {
-    //             self.consume(T![,]);
-    //         }
-    //     }
-    //     self.consume(T![')']);
-    //     Ok(Pattern::Tuple(TuplePattern { items }))
-    // }
+        self.power();
 
-    // fn full_map_pattern(&mut self) -> Result<Pattern> {
-    //     self.consume(T!['{']);
-    //     let mut items = vec![];
-    //     while !self.at(T!['}']) {
-    //         let key = self.full_pattern()?;
-    //         self.consume(T![:]);
-    //         let value = self.full_pattern()?;
-    //         items.push((key, value));
-    //         if !self.at(T!['}']) {
-    //             self.consume(T![,]);
-    //         }
-    //     }
-    //     self.consume(T!['}']);
-    //     Ok(Pattern::Map(MapPattern { items }))
-    // }
+        if self.eat(T![*]) || self.eat(T![/]) || self.eat(T![%]) {
+            self.factor();
+        }
 
-    // fn full_record_pattern(&mut self) -> Result<Pattern> {
-    //     self.consume(T!['{']);
-    //     let mut items = vec![];
-    //     while !self.at(T!['}']) {
-    //         let key = self.ident()?;
-    //         self.consume(T![:]);
-    //         let value = self.full_pattern()?;
-    //         items.push((key, value));
-    //         if !self.at(T!['}']) {
-    //             self.consume(T![,]);
-    //         }
-    //     }
-    //     self.consume(T!['}']);
-    //     Ok(Pattern::Record(RecordPattern { items }))
-    // }
+        self.close(m, SyntaxKind::Factor);
+    }
 
-    // fn pattern(&mut self) -> Result<Pattern> {
-    //     let tok = self.peek();
-    //     match tok.value {
-    //         T![ident] => Ok(Pattern::Ident(self.ident()?)),
-    //         T!['['] => self.list_pattern(),
-    //         T!['('] => self.tuple_pattern(),
-    //         T!['{'] => self.map_pattern(),
-    //         _ => Err(ParserError(format!(
-    //             "Unexpected token in pattern got `{:?}` - `{}`",
-    //             self.peek(),
-    //             self.text(tok)
-    //         ))),
-    //     }
-    // }
+    // <power> ::= <unary> (<ws>* "^" <ws>* <power>)?
+    fn power(&mut self) {
+        let m = self.open();
 
-    // fn list_pattern(&mut self) -> Result<Pattern> {
-    //     self.consume(T!['[']);
-    //     let mut items = vec![];
-    //     while !self.at(T![']']) {
-    //         items.push(self.pattern()?);
-    //         if !self.at(T![']']) {
-    //             self.consume(T![,]);
-    //         }
-    //     }
-    //     self.consume(T![']']);
-    //     Ok(Pattern::List(ListPattern { items }))
-    // }
+        self.unary();
 
-    // fn tuple_pattern(&mut self) -> Result<Pattern> {
-    //     self.consume(T!['(']);
-    //     if self.at(T![')']) {
-    //         self.consume(T![')']);
-    //         return Ok(Pattern::Unit);
-    //     }
-    //     let mut items = vec![];
-    //     while !self.at(T![')']) {
-    //         items.push(self.pattern()?);
-    //         if !self.at(T![')']) {
-    //             self.consume(T![,]);
-    //         }
-    //     }
-    //     self.consume(T![')']);
-    //     Ok(Pattern::Tuple(TuplePattern { items }))
-    // }
+        if self.eat(T![^]) {
+            self.power();
+        }
 
-    // fn map_pattern(&mut self) -> Result<Pattern> {
-    //     self.consume(T!['{']);
-    //     let mut items = vec![];
-    //     while !self.at(T!['}']) {
-    //         let key = self.pattern()?;
-    //         self.consume(T![:]);
-    //         let value = self.pattern()?;
-    //         items.push((key, value));
-    //         if !self.at(T!['}']) {
-    //             self.consume(T![,]);
-    //         }
-    //     }
-    //     self.consume(T!['}']);
-    //     Ok(Pattern::Map(MapPattern { items }))
-    // }
+        self.close(m, SyntaxKind::Power);
+    }
 
-    // fn lit(&mut self) -> Result<Lit> {
-    //     match self.peek().value {
-    //         T![int] => Ok(Lit::Int(self.int()?)),
-    //         T![real] => Ok(Lit::Real(self.real()?)),
-    //         T![str] => Ok(Lit::String(self.string()?)),
-    //         T![char] => Ok(Lit::Char(self.char()?)),
-    //         T![bool] => Ok(Lit::Bool(self.bool()?)),
-    //         T![lambda] => Ok(Lit::Lambda(self.lambda()?)),
-    //         T!['['] => Ok(Lit::List(self.list()?)),
-    //         T!['('] => Ok(Lit::Tuple(self.tuple()?)),
-    //         T!['{'] => Ok(Lit::Map(self.map()?)),
-    //         _ => Err(ParserError(format!("Unexpected token: {:?}", self.peek()))),
-    //     }
-    // }
+    // <unary> ::= <apply> | ("-" | "!") <unary>
+    fn unary(&mut self) {
+        let m = self.open();
 
-    // fn int(&mut self) -> Result<Int> {
-    //     let token = self.next();
-    //     let text = self.text(token);
-    //     Ok(Int::from(text.to_string().try_into()?))
-    // }
+        if self.eat(T![-]) || self.eat(T![!]) {
+            self.unary();
+        } else {
+            self.apply();
+        }
 
-    // fn real(&mut self) -> Result<Real> {
-    //     let token = self.next();
-    //     let text = self.text(token);
-    //     Ok(Real::from(text.to_string()))
-    // }
+        self.close(m, SyntaxKind::Unary);
+    }
 
-    // fn string(&mut self) -> Result<InternedString> {
-    //     let token = self.next();
-    //     let text = self.text(token);
-    //     Ok(InternedString::from(&text[1..(text.len() - 1)]))
-    // }
+    // <apply> ::= <atom> (<ws>* <atom>)*
+    fn apply(&mut self) {
+        let m = self.open();
 
-    // fn char(&mut self) -> Result<char> {
-    //     let token = self.next();
-    //     let text = self.text(token);
-    //     Ok(text
-    //         .chars()
-    //         .nth(1)
-    //         .ok_or(ParserError::new("Invalid character literal"))?)
-    // }
+        self.atom();
 
-    // fn bool(&mut self) -> Result<bool> {
-    //     let token = self.next();
-    //     let text = self.text(token);
-    //     text.parse()
-    //         .map_err(|_| ParserError(format!("Invalid boolean literal: {}", text)))
-    // }
+        while !self.eof() && !self.at(T![|>]) && !self.at(T![;]) {
+            self.atom();
+        }
 
-    // fn lambda(&mut self) -> Result<Lambda> {
-    //     self.consume(T![lambda]);
-    //     let mut params = vec![];
-    //     while !self.at(T![->]) {
-    //         params.push(self.pattern()?);
-    //     }
+        self.close(m, SyntaxKind::Apply);
+    }
 
-    //     self.consume(T![->]);
+    // <atom> ::= <ident> | <lit> | <if> | <letExpr> | <fnExpr> | "(" <expr> ")"
+    fn atom(&mut self) {
+        let m = self.open();
 
-    //     let body = self.expr()?;
+        match self.peek().kind {
+            T![ident] => self.ident(),
+            T![bool] | T![int] | T![real] | T![str] | T![char] | T!['['] | T!['('] | T!['{'] => {
+                self.lit()
+            }
+            T![if] => self.if_(),
+            T![let] => self.let_expr(),
+            _ => self.advance_with_error("Expected an atom"),
+        }
 
-    //     self.curry_fn(params, body)
-    // }
+        self.close(m, SyntaxKind::Atom);
+    }
 
-    // fn list(&mut self) -> Result<List<Expr>> {
-    //     self.consume(T!['[']);
-    //     let mut items = vec![];
-    //     while !self.at(T![']']) {
-    //         items.push(self.expr()?);
-    //         if !self.at(T![']']) {
-    //             self.consume(T![,]);
-    //         }
-    //     }
-    //     self.consume(T![']']);
-    //     Ok(items.into())
-    // }
+    fn lit(&mut self) {
+        let m = self.open();
 
-    // fn tuple(&mut self) -> Result<Tuple> {
-    //     self.consume(T!['(']);
-    //     let items = self.tuple_items()?;
-    //     self.consume(T![')']);
-    //     Ok(Tuple { items })
-    // }
+        match self.peek().kind {
+            T![bool] => self.bool(),
+            T![int] => self.int(),
+            T![real] => self.real(),
+            T![str] => self.string(),
+            T![char] => self.char(),
+            T![lambda] => self.lambda(),
+            T!['['] => self.list(),
+            T!['('] => {
+                self.eat(T!['(']);
+                if self.eat(T![')']) {
+                    self.close(m.clone(), SyntaxKind::Unit);
+                } else {
+                    self.expr();
+                    self.eat(T![')']);
+                    self.close(m.clone(), SyntaxKind::Tuple);
+                }
+            }
+            T!['{'] => self.map(),
+            _ => self.advance_with_error("Expected a literal"),
+        }
 
-    // fn tuple_items(&mut self) -> Result<Vec<Expr>> {
-    //     let mut items = vec![];
-    //     while !self.at(T![')']) {
-    //         items.push(self.expr()?);
-    //         if !self.at(T![')']) {
-    //             self.consume(T![,]);
-    //         }
-    //     }
-    //     Ok(items)
-    // }
+        self.close(m, SyntaxKind::Lit);
+    }
 
-    // fn map(&mut self) -> Result<Map> {
-    //     self.consume(T!['{']);
-    //     let mut items = HashMap::new();
-    //     while !self.at(T!['}']) {
-    //         let key = self.ident()?;
-    //         self.consume(T![:]);
-    //         let value = self.expr()?;
-    //         items.insert(key, value);
-    //         if !self.at(T!['}']) {
-    //             self.consume(T![,]);
-    //         }
-    //     }
-    //     self.consume(T!['}']);
-    //     Ok(Map { items })
-    // }
+    // <if> ::= "if" <ws>+ <expr> <ws>+ "then" <ws>+ <expr>
+    //     (<ws>+ "elif" <ws>+ <expr> <ws>+ "then" <ws>+ <expr>)* (<ws>+ "else" <ws>+ <expr>)?
+    fn if_(&mut self) {
+        let m = self.open();
 
-    // fn ident(&mut self) -> Result<InternedString> {
-    //     let token = self.next();
-    //     let text = self.text(token);
-    //     Ok(InternedString::from(text))
-    // }
+        self.expect(T![if]);
+        self.expr();
+        self.expect(T![then]);
+        self.expr();
+
+        while self.eat(T![elif]) {
+            self.expr();
+            self.expect(T![then]);
+            self.expr();
+        }
+
+        if self.eat(T![else]) {
+            self.expr();
+        }
+
+        self.close(m, SyntaxKind::If);
+    }
+
+    fn let_expr(&mut self) {
+        let m = self.open();
+
+        self.expect(T![let]);
+        self.let_();
+        self.expect(T![in]);
+        self.expr();
+
+        self.close(m, SyntaxKind::LetExpr);
+    }
+
+    fn let_(&mut self) {
+        let m = self.open();
+
+        self.expect(T![ident]);
+        if self.eat(T![=]) {
+            self.expr();
+        } else {
+            self.expect(T![:]);
+            self.expr();
+        }
+
+        self.close(m, SyntaxKind::Let);
+    }
+
+    fn bool(&mut self) {
+        let m = self.open();
+        self.expect(T![bool]);
+        self.close(m, SyntaxKind::Bool);
+    }
+
+    fn int(&mut self) {
+        let m = self.open();
+        self.expect(T![int]);
+        self.close(m, SyntaxKind::Int);
+    }
+
+    fn real(&mut self) {
+        let m = self.open();
+        self.expect(T![real]);
+        self.close(m, SyntaxKind::Real);
+    }
+
+    fn string(&mut self) {
+        let m = self.open();
+        self.expect(T![str]);
+        self.close(m, SyntaxKind::String);
+    }
+
+    fn char(&mut self) {
+        let m = self.open();
+        self.expect(T![char]);
+        self.close(m, SyntaxKind::Char);
+    }
+
+    // <lambda> ::= "\\" <ws>+ <ident>+ <ws>+ "->" <ws>+ <expr>
+    fn lambda(&mut self) {
+        let m = self.open();
+
+        self.expect(T![lambda]);
+        self.ident();
+        self.expect(T![->]);
+        self.expr();
+
+        self.close(m, SyntaxKind::Lambda);
+    }
+
+    // <list> ::= "[" <ws>* <expr> (<ws>* "," <ws>* <expr>)* <ws>* "]"
+    fn list(&mut self) {
+        let m = self.open();
+
+        self.expect(T!['[']);
+        if self.eat(T![']']) {
+            self.close(m, SyntaxKind::List);
+            return;
+        }
+        self.expr();
+        while self.eat(T![,]) {
+            self.expr();
+        }
+        self.expect(T![']']);
+
+        self.close(m, SyntaxKind::List);
+    }
+
+    fn map(&mut self) {
+        let m = self.open();
+
+        self.expect(T!['{']);
+        if self.eat(T!['}']) {
+            self.close(m, SyntaxKind::Map);
+            return;
+        }
+        self.expr();
+        while self.eat(T![,]) {
+            self.expr();
+        }
+        self.expect(T!['}']);
+
+        self.close(m, SyntaxKind::Map);
+    }
+
+    fn ident(&mut self) {
+        let m = self.open();
+        self.expect(T![ident]);
+        self.close(m, SyntaxKind::Ident);
+    }
 
     // fn curry_fn(&mut self, params: Vec<Pattern>, body: Expr) -> Result<Lambda> {
     //     let last = params.first().ok_or(ParserError(

@@ -10,15 +10,17 @@
 
 <fnDecl> ::= ("pub" <ws>+)? <fn>
 
-<expr> ::= <stmt>
+<expr> ::= <pipe>
 
-<stmt> ::= <logical> (<ws>* ";" <ws>* <stmt>)?
+<pipe> ::= <stmt> (<ws>* "|>" <ws>* <pipe>)?
+
+<stmt> ::= <or> (<ws>* ";" <ws>* <stmt>)?
 
 <or> ::= <and> (<ws>* "||" <ws>* <or>)?
 
 <and> ::= <cmp> (<ws>* "&&" <ws>* <and>)?
 
-<cmp> ::= <term> (<ws>* ("<" | ">" | "<=" | ">=" | "=" | "!=") <ws>* <term>)*
+<cmp> ::= <term> (<ws>* ("<" | ">" | "<=" | ">=" | "=" | "!=") <ws>* <cmp>)?
 
 <term> ::= <factor> (<ws>* ("+" | "-") <ws>* <term>)?
 
@@ -30,7 +32,7 @@
 
 <apply> ::= <atom> (<ws>+ <atom>)*
 
-<atom> ::= <ident> | <lit> | <if> | <let> | "(" <expr> ")"
+<atom> ::= <ident> | <lit> | <if> | <letExpr> | <fnExpr> | "(" <expr> ")"
 
 <letExpr> ::= <let> <ws>+ "in" <ws>+ <expr>?
 
@@ -51,6 +53,7 @@
 | <fullListPattern> 
 | <fullTuplePattern> 
 | <fullRecordPattern> 
+| <fullConsPattern>
 | <wildcard> 
 | <unit>
 
@@ -66,6 +69,7 @@
 | <letListPattern>
 | <letTuplePattern>
 | <letRecordPattern>
+| <letConsPattern>
 | <wildcard>
 | <unit>
 
@@ -75,7 +79,7 @@
 
 <letRecordPattern> ::= "{" <ws>* <ident> <ws>* ("=" <ws>* <letPattern>)? <ws>* ("," <ws>* <ident> ("=" <ws>* <letPattern>)? <ws>*)* "}"
 
-<letConsPattern> ::= <letPattern> <ws>+ "::" <ws>+ (<letConsPattern> | <ident>)
+<letConsPattern> ::= "[" <ws>* <letPattern> (<ws>* "," <ws>* <letPattern>)* <ws>+ "::" <ws>+ <ident> <ws>* "]"
 
 <lit> ::= <int> 
 | <real> 
@@ -89,7 +93,7 @@
 
 <lambda> ::= "\\" <ws>+ <ident>+ <ws>+ "->" <ws>+ <expr>
 
-<list> ::= "[" <ws>* <expr> (<ws>* "," <ws>* <expr>)* <ws>* "]"
+<list> ::= "[" <ws>* <expr>? (<ws>* "," <ws>* <expr>)* <ws>* "]"
 
 <tuple> ::= "(" <ws>* <expr> (<ws>* "," <ws>* <expr>)* <ws>* ")"
 

@@ -1,6 +1,6 @@
 use crate::intern::InternedString;
 
-use super::token::TokenKind;
+use super::token::{Token, TokenKind};
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Node {
@@ -16,7 +16,10 @@ pub enum SyntaxKind {
     Mod,
     Data,
     Expr,
-    Logical,
+    Pipe,
+    Stmt,
+    Or,
+    And,
     Cmp,
     Term,
     Factor,
@@ -54,11 +57,11 @@ pub enum SyntaxKind {
     Error,
 }
 
-#[derive(Debug, Clone, PartialEq)]
-pub struct Token {
-    pub kind: TokenKind,
-    pub text: InternedString,
-}
+// #[derive(Debug, Clone, PartialEq)]
+// pub struct Token {
+//     pub kind: TokenKind,
+//     pub text: InternedString,
+// }
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Child {
