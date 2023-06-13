@@ -11,8 +11,9 @@ let (y, z) = (2, 3)
 data Point = { x, y }
 let { x, y } = { x: 1, y: 2 }
 
--- cons pattern
-let (car :: cdr) = [1, 2, 3]
+-- cons patterns
+let [car :: cdr] = [1, 2, 3]
+let [x, y :: cdr] = [1, 2, 3]
 
 -- match
 let x = Point 1 2
