@@ -1,11 +1,11 @@
-// use crate::parser::Parser;
+use crate::parser::Parser;
 
-// #[test]
-// fn parse_int() {
-//     let input = "523";
-//     let ast = Parser::new(input).item().expect("failed to parse");
-//     insta::assert_debug_snapshot!(ast);
-// }
+#[test]
+fn parse_int() {
+    let input = "523";
+    let tree = Parser::new(input).build_tree();
+    insta::assert_debug_snapshot!(tree);
+}
 
 // #[test]
 // fn parse_binary() {

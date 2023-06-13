@@ -106,7 +106,7 @@ impl<'src> Parser<'src> {
     }
 
     fn expect(&mut self, expected: TokenKind) {
-        if self.eat(expected) {
+        if self.eat(expected.clone()) {
             return;
         } else {
             eprintln!("Expected {:?} got {:?}", expected, self.peek());
