@@ -1,9 +1,7 @@
-use crate::intern::InternedString;
-
-use super::token::{Token, TokenKind};
+use super::token::Token;
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct Node {
+pub struct Tree {
     pub kind: SyntaxKind,
     pub children: Vec<Child>,
 }
@@ -65,6 +63,6 @@ pub enum SyntaxKind {
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Child {
-    Node(Node),
+    Tree(Tree),
     Token(Token),
 }

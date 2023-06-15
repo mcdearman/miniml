@@ -4,11 +4,11 @@ use std::{
     ops::{Index, Range},
 };
 
+use super::span::Span;
+
 #[derive(Logos, Debug, Clone, PartialEq, Eq)]
 pub enum TokenKind {
     Eof,
-    #[error]
-    Err,
     #[regex("[ \n\t\r]+", logos::skip)]
     Whitespace,
     #[regex(r#"--[^\n]*|/\*([^*]|\**[^*/])*\*+/"#)]
@@ -130,9 +130,6 @@ pub enum TokenKind {
 macro_rules! T {
     [EOF] => {
        $crate::parser::token::TokenKind::Eof
-    };
-    [err] => {
-       $crate::parser::token::TokenKind::Err
     };
     [ws] => {
        $crate::parser::token::TokenKind::Whitespace
@@ -308,7 +305,6 @@ impl Display for TokenKind {
             "{}",
             match self {
                 T![EOF] => "<EOF>",
-                T![err] => "<?>",
                 T![ws] => "<WS>",
                 T![comment] => "Comment",
                 T![ident] => "Ident",
@@ -366,47 +362,6 @@ impl Display for TokenKind {
                 T![in] => "in",
             }
         )
-    }
-}
-
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct Span {
-    start: u64,
-    end: u64,
-}
-
-impl Span {
-    pub fn new(start: u64, end: u64) -> Self {
-        Self { start, end }
-    }
-}
-
-impl Display for Span {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "<{}, {}>", self.start, self.end)
-    }
-}
-
-impl From<Span> for Range<usize> {
-    fn from(span: Span) -> Self {
-        span.start as usize..span.end as usize
-    }
-}
-
-impl From<Range<usize>> for Span {
-    fn from(range: Range<usize>) -> Self {
-        Self {
-            start: range.start as u64,
-            end: range.end as u64,
-        }
-    }
-}
-
-impl Index<Span> for str {
-    type Output = str;
-
-    fn index(&self, index: Span) -> &Self::Output {
-        &self[Range::<usize>::from(index)]
     }
 }
 

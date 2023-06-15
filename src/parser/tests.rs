@@ -1,9 +1,14 @@
-use crate::parser::Parser;
+use crate::parser::{
+    parse,
+    token::{Token, TokenKind},
+};
+use chumsky::{input::Stream, prelude::Input, span::SimpleSpan};
+use logos::Logos;
 
 #[test]
 fn parse_int() {
-    let input = "523";
-    let tree = Parser::new(input).build_tree();
+    let src = "523";
+    let tree = parse(src);
     insta::assert_debug_snapshot!(tree);
 }
 

@@ -1,9 +1,9 @@
-use super::{token::TokenKind, ParserError};
+use super::token::TokenKind;
 use crate::{intern::InternedString, list::List, T};
 use itertools::join;
 use num_bigint::BigInt;
 use num_complex::Complex64;
-use num_rational::{BigRational, Rational64};
+use num_rational::BigRational;
 use std::{collections::HashMap, fmt::Display};
 
 #[derive(Debug, Clone, PartialEq)]
