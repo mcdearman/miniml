@@ -11,3 +11,8 @@ pub enum Event {
 pub struct MarkOpened {
     pub index: usize,
 }
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct MarkClosed {
+    pub index: usize,
+}

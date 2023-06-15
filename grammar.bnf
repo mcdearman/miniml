@@ -1,3 +1,5 @@
+<file> ::= (<item> <ws>+)+
+
 <item> ::= <decl> | <expr>
 
 <decl> ::= <mod> | <data> | <letDecl> | <fnDecl>
