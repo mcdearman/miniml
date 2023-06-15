@@ -9,6 +9,9 @@ let (y, z) = (2, 3)
 
 -- record pattern
 data Point = { x, y }
+let Point { x, y } = Point { x: 1, y: 2 }
+
+-- map pattern
 let { x, y } = { x: 1, y: 2 }
 
 -- cons patterns

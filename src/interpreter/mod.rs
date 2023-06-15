@@ -217,7 +217,7 @@ pub fn eval(env: Rc<RefCell<Env>>, expr: &Expr) -> Result<Value> {
             .lookup(&name)
             .ok_or(RuntimeError(format!("undefined variable: {}", name))),
         Expr::Lit(l) => match l {
-            Lit::Int(l) => Ok(Value::Int(Int { value: l.value })),
+            Lit::Int(l) => Ok(Value::Int(Int { value: l })),
             Lit::Rational(r) => Ok(Value::Rational(r)),
             Lit::Real(r) => Ok(Value::Real(r.0)),
             Lit::Complex(c) => Ok(Value::Complex(c)),
@@ -604,7 +604,7 @@ fn destructure_pattern(pattern: &Pattern, value: &Value) -> Option<DestructureRe
             })
         }
         Pattern::Int(i) => value.int().map(|z| {
-            if i.value == z.value {
+            if *i == z.value {
                 DestructureResult {
                     bindings: HashMap::new(),
                     rest: Some(Value::Int(z.clone())),

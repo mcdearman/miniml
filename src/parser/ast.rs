@@ -142,7 +142,7 @@ impl Display for Expr {
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Lit {
-    Int(Int),
+    Int(BigInt),
     Rational(BigRational),
     Real(Real),
     Complex(Complex64),
@@ -171,78 +171,6 @@ impl Display for Lit {
             Lit::Map(m) => write!(f, "{}", m),
             Lit::Record(r) => write!(f, "{}", r),
             Lit::Lambda(l) => write!(f, "{}", l),
-        }
-    }
-}
-
-#[derive(Debug, Clone, PartialEq)]
-pub struct Int {
-    pub value: BigInt,
-    pub radix: Radix,
-}
-
-#[derive(Debug, Clone, PartialEq)]
-pub enum Radix {
-    Bin,
-    Oct,
-    Dec,
-    Hex,
-}
-
-impl Display for Int {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self.radix {
-            Radix::Bin => write!(f, "0b{:b}", self.value),
-            Radix::Oct => write!(f, "0o{:o}", self.value),
-            Radix::Dec => write!(f, "{}", self.value),
-            Radix::Hex => write!(f, "0x{:x}", self.value),
-        }
-    }
-}
-
-impl TryFrom<String> for Int {
-    type Error = ParserError;
-
-    fn try_from(s: String) -> std::result::Result<Self, Self::Error> {
-        if s.starts_with("0b") {
-            Ok(Self {
-                value: BigInt::parse_bytes(
-                    s.strip_prefix("0b")
-                        .expect("expected integer prefix")
-                        .as_bytes(),
-                    2,
-                )
-                .ok_or(ParserError::new("Invalid binary integer literal"))?,
-                radix: Radix::Bin,
-            })
-        } else if s.starts_with("0o") {
-            Ok(Self {
-                value: BigInt::parse_bytes(
-                    s.strip_prefix("0o")
-                        .expect("expected integer prefix")
-                        .as_bytes(),
-                    8,
-                )
-                .ok_or(ParserError::new("Invalid octal integer literal"))?,
-                radix: Radix::Oct,
-            })
-        } else if s.starts_with("0x") {
-            Ok(Self {
-                value: BigInt::parse_bytes(
-                    s.strip_prefix("0x")
-                        .expect("expected integer prefix")
-                        .as_bytes(),
-                    16,
-                )
-                .ok_or(ParserError::new("Invalid hexadecimal integer literal"))?,
-                radix: Radix::Hex,
-            })
-        } else {
-            Ok(Self {
-                value: BigInt::parse_bytes(s.as_bytes(), 10)
-                    .ok_or(ParserError::new("Invalid decimal integer literal"))?,
-                radix: Radix::Dec,
-            })
         }
     }
 }
@@ -481,7 +409,7 @@ impl Display for FnExpr {
 #[derive(Debug, Clone, PartialEq)]
 pub enum Pattern {
     Ident(InternedString),
-    Int(Int),
+    Int(BigInt),
     Rational(BigRational),
     String(InternedString),
     Char(char),
