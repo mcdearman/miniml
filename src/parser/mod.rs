@@ -1,4 +1,4 @@
-use self::cst::Tree;
+use self::{cst::Tree, token::Token};
 
 pub mod ast;
 pub mod cst;
@@ -10,5 +10,5 @@ mod tests;
 pub mod token;
 
 pub fn parse(src: &str) -> Tree {
-    todo!()
+    let lex = TokenKind::lexer(src).
 }

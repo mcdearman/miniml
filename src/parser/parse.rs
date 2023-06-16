@@ -8,14 +8,18 @@ use super::{cst::Tree, token::Token};
 
 pub fn parser<'a, I: ValueInput<'a, Token = Token, Span = SimpleSpan>>(
 ) -> impl Parser<'a, I, Tree, extra::Err<Rich<'a, Token>>> {
-    let int = chumsky::token(Token::Int).map(|t| Tree::Int(t.value));
-    int
+    lit_parser()
 }
 
 fn lit_parser<'a, I: ValueInput<'a, Token = Token, Span = SimpleSpan>>(
 ) -> impl Parser<'a, I, Tree, extra::Err<Rich<'a, Token>>> {
-
-    // select! {
-    //     TokenKind::Int => chumsky::token(Token::Int).map(|t| Tree::Int(t.value)),
-    // }
+    select! {
+        Token {
+            kind: TokenKind::Int,
+            span,
+        } => {
+            let value = 
+            Tree::Int(value)
+        }
+    }
 }
