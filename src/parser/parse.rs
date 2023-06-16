@@ -1,9 +1,21 @@
-use chumsky::{extra, input::ValueInput, span::SimpleSpan};
+use chumsky::{extra, input::ValueInput, prelude::Rich, select, span::SimpleSpan, Parser};
 
-use super::token::Token;
+use crate::parser::token::TokenKind;
 
-pub trait Parser<'a, T> = chumsky::Parser<'a, T, SimpleSpan, extra::Err<Rich<Token>>>;
+use super::{cst::Tree, token::Token};
 
-pub fn parser<'a, I: ValueInput<'a, Token = Token, Span = SimpleSpan>>() -> impl Parser {
-    todo!()
+// pub trait Parser<'a, T> = chumsky::Parser<'a, T, SimpleSpan, extra::Err<Rich<Token>>>;
+
+pub fn parser<'a, I: ValueInput<'a, Token = Token, Span = SimpleSpan>>(
+) -> impl Parser<'a, I, Tree, extra::Err<Rich<'a, Token>>> {
+    let int = chumsky::token(Token::Int).map(|t| Tree::Int(t.value));
+    int
+}
+
+fn lit_parser<'a, I: ValueInput<'a, Token = Token, Span = SimpleSpan>>(
+) -> impl Parser<'a, I, Tree, extra::Err<Rich<'a, Token>>> {
+
+    // select! {
+    //     TokenKind::Int => chumsky::token(Token::Int).map(|t| Tree::Int(t.value)),
+    // }
 }
