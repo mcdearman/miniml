@@ -1,8 +1,4 @@
-use std::{cell::RefCell, rc::Rc};
-
 use clap::Parser;
-use interpreter::eval;
-use parser::ast::Item;
 
 mod compiler;
 mod intern;

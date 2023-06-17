@@ -1,9 +1,9 @@
-use super::token::TokenKind;
-use crate::{intern::InternedString, list::List, T};
+use super::token::Token;
+use crate::{intern::InternedString, list::List};
 use itertools::join;
 use num_bigint::BigInt;
 use num_complex::Complex64;
-use num_rational::BigRational;
+use num_rational::{BigRational, Rational64};
 use std::{collections::HashMap, fmt::Display};
 
 #[derive(Debug, Clone, PartialEq)]
@@ -142,9 +142,9 @@ impl Display for Expr {
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Lit {
-    Int(BigInt),
-    Rational(BigRational),
-    Real(Real),
+    Int(i64),
+    Rational(Rational64),
+    Real(f64),
     Complex(Complex64),
     String(InternedString),
     Char(char),
@@ -175,20 +175,20 @@ impl Display for Lit {
     }
 }
 
-#[derive(Debug, Clone, PartialEq)]
-pub struct Real(pub f64);
+// #[derive(Debug, Clone, PartialEq)]
+// pub struct Real(pub f64);
 
-impl Display for Real {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self.0)
-    }
-}
+// impl Display for Real {
+//     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+//         write!(f, "{}", self.0)
+//     }
+// }
 
-impl From<String> for Real {
-    fn from(s: String) -> Self {
-        Self(s.parse().expect("Invalid float"))
-    }
-}
+// impl From<String> for Real {
+//     fn from(s: String) -> Self {
+//         Self(s.parse().expect("Invalid float"))
+//     }
+// }
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Tuple {
@@ -305,11 +305,11 @@ impl Display for PrefixOp {
     }
 }
 
-impl From<TokenKind> for PrefixOp {
-    fn from(token: TokenKind) -> Self {
+impl From<Token> for PrefixOp {
+    fn from(token: Token) -> Self {
         match token {
-            T![-] => PrefixOp::Neg,
-            T![!] => PrefixOp::Not,
+            Token::Sub => PrefixOp::Neg,
+            Token::Not => PrefixOp::Not,
             _ => panic!("Not a prefix operator: {:?}", token),
         }
     }
@@ -354,23 +354,23 @@ impl Display for InfixOp {
     }
 }
 
-impl From<TokenKind> for InfixOp {
-    fn from(token: TokenKind) -> Self {
+impl From<Token> for InfixOp {
+    fn from(token: Token) -> Self {
         match token {
-            T![+] => InfixOp::Add,
-            T![-] => InfixOp::Sub,
-            T![*] => InfixOp::Mul,
-            T![/] => InfixOp::Div,
-            T![%] => InfixOp::Mod,
-            T![^] => InfixOp::Pow,
-            T![=] => InfixOp::Eq,
-            T![!=] => InfixOp::Neq,
-            T![<] => InfixOp::Lss,
-            T![>] => InfixOp::Gtr,
-            T![<=] => InfixOp::Leq,
-            T![>=] => InfixOp::Geq,
-            T![&&] => InfixOp::And,
-            T![||] => InfixOp::Or,
+            Token::Add => InfixOp::Add,
+            Token::Sub => InfixOp::Sub,
+            Token::Mul => InfixOp::Mul,
+            Token::Div => InfixOp::Div,
+            Token::Rem => InfixOp::Mod,
+            Token::Pow => InfixOp::Pow,
+            Token::Eql => InfixOp::Eq,
+            Token::Neq => InfixOp::Neq,
+            Token::Lss => InfixOp::Lss,
+            Token::Gtr => InfixOp::Gtr,
+            Token::Leq => InfixOp::Leq,
+            Token::Geq => InfixOp::Geq,
+            Token::And => InfixOp::And,
+            Token::Or => InfixOp::Or,
             _ => panic!("Not an infix operator: {:?}", token),
         }
     }

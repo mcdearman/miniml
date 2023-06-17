@@ -1,7 +1,4 @@
-use crate::parser::{
-    parse,
-    token::{Token, TokenKind},
-};
+use crate::parser::{parse, token::Token};
 use chumsky::{input::Stream, prelude::Input, span::SimpleSpan};
 use logos::Logos;
 
