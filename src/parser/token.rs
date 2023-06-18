@@ -3,6 +3,7 @@ use crate::intern::InternedString;
 use logos::{Lexer, Logos};
 use num_bigint::BigInt;
 use num_complex::Complex64;
+use num_rational::Rational64;
 use std::{
     fmt::Display,
     ops::{Index, Range},
@@ -19,6 +20,8 @@ pub enum Token {
     Ident(InternedString),
     #[regex(r#"(0b[0-1]+)|(0o[0-7]+)|(0x[0-9a-fA-F]+)|([1-9]\d*|0)"#, |lex| lex.slice().parse().ok(), priority = 2)]
     Int(i64),
+    #[regex(r#"-?\d+/\d+"#, |lex| lex.slice().parse().ok(), priority = 1)]
+    Rational(Rational64),
     #[regex(r#"((\d+(\.\d+))|(\.\d+))([Ee](\+|-)?\d+)?"#, |lex| lex.slice().parse().ok(), priority = 1)]
     Real(f64),
     #[regex(r#"((\d+(\.\d+)?)|(\.\d+))([Ee](\+|-)?\d+)?i"#, |lex| lex.slice().parse().ok(), priority = 0)]

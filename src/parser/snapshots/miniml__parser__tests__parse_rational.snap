@@ -1,0 +1,14 @@
+---
+source: src/parser/tests.rs
+expression: "tree.expect(\"Tree is empty\")"
+---
+Expr(
+    Lit(
+        Rational(
+            Ratio {
+                numer: 5,
+                denom: 23,
+            },
+        ),
+    ),
+)

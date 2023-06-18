@@ -31,6 +31,13 @@ fn parse_int() {
 // }
 
 #[test]
+fn parse_rational() {
+    let src = "5/23";
+    let (tree, _) = parse(src);
+    insta::assert_debug_snapshot!(tree.expect("Tree is empty"));
+}
+
+#[test]
 fn parse_float() {
     let src = "5.23";
     let (tree, _) = parse(src);
@@ -54,6 +61,20 @@ fn parse_char() {
 #[test]
 fn parse_bool() {
     let src = "true";
+    let (tree, _) = parse(src);
+    insta::assert_debug_snapshot!(tree.expect("Tree is empty"));
+}
+
+#[test]
+fn parse_list() {
+    let src = "[1, 2, 3]";
+    let (tree, _) = parse(src);
+    insta::assert_debug_snapshot!(tree.expect("Tree is empty"));
+}
+
+#[test]
+fn parse_tuple() {
+    let src = "(1, 2, 3)";
     let (tree, _) = parse(src);
     insta::assert_debug_snapshot!(tree.expect("Tree is empty"));
 }
@@ -166,20 +187,6 @@ fn parse_bool() {
 // #[test]
 // fn parse_hello_world() {
 //     let input = "println \"Hello, World!\"";
-//     let ast = Parser::new(input).item().expect("failed to parse");
-//     insta::assert_debug_snapshot!(ast);
-// }
-
-// #[test]
-// fn parse_list() {
-//     let input = "[1, 2, 3]";
-//     let ast = Parser::new(input).item().expect("failed to parse");
-//     insta::assert_debug_snapshot!(ast);
-// }
-
-// #[test]
-// fn parse_tuple() {
-//     let input = "(1, 2, 3)";
 //     let ast = Parser::new(input).item().expect("failed to parse");
 //     insta::assert_debug_snapshot!(ast);
 // }
