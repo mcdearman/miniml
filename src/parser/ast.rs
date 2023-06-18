@@ -112,6 +112,11 @@ pub enum Expr {
         expr: Box<Self>,
         arms: Vec<MatchArm>,
     },
+    List(Vec<Expr>),
+    Tuple(Tuple),
+    Map(Map),
+    Record(Record),
+    Lambda(Lambda),
     Unit,
 }
 
@@ -135,6 +140,11 @@ impl Display for Expr {
                 }
                 write!(f, ")")
             }
+            Expr::List(l) => write!(f, "{}", List::from(l.clone())),
+            Expr::Tuple(t) => write!(f, "{}", t),
+            Expr::Map(m) => write!(f, "{}", m),
+            Expr::Record(r) => write!(f, "{}", r),
+            Expr::Lambda(l) => write!(f, "{}", l),
             Expr::Unit => write!(f, "()"),
         }
     }
@@ -149,11 +159,6 @@ pub enum Lit {
     String(InternedString),
     Char(char),
     Bool(bool),
-    List(Vec<Expr>),
-    Tuple(Tuple),
-    Map(Map),
-    Record(Record),
-    Lambda(Lambda),
 }
 
 impl Display for Lit {
@@ -166,11 +171,6 @@ impl Display for Lit {
             Lit::String(s) => write!(f, "{}", s),
             Lit::Char(i) => write!(f, "{}", i),
             Lit::Bool(i) => write!(f, "{}", i),
-            Lit::List(l) => write!(f, "{}", List::from(l.clone())),
-            Lit::Tuple(t) => write!(f, "{}", t),
-            Lit::Map(m) => write!(f, "{}", m),
-            Lit::Record(r) => write!(f, "{}", r),
-            Lit::Lambda(l) => write!(f, "{}", l),
         }
     }
 }

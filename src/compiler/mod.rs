@@ -81,15 +81,10 @@ impl Compiler {
             Lit::Int(i) => self.emit_const(Value::Int(*i)),
             Lit::Rational(r) => self.emit_const(Value::Rational(*r)),
             Lit::Real(f) => self.emit_const(Value::Real(*f)),
-            Lit::Bool(b) => self.emit_const(Value::Bool(*b)),
-            Lit::Char(c) => self.emit_const(Value::Char(*c)),
+            Lit::Complex(c) => self.emit_const(Value::Complex(*c)),
             Lit::String(s) => self.emit_const(Value::String(s.clone())),
-            Lit::List(l) => todo!(),
-            Lit::Complex(_) => todo!(),
-            Lit::Tuple(_) => todo!(),
-            Lit::Map(_) => todo!(),
-            Lit::Record(_) => todo!(),
-            Lit::Lambda(_) => todo!(),
+            Lit::Char(c) => self.emit_const(Value::Char(*c)),
+            Lit::Bool(b) => self.emit_const(Value::Bool(*b)),
         }
     }
 }

@@ -4,8 +4,14 @@ use crate::{
     parser::ast::{Expr, Lit},
 };
 use chumsky::{
-    extra, input::ValueInput, prelude::Rich, primitive::just, recursive::recursive, select,
-    span::SimpleSpan, IterParser, Parser,
+    extra,
+    input::ValueInput,
+    prelude::Rich,
+    primitive::{choice, just},
+    recursive::recursive,
+    select,
+    span::SimpleSpan,
+    IterParser, Parser,
 };
 
 // pub trait Parser<'a, T> = chumsky::Parser<'a,  T, SimpleSpan, extra::Err<Rich<Token>> + Clone;
@@ -20,9 +26,38 @@ pub fn parser<'a, I: ValueInput<'a, Token = Token, Span = SimpleSpan>>(
 
 fn expr_parser<'a, I: ValueInput<'a, Token = Token, Span = SimpleSpan>>(
 ) -> impl Parser<'a, I, Expr, extra::Err<Rich<'a, Token>>> + Clone {
+    // recursive(|expr| {
+
+    // })
+    atom_parser()
+}
+
+// fn infix_parser<'a, I: ValueInput<'a, Token = Token, Span = SimpleSpan>>(
+// ) -> impl Parser<'a, I, Expr, extra::Err<Rich<'a, Token>>> + Clone {
+//     recursive(|expr| {
+//         let op = just(Token::Add).or(just(Token::Sub));
+//         let sum =
+//     })
+// }
+
+// <atom> ::= <ident> | <lit> | <if> | <letExpr> | <fnExpr> | "(" <expr> ")"
+fn atom_parser<'a, I: ValueInput<'a, Token = Token, Span = SimpleSpan>>(
+) -> impl Parser<'a, I, Expr, extra::Err<Rich<'a, Token>>> + Clone {
+    let ident = select! { Token::Ident(name) => name };
+    recursive(|expr| choice((ident, lit_parser(), if_parser(), list_parser())))
+}
+
+fn if_parser<'a, I: ValueInput<'a, Token = Token, Span = SimpleSpan>>(
+) -> impl Parser<'a, I, Expr, extra::Err<Rich<'a, Token>>> + Clone {
     recursive(|expr| {
-        let lit = lit_parser().map(Expr::Lit);
-        lit
+        just(Token::If)
+            .ignore_then(expr.clone())
+            .then_ignore(just(Token::Then))
+            .then(expr.clone())
+            .then_ignore(just(Token::Else))
+            .then(expr.clone())
+            .boxed()
+            .map(|((cond, then), else_)| Box::new(Expr::If { cond, then, else_ }))
     })
 }
 
@@ -36,14 +71,11 @@ fn lit_parser<'a, I: ValueInput<'a, Token = Token, Span = SimpleSpan>>(
         Token::Char(c) => Lit::Char(c),
         Token::String(s) => Lit::String(s),
         Token::Bool(b) => Lit::Bool(b),
-        // Token::LBrack => list_parser(),
-        // Token::LParen => todo!(),
-        // Token::LBrace => todo!(),
     }
 }
 
 fn list_parser<'a, I: ValueInput<'a, Token = Token, Span = SimpleSpan>>(
-) -> impl Parser<'a, I, Lit, extra::Err<Rich<'a, Token>>> + Clone {
+) -> impl Parser<'a, I, Expr, extra::Err<Rich<'a, Token>>> + Clone {
     recursive(|list| {
         let exprs = expr_parser()
             .clone()
@@ -52,7 +84,7 @@ fn list_parser<'a, I: ValueInput<'a, Token = Token, Span = SimpleSpan>>(
             .collect::<Vec<Expr>>()
             .delimited_by(just(Token::LBrack), just(Token::RBrack).ignored())
             .boxed()
-            .map(Lit::List);
+            .map(Expr::List);
         exprs
     })
 }
