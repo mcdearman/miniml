@@ -1,5 +1,5 @@
 -- A cons list is either empty or a pair of an element and a cons list.
-pub data Cons = a
+pub data Cons = { a }
 pub data Nil
 
 -- [len] takes a list [xs] and returns the number of elements in [xs].

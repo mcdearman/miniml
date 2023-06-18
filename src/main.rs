@@ -1,10 +1,13 @@
 use clap::Parser;
+use compiler::Compiler;
+use parser::{ast::Item, parse};
+use repl::repl;
 
 mod compiler;
 mod intern;
-mod interpreter;
 mod list;
 mod parser;
+mod repl;
 mod vm;
 
 #[derive(Parser)]
@@ -17,19 +20,26 @@ struct Cli {
 }
 
 fn main() {
-    // let args = Cli::parse();
+    let args = Cli::parse();
 
-    // if let Some(filepath) = args.filepath {
-    //     let src = std::fs::read_to_string(filepath).expect("failed to read file");
-    //     let env = Rc::new(RefCell::new(interpreter::Env::new()));
-    //     match &parser::Parser::new(&src).item().expect("failed to parse") {
-    //         Item::Data(_) => todo!(),
-    //         Item::Decl(d) => {
-    //             interpreter::handle_decl(env.clone(), d).expect("failed to handle decl")
-    //         }
-    //         Item::Expr(e) => println!("{}", eval(env.clone(), e).expect("failed to eval")),
-    //     }
-    // } else {
-    //     repl();
-    // }
+    if let Some(filepath) = args.filepath {
+        let src = std::fs::read_to_string(filepath).expect("failed to read file");
+        match &parse(&src) {
+            (Some(item), _) => match Compiler::new().compile(item) {
+                Ok(chunk) => {
+                    println!("{:?}", chunk);
+                }
+                Err(err) => {
+                    eprintln!("Compiler Error: {}", err);
+                }
+            },
+            (None, errs) => {
+                for err in errs {
+                    eprintln!("Parser Error: {}", err);
+                }
+            }
+        }
+    } else {
+        repl();
+    }
 }

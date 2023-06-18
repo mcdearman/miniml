@@ -1,6 +1,7 @@
 use crate::{
-    interpreter::{eval, handle_decl, Env},
+    compiler::Compiler,
     parser::{ast::Item, parse},
+    vm::VM,
 };
 use std::{
     cell::RefCell,
@@ -13,22 +14,23 @@ pub fn repl() {
     print!("> ");
     io::stdout().flush().expect("failed to flush stdout");
     let mut src = String::new();
-    let env = Rc::new(RefCell::new(Env::new()));
     loop {
         io::stdin()
             .read_line(&mut src)
             .expect("failed to read from stdin");
-        match parse(&src) {
-            (Some(item), _) => match item {
-                Item::Data(d) => todo!(),
-                Item::Decl(d) => match handle_decl(env.clone(), &d) {
-                    Ok(()) => println!("{}", d),
-                    Err(e) => eprintln!("Runtime Error: {}", e),
-                },
-                Item::Expr(e) => match eval(env.clone(), &e) {
-                    Ok(v) => println!("{}", v),
-                    Err(e) => eprintln!("Runtime Error: {}", e),
-                },
+        match &parse(&src) {
+            (Some(item), _) => match Compiler::new().compile(item) {
+                Ok(chunk) => {
+                    println!("AST: {:?}", item);
+                    println!("{:?}", chunk);
+                    match VM::new(chunk).run() {
+                        Ok(val) => println!("=> {}", val),
+                        Err(err) => eprintln!("Runtime Error: {}", err),
+                    }
+                }
+                Err(err) => {
+                    eprintln!("Compiler Error: {}", err);
+                }
             },
             (None, errs) => {
                 for err in errs {
