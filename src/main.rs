@@ -20,6 +20,7 @@ struct Cli {
 }
 
 fn main() {
+    env_logger::init();
     let args = Cli::parse();
 
     if let Some(filepath) = args.filepath {

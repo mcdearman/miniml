@@ -41,6 +41,7 @@ impl Compiler {
             Item::Expr(expr) => self.compile_expr(expr),
             _ => todo!(),
         }
+        self.chunk.write(OpCode::Return as u8, 0);
 
         Ok(self.chunk.clone())
     }

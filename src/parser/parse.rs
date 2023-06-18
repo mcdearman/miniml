@@ -36,9 +36,9 @@ fn lit_parser<'a, I: ValueInput<'a, Token = Token, Span = SimpleSpan>>(
         Token::Char(c) => Lit::Char(c),
         Token::String(s) => Lit::String(s),
         Token::Bool(b) => Lit::Bool(b),
-        Token::LBrack => todo!(),
-        Token::LParen => todo!(),
-        Token::LBrace => todo!(),
+        // Token::LBrack => list_parser(),
+        // Token::LParen => todo!(),
+        // Token::LBrace => todo!(),
     }
 }
 

@@ -37,6 +37,8 @@ impl VM {
             let instr = self.read_instr();
             log::trace!("Instr: {:?}", instr);
             log::trace!("Stack: {:?}", self.stack);
+            log::trace!("IP: {}", self.ip);
+            // log::trace!("Chunk: {:?}", self.chunk);
             match instr {
                 OpCode::Const => {
                     let constant = self.read_constant();
@@ -132,12 +134,14 @@ impl VM {
     }
 
     fn read_instr(&mut self) -> OpCode {
+        log::trace!("ip instr: {}", self.ip);
         let instr = self.chunk.code[self.ip];
         self.ip += 1;
         OpCode::from(instr)
     }
 
     fn read_constant(&mut self) -> Value {
+        log::trace!("ip const: {}", self.ip);
         let op = self.read_instr();
         self.chunk.constants[op as usize].clone()
     }

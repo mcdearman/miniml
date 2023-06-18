@@ -21,10 +21,10 @@ pub fn repl() {
         match &parse(&src) {
             (Some(item), _) => match Compiler::new().compile(item) {
                 Ok(chunk) => {
-                    println!("AST: {:?}", item);
-                    println!("{:?}", chunk);
+                    // println!("AST: {:?}", item);
+                    // println!("{:?}", chunk);
                     match VM::new(chunk).run() {
-                        Ok(val) => println!("=> {}", val),
+                        Ok(val) => println!("{}", val),
                         Err(err) => eprintln!("Runtime Error: {}", err),
                     }
                 }
