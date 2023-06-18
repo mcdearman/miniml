@@ -1,0 +1,11 @@
+---
+source: src/parser/tests.rs
+expression: "tree.expect(\"Tree is empty\")"
+---
+Expr(
+    Lit(
+        Int(
+            523,
+        ),
+    ),
+)

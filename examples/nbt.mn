@@ -1,0 +1,15 @@
+pub const TAG_END = 0
+pub const TAG_BYTE = 1
+pub const TAG_SHORT = 2
+pub const TAG_INT = 3
+pub const TAG_LONG = 4
+pub const TAG_FLOAT = 5
+pub const TAG_DOUBLE = 6
+pub const TAG_BYTE_ARRAY = 7
+pub const TAG_STRING = 8
+pub const TAG_LIST = 9
+pub const TAG_COMPOUND = 10
+pub const TAG_INT_ARRAY = 11
+pub const TAG_LONG_ARRAY = 12
+
+pub data Node = type 

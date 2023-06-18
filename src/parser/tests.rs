@@ -5,15 +5,15 @@ use logos::Logos;
 #[test]
 fn parse_int() {
     let src = "523";
-    let tree = parse(src);
-    insta::assert_debug_snapshot!(tree);
+    let (tree, _) = parse(src);
+    insta::assert_debug_snapshot!(tree.expect("Tree is empty"));
 }
 
 // #[test]
 // fn parse_binary() {
-//     let input = "0b101010";
-//     let ast = Parser::new(input).item().expect("failed to parse");
-//     insta::assert_debug_snapshot!(ast);
+//     let src = "0b101010";
+//     let (tree, _) = parse(src);
+//     insta::assert_debug_snapshot!(tree.expect("Tree is empty"));
 // }
 
 // #[test]
@@ -30,33 +30,33 @@ fn parse_int() {
 //     insta::assert_debug_snapshot!(ast);
 // }
 
-// #[test]
-// fn parse_float() {
-//     let input = "5.23";
-//     let ast = Parser::new(input).item().expect("failed to parse");
-//     insta::assert_debug_snapshot!(ast);
-// }
+#[test]
+fn parse_float() {
+    let src = "5.23";
+    let (tree, _) = parse(src);
+    insta::assert_debug_snapshot!(tree.expect("Tree is empty"));
+}
 
-// #[test]
-// fn parse_string() {
-//     let input = "\"Hello, World!\"";
-//     let ast = Parser::new(input).item().expect("failed to parse");
-//     insta::assert_debug_snapshot!(ast);
-// }
+#[test]
+fn parse_string() {
+    let src = "\"Hello, World!\"";
+    let (tree, _) = parse(src);
+    insta::assert_debug_snapshot!(tree.expect("Tree is empty"));
+}
 
-// #[test]
-// fn parse_char() {
-//     let input = "'a'";
-//     let ast = Parser::new(input).item().expect("failed to parse");
-//     insta::assert_debug_snapshot!(ast);
-// }
+#[test]
+fn parse_char() {
+    let src = "'a'";
+    let (tree, _) = parse(src);
+    insta::assert_debug_snapshot!(tree.expect("Tree is empty"));
+}
 
-// #[test]
-// fn parse_bool() {
-//     let input = "true";
-//     let ast = Parser::new(input).item().expect("failed to parse");
-//     insta::assert_debug_snapshot!(ast);
-// }
+#[test]
+fn parse_bool() {
+    let src = "true";
+    let (tree, _) = parse(src);
+    insta::assert_debug_snapshot!(tree.expect("Tree is empty"));
+}
 
 // #[test]
 // fn parse_lambda() {
