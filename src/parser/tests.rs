@@ -1,12 +1,12 @@
-use crate::parser::{parse, token::Token};
+use crate::parser::{parse, token::Token, Parser};
 use chumsky::{input::Stream, prelude::Input, span::SimpleSpan};
 use logos::Logos;
 
 #[test]
 fn parse_int() {
     let src = "523";
-    let (tree, _) = parse(src);
-    insta::assert_debug_snapshot!(tree.expect("Tree is empty"));
+    let ast = Parser::new(input).item().expect("failed to parse");
+    insta::assert_debug_snapshot!(ast);
 }
 
 // #[test]

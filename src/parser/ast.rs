@@ -7,6 +7,17 @@ use num_rational::{BigRational, Rational64};
 use std::{collections::HashMap, fmt::Display};
 
 #[derive(Debug, Clone, PartialEq)]
+pub struct File {
+    pub items: Vec<Item>,
+}
+
+impl Display for File {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", join(self.clone().items, "\n"))
+    }
+}
+
+#[derive(Debug, Clone, PartialEq)]
 pub enum Item {
     Data(Data),
     Decl(Decl),
