@@ -5,7 +5,8 @@ use logos::Logos;
 #[test]
 fn parse_int() {
     let src = "523";
-    let ast = Parser::new(input).item().expect("failed to parse");
+    let (tokens, error) = lex::lex(src);
+    let ast = Parser::new(src).parse();
     insta::assert_debug_snapshot!(ast);
 }
 

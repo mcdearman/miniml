@@ -1,11 +1,10 @@
 use super::{
     error::ParserError,
-    token::{Token, TokenKind},
+    token::{Token, TokenKind, TokenStream},
 };
-use chumsky::span::SimpleSpan;
 use logos::Logos;
 
-pub fn lex(src: &str) -> (Vec<(Token, SimpleSpan)>, Vec<ParserError>) {
+pub fn lex(src: &str) -> (TokenStream, Vec<ParserError>) {
     let mut errors = vec![];
     let mut tokens = vec![];
     for (res, span) in TokenKind::lexer(src).spanned() {
@@ -19,5 +18,5 @@ pub fn lex(src: &str) -> (Vec<(Token, SimpleSpan)>, Vec<ParserError>) {
             }),
         }
     }
-    (tokens, errors)
+    (TokenStream::new(tokens), errors)
 }

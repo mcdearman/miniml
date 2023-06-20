@@ -1,8 +1,5 @@
 use crate::{
-    parser::{
-        ast::{Expr, Item, Lit},
-        parse,
-    },
+    parser::ast::{Expr, Item, Lit},
     vm::{chunk::Chunk, opcode::OpCode, value::Value},
 };
 use std::fmt::Display;
