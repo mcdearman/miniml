@@ -50,12 +50,12 @@ impl Parser {
         }
     }
 
-    pub fn parse() -> (Option<Item>, Vec<ParserError>) {
+    pub fn parse() {
         // let mut errors = vec![];
         todo!()
     }
 
-    fn file(&mut self) ->  {
+    fn file(&mut self)  {
         while !self.eof() {
             self.item()
         }

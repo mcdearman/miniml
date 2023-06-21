@@ -1,14 +1,9 @@
-use crate::parser::{parse, token::Token, Parser};
-use chumsky::{input::Stream, prelude::Input, span::SimpleSpan};
-use logos::Logos;
-
-#[test]
-fn parse_int() {
-    let src = "523";
-    let (tokens, error) = lex::lex(src);
-    let ast = Parser::new(src).parse();
-    insta::assert_debug_snapshot!(ast);
-}
+// #[test]
+// fn parse_int() {
+//     let src = "523";
+//     let (tree, _) = parse(src);
+//     insta::assert_debug_snapshot!(tree.expect("Tree is empty"));
+// }
 
 // #[test]
 // fn parse_binary() {
@@ -31,54 +26,54 @@ fn parse_int() {
 //     insta::assert_debug_snapshot!(ast);
 // }
 
-#[test]
-fn parse_rational() {
-    let src = "5/23";
-    let (tree, _) = parse(src);
-    insta::assert_debug_snapshot!(tree.expect("Tree is empty"));
-}
+// #[test]
+// fn parse_rational() {
+//     let src = "5/23";
+//     let (tree, _) = parse(src);
+//     insta::assert_debug_snapshot!(tree.expect("Tree is empty"));
+// }
 
-#[test]
-fn parse_float() {
-    let src = "5.23";
-    let (tree, _) = parse(src);
-    insta::assert_debug_snapshot!(tree.expect("Tree is empty"));
-}
+// #[test]
+// fn parse_float() {
+//     let src = "5.23";
+//     let (tree, _) = parse(src);
+//     insta::assert_debug_snapshot!(tree.expect("Tree is empty"));
+// }
 
-#[test]
-fn parse_string() {
-    let src = "\"Hello, World!\"";
-    let (tree, _) = parse(src);
-    insta::assert_debug_snapshot!(tree.expect("Tree is empty"));
-}
+// #[test]
+// fn parse_string() {
+//     let src = "\"Hello, World!\"";
+//     let (tree, _) = parse(src);
+//     insta::assert_debug_snapshot!(tree.expect("Tree is empty"));
+// }
 
-#[test]
-fn parse_char() {
-    let src = "'a'";
-    let (tree, _) = parse(src);
-    insta::assert_debug_snapshot!(tree.expect("Tree is empty"));
-}
+// #[test]
+// fn parse_char() {
+//     let src = "'a'";
+//     let (tree, _) = parse(src);
+//     insta::assert_debug_snapshot!(tree.expect("Tree is empty"));
+// }
 
-#[test]
-fn parse_bool() {
-    let src = "true";
-    let (tree, _) = parse(src);
-    insta::assert_debug_snapshot!(tree.expect("Tree is empty"));
-}
+// #[test]
+// fn parse_bool() {
+//     let src = "true";
+//     let (tree, _) = parse(src);
+//     insta::assert_debug_snapshot!(tree.expect("Tree is empty"));
+// }
 
-#[test]
-fn parse_list() {
-    let src = "[1, 2, 3]";
-    let (tree, _) = parse(src);
-    insta::assert_debug_snapshot!(tree.expect("Tree is empty"));
-}
+// #[test]
+// fn parse_list() {
+//     let src = "[1, 2, 3]";
+//     let (tree, _) = parse(src);
+//     insta::assert_debug_snapshot!(tree.expect("Tree is empty"));
+// }
 
-#[test]
-fn parse_tuple() {
-    let src = "(1, 2, 3)";
-    let (tree, _) = parse(src);
-    insta::assert_debug_snapshot!(tree.expect("Tree is empty"));
-}
+// #[test]
+// fn parse_tuple() {
+//     let src = "(1, 2, 3)";
+//     let (tree, _) = parse(src);
+//     insta::assert_debug_snapshot!(tree.expect("Tree is empty"));
+// }
 
 // #[test]
 // fn parse_lambda() {
