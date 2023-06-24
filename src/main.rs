@@ -1,6 +1,6 @@
 use clap::Parser;
 use compiler::Compiler;
-use parser::ast::Item;
+use parser::{ast::Item, parse};
 use repl::repl;
 
 mod compiler;

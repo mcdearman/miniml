@@ -1,9 +1,11 @@
-// #[test]
-// fn parse_int() {
-//     let src = "523";
-//     let (tree, _) = parse(src);
-//     insta::assert_debug_snapshot!(tree.expect("Tree is empty"));
-// }
+use crate::parser::parse;
+
+#[test]
+fn parse_int() {
+    let src = "523";
+    let (tree, _) = parse(src);
+    insta::assert_debug_snapshot!(tree.expect("Tree is empty"));
+}
 
 // #[test]
 // fn parse_binary() {

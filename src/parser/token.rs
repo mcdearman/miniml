@@ -6,34 +6,32 @@ use num_complex::Complex64;
 use num_rational::Rational64;
 use std::{
     fmt::Display,
-    iter::Peekable,
     ops::{Index, Range},
-    vec::IntoIter,
 };
 
 #[derive(Logos, Debug, Clone, PartialEq)]
-pub enum TokenKind {
+pub enum Token {
     Eof,
     #[regex("[ \n\t\r]+", logos::skip)]
     Whitespace,
-    #[regex(r#"--[^\n]*|/\*([^*]|\**[^*/])*\*+/"#)]
-    Comment,
-    #[regex(r##"([A-Za-z]|_)([A-Za-z]|_|\d)*"##)]
-    Ident,
-    #[regex(r#"(0b[0-1]+)|(0o[0-7]+)|(0x[0-9a-fA-F]+)|([1-9]\d*|0)"#, priority = 2)]
-    Int,
-    #[regex(r#"-?\d+/\d+"#, priority = 1)]
-    Rational,
-    #[regex(r#"((\d+(\.\d+))|(\.\d+))([Ee](\+|-)?\d+)?"#, priority = 1)]
-    Real,
-    #[regex(r#"((\d+(\.\d+)?)|(\.\d+))([Ee](\+|-)?\d+)?i"#, priority = 0)]
-    Imag,
-    #[regex(r#"'\w'"#)]
-    Char,
-    #[regex(r#""((\\"|\\\\)|[^\\"])*""#)]
-    String,
-    #[regex(r#"true|false"#)]
-    Bool,
+    #[regex(r#"--[^\n]*|/\*([^*]|\**[^*/])*\*+/"#, |lex| InternedString::from(lex.slice()))]
+    Comment(InternedString),
+    #[regex(r##"([A-Za-z]|_)([A-Za-z]|_|\d)*"##, |lex| InternedString::from(lex.slice()))]
+    Ident(InternedString),
+    #[regex(r#"(0b[0-1]+)|(0o[0-7]+)|(0x[0-9a-fA-F]+)|([1-9]\d*|0)"#, |lex| lex.slice().parse().ok(), priority = 2)]
+    Int(i64),
+    #[regex(r#"-?\d+/\d+"#, |lex| lex.slice().parse().ok(), priority = 1)]
+    Rational(Rational64),
+    #[regex(r#"((\d+(\.\d+))|(\.\d+))([Ee](\+|-)?\d+)?"#, |lex| lex.slice().parse().ok(), priority = 1)]
+    Real(f64),
+    #[regex(r#"((\d+(\.\d+)?)|(\.\d+))([Ee](\+|-)?\d+)?i"#, |lex| lex.slice().parse().ok(), priority = 0)]
+    Imag(Complex64),
+    #[regex(r#"'\w'"#, |lex| lex.slice().chars().nth(1))]
+    Char(char),
+    #[regex(r#""((\\"|\\\\)|[^\\"])*""#, |lex| InternedString::from(lex.slice()))]
+    String(InternedString),
+    #[regex(r#"true|false"#, |lex| lex.slice().parse().ok())]
+    Bool(bool),
     #[token("+")]
     Add,
     #[token("-")]
@@ -130,285 +128,4 @@ pub enum TokenKind {
     Elif,
     #[token("in")]
     In,
-}
-
-#[macro_export]
-macro_rules! T {
-    [EOF] => {
-       $crate::parser::token::TokenKind::Eof
-    };
-    [ws] => {
-       $crate::parser::token::TokenKind::Whitespace
-    };
-    [comment] => {
-       $crate::parser::token::TokenKind::Comment
-    };
-    [ident] => {
-       $crate::parser::token::TokenKind::Ident
-    };
-    [int] => {
-       $crate::parser::token::TokenKind::Int
-    };
-    [real] => {
-       $crate::parser::token::TokenKind::Real
-    };
-    [imag] => {
-       $crate::parser::token::TokenKind::Imag
-    };
-    [char] => {
-       $crate::parser::token::TokenKind::Char
-    };
-    [str] => {
-       $crate::parser::token::TokenKind::String
-    };
-    [bool] => {
-       $crate::parser::token::TokenKind::Bool
-    };
-    [+] => {
-       $crate::parser::token::TokenKind::Add
-    };
-    [-] => {
-       $crate::parser::token::TokenKind::Sub
-    };
-    [*] => {
-       $crate::parser::token::TokenKind::Mul
-    };
-    [/] => {
-       $crate::parser::token::TokenKind::Div
-    };
-    [%] => {
-       $crate::parser::token::TokenKind::Rem
-    };
-    [^] => {
-       $crate::parser::token::TokenKind::Pow
-    };
-    [&&] => {
-       $crate::parser::token::TokenKind::And
-    };
-    [||] => {
-       $crate::parser::token::TokenKind::Or
-    };
-    [lambda] => {
-       $crate::parser::token::TokenKind::Lambda
-    };
-    [->] => {
-       $crate::parser::token::TokenKind::Arrow
-    };
-    [=>] => {
-       $crate::parser::token::TokenKind::FatArrow
-    };
-    [|] => {
-       $crate::parser::token::TokenKind::Pipe
-    };
-    [|>] => {
-       $crate::parser::token::TokenKind::PipeArrow
-    };
-    [=] => {
-       $crate::parser::token::TokenKind::Assign
-    };
-    [==] => {
-       $crate::parser::token::TokenKind::Eql
-    };
-    [<] => {
-       $crate::parser::token::TokenKind::Lss
-    };
-    [>] => {
-       $crate::parser::token::TokenKind::Gtr
-    };
-    [!] => {
-       $crate::parser::token::TokenKind::Not
-    };
-    [!=] => {
-       $crate::parser::token::TokenKind::Neq
-    };
-    [<=] => {
-       $crate::parser::token::TokenKind::Leq
-    };
-    [>=] => {
-       $crate::parser::token::TokenKind::Geq
-    };
-    ['('] => {
-       $crate::parser::token::TokenKind::LParen
-    };
-    [')'] => {
-       $crate::parser::token::TokenKind::RParen
-    };
-    ['['] => {
-       $crate::parser::token::TokenKind::LBrack
-    };
-    [']'] => {
-       $crate::parser::token::TokenKind::RBrack
-    };
-    ['{'] => {
-       $crate::parser::token::TokenKind::LBrace
-    };
-    ['}'] => {
-       $crate::parser::token::TokenKind::RBrace
-    };
-    [,] => {
-       $crate::parser::token::TokenKind::Comma
-    };
-    [.] => {
-       $crate::parser::token::TokenKind::Period
-    };
-    [;] => {
-       $crate::parser::token::TokenKind::Semicolon
-    };
-    [;;] => {
-       $crate::parser::token::TokenKind::DoubleSemicolon
-    };
-    [:] => {
-       $crate::parser::token::TokenKind::Colon
-    };
-    [pub] => {
-       $crate::parser::token::TokenKind::Pub
-    };
-    [mod] => {
-       $crate::parser::token::TokenKind::Module
-    };
-    [end] => {
-       $crate::parser::token::TokenKind::End
-    };
-    [use] => {
-       $crate::parser::token::TokenKind::Use
-    };
-    [let] => {
-       $crate::parser::token::TokenKind::Let
-    };
-    [fn] => {
-       $crate::parser::token::TokenKind::Fn
-    };
-    [data] => {
-       $crate::parser::token::TokenKind::Data
-    };
-    [match] => {
-       $crate::parser::token::TokenKind::Match
-    };
-    [with] => {
-       $crate::parser::token::TokenKind::With
-    };
-    [if] => {
-       $crate::parser::token::TokenKind::If
-    };
-    [then] => {
-       $crate::parser::token::TokenKind::Then
-    };
-    [else] => {
-       $crate::parser::token::TokenKind::Else
-    };
-    [elif] => {
-       $crate::parser::token::TokenKind::Elif
-    };
-    [in] => {
-       $crate::parser::token::TokenKind::In
-    };
-}
-
-impl Display for TokenKind {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(
-            f,
-            "{}",
-            match self {
-                T![EOF] => "<EOF>",
-                T![ws] => "<WS>",
-                T![comment] => "Comment",
-                T![ident] => "Ident",
-                T![int] => "Int",
-                T![real] => "Float",
-                T![imag] => "Imag",
-                T![char] => "Char",
-                T![str] => "String",
-                T![bool] => "Bool",
-                T![+] => "+",
-                T![-] => "-",
-                T![*] => "*",
-                T![/] => "/",
-                T![%] => "%",
-                T![^] => "^",
-                T![&&] => "&&",
-                T![||] => "||",
-                T![lambda] => "lambda",
-                T![->] => "->",
-                T![=>] => "=>",
-                T![|] => "|",
-                T![|>] => "|>",
-                T![==] => "==",
-                T![<] => "<",
-                T![>] => ">",
-                T![=] => "=",
-                T![!] => "!",
-                T![!=] => "!=",
-                T![<=] => "<=",
-                T![>=] => ">=",
-                T!['('] => "(",
-                T![')'] => ")",
-                T!['['] => "[",
-                T![']'] => "]",
-                T!['{'] => "{",
-                T!['}'] => "}",
-                T![,] => ",",
-                T![.] => ".",
-                T![;] => ";",
-                T![;;] => ";;",
-                T![:] => ":",
-                T![pub] => "pub",
-                T![mod] => "mod",
-                T![end] => "end",
-                T![use] => "use",
-                T![let] => "let",
-                T![fn] => "fn",
-                T![data] => "data",
-                T![match] => "match",
-                T![with] => "with",
-                T![if] => "if",
-                T![then] => "then",
-                T![else] => "else",
-                T![elif] => "elif",
-                T![in] => "in",
-            }
-        )
-    }
-}
-
-#[derive(Debug, Clone, PartialEq)]
-pub struct Token {
-    pub kind: TokenKind,
-    pub span: Span,
-}
-
-impl Display for Token {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{:?}: {:?}", self.kind, self.span)
-    }
-}
-
-#[derive(Debug, Clone)]
-pub struct TokenStream {
-    tokens: Peekable<IntoIter<Token>>,
-}
-
-impl TokenStream {
-    pub fn new(tokens: Vec<Token>) -> Self {
-        Self {
-            tokens: tokens.into_iter().peekable(),
-        }
-    }
-
-    pub fn peek(&mut self) -> Token {
-        self.tokens
-            .peek()
-            .unwrap_or(&Token {
-                kind: TokenKind::Eof,
-                span: Span::new(0, 0),
-            })
-            .clone()
-    }
-
-    pub fn next(&mut self) -> Token {
-        self.tokens.next().unwrap_or(Token {
-            kind: TokenKind::Eof,
-            span: Span::new(0, 0),
-        })
-    }
 }
