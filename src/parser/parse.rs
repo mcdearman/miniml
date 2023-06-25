@@ -46,10 +46,19 @@ fn expr_parser<'a, I: ValueInput<'a, Token = Token, Span = SimpleSpan>>(
             .boxed()
             .map(Expr::List);
 
+        let elif = just(Token::Elif)
+            .ignore_then(expr.clone())
+            .then_ignore(just(Token::Then))
+            .then(expr.clone())
+            .map(|(cond, then)| (cond, then))
+            .boxed();
+
         let if_ = just(Token::If)
             .ignore_then(expr.clone())
             .then_ignore(just(Token::Then))
             .then(expr.clone())
+            .then(elif.repeated())
+            .foldr(expr.clone(), f)
             .then_ignore(just(Token::Else))
             .then(expr.clone())
             .map(|((cond, then), else_)| Expr::If {
