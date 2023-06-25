@@ -46,34 +46,49 @@ fn expr_parser<'a, I: ValueInput<'a, Token = Token, Span = SimpleSpan>>(
             .boxed()
             .map(Expr::List);
 
+        let if_ = just(Token::If)
+            .ignore_then(expr.clone())
+            .then_ignore(just(Token::Then))
+            .then(expr.clone());
+
         let elif = just(Token::Elif)
             .ignore_then(expr.clone())
             .then_ignore(just(Token::Then))
             .then(expr.clone())
-            .map(|(cond, then)| (cond, then))
             .boxed();
 
-        let if_ = just(Token::If)
-            .ignore_then(expr.clone())
-            .then_ignore(just(Token::Then))
-            .then(expr.clone())
+        let else_ = just(Token::Else).ignore_then(expr.clone());
+
+        let if_else = if_
             .then(elif.repeated())
-            .foldr(expr.clone(), f)
-            .then_ignore(just(Token::Else))
-            .then(expr.clone())
-            .map(|((cond, then), else_)| Expr::If {
+            .then(else_)
+            .foldr(|(cond, then), else_| Expr::If {
                 cond: Box::new(cond),
                 then: Box::new(then),
                 else_: Box::new(else_),
             })
             .boxed();
 
+        // let if_else = if_
+        //     .foldl(elif.repeated(), |(cond1, then1), (cond2, then2)| {
+        //         Expr::If { cond: cond1, then: then1, else_: Box::new(Expr::If { cond: cond2, then: }) }
+        //     })
+        //     .then(elif.repeated())
+        //     .then_ignore(just(Token::Else))
+        //     .then(expr.clone())
+        //     .map(|((cond, then), else_)| Expr::If {
+        //         cond: Box::new(cond),
+        //         then: Box::new(then),
+        //         else_: Box::new(else_),
+        //     })
+        //     .boxed();
+
         // <atom> ::= <ident> | <lit> | <list> | <if> | <letExpr> | <fnExpr> | "(" <expr> ")"
         let atom = choice((
             ident.map(Expr::Ident),
             lit.map(Expr::Lit),
             list,
-            if_,
+            if_else,
             expr.delimited_by(just(Token::LParen), just(Token::RParen)),
         ));
 

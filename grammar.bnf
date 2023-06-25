@@ -6,7 +6,7 @@
 
 <mod> ::= ("pub" <ws>+)? "mod" <ws>+ <ident> <ws>+ "{" <ws>* <decl> <ws>* "}"
 
-<data> ::= ("pub" <ws>+)? "data" <ws>+ <ident> <ws>+ "=" <ws>+ "{" <ws>* <ident> <ws>* ("," <ws>* <ident> <ws>*)* "}"
+<type> ::= ("pub" <ws>+)? "type" <ws>+ <ident> <ws>+ "=" <ws>+ "{" <ws>* <ident> <ws>* ("," <ws>* <ident> <ws>*)* "}"
 
 <letDecl> ::= ("pub" <ws>+)? <let>
 
@@ -94,6 +94,15 @@
 | <map>
 
 <lambda> ::= "\\" <ws>+ <ident>+ <ws>+ "->" <ws>+ <expr>
+
+<fullHint> ::= <scopedHint> (<ws>+ ("->" | "*") <ws>+ <fullHint>)*
+
+<scopedHint> ::= <hint> 
+| "(" <fullHint> (<ws>+ ("->" | "*") <ws>+ <fullHint>)+ ")"
+| "(" <fullHint>* ")"
+| "[" <fullHint> "]"
+
+<hint> ::= <ident>
 
 <list> ::= "[" <ws>* <expr>? (<ws>* "," <ws>* <expr>)* <ws>* "]"
 
