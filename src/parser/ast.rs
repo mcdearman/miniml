@@ -286,6 +286,36 @@ impl Display for MatchArm {
     }
 }
 
+#[derive(Debug, Clone, PartialEq)]
+pub struct IfBuilder {
+    pub cond: Expr,
+    pub then: Expr,
+    pub elifs: Vec<(Expr, Expr)>,
+}
+
+impl IfBuilder {
+    pub fn new(cond: Expr, then: Expr) -> Self {
+        Self {
+            cond,
+            then,
+            elifs: vec![],
+        }
+    }
+
+    pub fn elif(mut self, cond: Expr, then: Expr) -> Self {
+        self.elifs.push((cond, then));
+        self
+    }
+
+    pub fn else_(self, else_: Expr) -> Expr {
+        Expr::If {
+            cond: Box::new(self.cond),
+            then: Box::new(self.then),
+            else_: Box::new(else_),
+        }
+    }
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum PrefixOp {
     Neg,

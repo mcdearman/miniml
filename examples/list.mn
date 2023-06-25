@@ -19,8 +19,7 @@ pub fn map f xs =
 
 -- [filter] takes a predicate [f] and a list [xs] and returns the 
 -- list of all elements [x] in [xs] such that [f x] is [True].
--- filter :: (a -> Bool) -> List a -> List a
-pub fn filter f xs =
+pub fn filter (f : a -> Bool) (xs : List a) -> List a =
   match xs with
     Nil -> Nil
     Cons x ->

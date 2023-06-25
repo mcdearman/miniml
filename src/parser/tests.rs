@@ -86,7 +86,14 @@ fn parse_list() {
 
 #[test]
 fn parse_if() {
-    let src = "if true then 1 else 2";
+    let src = "if a then b else c";
+    let (tree, _) = parse(src);
+    insta::assert_debug_snapshot!(tree);
+}
+
+#[test]
+fn parse_elif() {
+    let src = "if a then b elif c then d else e";
     let (tree, _) = parse(src);
     insta::assert_debug_snapshot!(tree);
 }
