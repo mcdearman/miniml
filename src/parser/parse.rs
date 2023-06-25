@@ -1,3 +1,5 @@
+use std::borrow::Borrow;
+
 use super::{ast::Item, token::Token};
 use crate::{
     list::List,
@@ -18,66 +20,24 @@ use chumsky::{
 
 pub fn parser<'a, I: ValueInput<'a, Token = Token, Span = SimpleSpan>>(
 ) -> impl Parser<'a, I, Item, extra::Err<Rich<'a, Token>>> + Clone {
-    recursive(|item| {
-        let expr = expr_parser().map(Item::Expr);
-        expr
-    })
+    expr_parser().map(Item::Expr)
 }
 
 fn expr_parser<'a, I: ValueInput<'a, Token = Token, Span = SimpleSpan>>(
 ) -> impl Parser<'a, I, Expr, extra::Err<Rich<'a, Token>>> + Clone {
-    // recursive(|expr| {
-
-    // })
-    atom_parser()
-}
-
-// fn infix_parser<'a, I: ValueInput<'a, Token = Token, Span = SimpleSpan>>(
-// ) -> impl Parser<'a, I, Expr, extra::Err<Rich<'a, Token>>> + Clone {
-//     recursive(|expr| {
-//         let op = just(Token::Add).or(just(Token::Sub));
-//         let sum =
-//     })
-// }
-
-// <atom> ::= <ident> | <lit> | <if> | <letExpr> | <fnExpr> | "(" <expr> ")"
-fn atom_parser<'a, I: ValueInput<'a, Token = Token, Span = SimpleSpan>>(
-) -> impl Parser<'a, I, Expr, extra::Err<Rich<'a, Token>>> + Clone {
     let ident = select! { Token::Ident(name) => name };
-    recursive(|expr| choice((ident, lit_parser(), if_parser(), list_parser())))
-}
-
-fn if_parser<'a, I: ValueInput<'a, Token = Token, Span = SimpleSpan>>(
-) -> impl Parser<'a, I, Expr, extra::Err<Rich<'a, Token>>> + Clone {
     recursive(|expr| {
-        just(Token::If)
-            .ignore_then(expr.clone())
-            .then_ignore(just(Token::Then))
-            .then(expr.clone())
-            .then_ignore(just(Token::Else))
-            .then(expr.clone())
-            .boxed()
-            .map(|((cond, then), else_)| Box::new(Expr::If { cond, then, else_ }))
-    })
-}
+        let lit = select! {
+            Token::Int(n) => Lit::Int(n),
+            Token::Rational(n) => Lit::Rational(n),
+            Token::Real(n) => Lit::Real(n),
+            Token::Imag(n) => Lit::Complex(n),
+            Token::Char(c) => Lit::Char(c),
+            Token::String(s) => Lit::String(s),
+            Token::Bool(b) => Lit::Bool(b),
+        };
 
-fn lit_parser<'a, I: ValueInput<'a, Token = Token, Span = SimpleSpan>>(
-) -> impl Parser<'a, I, Lit, extra::Err<Rich<'a, Token>>> + Clone {
-    select! {
-        Token::Int(n) => Lit::Int(n),
-        Token::Rational(n) => Lit::Rational(n),
-        Token::Real(n) => Lit::Real(n),
-        Token::Imag(n) => Lit::Complex(n),
-        Token::Char(c) => Lit::Char(c),
-        Token::String(s) => Lit::String(s),
-        Token::Bool(b) => Lit::Bool(b),
-    }
-}
-
-fn list_parser<'a, I: ValueInput<'a, Token = Token, Span = SimpleSpan>>(
-) -> impl Parser<'a, I, Expr, extra::Err<Rich<'a, Token>>> + Clone {
-    recursive(|list| {
-        let exprs = expr_parser()
+        let list = expr
             .clone()
             .separated_by(just(Token::Comma))
             .allow_trailing()
@@ -85,6 +45,29 @@ fn list_parser<'a, I: ValueInput<'a, Token = Token, Span = SimpleSpan>>(
             .delimited_by(just(Token::LBrack), just(Token::RBrack).ignored())
             .boxed()
             .map(Expr::List);
-        exprs
+
+        let if_ = just(Token::If)
+            .ignore_then(expr.clone())
+            .then_ignore(just(Token::Then))
+            .then(expr.clone())
+            .then_ignore(just(Token::Else))
+            .then(expr.clone())
+            .map(|((cond, then), else_)| Expr::If {
+                cond: Box::new(cond),
+                then: Box::new(then),
+                else_: Box::new(else_),
+            })
+            .boxed();
+
+        // <atom> ::= <ident> | <lit> | <list> | <if> | <letExpr> | <fnExpr> | "(" <expr> ")"
+        let atom = choice((
+            ident.map(Expr::Ident),
+            lit.map(Expr::Lit),
+            list,
+            if_,
+            expr.delimited_by(just(Token::LParen), just(Token::RParen)),
+        ));
+
+        atom
     })
 }

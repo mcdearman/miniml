@@ -186,21 +186,6 @@ impl Display for Lit {
     }
 }
 
-// #[derive(Debug, Clone, PartialEq)]
-// pub struct Real(pub f64);
-
-// impl Display for Real {
-//     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-//         write!(f, "{}", self.0)
-//     }
-// }
-
-// impl From<String> for Real {
-//     fn from(s: String) -> Self {
-//         Self(s.parse().expect("Invalid float"))
-//     }
-// }
-
 #[derive(Debug, Clone, PartialEq)]
 pub struct Tuple {
     pub items: Vec<Expr>,

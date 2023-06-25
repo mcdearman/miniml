@@ -1,0 +1,25 @@
+---
+source: src/parser/tests.rs
+expression: "tree.expect(\"Tree is empty\")"
+---
+Expr(
+    List(
+        [
+            Lit(
+                Int(
+                    1,
+                ),
+            ),
+            Lit(
+                Int(
+                    2,
+                ),
+            ),
+            Lit(
+                Int(
+                    3,
+                ),
+            ),
+        ],
+    ),
+)

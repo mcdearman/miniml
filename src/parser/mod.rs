@@ -25,6 +25,7 @@ pub fn parse(src: &str) -> (Option<Item>, Vec<Error>) {
             })
             .collect_vec(),
     );
+
     let tok_stream =
         Stream::from_iter(tokens.into_iter()).spanned(SimpleSpan::from(src.len()..src.len()));
 
@@ -33,6 +34,7 @@ pub fn parse(src: &str) -> (Option<Item>, Vec<Error>) {
             message: format!("{:?}", e),
         })
     });
+
     match res {
         Ok(item) => (Some(item), errors),
         Err(errs) => {
