@@ -42,7 +42,6 @@ impl<'src> Parser<'src> {
                 kind: T![EOF],
                 span: Span::new(0, 0),
             },
-            Some((Ok(t), _)) => self.fetch_token(),
             Some((Ok(t), s)) => match t {
                 T![comment] => self.fetch_token(),
                 _ => Token {
