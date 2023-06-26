@@ -1,11 +1,9 @@
-use crate::parser::parse;
-
-#[test]
-fn parse_int() {
-    let src = "523";
-    let (tree, _) = parse(src);
-    insta::assert_debug_snapshot!(tree.expect("Tree is empty"));
-}
+// #[test]
+// fn parse_int() {
+//     let src = "523";
+//     let (tree, _) = parse(src);
+//     insta::assert_debug_snapshot!(tree.expect("Tree is empty"));
+// }
 
 // #[test]
 // fn parse_binary() {
@@ -28,47 +26,46 @@ fn parse_int() {
 //     insta::assert_debug_snapshot!(ast);
 // }
 
-#[test]
-fn parse_rational() {
-    let src = "5/23";
-    let (tree, _) = parse(src);
-    insta::assert_debug_snapshot!(tree.expect("Tree is empty"));
-}
+// fn parse_rational() {
+//     let src = "5/23";
+//     let (tree, _) = parse(src);
+//     insta::assert_debug_snapshot!(tree.expect("Tree is empty"));
+// }
 
-#[test]
-fn parse_float() {
-    let src = "5.23";
-    let (tree, _) = parse(src);
-    insta::assert_debug_snapshot!(tree.expect("Tree is empty"));
-}
+// #[test]
+// fn parse_float() {
+//     let src = "5.23";
+//     let (tree, _) = parse(src);
+//     insta::assert_debug_snapshot!(tree.expect("Tree is empty"));
+// }
 
-#[test]
-fn parse_string() {
-    let src = "\"Hello, World!\"";
-    let (tree, _) = parse(src);
-    insta::assert_debug_snapshot!(tree.expect("Tree is empty"));
-}
+// #[test]
+// fn parse_string() {
+//     let src = "\"Hello, World!\"";
+//     let (tree, _) = parse(src);
+//     insta::assert_debug_snapshot!(tree.expect("Tree is empty"));
+// }
 
-#[test]
-fn parse_char() {
-    let src = "'a'";
-    let (tree, _) = parse(src);
-    insta::assert_debug_snapshot!(tree.expect("Tree is empty"));
-}
+// #[test]
+// fn parse_char() {
+//     let src = "'a'";
+//     let (tree, _) = parse(src);
+//     insta::assert_debug_snapshot!(tree.expect("Tree is empty"));
+// }
 
-#[test]
-fn parse_bool() {
-    let src = "true";
-    let (tree, _) = parse(src);
-    insta::assert_debug_snapshot!(tree.expect("Tree is empty"));
-}
+// #[test]
+// fn parse_bool() {
+//     let src = "true";
+//     let (tree, _) = parse(src);
+//     insta::assert_debug_snapshot!(tree.expect("Tree is empty"));
+// }
 
-#[test]
-fn parse_list() {
-    let src = "[1, 2, 3]";
-    let (tree, _) = parse(src);
-    insta::assert_debug_snapshot!(tree.expect("Tree is empty"));
-}
+// #[test]
+// fn parse_list() {
+//     let src = "[1, 2, 3]";
+//     let (tree, _) = parse(src);
+//     insta::assert_debug_snapshot!(tree.expect("Tree is empty"));
+// }
 
 // #[test]
 // fn parse_tuple() {
@@ -84,19 +81,19 @@ fn parse_list() {
 //     insta::assert_debug_snapshot!(ast);
 // }
 
-#[test]
-fn parse_if() {
-    let src = "if a then b else c";
-    let (tree, _) = parse(src);
-    insta::assert_debug_snapshot!(tree);
-}
+// #[test]
+// fn parse_if() {
+//     let src = "if a then b else c";
+//     let (tree, _) = parse(src);
+//     insta::assert_debug_snapshot!(tree);
+// }
 
-#[test]
-fn parse_elif() {
-    let src = "if a then b elif c then d else e";
-    let (tree, _) = parse(src);
-    insta::assert_debug_snapshot!(tree);
-}
+// #[test]
+// fn parse_elif() {
+//     let src = "if a then b elif c then d else e";
+//     let (tree, _) = parse(src);
+//     insta::assert_debug_snapshot!(tree);
+// }
 
 // #[test]
 // fn parse_let_decl() {

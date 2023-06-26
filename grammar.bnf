@@ -95,10 +95,11 @@
 
 <lambda> ::= "\\" <ws>+ <ident>+ <ws>+ "->" <ws>+ <expr>
 
-<fullHint> ::= <scopedHint> (<ws>+ ("->" | "*") <ws>+ <fullHint>)*
+<fullHint> ::= <scopedHint> (<ws>+ "->" <ws>+ <fullHint>)*
 
 <scopedHint> ::= <hint> 
-| "(" <fullHint> (<ws>+ ("->" | "*") <ws>+ <fullHint>)+ ")"
+| "(" <fullHint> (<ws>+ "->" <ws>+ <fullHint>)+ ")"
+| "(" <fullHint> ("," <ws>+ <fullHint>)+ ")"
 | "(" <fullHint>* ")"
 | "[" <fullHint> "]"
 
