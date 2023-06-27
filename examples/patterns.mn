@@ -8,7 +8,7 @@ let [x, y] = [1, 2]
 let (y, z) = (2, 3)
 
 -- record pattern
-data Point = { x, y }
+type Point = { x : i32, y : i32 }
 let Point { x, y } = Point { x: 1, y: 2 }
 
 -- map pattern

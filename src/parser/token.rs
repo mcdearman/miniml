@@ -105,8 +105,8 @@ pub enum TokenKind {
     Let,
     #[token("fn")]
     Fn,
-    #[token("data")]
-    Data,
+    #[token("type")]
+    Type,
     #[token("match")]
     Match,
     #[token("with")]
@@ -272,8 +272,8 @@ macro_rules! T {
     [fn] => {
        $crate::parser::token::TokenKind::Fn
     };
-    [data] => {
-       $crate::parser::token::TokenKind::Data
+    [type] => {
+       $crate::parser::token::TokenKind::Type
     };
     [match] => {
        $crate::parser::token::TokenKind::Match
@@ -353,7 +353,7 @@ impl Display for TokenKind {
                 T![use] => "use",
                 T![let] => "let",
                 T![fn] => "fn",
-                T![data] => "data",
+                T![type] => "type",
                 T![match] => "match",
                 T![with] => "with",
                 T![if] => "if",

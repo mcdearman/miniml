@@ -37,7 +37,7 @@ impl<'src> Parser<'src> {
     }
 
     fn fetch_token(&mut self) -> Token {
-        match self.lexer.next().map(|t| (t, self.lexer.span())) {
+        match self.lexer.next().map(|res| (res, self.lexer.span())) {
             None => Token {
                 kind: T![EOF],
                 span: Span::new(0, 0),

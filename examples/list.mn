@@ -1,41 +1,41 @@
 -- A cons list is either empty or a pair of an element and a cons list.
-pub data Cons = { a }
-pub data Nil
+pub type List 'a
+  = Cons { car : 'a, cdr : List 'a } 
+  | Nil
 
 -- [len] takes a list [xs] and returns the number of elements in [xs].
 -- len :: List a -> Int
 pub fn len xs =
   match xs with
-    Nil -> 0
-    Cons x -> 1 + len x
+    List::Cons x -> 1 + len x
+    List::Nil -> 0
 
 -- [map] takes a function [f] and a list [xs] and returns the list of
 -- the results of applying [f] to each element of [xs].
--- map :: (a -> b) -> List a -> List b
-pub fn map f xs =
+pub fn map (f: 'a -> 'b) (xs: List 'a) -> List 'b =
   match xs with
-    Nil -> Nil
-    Cons x -> Cons (map f x)
+    List::Cons x -> Cons (map f x)
+    List::Nil -> Nil
 
 -- [filter] takes a predicate [f] and a list [xs] and returns the 
 -- list of all elements [x] in [xs] such that [f x] is [True].
-pub fn filter (f : a -> Bool) (xs : List a) -> List a =
+pub fn filter (f : 'a -> Bool) (xs : List 'a) -> List 'a =
   match xs with
-    Nil -> Nil
-    Cons x ->
+    List::Cons x ->
       if f x then
         Cons (filter f x)
       else
         filter f x
+    List::Nil -> Nil
 
 -- [foldl] takes a binary operator [f], a starting value [z], and a list [xs],
 -- and returns the result of inserting [f] between successive elements of [xs],
 -- starting with [z] to the left of the leftmost element of [xs].
 -- foldl :: (a -> b -> a) -> a -> List b -> a
-pub fn foldl f z xs =
+pub fn foldl (f: 'a -> 'b -> 'a) (z: 'a) (xs: List 'b) -> 'a =
   match xs with
-    Nil -> z
-    Cons x -> foldl f (f z x) x
+    List::Cons x -> foldl f (f z x) x
+    List::Nil -> z
 
 -- [foldr] takes a binary operator [f], a starting value [z], and a list [xs],
 -- and returns the result of inserting [f] between successive elements of [xs],
