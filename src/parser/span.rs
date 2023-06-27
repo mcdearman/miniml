@@ -3,7 +3,7 @@ use std::{
     ops::{Index, Range},
 };
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Span {
     start: u64,
     end: u64,

@@ -51,6 +51,7 @@ impl Display for Data {
 pub enum Decl {
     Let(LetDecl),
     Fn(FnDecl),
+    Error,
 }
 
 impl Display for Decl {
@@ -58,6 +59,7 @@ impl Display for Decl {
         match self {
             Decl::Let(l) => write!(f, "{}", l),
             Decl::Fn(fun) => write!(f, "{}", fun),
+            Decl::Error => write!(f, "error"),
         }
     }
 }
@@ -130,6 +132,7 @@ pub enum Expr {
     Record(Record),
     Lambda(Lambda),
     Unit,
+    Error,
 }
 
 impl Display for Expr {
@@ -158,6 +161,7 @@ impl Display for Expr {
             Expr::Record(r) => write!(f, "{}", r),
             Expr::Lambda(l) => write!(f, "{}", l),
             Expr::Unit => write!(f, "()"),
+            Expr::Error => write!(f, "error"),
         }
     }
 }
@@ -358,6 +362,7 @@ pub enum InfixOp {
     Geq,
     And,
     Or,
+    Pipe,
 }
 
 impl Display for InfixOp {
@@ -377,6 +382,7 @@ impl Display for InfixOp {
             InfixOp::Geq => write!(f, ">="),
             InfixOp::And => write!(f, "&&"),
             InfixOp::Or => write!(f, "||"),
+            InfixOp::Pipe => write!(f, "|>"),
         }
     }
 }
@@ -398,6 +404,7 @@ impl From<TokenKind> for InfixOp {
             TokenKind::Geq => InfixOp::Geq,
             TokenKind::And => InfixOp::And,
             TokenKind::Or => InfixOp::Or,
+            TokenKind::Pipe => InfixOp::Pipe,
             _ => panic!("Not an infix operator: {:?}", TokenKind),
         }
     }

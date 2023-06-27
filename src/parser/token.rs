@@ -1,6 +1,10 @@
 use super::span::Span;
 use logos::Logos;
-use std::{fmt::Display, iter::Peekable, vec::IntoIter};
+use std::{
+    fmt::{Debug, Display},
+    iter::Peekable,
+    vec::IntoIter,
+};
 
 #[derive(Logos, Debug, Clone, PartialEq)]
 pub enum TokenKind {
@@ -11,7 +15,10 @@ pub enum TokenKind {
     Comment,
     #[regex(r##"([A-Za-z]|_)([A-Za-z]|_|\d)*"##)]
     Ident,
-    #[regex(r#"(0b[0-1]+)|(0o[0-7]+)|(0x[0-9a-fA-F]+)|([1-9]\d*|0)"#, priority = 2)]
+    #[regex(
+        r#"(\+|-)*((0b[0-1]+)|(0o[0-7]+)|(0x[0-9a-fA-F]+)|([1-9]\d*|0))"#,
+        priority = 2
+    )]
     Int,
     #[regex(r#"-?\d+/\d+"#, priority = 1)]
     Rational,
@@ -366,44 +373,55 @@ impl Display for TokenKind {
     }
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Clone, PartialEq)]
 pub struct Token {
     pub kind: TokenKind,
     pub span: Span,
 }
 
+impl Debug for Token {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{:?} - {}", self.kind, self.span)
+    }
+}
+
 impl Display for Token {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{:?}: {:?}", self.kind, self.span)
+        write!(f, "{} - {}", self.kind, self.span)
     }
 }
 
-#[derive(Debug, Clone)]
-pub struct TokenStream {
-    tokens: Peekable<IntoIter<Token>>,
-}
+// #[derive(Debug, Clone)]
+// pub struct TokenStream {
+//     tokens: Peekable<IntoIter<Token>>,
+// }
 
-impl TokenStream {
-    pub fn new(tokens: Vec<Token>) -> Self {
-        Self {
-            tokens: tokens.into_iter().peekable(),
-        }
-    }
+// impl TokenStream {
+//     pub fn new(tokens: Vec<Token>) -> Self {
+//         Self {
+//             tokens: tokens.into_iter().peekable(),
+//         }
+//     }
 
-    pub fn peek(&mut self) -> Token {
-        self.tokens
-            .peek()
-            .unwrap_or(&Token {
-                kind: TokenKind::Eof,
-                span: Span::new(0, 0),
-            })
-            .clone()
-    }
+//     pub fn peek(&mut self) -> Token {
+//         self.tokens
+//             .peek()
+//             .unwrap_or(&Token {
+//                 kind: TokenKind::Eof,
+//                 span: Span::new(0, 0),
+//             })
+//             .clone()
+//     }
 
-    pub fn next(&mut self) -> Token {
-        self.tokens.next().unwrap_or(Token {
-            kind: TokenKind::Eof,
-            span: Span::new(0, 0),
-        })
-    }
-}
+//     pub fn next(&mut self) -> Token {
+//         self.tokens.next().unwrap_or(Token {
+//             kind: TokenKind::Eof,
+//             span: Span::new(0, 0),
+//         })
+//     }
+// }
+// pub trait TokenStream {
+//     fn peek(&mut self) -> Token;
+//     fn next(&mut self) -> Token;
+//     fn at(&mut self, kind: TokenKind) -> bool;
+// }

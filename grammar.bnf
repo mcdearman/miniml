@@ -2,7 +2,7 @@
 
 <item> ::= <decl> | <expr>
 
-<decl> ::= <mod> | <data> | <letDecl> | <fnDecl>
+<decl> ::= <mod> | <type> | <letDecl> | <fnDecl>
 
 <mod> ::= ("pub" <ws>+)? "mod" <ws>+ <ident> <ws>+ "{" <ws>* <decl> <ws>* "}"
 
@@ -16,7 +16,7 @@
 
 <pipe> ::= <stmt> (<ws>* "|>" <ws>* <pipe>)?
 
-<stmt> ::= <or> (<ws>* ";" <ws>* <stmt>)?
+<stmt> ::= <or> (<ws>* ";" <ws>* <expr>)?
 
 <or> ::= <and> (<ws>* "||" <ws>* <or>)?
 
@@ -32,7 +32,7 @@
 
 <unary> ::= <apply> | ("-" | "!") <unary>
 
-<apply> ::= <atom> (<ws>+ <atom>)*
+<apply> ::= <atom> (<ws>+ <apply>)?
 
 <atom> ::= <ident> | <lit> | <if> | <letExpr> | <fnExpr> | "(" <expr> ")"
 
