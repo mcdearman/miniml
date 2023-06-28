@@ -2,10 +2,10 @@ use crate::{intern::InternedString, list::List};
 use itertools::join;
 use num_bigint::BigInt;
 use num_complex::Complex64;
-use num_rational::{BigRational, Rational64};
-use std::{collections::HashMap, fmt::Display};
+use num_rational::{BigRational, Rational32, Rational64};
+use std::{collections::HashMap, fmt::Display, str::FromStr};
 
-use super::token::TokenKind;
+use super::{error::Error, token::TokenKind};
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct File {
@@ -168,13 +168,14 @@ impl Display for Expr {
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Lit {
-    Int(i64),
-    Rational(Rational64),
+    Int(BigInt),
+    Rational(BigRational),
     Real(f64),
     Complex(Complex64),
     String(InternedString),
     Char(char),
     Bool(bool),
+    Error,
 }
 
 impl Display for Lit {
@@ -187,6 +188,7 @@ impl Display for Lit {
             Lit::String(s) => write!(f, "{}", s),
             Lit::Char(i) => write!(f, "{}", i),
             Lit::Bool(i) => write!(f, "{}", i),
+            Lit::Error => write!(f, "error"),
         }
     }
 }

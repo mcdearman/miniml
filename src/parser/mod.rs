@@ -3,13 +3,14 @@ use std::iter::Peekable;
 use crate::{intern::InternedString, T};
 
 use self::{
-    ast::{Decl, Expr, File, InfixOp, Item, LetExpr, Pattern, PrefixOp},
+    ast::{Decl, Expr, File, InfixOp, Item, LetExpr, Lit, Pattern, PrefixOp},
     error::Error,
     span::Span,
     token::{Token, TokenKind},
 };
 use itertools::Itertools;
 use logos::{Lexer, Logos};
+use num_bigint::BigInt;
 
 pub mod ast;
 pub mod cst;
@@ -297,14 +298,15 @@ impl<'src> Parser<'src> {
         }
     }
 
-    // <atom> ::= <ident> | <lit> | <if> | <letExpr> | <fnExpr> | "(" <expr> ")"
+    // <atom> ::= <ident> | <lit> | <lambda> | <list> | <tuple>
+    // | <map> | <if> | <letExpr> | <fnExpr> | "(" <expr> ")"
     fn atom(&mut self) -> Expr {
         match self.peek().kind {
             T![ident] => self.ident(),
-            T![int] | T![real] | T![str] | T![char] | T![bool] => self.lit(),
-            T![if] => self.if_expr(),
-            T![let] => self.let_expr(),
-            T![fn] => self.fn_expr(),
+            T![int] | T![real] | T![str] | T![char] | T![bool] => Expr::Lit(self.lit()),
+            T![if] => todo!(),
+            T![let] => todo!(),
+            T![fn] => todo!(),
             T!['('] => {
                 self.next();
                 let expr = self.expr();
@@ -315,9 +317,32 @@ impl<'src> Parser<'src> {
         }
     }
 
+    // <lit> ::= <int> | <real> | <string> | <char> | <bool>
+    fn lit(&mut self) -> Lit {
+        match self.peek().kind {
+            T![int] => Lit::Int(match self.int() {
+                Some(i) => i,
+                None => return Lit::Error,
+            }),
+            T![real] => todo!(),
+            T![str] => todo!(),
+            T![char] => todo!(),
+            T![bool] => todo!(),
+            _ => Lit::Error,
+        }
+    }
+
     fn ident(&mut self) -> Expr {
         let token = self.next();
         let text = self.text(token);
         Expr::Ident(InternedString::from(text))
+    }
+
+    fn int(&mut self) -> Option<BigInt> {
+        let token = self.next();
+        let text = self.text(token);
+        text.parse()
+            .map_err(|e| self.errors.push(Error(format!("{}: {}", e, text))))
+            .ok()
     }
 }

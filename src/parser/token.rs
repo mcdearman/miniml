@@ -16,15 +16,15 @@ pub enum TokenKind {
     #[regex(r##"([A-Za-z]|_)([A-Za-z]|_|\d)*"##)]
     Ident,
     #[regex(
-        r#"(\+|-)*((0b[0-1]+)|(0o[0-7]+)|(0x[0-9a-fA-F]+)|([1-9]\d*|0))"#,
+        r#"(\+|-)*((0b[0-1]+)|(0o[0-7]+)|(0x[0-9a-fA-F]+)|([1-9]\d*|0))(i8|u8|i16|u16|i32|u32|i64|u64|i128|u128)?"#,
         priority = 2
     )]
     Int,
     #[regex(r#"-?\d+/\d+"#, priority = 1)]
     Rational,
-    #[regex(r#"((\d+(\.\d+))|(\.\d+))([Ee](\+|-)?\d+)?"#, priority = 1)]
+    #[regex(r#"((\d+(\.\d+))|(\.\d+))([Ee](\+|-)?\d+)?(f32|f64)?"#, priority = 1)]
     Real,
-    #[regex(r#"((\d+(\.\d+)?)|(\.\d+))([Ee](\+|-)?\d+)?i"#, priority = 0)]
+    #[regex(r#"((\d+(\.\d+)?)|(\.\d+))([Ee](\+|-)?\d+)?i(c32|c64)?"#, priority = 0)]
     Imag,
     #[regex(r#"'\w'"#)]
     Char,

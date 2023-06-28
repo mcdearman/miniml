@@ -34,7 +34,16 @@
 
 <apply> ::= <atom> (<ws>+ <apply>)?
 
-<atom> ::= <ident> | <lit> | <if> | <letExpr> | <fnExpr> | "(" <expr> ")"
+<atom> ::= <ident> 
+| <lit> 
+| <lambda>
+| <list>
+| <tuple>
+| <map>
+| <if> 
+| <letExpr> 
+| <fnExpr> 
+| "(" <expr> ")"
 
 <letExpr> ::= <let> <ws>+ "in" <ws>+ <expr>?
 
@@ -88,10 +97,6 @@
 | <string> 
 | <char> 
 | <bool> 
-| <lambda>
-| <list>
-| <tuple>
-| <map>
 
 <lambda> ::= "\\" <ws>+ <ident>+ <ws>+ "->" <ws>+ <expr>
 
