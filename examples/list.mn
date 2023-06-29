@@ -5,10 +5,10 @@ pub type List 'a
 
 -- [len] takes a list [xs] and returns the number of elements in [xs].
 -- len :: List a -> Int
-pub fn len xs =
+pub fn len (xs : List 'a) -> u32 =
   match xs with
-    List::Cons x -> 1 + len x
-    List::Nil -> 0
+    List.Cons x -> 1 + len x
+    List.Nil -> 0
 
 -- [map] takes a function [f] and a list [xs] and returns the list of
 -- the results of applying [f] to each element of [xs].
