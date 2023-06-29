@@ -3,17 +3,10 @@ use std::fmt::Display;
 use itertools::join;
 
 /// A singly-linked list with owned nodes.
-#[derive(Debug, Clone, Default, PartialEq)]
-pub struct List<T> {
-    pub head: Option<Box<Node<T>>>,
-}
-
-impl<T> List<T> {
-    pub const NIL: List<T> = List { head: None };
-
-    pub fn new(head: Option<Box<Node<T>>>) -> Self {
-        Self { head }
-    }
+#[derive(Debug, Clone, PartialEq)]
+pub enum List<T> {
+    Node(T, Box<List<T>>),
+    Nil,
 }
 
 impl<T> Display for List<T>
@@ -21,9 +14,14 @@ where
     T: Display + Clone,
 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "[")?;
-        write!(f, "{}", join(self.clone(), ", "))?;
-        write!(f, "]")
+        match self {
+            List::Node(data, next) => {
+                write!(f, "[")?;
+                write!(f, "{}", join(self.clone(), ", "))?;
+                write!(f, "]")
+            }
+            List::Nil => write!(f, "[]"),
+        }
     }
 }
 
@@ -37,6 +35,15 @@ impl<T> Iterator for List<T> {
                 Some(node.data)
             }
             None => None,
+        }
+
+        match self {
+            List::Node(data, next) => {
+                let data = data.clone();
+                *self = *next.clone();
+                Some(data)
+            }
+            List::Nil => None,
         }
     }
 }
@@ -66,29 +73,5 @@ impl<T> From<Vec<T>> for List<T> {
                 next: list.head,
             })))
         })
-    }
-}
-
-#[derive(Debug, Clone, PartialEq)]
-pub struct Node<T> {
-    pub data: T,
-    pub next: Option<Box<Node<T>>>,
-}
-
-impl<T> Display for Node<T>
-where
-    T: Display,
-{
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let mut node = self;
-        write!(f, "[")?;
-        while let Some(next) = &node.next {
-            write!(f, "{}", node.data)?;
-            node = next;
-            if node.next.is_some() {
-                write!(f, ", ")?;
-            }
-        }
-        write!(f, "]")
     }
 }

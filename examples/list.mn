@@ -1,11 +1,10 @@
 -- A cons list is either empty or a pair of an element and a cons list.
 pub type List 'a
-  = Cons { car : 'a, cdr : List 'a } 
+  = Node { data : 'a, next : List 'a } 
   | Nil
 
 -- [len] takes a list [xs] and returns the number of elements in [xs].
--- len :: List a -> Int
-pub fn len (xs : List 'a) -> u32 =
+pub fn len (xs : List 'a) -> u64 =
   match xs with
     List.Cons x -> 1 + len x
     List.Nil -> 0
@@ -31,7 +30,6 @@ pub fn filter (f : 'a -> Bool) (xs : List 'a) -> List 'a =
 -- [foldl] takes a binary operator [f], a starting value [z], and a list [xs],
 -- and returns the result of inserting [f] between successive elements of [xs],
 -- starting with [z] to the left of the leftmost element of [xs].
--- foldl :: (a -> b -> a) -> a -> List b -> a
 pub fn foldl (f: 'a -> 'b -> 'a) (z: 'a) (xs: List 'b) -> 'a =
   match xs with
     List::Cons x -> foldl f (f z x) x
