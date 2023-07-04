@@ -13,7 +13,7 @@ pub fn len (xs : List 'a) -> u64 =
 -- the results of applying [f] to each element of [xs].
 pub fn map (f: 'a -> 'b) (xs: List 'a) -> List 'b =
   match xs with
-    List::Cons x -> Cons (map f x)
+    List::Cons x -> Cons (map f x) 
     List::Nil -> Nil
 
 -- [filter] takes a predicate [f] and a list [xs] and returns the 
