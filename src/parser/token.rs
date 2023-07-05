@@ -391,37 +391,36 @@ impl Display for Token {
     }
 }
 
-// #[derive(Debug, Clone)]
-// pub struct TokenStream {
-//     tokens: Peekable<IntoIter<Token>>,
-// }
+#[derive(Debug, Clone)]
+pub struct TokenStream {
+    tokens: Peekable<IntoIter<Token>>,
+}
 
-// impl TokenStream {
-//     pub fn new(tokens: Vec<Token>) -> Self {
-//         Self {
-//             tokens: tokens.into_iter().peekable(),
-//         }
-//     }
+impl TokenStream {
+    pub fn new<'src>(src: &'src str) -> Self {
+        let tokens: Vec<Token> = TokenKind::lexer(src)
+            .spanned()
+            .filter_map(|(kind, span)| Token { kind, span: span.into() })
+            .collect();
+        Self {
+            tokens: tokens.into_iter().peekable(),
+        }
+    }
 
-//     pub fn peek(&mut self) -> Token {
-//         self.tokens
-//             .peek()
-//             .unwrap_or(&Token {
-//                 kind: TokenKind::Eof,
-//                 span: Span::new(0, 0),
-//             })
-//             .clone()
-//     }
+    pub fn peek(&mut self) -> Token {
+        self.tokens
+            .peek()
+            .unwrap_or(&Token {
+                kind: TokenKind::Eof,
+                span: Span::new(0, 0),
+            })
+            .clone()
+    }
 
-//     pub fn next(&mut self) -> Token {
-//         self.tokens.next().unwrap_or(Token {
-//             kind: TokenKind::Eof,
-//             span: Span::new(0, 0),
-//         })
-//     }
-// }
-// pub trait TokenStream {
-//     fn peek(&mut self) -> Token;
-//     fn next(&mut self) -> Token;
-//     fn at(&mut self, kind: TokenKind) -> bool;
-// }
+    pub fn next(&mut self) -> Token {
+        self.tokens.next().unwrap_or(Token {
+            kind: TokenKind::Eof,
+            span: Span::new(0, 0),
+        })
+    }
+}

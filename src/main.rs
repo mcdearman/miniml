@@ -5,7 +5,6 @@ use repl::repl;
 
 mod compiler;
 mod intern;
-mod list;
 mod parser;
 mod repl;
 mod vm;
