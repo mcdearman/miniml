@@ -1,4 +1,4 @@
-use crate::{intern::InternedString, list::List};
+use crate::intern::InternedString;
 use itertools::join;
 use num_bigint::BigInt;
 use num_complex::Complex64;
@@ -155,7 +155,7 @@ impl Display for Expr {
                 }
                 write!(f, ")")
             }
-            Expr::List(l) => write!(f, "{}", List::from(l.clone())),
+            Expr::List(l) => write!(f, "{:?}", l.clone()),
             Expr::Tuple(t) => write!(f, "{}", t),
             Expr::Map(m) => write!(f, "{}", m),
             Expr::Record(r) => write!(f, "{}", r),

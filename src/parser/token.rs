@@ -1,4 +1,4 @@
-use super::span::Span;
+use super::{error::Error, span::Span};
 use logos::Logos;
 use std::{
     fmt::{Debug, Display},
@@ -394,16 +394,36 @@ impl Display for Token {
 #[derive(Debug, Clone)]
 pub struct TokenStream {
     tokens: Peekable<IntoIter<Token>>,
+    errors: Vec<Error>,
 }
 
 impl TokenStream {
     pub fn new<'src>(src: &'src str) -> Self {
-        let tokens: Vec<Token> = TokenKind::lexer(src)
+        let (tokens, errors): (Vec<Option<Token>>, Vec<Option<Error>>) = TokenKind::lexer(src)
             .spanned()
-            .filter_map(|(kind, span)| Token { kind, span: span.into() })
-            .collect();
+            .map(|(kind, span)| match kind {
+                Ok(kind) => (
+                    Some(Token {
+                        kind: kind,
+                        span: span.into(),
+                    }),
+                    None,
+                ),
+                Err(err) => (
+                    None,
+                    Some(Error(format!("Lexer error - {}", Span::from(span)))),
+                ),
+            })
+            .unzip();
+
         Self {
-            tokens: tokens.into_iter().peekable(),
+            tokens: tokens
+                .into_iter()
+                .flatten()
+                .collect::<Vec<_>>()
+                .into_iter()
+                .peekable(),
+            errors: errors.into_iter().flatten().collect(),
         }
     }
 

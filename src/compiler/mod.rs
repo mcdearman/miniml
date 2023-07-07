@@ -74,14 +74,14 @@ impl Compiler {
     }
 
     fn compile_lit(&mut self, lit: &Lit) {
-        match lit {
-            Lit::Int(i) => self.emit_const(Value::Int(*i)),
-            Lit::Rational(r) => self.emit_const(Value::Rational(*r)),
-            Lit::Real(f) => self.emit_const(Value::Real(*f)),
-            Lit::Complex(c) => self.emit_const(Value::Complex(*c)),
-            Lit::String(s) => self.emit_const(Value::String(s.clone())),
-            Lit::Char(c) => self.emit_const(Value::Char(*c)),
-            Lit::Bool(b) => self.emit_const(Value::Bool(*b)),
-        }
+        // match lit {
+        //     Lit::Int(i) => self.emit_const(Value::Int(*i)),
+        //     Lit::Rational(r) => self.emit_const(Value::Rational(*r)),
+        //     Lit::Real(f) => self.emit_const(Value::Real(*f)),
+        //     Lit::Complex(c) => self.emit_const(Value::Complex(*c)),
+        //     Lit::String(s) => self.emit_const(Value::String(s.clone())),
+        //     Lit::Char(c) => self.emit_const(Value::Char(*c)),
+        //     Lit::Bool(b) => self.emit_const(Value::Bool(*b)),
+        // }
     }
 }
