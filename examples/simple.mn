@@ -1,13 +1,10 @@
--- MiniML is small and simple. There are only two kinds of items in MiniML: 
--- statements and expressions. Statements are used to define values and types.
--- Expressions are used to compute values. There are two kinds of statements:
--- let bindings and type declarations.
-
--- type alias declaration
-type Point = (int, int)
-
--- record type declaration
-type Person = { name: String, age: Int8 }
+-- Arithmetic
+1 + 1
+21 - 2
+2 * 2
+4 / 2
+5 % 2
+6^2
 
 -- global let binding
 let x = 1

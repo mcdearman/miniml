@@ -19,3 +19,4 @@ clap = { version = "4.3.0", features = ["cargo", "derive"] }
 rustyline = "11.0.0"
 logos = "0.13.0"
 log = "0.4.18"
+cstree = "0.12.0"

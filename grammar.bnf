@@ -38,8 +38,6 @@
 
 <letter> ::= <wildcard> | [a-z] | [A-Z]
 
-<bool> ::= "true" | "false"
-
 <real> ::= <int> "." <digit>+
 
 <int> ::= "0" | <nonzero> <digit>*

@@ -8,6 +8,7 @@ pub struct Tree {
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum SyntaxKind {
+    // Tokens
     File,
     Item,
     Decl,
