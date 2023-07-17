@@ -2,3 +2,8 @@ fn gcd a b =
   if b = 0 then a 
   else gcd b (a % b)
 
+-- > gcd 18 _
+-- \x -> gcd 18 x
+
+-- > gcd _ 85
+-- \x -> gcd x 85
