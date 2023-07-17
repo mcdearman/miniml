@@ -1,9 +1,7 @@
-use std::fmt::Display;
-
+use crate::intern::InternedString;
 use num_complex::Complex64;
 use num_rational::Rational64;
-
-use crate::{intern::InternedString, list::List};
+use std::fmt::Display;
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Value {

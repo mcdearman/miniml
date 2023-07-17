@@ -30,8 +30,6 @@ pub enum TokenKind {
     Char,
     #[regex(r#""((\\"|\\\\)|[^\\"])*""#)]
     String,
-    #[regex(r#"true|false"#)]
-    Bool,
     #[token("+")]
     Add,
     #[token("-")]
@@ -161,9 +159,6 @@ macro_rules! T {
     };
     [str] => {
        $crate::parser::token::TokenKind::String
-    };
-    [bool] => {
-       $crate::parser::token::TokenKind::Bool
     };
     [+] => {
        $crate::parser::token::TokenKind::Add
@@ -321,7 +316,6 @@ impl Display for TokenKind {
                 T![imag] => "Imag",
                 T![char] => "Char",
                 T![str] => "String",
-                T![bool] => "Bool",
                 T![+] => "+",
                 T![-] => "-",
                 T![*] => "*",
