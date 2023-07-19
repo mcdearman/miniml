@@ -18,3 +18,17 @@ fn add x y = x + y
 -- local function binding
 let fn add x y = x + y in add 1 2
 
+-- if expression
+if 1 = 1 then 1 else 2
+
+-- elif
+if x = y then 1 
+elif x = z 
+then 2 else 3
+
+-- recursion
+fn gcd a b =
+  if b = 0 then a 
+  else gcd b (a % b)
+
+
