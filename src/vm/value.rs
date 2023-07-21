@@ -12,11 +12,6 @@ pub enum Value {
     String(InternedString),
     Char(char),
     Bool(bool),
-    // List(List<Value>),
-    // Tuple(Tuple),
-    // Map(Map),
-    // Record(Record),
-    // Lambda(Lambda),
     Nil,
 }
 

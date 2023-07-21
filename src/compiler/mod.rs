@@ -4,6 +4,11 @@ use crate::{
 };
 use std::fmt::Display;
 
+use self::error::CompileResult;
+
+pub mod error;
+mod tests;
+
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct CompilerError(pub String);
 
@@ -33,7 +38,7 @@ impl Compiler {
         }
     }
 
-    pub fn compile(&mut self, ast: &Item) -> Result<Chunk> {
+    pub fn compile(&mut self, ast: &Item) -> CompileResult<Chunk> {
         match ast {
             Item::Expr(expr) => self.compile_expr(expr),
             _ => todo!(),
@@ -44,7 +49,7 @@ impl Compiler {
     }
 
     fn emit_byte(&mut self, byte: u8) {
-        self.chunk.write(byte, 0)
+        self.chunk.write(byte, Span::from(0..0))
     }
 
     fn emit_bytes(&mut self, byte1: u8, byte2: u8) {

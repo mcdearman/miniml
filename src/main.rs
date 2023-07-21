@@ -1,12 +1,12 @@
 use clap::Parser;
 use compiler::Compiler;
-use parser::ast::Item;
 use repl::repl;
 
 mod compiler;
 mod intern;
 mod parser;
 mod repl;
+mod span;
 mod vm;
 
 #[derive(Parser)]

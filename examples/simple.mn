@@ -31,4 +31,10 @@ fn gcd a b =
   if b = 0 then a 
   else gcd b (a % b)
 
+-- lambda expression
+let gcd = \a b ->
+  if b = 0 then a 
+  else gcd b (a % b)
 
+-- symbols like lisp
+let x = :x

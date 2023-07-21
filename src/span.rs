@@ -3,14 +3,14 @@ use std::{
     ops::{Index, Range},
 };
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, Eq, PartialEq, Default, Hash)]
 pub struct Span {
-    start: u64,
-    end: u64,
+    pub start: u32,
+    pub end: u32,
 }
 
 impl Span {
-    pub fn new(start: u64, end: u64) -> Self {
+    pub fn new(start: u32, end: u32) -> Self {
         Self { start, end }
     }
 }
@@ -30,8 +30,8 @@ impl From<Span> for Range<usize> {
 impl From<Range<usize>> for Span {
     fn from(range: Range<usize>) -> Self {
         Self {
-            start: range.start as u64,
-            end: range.end as u64,
+            start: range.start as u32,
+            end: range.end as u32,
         }
     }
 }
@@ -40,6 +40,16 @@ impl Index<Span> for str {
     type Output = str;
 
     fn index(&self, index: Span) -> &Self::Output {
-        &self[Range::<usize>::from(index)]
+        &self[Range::from(index)]
     }
 }
+
+impl Index<Span> for String {
+    type Output = str;
+
+    fn index(&self, index: Span) -> &Self::Output {
+        &self[Range::from(index)]
+    }
+}
+
+pub type Spanned<T> = (T, Span);

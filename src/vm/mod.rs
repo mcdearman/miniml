@@ -1,7 +1,5 @@
 use std::fmt::{format, Display};
 
-use chumsky::extra::Err;
-
 use self::{
     chunk::Chunk,
     error::{Result, RuntimeError},
