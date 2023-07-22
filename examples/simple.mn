@@ -16,7 +16,7 @@ let y = 2 in x + y
 fn add x y = x + y
 
 -- local function binding
-let fn add x y = x + y in add 1 2
+fn add x y = x + y in add 1 2
 
 -- if expression
 if 1 = 1 then 1 else 2
@@ -32,6 +32,12 @@ fn gcd a b =
   else gcd b (a % b)
 
 -- lambda expression
+\a b -> a + b
+
+-- lambda application
+(\a b -> a + b) 1 2
+
+-- lambdas can be assigned to variables
 let gcd = \a b ->
   if b = 0 then a 
   else gcd b (a % b)
