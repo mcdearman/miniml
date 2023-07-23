@@ -17,40 +17,42 @@ impl Display for File {
 #[derive(Debug, Clone, PartialEq)]
 pub enum Expr {
     Ident(InternedString),
-    Int(BigInt),
-    Prefix {
-        op: PrefixOp,
-        expr: Box<Spanned<Self>>,
-    },
-    Infix {
-        op: InfixOp,
-        lhs: Box<Self>,
-        rhs: Box<Self>,
-    },
-    Let {
-        name: InternedString,
-        expr: Box<Self>,
-        body: Option<Box<Self>>,
-    },
-    Fn {
-        name: InternedString,
-        params: Vec<InternedString>,
+    Int(i64),
+    Real(f64),
+    String(InternedString),
+    // Prefix {
+    //     op: PrefixOp,
+    //     expr: Box<Spanned<Self>>,
+    // },
+    // Infix {
+    //     op: InfixOp,
+    //     lhs: Box<Self>,
+    //     rhs: Box<Self>,
+    // },
+    // Let {
+    //     name: InternedString,
+    //     expr: Box<Self>,
+    //     body: Option<Box<Self>>,
+    // },
+    // Fn {
+    //     name: InternedString,
+    //     params: Vec<InternedString>,
 
-        body: Box<Self>,
-    },
-    Apply {
-        fun: Box<Self>,
-        args: Vec<Self>,
-    },
-    If {
-        cond: Box<Self>,
-        then: Box<Self>,
-        else_: Box<Self>,
-    },
-    Lambda {
-        param: InternedString,
-        body: Box<Self>,
-    },
+    //     body: Box<Self>,
+    // },
+    // Apply {
+    //     fun: Box<Self>,
+    //     args: Vec<Self>,
+    // },
+    // If {
+    //     cond: Box<Self>,
+    //     then: Box<Self>,
+    //     else_: Box<Self>,
+    // },
+    // Lambda {
+    //     param: InternedString,
+    //     body: Box<Self>,
+    // },
     Unit,
     Error,
 }
@@ -59,13 +61,9 @@ impl Display for Expr {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Expr::Ident(i) => write!(f, "{}", i),
-            Expr::Prefix { op, expr } => write!(f, "({} {})", op, expr.0),
-            Expr::Infix { op, lhs, rhs } => write!(f, "({} {} {})", lhs, op, rhs),
-            Expr::Let { name, expr, body } => write!(f, "let {} = {} in {}", name, expr, body),
-            Expr::If { cond, then, else_ } => {
-                write!(f, "(if {} then {} else {})", cond, then, else_)
-            }
-
+            Expr::Int(i) => write!(f, "{}", i),
+            Expr::Real(r) => write!(f, "{}", r),
+            Expr::String(s) => write!(f, "{}", s),
             Expr::Unit => write!(f, "()"),
             Expr::Error => write!(f, "error"),
         }
