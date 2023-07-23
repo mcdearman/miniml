@@ -1,7 +1,6 @@
-use crate::span::Span;
-
 use super::{opcode::OpCode, value::Value};
 use core::result::Result;
+use miniml_util::span::Span;
 use std::fmt::{Debug, Write};
 
 #[derive(Clone, PartialEq)]
@@ -94,8 +93,8 @@ impl Debug for Chunk {
 mod tests {
     use super::Chunk;
     use super::OpCode;
-    use crate::span::Span;
-    use crate::vm::value::Value;
+    use crate::value::Value;
+    use miniml_util::span::Span;
 
     #[test]
     fn test_ret() {

@@ -43,4 +43,4 @@ let gcd = \a b ->
   else gcd b (a % b)
 
 -- symbols like lisp
-let x = :x
+let foo = :foo

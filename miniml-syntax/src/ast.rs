@@ -1,6 +1,5 @@
-use super::token::TokenKind;
-use crate::intern::InternedString;
 use itertools::join;
+use miniml_util::{intern::InternedString, span::Spanned};
 use num_bigint::BigInt;
 use std::fmt::Display;
 
@@ -21,7 +20,7 @@ pub enum Expr {
     Int(BigInt),
     Prefix {
         op: PrefixOp,
-        expr: Box<Self>,
+        expr: Box<Spanned<Self>>,
     },
     Infix {
         op: InfixOp,
@@ -35,12 +34,13 @@ pub enum Expr {
     },
     Fn {
         name: InternedString,
-        param: InternedString,
+        params: Vec<InternedString>,
+
         body: Box<Self>,
     },
     Apply {
         fun: Box<Self>,
-        arg: Box<Self>,
+        args: Vec<Self>,
     },
     If {
         cond: Box<Self>,
@@ -59,35 +59,16 @@ impl Display for Expr {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Expr::Ident(i) => write!(f, "{}", i),
-            Expr::Prefix { op, expr } => write!(f, "({} {})", op, expr),
+            Expr::Prefix { op, expr } => write!(f, "({} {})", op, expr.0),
             Expr::Infix { op, lhs, rhs } => write!(f, "({} {} {})", lhs, op, rhs),
-            Expr::Let { name, expr } => write!(f, "let {} = {}", name, expr),
-            Expr::Fn(fun) => write!(f, "{}", fun),
-            Expr::Apply(lhs, rhs) => write!(f, "({} {})", lhs, rhs),
+            Expr::Let { name, expr, body } => write!(f, "let {} = {} in {}", name, expr, body),
             Expr::If { cond, then, else_ } => {
                 write!(f, "(if {} then {} else {})", cond, then, else_)
             }
-            Expr::Match { expr, arms } => {
-                write!(f, "(match {} with ", expr)?;
-                for arm in arms {
-                    write!(f, "{}", arm)?;
-                }
-                write!(f, ")")
-            }
-            Expr::List(l) => write!(f, "{:?}", l.clone()),
-            Expr::Tuple(t) => write!(f, "{}", t),
-            Expr::Map(m) => write!(f, "{}", m),
-            Expr::Record(r) => write!(f, "{}", r),
-            Expr::Lambda(l) => write!(f, "{}", l),
+
             Expr::Unit => write!(f, "()"),
             Expr::Error => write!(f, "error"),
         }
-    }
-}
-
-impl Display for Lambda {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "\\{} -> {}", self.param, self.body)
     }
 }
 

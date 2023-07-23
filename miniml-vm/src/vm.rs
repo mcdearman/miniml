@@ -1,16 +1,10 @@
-use std::fmt::{format, Display};
-
-use self::{
+use crate::{
     chunk::Chunk,
     error::{Result, RuntimeError},
+    opcode::OpCode,
     value::Value,
 };
-use crate::vm::opcode::OpCode;
-
-pub mod chunk;
-pub mod error;
-pub mod opcode;
-pub mod value;
+use std::fmt::{format, Display};
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct VM {

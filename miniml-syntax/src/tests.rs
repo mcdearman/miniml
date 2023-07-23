@@ -1,24 +1,3 @@
-use logos::Logos;
-
-use crate::parser::token::{Token, TokenKind};
-
-#[test]
-fn lex_int() {
-    let src = "-523";
-    let tokens = TokenKind::lexer(src)
-        .spanned()
-        .map(|(t, s)| Token {
-            kind: t.map_err(|e| panic!("{:?}", e)).unwrap(),
-            span: s.into(),
-        })
-        .collect::<Vec<_>>();
-    let token_lits = tokens
-        .iter()
-        .map(|t| (t.clone(), src[t.span].to_string()))
-        .collect::<Vec<_>>();
-    insta::assert_debug_snapshot!(token_lits);
-}
-
 // #[test]
 // fn parse_int() {
 //     let src = "523";

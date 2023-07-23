@@ -2,13 +2,6 @@ use clap::Parser;
 use compiler::Compiler;
 use repl::repl;
 
-mod compiler;
-mod intern;
-mod parser;
-mod repl;
-mod span;
-mod vm;
-
 #[derive(Parser)]
 #[command(author, version, about, long_about = None)]
 struct Cli {

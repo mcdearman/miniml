@@ -1,10 +1,3 @@
-use crate::{compiler::Compiler, parser::ast::Item, vm::VM};
-use std::{
-    cell::RefCell,
-    io::{self, Write},
-    rc::Rc,
-};
-
 pub fn repl() {
     // println!("Welcome to the MiniML REPL!");
     // print!("> ");
