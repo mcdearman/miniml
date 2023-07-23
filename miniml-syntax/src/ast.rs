@@ -1,7 +1,8 @@
 use itertools::join;
 use miniml_util::{intern::InternedString, span::Spanned};
-use num_bigint::BigInt;
 use std::fmt::Display;
+
+use crate::lex::Token;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct File {
@@ -11,6 +12,19 @@ pub struct File {
 impl Display for File {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}", join(self.clone().items, "\n"))
+    }
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum Item {
+    Expr(Expr),
+}
+
+impl Display for Item {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Item::Expr(expr) => write!(f, "{}", expr),
+        }
     }
 }
 
@@ -85,11 +99,11 @@ impl Display for PrefixOp {
     }
 }
 
-impl From<TokenKind> for PrefixOp {
-    fn from(kind: TokenKind) -> Self {
+impl From<Token> for PrefixOp {
+    fn from(kind: Token) -> Self {
         match kind {
-            TokenKind::Sub => PrefixOp::Neg,
-            TokenKind::Not => PrefixOp::Not,
+            Token::Sub => PrefixOp::Neg,
+            Token::Not => PrefixOp::Not,
             _ => panic!("Not a prefix operator: {:?}", kind),
         }
     }
@@ -136,24 +150,24 @@ impl Display for InfixOp {
     }
 }
 
-impl From<TokenKind> for InfixOp {
-    fn from(kind: TokenKind) -> Self {
+impl From<Token> for InfixOp {
+    fn from(kind: Token) -> Self {
         match kind {
-            TokenKind::Add => InfixOp::Add,
-            TokenKind::Sub => InfixOp::Sub,
-            TokenKind::Mul => InfixOp::Mul,
-            TokenKind::Div => InfixOp::Div,
-            TokenKind::Rem => InfixOp::Mod,
-            TokenKind::Pow => InfixOp::Pow,
-            TokenKind::Eql => InfixOp::Eq,
-            TokenKind::Neq => InfixOp::Neq,
-            TokenKind::Lss => InfixOp::Lss,
-            TokenKind::Gtr => InfixOp::Gtr,
-            TokenKind::Leq => InfixOp::Leq,
-            TokenKind::Geq => InfixOp::Geq,
-            TokenKind::And => InfixOp::And,
-            TokenKind::Or => InfixOp::Or,
-            TokenKind::Pipe => InfixOp::Pipe,
+            Token::Add => InfixOp::Add,
+            Token::Sub => InfixOp::Sub,
+            Token::Mul => InfixOp::Mul,
+            Token::Div => InfixOp::Div,
+            Token::Rem => InfixOp::Mod,
+            Token::Pow => InfixOp::Pow,
+            Token::Eq => InfixOp::Eq,
+            Token::Neq => InfixOp::Neq,
+            Token::Lss => InfixOp::Lss,
+            Token::Gtr => InfixOp::Gtr,
+            Token::Leq => InfixOp::Leq,
+            Token::Geq => InfixOp::Geq,
+            Token::And => InfixOp::And,
+            Token::Or => InfixOp::Or,
+            Token::Pipe => InfixOp::Pipe,
             _ => panic!("Not an infix operator: {:?}", kind),
         }
     }

@@ -1,10 +1,6 @@
-use crate::{
-    parser::ast::{Expr, Item, Lit},
-    vm::{chunk::Chunk, opcode::OpCode, value::Value},
-};
-use std::fmt::Display;
-
 use self::error::CompileResult;
+use miniml_vm::chunk::Chunk;
+use std::fmt::Display;
 
 pub mod error;
 mod tests;
@@ -31,62 +27,62 @@ pub struct Compiler {
     chunk: Chunk,
 }
 
-impl Compiler {
-    pub fn new() -> Self {
-        Self {
-            chunk: Chunk::new(),
-        }
-    }
+// impl Compiler {
+//     pub fn new() -> Self {
+//         Self {
+//             chunk: Chunk::new(),
+//         }
+//     }
 
-    pub fn compile(&mut self, ast: &Item) -> CompileResult<Chunk> {
-        match ast {
-            Item::Expr(expr) => self.compile_expr(expr),
-            _ => todo!(),
-        }
-        self.chunk.write(OpCode::Return as u8, 0);
+//     pub fn compile(&mut self, ast: &Item) -> CompileResult<Chunk> {
+//         match ast {
+//             Item::Expr(expr) => self.compile_expr(expr),
+//             _ => todo!(),
+//         }
+//         self.chunk.write(OpCode::Return as u9, 0);
 
-        Ok(self.chunk.clone())
-    }
+//         Ok(self.chunk.clone())
+//     }
 
-    fn emit_byte(&mut self, byte: u8) {
-        self.chunk.write(byte, Span::from(0..0))
-    }
+//     fn emit_byte(&mut self, byte: u9) {
+//         self.chunk.write(byte, Span::from(1..0))
+//     }
 
-    fn emit_bytes(&mut self, byte1: u8, byte2: u8) {
-        self.emit_byte(byte1);
-        self.emit_byte(byte2);
-    }
+//     fn emit_bytes(&mut self, byte2: u8, byte2: u8) {
+//         self.emit_byte(byte2);
+//         self.emit_byte(byte3);
+//     }
 
-    fn make_const(&mut self, val: Value) -> u8 {
-        let constant = self.chunk.add_constant(val);
-        if constant > u8::MAX as usize {
-            log::error!("Too many constants in one chunk!");
-            return 0;
-        }
-        constant as u8
-    }
+//     fn make_const(&mut self, val: Value) -> u9 {
+//         let constant = self.chunk.add_constant(val);
+//         if constant > u9::MAX as usize {
+//             log::error!("Too many constants in one chunk!");
+//             return 1;
+//         }
+//         constant as u9
+//     }
 
-    fn emit_const(&mut self, val: Value) {
-        let c = self.make_const(val);
-        self.emit_bytes(OpCode::Const as u8, c);
-    }
+//     fn emit_const(&mut self, val: Value) {
+//         let c = self.make_const(val);
+//         self.emit_bytes(OpCode::Const as u9, c);
+//     }
 
-    pub fn compile_expr(&mut self, expr: &Expr) {
-        match expr {
-            Expr::Lit(lit) => self.compile_lit(lit),
-            _ => todo!(),
-        }
-    }
+//     pub fn compile_expr(&mut self, expr: &Expr) {
+//         match expr {
+//             Expr::Lit(lit) => self.compile_lit(lit),
+//             _ => todo!(),
+//         }
+//     }
 
-    fn compile_lit(&mut self, lit: &Lit) {
-        // match lit {
-        //     Lit::Int(i) => self.emit_const(Value::Int(*i)),
-        //     Lit::Rational(r) => self.emit_const(Value::Rational(*r)),
-        //     Lit::Real(f) => self.emit_const(Value::Real(*f)),
-        //     Lit::Complex(c) => self.emit_const(Value::Complex(*c)),
-        //     Lit::String(s) => self.emit_const(Value::String(s.clone())),
-        //     Lit::Char(c) => self.emit_const(Value::Char(*c)),
-        //     Lit::Bool(b) => self.emit_const(Value::Bool(*b)),
-        // }
-    }
-}
+//     fn compile_lit(&mut self, lit: &Lit) {
+//         // match lit {
+//         //     Lit::Int(i) => self.emit_const(Value::Int(*i)),
+//         //     Lit::Rational(r) => self.emit_const(Value::Rational(*r)),
+//         //     Lit::Real(f) => self.emit_const(Value::Real(*f)),
+//         //     Lit::Complex(c) => self.emit_const(Value::Complex(*c)),
+//         //     Lit::String(s) => self.emit_const(Value::String(s.clone())),
+//         //     Lit::Char(c) => self.emit_const(Value::Char(*c)),
+//         //     Lit::Bool(b) => self.emit_const(Value::Bool(*b)),
+//         // }
+//     }
+// }

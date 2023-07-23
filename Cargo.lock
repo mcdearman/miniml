@@ -518,6 +518,9 @@ version = "0.1.0"
 dependencies = [
  "insta",
  "log",
+ "miniml-syntax",
+ "miniml-util",
+ "miniml-vm",
  "num-bigint",
  "num-complex",
  "num-rational",

@@ -1,6 +1,11 @@
 use super::error::SyntaxError;
 use logos::Logos;
-use miniml_util::span::{Span, Spanned};
+use miniml_util::{
+    intern::InternedString,
+    span::{Span, Spanned},
+};
+use num_complex::Complex;
+use num_rational::Rational64;
 use std::{
     fmt::{Debug, Display},
     iter::Peekable,
@@ -22,16 +27,16 @@ pub enum Token {
         callback = |lex| lex.slice().parse().ok()
     )]
     Int(i64),
-    #[regex(r#"-?\d+/\d+"#, priority = 1)]
-    Rational,
-    #[regex(r#"((\d+(\.\d+))|(\.\d+))([Ee](\+|-)?\d+)?"#, priority = 1)]
-    Real,
-    #[regex(r#"((\d+(\.\d+)?)|(\.\d+))([Ee](\+|-)?\d+)?i"#, priority = 0)]
-    Imag,
-    #[regex(r#"'\w'"#)]
-    Char,
-    #[regex(r#""((\\"|\\\\)|[^\\"])*""#)]
-    String,
+    #[regex(r#"-?\d+/\d+"#, priority = 1, callback = |lex| lex.slice().parse().ok())]
+    Rational(Rational64),
+    #[regex(r#"((\d+(\.\d+))|(\.\d+))([Ee](\+|-)?\d+)?"#, priority = 1, callback = |lex| lex.slice().parse().ok())]
+    Real(f64),
+    #[regex(r#"((\d+(\.\d+)?)|(\.\d+))([Ee](\+|-)?\d+)?i"#, priority = 0, callback = |lex| lex.slice().parse().ok())]
+    Imag(Complex<f64>),
+    #[regex(r#"'\w'"#, callback = |lex| lex.slice().parse().ok())]
+    Char(char),
+    #[regex(r#""((\\"|\\\\)|[^\\"])*""#, callback = |lex| InternedString::from(lex.slice()))]
+    String(InternedString),
     #[token("+")]
     Add,
     #[token("-")]
@@ -110,8 +115,8 @@ pub enum Token {
     Let,
     #[token("fn")]
     Fn,
-    #[token("type")]
-    Type,
+    #[token("struct")]
+    Struct,
     #[token("match")]
     Match,
     #[token("with")]
@@ -120,10 +125,10 @@ pub enum Token {
     If,
     #[token("then")]
     Then,
-    #[token("else")]
-    Else,
     #[token("elif")]
     Elif,
+    #[token("else")]
+    Else,
     #[token("in")]
     In,
 }
@@ -134,64 +139,61 @@ impl Display for Token {
             f,
             "{}",
             match self {
-                Token::Eof => "<EOF>",
-                Token::Whitespace => "<WS>",
-                Token::Comment => "Comment",
-                Token::Ident => "Ident",
-                Token::Int(i) => {
-                    let s = &format!("{}", i);
-                    s
-                }
-                Token::Rational => "Rational",
-                Token::Real => "Float",
-                Token::Imag => "Imag",
-                Token::Char => "Char",
-                Token::String => "String",
-                Token::Add => "+",
-                Token::Sub => "-",
-                Token::Mul => "*",
-                Token::Div => "/",
-                Token::Rem => "%",
-                Token::Pow => "^",
-                Token::And => "&&",
-                Token::Or => "||",
-                Token::Lambda => "lambda",
-                Token::Arrow => "->",
-                Token::FatArrow => "=>",
-                Token::Pipe => "|",
-                Token::PipeArrow => "|>",
-                Token::Eq => "=",
-                Token::Lss => "<",
-                Token::Gtr => ">",
-                Token::Not => "!",
-                Token::Neq => "!=",
-                Token::Leq => "<=",
-                Token::Geq => ">=",
-                Token::LParen => "(",
-                Token::RParen => ")",
-                Token::LBrack => "[",
-                Token::RBrack => "]",
-                Token::LBrace => "{",
-                Token::RBrace => "}",
-                Token::Comma => ",",
-                Token::Period => ".",
-                Token::Semicolon => ";",
-                Token::DoubleSemicolon => ";;",
-                Token::Colon => ":",
-                Token::Pub => "pub",
-                Token::Module => "mod",
-                Token::End => "end",
-                Token::Use => "use",
-                Token::Let => "let",
-                Token::Fn => "fn",
-                Token::Type => "type",
-                Token::Match => "match",
-                Token::With => "with",
-                Token::If => "if",
-                Token::Then => "then",
-                Token::Else => "else",
-                Token::Elif => "elif",
-                Token::In => "in",
+                Token::Eof => "<EOF>".to_string(),
+                Token::Whitespace => "<WS>".to_string(),
+                Token::Comment => "Comment".to_string(),
+                Token::Ident => "Ident".to_string(),
+                Token::Int(i) => i.to_string(),
+                Token::Rational(r) => r.to_string(),
+                Token::Real(r) => r.to_string(),
+                Token::Imag(i) => i.to_string(),
+                Token::Char(c) => c.to_string(),
+                Token::String(s) => s.to_string(),
+                Token::Add => "+".to_string(),
+                Token::Sub => "-".to_string(),
+                Token::Mul => "*".to_string(),
+                Token::Div => "/".to_string(),
+                Token::Rem => "%".to_string(),
+                Token::Pow => "^".to_string(),
+                Token::And => "&&".to_string(),
+                Token::Or => "||".to_string(),
+                Token::Lambda => "lambda".to_string(),
+                Token::Arrow => "->".to_string(),
+                Token::FatArrow => "=>".to_string(),
+                Token::Pipe => "|".to_string(),
+                Token::PipeArrow => "|>".to_string(),
+                Token::Eq => "=".to_string(),
+                Token::Lss => "<".to_string(),
+                Token::Gtr => ">".to_string(),
+                Token::Not => "!".to_string(),
+                Token::Neq => "!=".to_string(),
+                Token::Leq => "<=".to_string(),
+                Token::Geq => ">=".to_string(),
+                Token::LParen => "(".to_string(),
+                Token::RParen => ")".to_string(),
+                Token::LBrack => "[".to_string(),
+                Token::RBrack => "]".to_string(),
+                Token::LBrace => "{".to_string(),
+                Token::RBrace => "}".to_string(),
+                Token::Comma => ",".to_string(),
+                Token::Period => ".".to_string(),
+                Token::Semicolon => ";".to_string(),
+                Token::DoubleSemicolon => ";;".to_string(),
+                Token::Colon => ":".to_string(),
+                Token::Pub => "pub".to_string(),
+                Token::Module => "mod".to_string(),
+                Token::End => "end".to_string(),
+                Token::Use => "use".to_string(),
+                Token::Let => "let".to_string(),
+                Token::Fn => "fn".to_string(),
+                Token::Struct => "struct".to_string(),
+                Token::Match => "match".to_string(),
+                Token::With => "with".to_string(),
+                Token::If => "if".to_string(),
+                Token::Then => "then".to_string(),
+                Token::Elif => "elif".to_string(),
+                Token::Else => "else".to_string(),
+                Token::In => "in".to_string(),
             }
         )
     }
