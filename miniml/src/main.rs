@@ -40,7 +40,7 @@ use miniml_syntax::{lex::lex, parser::Parser};
 use miniml_vm::vm::VM;
 
 fn main() {
-    let src = "-523 + 2 * 3 + 4 / 2";
+    let src = "let x = 1";
     let tokens = lex(src).expect("failed to lex");
     let mut parser = Parser::new(tokens);
     let ast = parser.parse().expect("failed to parse");

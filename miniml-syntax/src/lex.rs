@@ -111,6 +111,8 @@ pub enum Token {
     End,
     #[token("use")]
     Use,
+    #[token("const")]
+    Const,
     #[token("let")]
     Let,
     #[token("fn")]
@@ -184,6 +186,7 @@ impl Display for Token {
                 Token::Module => "mod".to_string(),
                 Token::End => "end".to_string(),
                 Token::Use => "use".to_string(),
+                Token::Const => "const".to_string(),
                 Token::Let => "let".to_string(),
                 Token::Fn => "fn".to_string(),
                 Token::Struct => "struct".to_string(),
@@ -226,12 +229,15 @@ impl TokenStream {
         self.peek().0 == token.clone()
     }
 
-    pub fn eat(&mut self, token: &Token) -> bool {
+    pub fn eat(&mut self, token: &Token) -> Result<(), Spanned<SyntaxError>> {
         if self.at(token) {
             self.next();
-            true
+            Ok(())
         } else {
-            false
+            Err((
+                SyntaxError::UnexpectedToken(self.peek().0.clone()),
+                self.peek().1,
+            ))
         }
     }
 }

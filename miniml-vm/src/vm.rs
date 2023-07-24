@@ -1,16 +1,20 @@
+use std::collections::HashMap;
+
+use miniml_util::intern::InternedString;
+
 use crate::{
     chunk::Chunk,
     error::{Result, RuntimeError},
     opcode::OpCode,
     value::Value,
 };
-use std::fmt::{format, Display};
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct VM {
     chunk: Chunk,
     ip: usize,
     stack: Vec<Value>,
+    globals: HashMap<InternedString, Value>,
 }
 
 impl VM {
@@ -21,6 +25,7 @@ impl VM {
             chunk,
             ip: 0,
             stack: vec![],
+            globals: HashMap::new(),
         }
     }
 
@@ -32,6 +37,15 @@ impl VM {
             log::trace!("IP: {}", self.ip);
             // log::trace!("Chunk: {:?}", self.chunk);
             match instr {
+                OpCode::Pop => {
+                    self.pop();
+                }
+                OpCode::DefineGlobal => {
+                    let name = self.read_string();
+                    let value = self.pop();
+                    self.globals.insert(name, value);
+                    self.pop();
+                }
                 OpCode::Const => {
                     let constant = self.read_constant();
                     self.push(constant);
@@ -136,6 +150,14 @@ impl VM {
         log::trace!("ip const: {}", self.ip);
         let op = self.read_instr();
         self.chunk.constants[op as usize].clone()
+    }
+
+    fn read_string(&mut self) -> InternedString {
+        log::trace!("ip string: {}", self.ip);
+        match self.read_constant() {
+            Value::String(s) => s,
+            _ => panic!("Expected string"),
+        }
     }
 
     fn push(&mut self, value: Value) {

@@ -49,6 +49,8 @@ impl Chunk {
             write!(out, "{:4} ", self.spans[offset])?;
         }
         match OpCode::from(self.code[offset]) {
+            OpCode::Pop => self.simple_instr(out, "POP", offset),
+            OpCode::DefineGlobal => self.simple_instr(out, "DEFINE_GLOBAL", offset),
             OpCode::Const => self.const_instr(out, offset),
             OpCode::Add => self.simple_instr(out, "ADD", offset),
             OpCode::Sub => self.simple_instr(out, "SUB", offset),

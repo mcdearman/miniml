@@ -1,6 +1,9 @@
 use crate::error::CompileResult;
-use miniml_syntax::ast::{Expr, InfixOp, Item, PrefixOp, Root};
-use miniml_util::span::{Span, Spanned};
+use miniml_syntax::ast::{Decl, Expr, InfixOp, Item, LetDecl, PrefixOp, Root};
+use miniml_util::{
+    intern::InternedString,
+    span::{Span, Spanned},
+};
 use miniml_vm::{chunk::Chunk, opcode::OpCode, value::Value};
 use std::fmt::Display;
 
@@ -65,17 +68,33 @@ impl Compiler {
         self.emit_bytes(OpCode::Const as u8, c);
     }
 
+    fn define_var(&mut self, name: InternedString) {
+        let idx = self.make_const(Value::Ident(name));
+        self.emit_bytes(OpCode::DefineGlobal as u8, idx);
+    }
+
     fn compile_item(&mut self, item: &Item) {
         match item {
-            Item::Decl(decl) => todo!(),
+            Item::Decl(decl) => self.compile_decl(&decl.0),
             Item::Expr(expr) => self.compile_expr(&expr.0),
+        }
+    }
+
+    fn compile_decl(&mut self, decl: &Decl) {
+        match decl {
+            Decl::Let(let_decl) => match let_decl.clone().0 {
+                LetDecl { name, expr } => {
+                    self.compile_expr(&expr.0);
+                    self.define_var(name.0);
+                }
+            },
         }
     }
 
     fn compile_expr(&mut self, expr: &Expr) {
         match expr {
             Expr::Int(i) => self.emit_const(Value::Int(*i)),
-            Expr::Prefix { op, expr } => match op.clone() {
+            Expr::Prefix { op, expr } => match op.clone().0 {
                 PrefixOp::Neg => {
                     self.compile_expr(&expr.0);
                     self.emit_byte(OpCode::Neg as u8);
@@ -85,7 +104,7 @@ impl Compiler {
             Expr::Infix { op, lhs, rhs } => {
                 self.compile_expr(&lhs.0);
                 self.compile_expr(&rhs.0);
-                match op.clone() {
+                match op.clone().0 {
                     InfixOp::Add => self.emit_byte(OpCode::Add as u8),
                     InfixOp::Sub => self.emit_byte(OpCode::Sub as u8),
                     InfixOp::Mul => self.emit_byte(OpCode::Mul as u8),

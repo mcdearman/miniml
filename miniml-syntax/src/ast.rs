@@ -36,31 +36,68 @@ impl Display for Item {
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Decl {
-    Let {
-        name: InternedString,
-        expr: Box<Spanned<Expr>>,
-    },
-    Fn {
-        name: InternedString,
-        params: Vec<InternedString>,
-        body: Box<Spanned<Expr>>,
-    },
+    Let(Spanned<LetDecl>),
 }
 
 impl Display for Decl {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Decl::Let { name, expr } => write!(f, "let {} = {};", name, expr.0),
-            Decl::Fn { name, params, body } => {
-                write!(
-                    f,
-                    "fn {} {} = {};",
-                    name,
-                    join(params.clone(), ", "),
-                    body.0
-                )
-            }
+            Decl::Let(decl) => write!(f, "{}", decl.0),
+            //     Decl::Fn { name, params, body } => {
+            //         write!(
+            //             f,
+            //             "fn {} {} = {};",
+            //             name,
+            //             join(params.clone(), ", "),
+            //             body.0
+            //         )
+            //     }
+            // }
         }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum Let {
+    Decl(Spanned<LetDecl>),
+    Expr(Spanned<LetExpr>),
+}
+
+impl Display for Let {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Let::Decl(decl) => write!(f, "{}", decl.0),
+            Let::Expr(expr) => write!(f, "{}", expr.0),
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct LetDecl {
+    pub name: Spanned<InternedString>,
+    pub expr: Box<Spanned<Expr>>,
+}
+
+impl Display for LetDecl {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "let {} = {}", self.name.0, self.expr.0)
+    }
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct LetExpr {
+    pub name: Spanned<InternedString>,
+    pub expr: Box<Spanned<Expr>>,
+    pub body: Box<Spanned<Expr>>,
+}
+
+impl Display for LetExpr {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "let {} = {} in {}",
+            self.name.0, self.expr.0, self.body.0
+        )
     }
 }
 
@@ -71,19 +108,15 @@ pub enum Expr {
     Real(f64),
     String(InternedString),
     Prefix {
-        op: PrefixOp,
+        op: Spanned<PrefixOp>,
         expr: Box<Spanned<Self>>,
     },
     Infix {
-        op: InfixOp,
+        op: Spanned<InfixOp>,
         lhs: Box<Spanned<Self>>,
         rhs: Box<Spanned<Self>>,
     },
-    // Let {
-    //     name: InternedString,
-    //     expr: Box<Self>,
-    //     body: Option<Box<Self>>,
-    // },
+    Let(Spanned<LetExpr>),
     // Fn {
     //     name: InternedString,
     //     params: Vec<InternedString>,
@@ -114,8 +147,9 @@ impl Display for Expr {
             Expr::Int(i) => write!(f, "{}", i),
             Expr::Real(r) => write!(f, "{}", r),
             Expr::String(s) => write!(f, "{}", s),
-            Expr::Prefix { op, expr } => write!(f, "({}{})", op, expr.0),
-            Expr::Infix { op, lhs, rhs } => write!(f, "({} {} {})", lhs.0, op, rhs.0),
+            Expr::Prefix { op, expr } => write!(f, "{}{}", op.0, expr.0),
+            Expr::Infix { op, lhs, rhs } => write!(f, "{} {} {}", lhs.0, op.0, rhs.0),
+            Expr::Let(l) => write!(f, "{}", l.0),
             Expr::Apply { fun, args } => {
                 write!(f, "({}", fun.0)?;
                 for arg in args {

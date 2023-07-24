@@ -1,5 +1,8 @@
+#[repr(u8)]
 #[derive(Debug, Clone, PartialEq)]
 pub enum OpCode {
+    Pop,
+    DefineGlobal,
     Const,
     Add,
     Sub,
@@ -12,13 +15,15 @@ pub enum OpCode {
 impl From<u8> for OpCode {
     fn from(byte: u8) -> Self {
         match byte {
-            0 => OpCode::Const,
-            1 => OpCode::Add,
-            2 => OpCode::Sub,
-            3 => OpCode::Mul,
-            4 => OpCode::Div,
-            5 => OpCode::Neg,
-            6 => OpCode::Return,
+            0 => OpCode::Pop,
+            1 => OpCode::DefineGlobal,
+            2 => OpCode::Const,
+            3 => OpCode::Add,
+            4 => OpCode::Sub,
+            5 => OpCode::Mul,
+            6 => OpCode::Div,
+            7 => OpCode::Neg,
+            8 => OpCode::Return,
             _ => panic!("invalid opcode"),
         }
     }
