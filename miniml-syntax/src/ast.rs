@@ -42,11 +42,11 @@ pub enum Expr {
         op: PrefixOp,
         expr: Box<Spanned<Self>>,
     },
-    // Infix {
-    //     op: InfixOp,
-    //     lhs: Box<Self>,
-    //     rhs: Box<Self>,
-    // },
+    Infix {
+        op: InfixOp,
+        lhs: Box<Spanned<Self>>,
+        rhs: Box<Spanned<Self>>,
+    },
     // Let {
     //     name: InternedString,
     //     expr: Box<Self>,
@@ -58,10 +58,10 @@ pub enum Expr {
 
     //     body: Box<Self>,
     // },
-    // Apply {
-    //     fun: Box<Self>,
-    //     args: Vec<Self>,
-    // },
+    Apply {
+        fun: Box<Spanned<Self>>,
+        args: Vec<Spanned<Self>>,
+    },
     // If {
     //     cond: Box<Self>,
     //     then: Box<Self>,
@@ -77,12 +77,20 @@ pub enum Expr {
 
 impl Display for Expr {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
+        match self.clone() {
             Expr::Ident(i) => write!(f, "{}", i),
             Expr::Int(i) => write!(f, "{}", i),
             Expr::Real(r) => write!(f, "{}", r),
             Expr::String(s) => write!(f, "{}", s),
             Expr::Prefix { op, expr } => write!(f, "({}{})", op, expr.0),
+            Expr::Infix { op, lhs, rhs } => write!(f, "({} {} {})", lhs.0, op, rhs.0),
+            Expr::Apply { fun, args } => {
+                write!(f, "({}", fun.0)?;
+                for arg in args {
+                    write!(f, " {}", arg.0)?;
+                }
+                write!(f, ")")
+            }
             Expr::Unit => write!(f, "()"),
             Expr::Error => write!(f, "error"),
         }

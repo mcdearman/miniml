@@ -1,5 +1,5 @@
 use crate::error::CompileResult;
-use miniml_syntax::ast::{Expr, Item, PrefixOp, Root};
+use miniml_syntax::ast::{Expr, InfixOp, Item, PrefixOp, Root};
 use miniml_util::span::{Span, Spanned};
 use miniml_vm::{chunk::Chunk, opcode::OpCode, value::Value};
 use std::fmt::Display;
@@ -81,6 +81,17 @@ impl Compiler {
                 }
                 PrefixOp::Not => todo!(),
             },
+            Expr::Infix { op, lhs, rhs } => {
+                self.compile_expr(&lhs.0);
+                self.compile_expr(&rhs.0);
+                match op.clone() {
+                    InfixOp::Add => self.emit_byte(OpCode::Add as u8),
+                    InfixOp::Sub => self.emit_byte(OpCode::Sub as u8),
+                    InfixOp::Mul => self.emit_byte(OpCode::Mul as u8),
+                    InfixOp::Div => self.emit_byte(OpCode::Div as u8),
+                    _ => todo!(),
+                }
+            }
             _ => todo!(),
         }
     }

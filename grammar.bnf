@@ -1,6 +1,20 @@
 <root> ::= (<item> <ws>+)+
 
-<item> ::= <decl> | <expr>
+<item> ::= <expr>
+
+<expr> ::= <term>
+
+<term> ::= <factor> (<ws>* ("+" | "-") <ws>* <term>)?
+
+<factor> ::= <power> (<ws>* ("*" | "/" | "%") <ws>* <factor>)?
+
+<power> ::= <unary> (<ws>* "^" <ws>* <power>)?
+
+<unary> ::= <apply> | ("-" | "!") <unary>
+
+<apply> ::= <atom> (<ws>+ <atom>)*
+
+<atom> ::= <ident> | <lit> | <lambda> | <list> | <tuple> | <map> | "(" <ws>* <expr> <ws>* ")"
 
 <lit> ::= <int> 
 | <real> 
