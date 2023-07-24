@@ -1,5 +1,5 @@
 use crate::{
-    ast::{Expr, Item, Root},
+    ast::{Expr, Item, PrefixOp, Root},
     error::SyntaxError,
     lex::{Token, TokenStream},
 };
@@ -60,6 +60,21 @@ impl Parser {
                 ))
             }
             Token::Int(i) => Ok((Expr::Int(i), Span::new(start, self.tokens.next().1.end))),
+            Token::Real(r) => Ok((Expr::Real(r), Span::new(start, self.tokens.next().1.end))),
+            Token::String(s) => {
+                self.tokens.next();
+                Ok((Expr::String(s), Span::new(start, self.tokens.peek().1.end)))
+            }
+            Token::Sub => {
+                self.tokens.next();
+                Ok((
+                    Expr::Prefix {
+                        op: PrefixOp::Neg,
+                        expr: Box::new(self.expr()?),
+                    },
+                    Span::new(start, self.tokens.peek().1.end),
+                ))
+            }
             _ => todo!(),
         }
     }

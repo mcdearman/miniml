@@ -38,10 +38,10 @@ pub enum Expr {
     Int(i64),
     Real(f64),
     String(InternedString),
-    // Prefix {
-    //     op: PrefixOp,
-    //     expr: Box<Spanned<Self>>,
-    // },
+    Prefix {
+        op: PrefixOp,
+        expr: Box<Spanned<Self>>,
+    },
     // Infix {
     //     op: InfixOp,
     //     lhs: Box<Self>,
@@ -82,6 +82,7 @@ impl Display for Expr {
             Expr::Int(i) => write!(f, "{}", i),
             Expr::Real(r) => write!(f, "{}", r),
             Expr::String(s) => write!(f, "{}", s),
+            Expr::Prefix { op, expr } => write!(f, "({}{})", op, expr.0),
             Expr::Unit => write!(f, "()"),
             Expr::Error => write!(f, "error"),
         }

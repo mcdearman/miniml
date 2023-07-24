@@ -22,12 +22,12 @@ pub enum Token {
     #[regex(r##"([A-Za-z]|_)([A-Za-z]|_|\d)*"##, callback = |lex| InternedString::from(lex.slice()))]
     Ident(InternedString),
     #[regex(
-        r#"(\+|-)*((0b[0-1]+)|(0o[0-7]+)|(0x[0-9a-fA-F]+)|([1-9]\d*|0))"#,
+        r#"((0b[0-1]+)|(0o[0-7]+)|(0x[0-9a-fA-F]+)|([1-9]\d*|0))"#,
         priority = 2,
         callback = |lex| lex.slice().parse().ok()
     )]
     Int(i64),
-    #[regex(r#"-?\d+/\d+"#, priority = 1, callback = |lex| lex.slice().parse().ok())]
+    #[regex(r#"\d+/\d+"#, priority = 1, callback = |lex| lex.slice().parse().ok())]
     Rational(Rational64),
     #[regex(r#"((\d+(\.\d+))|(\.\d+))([Ee](\+|-)?\d+)?"#, priority = 1, callback = |lex| lex.slice().parse().ok())]
     Real(f64),
@@ -142,7 +142,7 @@ impl Display for Token {
                 Token::Eof => "<EOF>".to_string(),
                 Token::Whitespace => "<WS>".to_string(),
                 Token::Comment => "Comment".to_string(),
-                Token::Ident(name) => "Ident".to_string(),
+                Token::Ident(_) => "Ident".to_string(),
                 Token::Int(i) => i.to_string(),
                 Token::Rational(r) => r.to_string(),
                 Token::Real(r) => r.to_string(),

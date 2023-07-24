@@ -39,14 +39,14 @@ use miniml_vm::vm::VM;
 //     }
 // }
 fn main() {
-    let src = "523";
+    let src = "-523";
     let tokens = lex(src).expect("failed to lex");
     let mut parser = Parser::new(tokens);
     let ast = parser.parse().expect("failed to parse");
-    // println!("{:?}", ast);
+    println!("ast: {:?}", ast);
     let mut compiler = Compiler::new();
     let chunk = compiler.compile(&ast.0).expect("failed to compile");
     let mut vm = VM::new(chunk);
     let res = vm.run().expect("runtime error");
-    println!("{:?}", res);
+    println!("val: {:?}", res);
 }

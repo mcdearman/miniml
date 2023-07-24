@@ -1,5 +1,5 @@
 use crate::error::CompileResult;
-use miniml_syntax::ast::{Expr, Item, Root};
+use miniml_syntax::ast::{Expr, Item, PrefixOp, Root};
 use miniml_util::span::{Span, Spanned};
 use miniml_vm::{chunk::Chunk, opcode::OpCode, value::Value};
 use std::fmt::Display;
@@ -74,6 +74,13 @@ impl Compiler {
     fn compile_expr(&mut self, expr: &Expr) {
         match expr {
             Expr::Int(i) => self.emit_const(Value::Int(*i)),
+            Expr::Prefix { op, expr } => match op.clone() {
+                PrefixOp::Neg => {
+                    self.compile_expr(&expr.0);
+                    self.emit_byte(OpCode::Neg as u8);
+                }
+                PrefixOp::Not => todo!(),
+            },
             _ => todo!(),
         }
     }
