@@ -67,6 +67,7 @@ impl Compiler {
 
     fn compile_item(&mut self, item: &Item) {
         match item {
+            Item::Decl(decl) => todo!(),
             Item::Expr(expr) => self.compile_expr(&expr.0),
         }
     }

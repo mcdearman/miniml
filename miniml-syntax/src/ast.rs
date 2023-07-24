@@ -21,13 +21,45 @@ impl Display for Root {
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Item {
+    Decl(Spanned<Decl>),
     Expr(Spanned<Expr>),
 }
 
 impl Display for Item {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
+            Item::Decl(decl) => write!(f, "{}", decl.0),
             Item::Expr(expr) => write!(f, "{}", expr.0),
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum Decl {
+    Let {
+        name: InternedString,
+        expr: Box<Spanned<Expr>>,
+    },
+    Fn {
+        name: InternedString,
+        params: Vec<InternedString>,
+        body: Box<Spanned<Expr>>,
+    },
+}
+
+impl Display for Decl {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Decl::Let { name, expr } => write!(f, "let {} = {};", name, expr.0),
+            Decl::Fn { name, params, body } => {
+                write!(
+                    f,
+                    "fn {} {} = {};",
+                    name,
+                    join(params.clone(), ", "),
+                    body.0
+                )
+            }
         }
     }
 }

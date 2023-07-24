@@ -1,5 +1,5 @@
 use crate::{
-    ast::{Expr, InfixOp, Item, PrefixOp, Root},
+    ast::{Decl, Expr, InfixOp, Item, PrefixOp, Root},
     error::SyntaxError,
     lex::{Token, TokenStream},
 };
@@ -42,11 +42,19 @@ impl Parser {
     fn item(&mut self) -> Result<Spanned<Item>, Spanned<SyntaxError>> {
         let start = self.tokens.peek().1.start;
         match self.tokens.peek().0 {
+            Token::Let => Ok((
+                Item::Decl(self.decl()?),
+                Span::new(start, self.tokens.peek().1.end),
+            )),
             _ => Ok((
                 Item::Expr(self.expr()?),
                 Span::new(start, self.tokens.peek().1.end),
             )),
         }
+    }
+
+    fn decl(&mut self) -> Result<Spanned<Decl>, Spanned<SyntaxError>> {
+        todo!()
     }
 
     fn expr(&mut self) -> Result<Spanned<Expr>, Spanned<SyntaxError>> {

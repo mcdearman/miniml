@@ -13,10 +13,6 @@
 //     env_logger::init();
 //     let args = Cli::parse();
 
-use miniml_compile::compiler::Compiler;
-use miniml_syntax::{lex::lex, parser::Parser};
-use miniml_vm::vm::VM;
-
 //     if let Some(filepath) = args.filepath {
 //         // let src = std::fs::read_to_string(filepath).expect("failed to read file");
 //         // match &parse(&src) {
@@ -38,6 +34,11 @@ use miniml_vm::vm::VM;
 //         repl();
 //     }
 // }
+
+use miniml_compile::compiler::Compiler;
+use miniml_syntax::{lex::lex, parser::Parser};
+use miniml_vm::vm::VM;
+
 fn main() {
     let src = "-523 + 2 * 3 + 4 / 2";
     let tokens = lex(src).expect("failed to lex");
