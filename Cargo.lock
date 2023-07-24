@@ -498,17 +498,14 @@ name = "miniml"
 version = "0.1.0"
 dependencies = [
  "clap",
- "cstree",
  "env_logger",
  "insta",
- "itertools",
- "lasso",
  "log",
- "logos",
- "num-bigint",
- "num-complex",
- "num-rational",
- "once_cell",
+ "miniml-compile",
+ "miniml-repl",
+ "miniml-syntax",
+ "miniml-util",
+ "miniml-vm",
  "rustyline",
 ]
 

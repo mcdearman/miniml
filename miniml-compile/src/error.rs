@@ -1,9 +1,11 @@
+use miniml_util::intern::InternedString;
+
 #[derive(Debug, Clone, PartialEq)]
-pub struct CompilerError(pub String);
+pub struct CompilerError(pub InternedString);
 
 impl CompilerError {
     pub fn new(msg: &str) -> Self {
-        Self(msg.to_string())
+        Self(InternedString::from(msg))
     }
 }
 

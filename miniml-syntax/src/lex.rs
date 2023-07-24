@@ -19,8 +19,8 @@ pub enum Token {
     Whitespace,
     #[regex(r#"--[^\n]*|/\*([^*]|\**[^*/])*\*+/"#)]
     Comment,
-    #[regex(r##"([A-Za-z]|_)([A-Za-z]|_|\d)*"##)]
-    Ident,
+    #[regex(r##"([A-Za-z]|_)([A-Za-z]|_|\d)*"##, callback = |lex| InternedString::from(lex.slice()))]
+    Ident(InternedString),
     #[regex(
         r#"(\+|-)*((0b[0-1]+)|(0o[0-7]+)|(0x[0-9a-fA-F]+)|([1-9]\d*|0))"#,
         priority = 2,
@@ -142,7 +142,7 @@ impl Display for Token {
                 Token::Eof => "<EOF>".to_string(),
                 Token::Whitespace => "<WS>".to_string(),
                 Token::Comment => "Comment".to_string(),
-                Token::Ident => "Ident".to_string(),
+                Token::Ident(name) => "Ident".to_string(),
                 Token::Int(i) => i.to_string(),
                 Token::Rational(r) => r.to_string(),
                 Token::Real(r) => r.to_string(),
@@ -199,6 +199,7 @@ impl Display for Token {
     }
 }
 
+#[derive(Debug, Clone)]
 pub struct TokenStream {
     tokens: Peekable<IntoIter<Spanned<Token>>>,
 }

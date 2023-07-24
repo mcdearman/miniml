@@ -1,4 +1,4 @@
-<file> ::= (<item> <ws>+)+
+<root> ::= (<item> <ws>+)+
 
 <item> ::= <decl> | <expr>
 
@@ -9,16 +9,6 @@
 | <bool> 
 
 <lambda> ::= "\\" <ws>+ <ident>+ <ws>+ "->" <ws>+ <expr>
-
-<fullHint> ::= <scopedHint> (<ws>+ "->" <ws>+ <fullHint>)*
-
-<scopedHint> ::= <hint> 
-| "(" <fullHint> (<ws>+ "->" <ws>+ <fullHint>)+ ")"
-| "(" <fullHint> ("," <ws>+ <fullHint>)+ ")"
-| "(" <fullHint>* ")"
-| "[" <fullHint> "]"
-
-<hint> ::= <ident>
 
 <list> ::= "[" <ws>* <expr>? (<ws>* "," <ws>* <expr>)* <ws>* "]"
 

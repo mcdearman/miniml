@@ -5,25 +5,29 @@ use std::fmt::Display;
 use crate::lex::Token;
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct File {
-    pub items: Vec<Expr>,
+pub struct Root {
+    pub items: Vec<Spanned<Item>>,
 }
 
-impl Display for File {
+impl Display for Root {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", join(self.clone().items, "\n"))
+        write!(
+            f,
+            "{}",
+            join(self.clone().items.into_iter().map(|i| i.0), "\n")
+        )
     }
 }
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Item {
-    Expr(Expr),
+    Expr(Spanned<Expr>),
 }
 
 impl Display for Item {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Item::Expr(expr) => write!(f, "{}", expr),
+            Item::Expr(expr) => write!(f, "{}", expr.0),
         }
     }
 }
