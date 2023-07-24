@@ -69,7 +69,7 @@ impl Compiler {
     }
 
     fn define_var(&mut self, name: InternedString) {
-        let idx = self.make_const(Value::Ident(name));
+        let idx = self.make_const(Value::String(name));
         self.emit_bytes(OpCode::DefineGlobal as u8, idx);
     }
 

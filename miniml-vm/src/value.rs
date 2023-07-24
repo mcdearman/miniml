@@ -5,7 +5,6 @@ use std::fmt::Display;
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Value {
-    Ident(InternedString),
     Int(i64),
     Rational(Rational64),
     Real(f64),
@@ -19,7 +18,6 @@ pub enum Value {
 impl Display for Value {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Value::Ident(name) => write!(f, "{}", name),
             Value::Int(n) => write!(f, "{}", n),
             Value::Rational(n) => write!(f, "{}", n),
             Value::Real(n) => write!(f, "{}", n),

@@ -40,6 +40,7 @@ use miniml_syntax::{lex::lex, parser::Parser};
 use miniml_vm::vm::VM;
 
 fn main() {
+    env_logger::init();
     let src = "let x = 1";
     let tokens = lex(src).expect("failed to lex");
     let mut parser = Parser::new(tokens);

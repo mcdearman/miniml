@@ -1,13 +1,11 @@
-use std::collections::HashMap;
-
-use miniml_util::intern::InternedString;
-
 use crate::{
     chunk::Chunk,
     error::{Result, RuntimeError},
     opcode::OpCode,
     value::Value,
 };
+use miniml_util::intern::InternedString;
+use std::collections::HashMap;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct VM {
