@@ -45,10 +45,12 @@ fn main() {
     let tokens = lex(src).expect("failed to lex");
     let mut parser = Parser::new(tokens);
     let ast = parser.parse().expect("failed to parse");
-    println!("ast: {:?}", ast);
+    log::trace!("ast: {:?}", ast);
     let mut compiler = Compiler::new();
     let chunk = compiler.compile(&ast.0).expect("failed to compile");
+    log::trace!("chunk: {:?}", chunk);
+    log::trace!("disasm: {}", chunk);
     let mut vm = VM::new(chunk);
     let res = vm.run().expect("runtime error");
-    println!("val: {:?}", res);
+    println!("{}", res);
 }

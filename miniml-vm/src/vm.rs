@@ -41,8 +41,10 @@ impl VM {
                 OpCode::DefineGlobal => {
                     let name = self.read_string();
                     let value = self.pop();
+                    log::trace!("defining global: {} = {}", name, value);
                     self.globals.insert(name, value);
-                    self.pop();
+                    log::trace!("Globals: {:?}", self.globals);
+                    break;
                 }
                 OpCode::Const => {
                     let constant = self.read_constant();
@@ -135,6 +137,7 @@ impl VM {
                 _ => return Err(RuntimeError::new("Unknown opcode")),
             }
         }
+        Ok(Value::Unit)
     }
 
     fn read_instr(&mut self) -> OpCode {
