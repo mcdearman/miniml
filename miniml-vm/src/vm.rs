@@ -46,6 +46,12 @@ impl VM {
                     log::trace!("Globals: {:?}", self.globals);
                     break;
                 }
+                OpCode::GetGlobal => {
+                    let name = self.read_string();
+                    log::trace!("getting global: {}", name);
+                    let value = self.globals.get(&name).unwrap().clone();
+                    self.push(value);
+                }
                 OpCode::Const => {
                     let constant = self.read_constant();
                     self.push(constant);

@@ -41,7 +41,7 @@ use miniml_vm::vm::VM;
 
 fn main() {
     env_logger::init();
-    let src = "let x = 1";
+    let src = "let x = 1\nx";
     let tokens = lex(src).expect("failed to lex");
     let mut parser = Parser::new(tokens);
     let ast = parser.parse().expect("failed to parse");

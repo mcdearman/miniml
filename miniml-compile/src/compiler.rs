@@ -92,8 +92,12 @@ impl Compiler {
     }
 
     fn compile_expr(&mut self, expr: &Expr) {
-        match expr {
-            Expr::Int(i) => self.emit_const(Value::Int(*i)),
+        match expr.clone() {
+            Expr::Ident(name) => {
+                let idx = self.make_const(Value::String(name));
+                self.emit_bytes(OpCode::GetGlobal as u8, idx);
+            }
+            Expr::Int(i) => self.emit_const(Value::Int(i)),
             Expr::Prefix { op, expr } => match op.clone().0 {
                 PrefixOp::Neg => {
                     self.compile_expr(&expr.0);
