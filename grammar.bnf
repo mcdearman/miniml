@@ -1,10 +1,12 @@
 <root> ::= (<item> <ws>+)+
 
-<item> ::= <decl> | <expr>
+<item> ::= <decl>
 
-<decl> ::= <letDecl> | <fnDecl>
+<decl> ::= <let> | <fn>
 
-<letDecl> ::= <let>
+<let> ::= "let" <ws>+ <ident> <ws>* "=" <ws>* <expr>
+
+<fn> ::= <ident> (<ws>+ <ident>)* <ws>+ "=" <ws>+ <expr>
 
 <expr> ::= <term>
 
@@ -18,11 +20,9 @@
 
 <apply> ::= <atom> (<ws>+ <atom>)*
 
-<atom> ::= <ident> | <lit> | <lambda> | <list> | <tuple> | <map> | "(" <ws>* <expr> <ws>* ")"
+<atom> ::= <ident> | <lit> | <letExpr> | <lambda> | <list> | <tuple> | <map> | "(" <ws>* <expr> <ws>* ")"
 
-<letExpr> :: <let> <ws>+ "in" <ws>+ <expr>
-
-<let> ::= "let" <ws>+ <ident> <ws>* "=" <ws>* <expr>
+<letExpr> ::= "let" <ws>+ <ident> <ws>* "=" <ws>* <expr> "in" <ws>+ <expr>
 
 <lit> ::= <int> 
 | <real> 

@@ -1,12 +1,15 @@
 use itertools::join;
-use miniml_util::{intern::InternedString, span::Spanned};
+use miniml_util::{
+    intern::InternedString,
+    span::{Span, Spanned},
+};
 use std::fmt::Display;
 
 use crate::lex::Token;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Root {
-    pub items: Vec<Spanned<Item>>,
+    pub decls: Vec<Spanned<Decl>>,
 }
 
 impl Display for Root {
@@ -14,99 +17,59 @@ impl Display for Root {
         write!(
             f,
             "{}",
-            join(self.clone().items.into_iter().map(|i| i.0), "\n")
+            join(self.clone().decls.into_iter().map(|d| d.0), "\n")
         )
     }
 }
 
-#[derive(Debug, Clone, PartialEq)]
-pub enum Item {
-    Decl(Spanned<Decl>),
-    Expr(Spanned<Expr>),
-}
+// #[derive(Debug, Clone, PartialEq)]
+// pub enum Item {
+//     Decl(Decl),
+// }
 
-impl Display for Item {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            Item::Decl(decl) => write!(f, "{}", decl.0),
-            Item::Expr(expr) => write!(f, "{}", expr.0),
-        }
-    }
-}
+// impl Display for Item {
+//     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+//         match self {
+//             Item::Decl(decl) => write!(f, "{}", decl.0),
+//             Item::Expr(expr) => write!(f, "{}", expr.0),
+//         }
+//     }
+// }
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Decl {
-    Let(Spanned<LetDecl>),
+    Let {
+        name: Spanned<InternedString>,
+        expr: Box<Spanned<Expr>>,
+    },
+    Fn {
+        name: Spanned<InternedString>,
+        params: Vec<Spanned<InternedString>>,
+        body: Box<Spanned<Expr>>,
+    },
 }
 
 impl Display for Decl {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Decl::Let(decl) => write!(f, "{}", decl.0),
-            //     Decl::Fn { name, params, body } => {
-            //         write!(
-            //             f,
-            //             "fn {} {} = {};",
-            //             name,
-            //             join(params.clone(), ", "),
-            //             body.0
-            //         )
-            //     }
-            // }
+            Decl::Let { name, expr } => write!(f, "let {} = {}", name.0, expr.0),
+            Decl::Fn { name, params, body } => {
+                write!(
+                    f,
+                    "fn {} {} = {};",
+                    name.0,
+                    join(params.into_iter().map(|p| p.0), ", "),
+                    body.0
+                )
+            }
         }
-    }
-}
-
-#[derive(Debug, Clone, PartialEq)]
-pub enum Let {
-    Decl(Spanned<LetDecl>),
-    Expr(Spanned<LetExpr>),
-}
-
-impl Display for Let {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            Let::Decl(decl) => write!(f, "{}", decl.0),
-            Let::Expr(expr) => write!(f, "{}", expr.0),
-        }
-    }
-}
-
-#[derive(Debug, Clone, PartialEq)]
-pub struct LetDecl {
-    pub name: Spanned<InternedString>,
-    pub expr: Box<Spanned<Expr>>,
-}
-
-impl Display for LetDecl {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "let {} = {}", self.name.0, self.expr.0)
-    }
-}
-
-#[derive(Debug, Clone, PartialEq)]
-pub struct LetExpr {
-    pub name: Spanned<InternedString>,
-    pub expr: Box<Spanned<Expr>>,
-    pub body: Box<Spanned<Expr>>,
-}
-
-impl Display for LetExpr {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(
-            f,
-            "let {} = {} in {}",
-            self.name.0, self.expr.0, self.body.0
-        )
     }
 }
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Expr {
     Ident(InternedString),
-    Int(i64),
-    Real(f64),
-    String(InternedString),
+    Lit(Lit),
     Prefix {
         op: Spanned<PrefixOp>,
         expr: Box<Spanned<Self>>,
@@ -116,40 +79,59 @@ pub enum Expr {
         lhs: Box<Spanned<Self>>,
         rhs: Box<Spanned<Self>>,
     },
-    Let(Spanned<LetExpr>),
-    // Fn {
-    //     name: InternedString,
-    //     params: Vec<InternedString>,
+    Let {
+        name: Spanned<InternedString>,
+        expr: Box<Spanned<Self>>,
+        body: Box<Spanned<Self>>,
+    },
+    Fn {
+        name: InternedString,
+        params: Vec<InternedString>,
 
-    //     body: Box<Self>,
-    // },
+        body: Box<Spanned<Self>>,
+    },
     Apply {
         fun: Box<Spanned<Self>>,
         args: Vec<Spanned<Self>>,
     },
-    // If {
-    //     cond: Box<Self>,
-    //     then: Box<Self>,
-    //     else_: Box<Self>,
-    // },
-    // Lambda {
-    //     param: InternedString,
-    //     body: Box<Self>,
-    // },
+    If {
+        cond: Box<Spanned<Self>>,
+        then: Box<Spanned<Self>>,
+        else_: Box<Spanned<Self>>,
+    },
+    Lambda {
+        param: Spanned<InternedString>,
+        body: Box<Spanned<Self>>,
+    },
     Unit,
     Error,
+}
+
+impl Expr {
+    pub fn spanned(self, span: Span) -> Spanned<Self> {
+        (self, span)
+    }
 }
 
 impl Display for Expr {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self.clone() {
             Expr::Ident(i) => write!(f, "{}", i),
-            Expr::Int(i) => write!(f, "{}", i),
-            Expr::Real(r) => write!(f, "{}", r),
-            Expr::String(s) => write!(f, "{}", s),
+            Expr::Lit(l) => write!(f, "{}", l),
             Expr::Prefix { op, expr } => write!(f, "{}{}", op.0, expr.0),
             Expr::Infix { op, lhs, rhs } => write!(f, "{} {} {}", lhs.0, op.0, rhs.0),
-            Expr::Let(l) => write!(f, "{}", l.0),
+            Expr::Let { name, expr, body } => {
+                write!(f, "let {} = {} in {}", name.0, expr.0, body.0)
+            }
+            Expr::Fn { name, params, body } => {
+                write!(
+                    f,
+                    "fn {} {} = {}",
+                    name,
+                    join(params.into_iter(), " "),
+                    body.0
+                )
+            }
             Expr::Apply { fun, args } => {
                 write!(f, "({}", fun.0)?;
                 for arg in args {
@@ -157,6 +139,10 @@ impl Display for Expr {
                 }
                 write!(f, ")")
             }
+            Expr::If { cond, then, else_ } => {
+                write!(f, "if {} then {} else {}", cond.0, then.0, else_.0)
+            }
+            Expr::Lambda { param, body } => write!(f, "fn {} => {}", param.0, body.0),
             Expr::Unit => write!(f, "()"),
             Expr::Error => write!(f, "error"),
         }
@@ -248,6 +234,29 @@ impl From<Token> for InfixOp {
             Token::Or => InfixOp::Or,
             Token::Pipe => InfixOp::Pipe,
             _ => panic!("Not an infix operator: {:?}", kind),
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum Lit {
+    Int(i64),
+    Real(f64),
+    String(InternedString),
+}
+
+impl Lit {
+    pub fn spanned(self, span: Span) -> Spanned<Self> {
+        (self, span)
+    }
+}
+
+impl Display for Lit {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Lit::Int(i) => write!(f, "{}", i),
+            Lit::Real(r) => write!(f, "{}", r),
+            Lit::String(s) => write!(f, "\"{}\"", s),
         }
     }
 }

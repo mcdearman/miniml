@@ -1,3 +1,8 @@
+-- MiniML is a scripting language but there are no top level expressions.
+-- Every MiniML script must have a main function that serves as the entry point.
+fn main = 
+  print "Hello World!"
+
 -- Arithmetic
 1 + 1
 21 - 2

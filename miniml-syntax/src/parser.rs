@@ -1,5 +1,5 @@
 use crate::{
-    ast::{Decl, Expr, InfixOp, Item, Let, LetDecl, LetExpr, PrefixOp, Root},
+    ast::{Decl, Expr, InfixOp, PrefixOp, Root},
     error::SyntaxError,
     lex::{Token, TokenStream},
 };
@@ -24,42 +24,47 @@ impl Parser {
 
     fn root(&mut self) -> Result<Spanned<Root>, Vec<Spanned<SyntaxError>>> {
         let mut errors = Vec::new();
-        let mut items = Vec::new();
+        let mut decls = Vec::new();
         let start = self.tokens.peek().1.start;
 
         while !self.tokens.at(&Token::Eof) {
-            match self.item() {
-                Ok(item) => items.push(item),
+            match self.decl() {
+                Ok(d) => decls.push(d),
                 Err(err) => errors.push(err),
             }
         }
 
         let end = self.tokens.peek().1.end;
         if errors.is_empty() {
-            Ok((Root { items }, Span::new(start, end)))
+            Ok((Root { decls }, Span::new(start, end)))
         } else {
             Err(errors)
         }
     }
 
-    fn item(&mut self) -> Result<Spanned<Item>, Spanned<SyntaxError>> {
+    fn decl(&mut self) -> Result<Spanned<Decl>, Spanned<SyntaxError>> {
         let start = self.tokens.peek().1.start;
         match self.tokens.peek().0 {
-            Token::Let => match self.let_()? {
-                Let::Decl(decl) => Ok((
-                    Item::Decl((Decl::Let(decl), Span::new(start, self.tokens.peek().1.end))),
-                    Span::new(start, self.tokens.peek().1.end),
-                )),
-                Let::Expr(expr) => Ok((
-                    Item::Expr((Expr::Let(expr), Span::new(start, self.tokens.peek().1.end))),
-                    Span::new(start, self.tokens.peek().1.end),
-                )),
-            },
-            _ => Ok((
-                Item::Expr(self.expr()?),
-                Span::new(start, self.tokens.peek().1.end),
+            Token::Let => self.let_(),
+            Token::Fn => self.fn_(),
+            _ => Err((
+                SyntaxError::UnexpectedToken(self.tokens.peek().0.clone()),
+                self.tokens.peek().1.clone(),
             )),
         }
+    }
+
+    fn let_(&mut self) -> Result<Spanned<Decl>, Spanned<SyntaxError>> {
+        let start = self.tokens.peek().1.start;
+        self.tokens.eat(&Token::Let)?;
+        let name = self.ident()?;
+        self.tokens.eat(&Token::Eq)?;
+        let expr = self.expr()?;
+        todo!()
+    }
+
+    fn fn_(self) -> Result<Spanned<Decl>, Spanned<SyntaxError>> {
+        todo!()
     }
 
     fn expr(&mut self) -> Result<Spanned<Expr>, Spanned<SyntaxError>> {
@@ -225,35 +230,6 @@ impl Parser {
                 SyntaxError::UnexpectedToken(self.tokens.peek().0.clone()),
                 self.tokens.peek().1.clone(),
             )),
-        }
-    }
-
-    fn let_(&mut self) -> Result<Let, Spanned<SyntaxError>> {
-        let start = self.tokens.peek().1.start;
-        self.tokens.eat(&Token::Let)?;
-        let name = self.ident()?;
-        self.tokens.eat(&Token::Eq)?;
-        let expr = self.expr()?;
-
-        if self.tokens.at(&Token::In) {
-            self.tokens.eat(&Token::In)?;
-            let body = self.expr()?;
-            Ok(Let::Expr((
-                LetExpr {
-                    name,
-                    expr: Box::new(expr),
-                    body: Box::new(body),
-                },
-                Span::new(start, self.tokens.peek().1.end),
-            )))
-        } else {
-            Ok(Let::Decl((
-                LetDecl {
-                    name,
-                    expr: Box::new(expr),
-                },
-                Span::new(start, self.tokens.peek().1.end),
-            )))
         }
     }
 
