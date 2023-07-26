@@ -49,6 +49,12 @@ pub enum Decl {
     },
 }
 
+impl Decl {
+    pub fn spanned(self, span: Span) -> Spanned<Self> {
+        (self, span)
+    }
+}
+
 impl Display for Decl {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {

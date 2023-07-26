@@ -21,12 +21,12 @@ impl Span {
     pub fn spanned<T>(self, value: T) -> Spanned<T> {
         (value, self)
     }
-}
 
-impl Span {
-    pub fn extend(&mut self, other: Span) {
-        self.start = self.start.min(other.start);
-        self.end = self.end.max(other.end);
+    pub fn extend(&self, other: Span) -> Self {
+        Self {
+            start: self.start.min(other.start),
+            end: self.end.max(other.end),
+        }
     }
 }
 

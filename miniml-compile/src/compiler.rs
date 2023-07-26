@@ -1,5 +1,5 @@
 use crate::error::CompileResult;
-use miniml_syntax::ast::{Decl, Expr, InfixOp, Item, LetDecl, PrefixOp, Root};
+use miniml_syntax::ast::{Decl, Expr, InfixOp, PrefixOp, Root};
 use miniml_util::{
     intern::InternedString,
     span::{Span, Spanned},
@@ -37,8 +37,8 @@ impl Compiler {
     }
 
     pub fn compile(&mut self, ast: &Root) -> CompileResult<Chunk> {
-        for item in &ast.items {
-            self.compile_item(&item.0);
+        for d in &ast.decls {
+            self.compile_decl(&d.0);
         }
         self.chunk.write(OpCode::Return as u8, Span::from(1..0));
 
@@ -73,22 +73,16 @@ impl Compiler {
         self.emit_bytes(OpCode::DefineGlobal as u8, idx);
     }
 
-    fn compile_item(&mut self, item: &Item) {
-        match item {
-            Item::Decl(decl) => self.compile_decl(&decl.0),
-            Item::Expr(expr) => self.compile_expr(&expr.0),
-        }
-    }
-
     fn compile_decl(&mut self, decl: &Decl) {
-        match decl {
-            Decl::Let(let_decl) => match let_decl.clone().0 {
-                LetDecl { name, expr } => {
-                    self.compile_expr(&expr.0);
-                    self.define_var(name.0);
-                }
-            },
-        }
+        todo!()
+        // match decl {
+        //     Decl::Let(let_decl) => match let_decl.clone().0 {
+        //         LetDecl { name, expr } => {
+        //             self.compile_expr(&expr.0);
+        //             self.define_var(name.0);
+        //         }
+        //     },
+        // }
     }
 
     fn compile_expr(&mut self, expr: &Expr) {
@@ -97,7 +91,6 @@ impl Compiler {
                 let idx = self.make_const(Value::String(name));
                 self.emit_bytes(OpCode::GetGlobal as u8, idx);
             }
-            Expr::Int(i) => self.emit_const(Value::Int(i)),
             Expr::Prefix { op, expr } => match op.clone().0 {
                 PrefixOp::Neg => {
                     self.compile_expr(&expr.0);

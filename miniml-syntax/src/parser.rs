@@ -1,5 +1,5 @@
 use crate::{
-    ast::{Decl, Expr, InfixOp, PrefixOp, Root},
+    ast::{Decl, Expr, InfixOp, Lit, PrefixOp, Root},
     error::SyntaxError,
     lex::{Token, TokenStream},
 };
@@ -55,15 +55,20 @@ impl Parser {
     }
 
     fn let_(&mut self) -> Result<Spanned<Decl>, Spanned<SyntaxError>> {
-        let start = self.tokens.peek().1.start;
+        let start = self.tokens.peek().1;
         self.tokens.eat(&Token::Let)?;
         let name = self.ident()?;
         self.tokens.eat(&Token::Eq)?;
         let expr = self.expr()?;
-        todo!()
+        let span = start.extend(self.tokens.peek().1);
+        Ok(Decl::Let {
+            name,
+            expr: Box::new(expr),
+        }
+        .spanned(span))
     }
 
-    fn fn_(self) -> Result<Spanned<Decl>, Spanned<SyntaxError>> {
+    fn fn_(&mut self) -> Result<Spanned<Decl>, Spanned<SyntaxError>> {
         todo!()
     }
 
@@ -220,11 +225,25 @@ impl Parser {
                     Span::new(start, self.tokens.peek().1.end),
                 ))
             }
-            Token::Int(i) => Ok((Expr::Int(i), Span::new(start, self.tokens.next().1.end))),
-            Token::Real(r) => Ok((Expr::Real(r), Span::new(start, self.tokens.next().1.end))),
+            Token::Int(_) | Token::Real(_) | Token::String(_) => {
+                let (lit, span) = self.lit()?;
+                Ok(Expr::Lit(lit).spanned(span))
+            }
+            _ => Err((
+                SyntaxError::UnexpectedToken(self.tokens.peek().0.clone()),
+                self.tokens.peek().1.clone(),
+            )),
+        }
+    }
+
+    fn lit(&mut self) -> Result<Spanned<Lit>, Spanned<SyntaxError>> {
+        let span = self.tokens.peek().1.clone();
+        match self.tokens.peek().0 {
+            Token::Int(i) => Ok(Lit::Int(i).spanned(span)),
+            Token::Real(r) => Ok(Lit::Real(r).spanned(span)),
             Token::String(s) => {
                 self.tokens.next();
-                Ok((Expr::String(s), Span::new(start, self.tokens.peek().1.end)))
+                Ok(Lit::String(s).spanned(span))
             }
             _ => Err((
                 SyntaxError::UnexpectedToken(self.tokens.peek().0.clone()),
