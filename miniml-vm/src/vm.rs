@@ -135,6 +135,20 @@ impl VM {
                         }
                     }
                 }
+                OpCode::Jif => {
+                    let offset = self.read_instr() as usize;
+                    let cond = self.pop();
+                    match cond {
+                        Value::Bool(true) => {}
+                        Value::Bool(false) => self.ip += offset,
+                        _ => {
+                            return Err(RuntimeError(format!(
+                                "Cannot jump if non-boolean `{:?}`",
+                                cond
+                            )))
+                        }
+                    }
+                }
                 OpCode::Return => {
                     let val = self.pop();
                     // println!("{}", val);

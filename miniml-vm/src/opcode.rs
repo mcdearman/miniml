@@ -10,6 +10,7 @@ pub enum OpCode {
     Mul,
     Div,
     Neg,
+    Jif,
     Return,
 }
 
@@ -25,7 +26,8 @@ impl From<u8> for OpCode {
             6 => OpCode::Mul,
             7 => OpCode::Div,
             8 => OpCode::Neg,
-            9 => OpCode::Return,
+            9 => OpCode::Jif,
+            10 => OpCode::Return,
             _ => panic!("invalid opcode"),
         }
     }

@@ -24,15 +24,23 @@ impl Display for CompilerError {
 
 pub type Result<T> = std::result::Result<T, CompilerError>;
 
+#[derive(Debug, Clone, PartialEq)]
+pub struct Local {
+    name: InternedString,
+    depth: usize,
+}
+
 #[derive(Debug)]
 pub struct Compiler {
     chunk: Chunk,
+    locals: Vec<Local>,
 }
 
 impl Compiler {
     pub fn new() -> Self {
         Self {
             chunk: Chunk::new(),
+            locals: vec![],
         }
     }
 
@@ -52,6 +60,23 @@ impl Compiler {
     fn emit_bytes(&mut self, byte1: u8, byte2: u8) {
         self.emit_byte(byte1);
         self.emit_byte(byte2);
+    }
+
+    fn emit_jump(&mut self, op: OpCode) -> usize {
+        self.emit_byte(op as u8);
+        self.emit_byte(0xff);
+        self.emit_byte(0xff);
+        self.chunk.code.len() - 2
+    }
+
+    fn patch_jump(&mut self, offset: usize) {
+        let jump = self.chunk.code.len() - offset - 2;
+        if jump > u16::MAX as usize {
+            log::error!("Too much code to jump over!");
+            return;
+        }
+        self.chunk.code[offset] = ((jump >> 8) & 0xff) as u8;
+        self.chunk.code[offset + 1] = (jump & 0xff) as u8;
     }
 
     fn make_const(&mut self, val: Value) -> u8 {
