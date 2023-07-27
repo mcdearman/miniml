@@ -1,4 +1,5 @@
 use super::error::SyntaxError;
+use itertools::join;
 use logos::Logos;
 use miniml_util::{
     intern::InternedString,
@@ -239,6 +240,19 @@ impl TokenStream {
                 self.peek().1,
             ))
         }
+    }
+}
+
+impl Display for TokenStream {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "{}",
+            join(
+                self.tokens.clone().map(|(t, s)| format!("{} - {}", t, s)),
+                "\n"
+            )
+        )
     }
 }
 

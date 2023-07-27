@@ -1,5 +1,5 @@
 use crate::error::CompileResult;
-use miniml_syntax::ast::{Decl, Expr, InfixOp, PrefixOp, Root};
+use miniml_syntax::ast::{Decl, Expr, InfixOp, Lit, PrefixOp, Root};
 use miniml_util::{
     intern::InternedString,
     span::{Span, Spanned},
@@ -74,15 +74,15 @@ impl Compiler {
     }
 
     fn compile_decl(&mut self, decl: &Decl) {
-        todo!()
-        // match decl {
-        //     Decl::Let(let_decl) => match let_decl.clone().0 {
-        //         LetDecl { name, expr } => {
-        //             self.compile_expr(&expr.0);
-        //             self.define_var(name.0);
-        //         }
-        //     },
-        // }
+        match decl.clone() {
+            Decl::Let { name, expr } => {
+                self.compile_expr(&expr.0);
+                self.define_var(name.0);
+            }
+            Decl::Fn { name, params, body } => {
+                todo!()
+            }
+        }
     }
 
     fn compile_expr(&mut self, expr: &Expr) {
@@ -91,6 +91,11 @@ impl Compiler {
                 let idx = self.make_const(Value::String(name));
                 self.emit_bytes(OpCode::GetGlobal as u8, idx);
             }
+            Expr::Lit(lit) => match lit {
+                Lit::Int(i) => self.emit_const(Value::Int(i)),
+                Lit::Real(r) => self.emit_const(Value::Real(r)),
+                Lit::String(s) => self.emit_const(Value::String(s)),
+            },
             Expr::Prefix { op, expr } => match op.clone().0 {
                 PrefixOp::Neg => {
                     self.compile_expr(&expr.0);

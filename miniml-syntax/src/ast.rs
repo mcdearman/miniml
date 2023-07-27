@@ -22,20 +22,6 @@ impl Display for Root {
     }
 }
 
-// #[derive(Debug, Clone, PartialEq)]
-// pub enum Item {
-//     Decl(Decl),
-// }
-
-// impl Display for Item {
-//     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-//         match self {
-//             Item::Decl(decl) => write!(f, "{}", decl.0),
-//             Item::Expr(expr) => write!(f, "{}", expr.0),
-//         }
-//     }
-// }
-
 #[derive(Debug, Clone, PartialEq)]
 pub enum Decl {
     Let {

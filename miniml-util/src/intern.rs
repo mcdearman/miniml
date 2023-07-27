@@ -5,11 +5,19 @@ use std::{
     fmt::{Debug, Display},
 };
 
+use crate::span::{Span, Spanned};
+
 pub static mut INTERNER: Lazy<ThreadedRodeo> = Lazy::new(|| ThreadedRodeo::default());
 
 #[derive(Clone, Copy, PartialEq, Eq, Hash)]
 pub struct InternedString {
     pub key: Spur,
+}
+
+impl InternedString {
+    pub fn spanned(self, span: Span) -> Spanned<Self> {
+        (self, span)
+    }
 }
 
 impl From<Spur> for InternedString {

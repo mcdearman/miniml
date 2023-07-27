@@ -239,8 +239,14 @@ impl Parser {
     fn lit(&mut self) -> Result<Spanned<Lit>, Spanned<SyntaxError>> {
         let span = self.tokens.peek().1.clone();
         match self.tokens.peek().0 {
-            Token::Int(i) => Ok(Lit::Int(i).spanned(span)),
-            Token::Real(r) => Ok(Lit::Real(r).spanned(span)),
+            Token::Int(i) => {
+                self.tokens.next();
+                Ok(Lit::Int(i).spanned(span))
+            }
+            Token::Real(r) => {
+                self.tokens.next();
+                Ok(Lit::Real(r).spanned(span))
+            }
             Token::String(s) => {
                 self.tokens.next();
                 Ok(Lit::String(s).spanned(span))
@@ -253,11 +259,11 @@ impl Parser {
     }
 
     fn ident(&mut self) -> Result<Spanned<InternedString>, Spanned<SyntaxError>> {
-        let start = self.tokens.peek().1.start;
+        let span = self.tokens.peek().1.clone();
         match self.tokens.peek().0 {
             Token::Ident(name) => {
                 self.tokens.next();
-                Ok((name, Span::new(start, self.tokens.peek().1.end)))
+                Ok(name.spanned(span))
             }
             _ => Err((
                 SyntaxError::UnexpectedToken(self.tokens.peek().0.clone()),
