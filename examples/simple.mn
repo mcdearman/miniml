@@ -32,8 +32,9 @@ fn main =
 -- are struct definitions and global variables.
 struct Point = { x, y }
 
-const true = 1
-const false = 0
+-- True and false are just symbols.
+const true = :true
+const false = :false
 
 -- global function definition
 fn add x y = x + y
@@ -48,5 +49,3 @@ let gcd = \a b ->
   if b = 0 then a 
   else gcd b (a % b)
 
--- symbols like lisp
-const :foo
