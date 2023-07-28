@@ -79,7 +79,6 @@ pub enum Expr {
     Fn {
         name: InternedString,
         params: Vec<InternedString>,
-
         body: Box<Spanned<Self>>,
     },
     Apply {
