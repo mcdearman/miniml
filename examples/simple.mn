@@ -23,10 +23,16 @@ fn main =
   then 2 else 3;
 
   -- lambda expression
-  \a b -> a + b
+  \a b -> a + b;
 
   -- lambda application
-  (\a b -> a + b) 1 2
+  (\a b -> a + b) 1 2;
+
+  -- symbols like Lisp
+  :foo;
+
+  -- main function must return unit
+  ()
   
 -- The only declarations that can appear outside of functions 
 -- are struct definitions and global variables.
