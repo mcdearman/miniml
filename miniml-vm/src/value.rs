@@ -3,6 +3,8 @@ use num_complex::Complex64;
 use num_rational::Rational64;
 use std::fmt::Display;
 
+use crate::object::Object;
+
 #[derive(Debug, Clone, PartialEq)]
 pub enum Value {
     Int(i64),
@@ -12,6 +14,7 @@ pub enum Value {
     String(InternedString),
     Char(char),
     Bool(bool),
+    Object(Object),
     Unit,
     Nil,
 }
@@ -26,6 +29,7 @@ impl Display for Value {
             Value::String(s) => write!(f, "{}", s),
             Value::Char(c) => write!(f, "{}", c),
             Value::Bool(b) => write!(f, "{}", b),
+            Value::Object(o) => write!(f, "{}", o),
             Value::Unit => write!(f, "()"),
             Value::Nil => write!(f, "nil"),
         }

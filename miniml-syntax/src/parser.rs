@@ -43,7 +43,6 @@ impl Parser {
     }
 
     fn decl(&mut self) -> Result<Spanned<Decl>, Spanned<SyntaxError>> {
-        let start = self.tokens.peek().1.start;
         match self.tokens.peek().0 {
             Token::Let => self.let_(),
             Token::Fn => self.fn_(),
@@ -69,7 +68,22 @@ impl Parser {
     }
 
     fn fn_(&mut self) -> Result<Spanned<Decl>, Spanned<SyntaxError>> {
-        todo!()
+        let start = self.tokens.peek().1;
+        self.tokens.eat(&Token::Fn)?;
+        let name = self.ident()?;
+        let mut params = vec![];
+        while !self.tokens.at(&Token::Eq) {
+            params.push(self.ident()?);
+        }
+        self.tokens.eat(&Token::Eq)?;
+        let body = self.expr()?;
+        let span = start.extend(self.tokens.peek().1);
+        Ok(Decl::Fn {
+            name,
+            params,
+            body: Box::new(body),
+        }
+        .spanned(span))
     }
 
     fn expr(&mut self) -> Result<Spanned<Expr>, Spanned<SyntaxError>> {
