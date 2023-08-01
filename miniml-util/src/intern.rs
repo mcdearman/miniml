@@ -3,6 +3,7 @@ use once_cell::sync::Lazy;
 use std::{
     borrow::Borrow,
     fmt::{Debug, Display},
+    ops::Deref,
 };
 
 use crate::span::{Span, Spanned};
@@ -58,6 +59,14 @@ impl Display for InternedString {
 
 impl Borrow<str> for InternedString {
     fn borrow(&self) -> &str {
+        unsafe { INTERNER.resolve(&self.key) }
+    }
+}
+
+impl Deref for InternedString {
+    type Target = str;
+
+    fn deref(&self) -> &Self::Target {
         unsafe { INTERNER.resolve(&self.key) }
     }
 }

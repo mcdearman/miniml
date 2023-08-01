@@ -4,7 +4,12 @@ use miniml_util::{
     intern::InternedString,
     span::{Span, Spanned},
 };
-use miniml_vm::{chunk::Chunk, object::Function, opcode::OpCode, value::Value};
+use miniml_vm::{
+    chunk::Chunk,
+    object::{Function, Object},
+    opcode::OpCode,
+    value::Value,
+};
 use std::fmt::Display;
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -50,13 +55,13 @@ impl Compiler {
         &mut self.fun.chunk
     }
 
-    pub fn compile(&mut self, ast: &Root) -> CompileResult<&Function> {
+    pub fn compile(&mut self, ast: &Root) -> CompileResult<Function> {
         for d in &ast.decls {
             self.compile_decl(&d.0);
         }
         self.chunk().write(OpCode::Return as u8, Span::from(1..0));
 
-        Ok(&self.fun)
+        Ok(self.fun.clone())
     }
 
     fn emit_byte(&mut self, byte: u8) {
@@ -111,7 +116,25 @@ impl Compiler {
                 self.define_var(name.0);
             }
             Decl::Fn { name, params, body } => {
-                todo!()
+                let mut fun = Function::new(params.len(), Box::new(Chunk::new()), &name.0);
+                let mut compiler = Compiler {
+                    fun,
+                    top_level: false,
+                    locals: vec![],
+                };
+                for p in &params {
+                    compiler.locals.push(Local {
+                        name: p.0,
+                        depth: 0,
+                    });
+                }
+                compiler.compile_expr(&body.0);
+                compiler
+                    .chunk()
+                    .write(OpCode::Return as u8, Span::from(1..0));
+                let idx = self.make_const(Value::Object(Object::Function(compiler.fun)));
+                self.emit_bytes(OpCode::Const as u8, idx);
+                self.define_var(name.0);
             }
         }
     }

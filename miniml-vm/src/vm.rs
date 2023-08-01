@@ -16,9 +16,9 @@ pub struct VM {
 }
 
 impl VM {
-    pub fn new() -> Self {
+    pub fn new(frame: CallFrame) -> Self {
         Self {
-            frames: vec![],
+            frames: vec![frame],
             stack: vec![],
             globals: HashMap::new(),
         }
