@@ -116,7 +116,7 @@ impl Compiler {
                 self.define_var(name.0);
             }
             Decl::Fn { name, params, body } => {
-                let mut fun = Function::new(params.len(), Box::new(Chunk::new()), &name.0);
+                let fun = Function::new(params.len(), Box::new(Chunk::new()), &name.0);
                 let mut compiler = Compiler {
                     fun,
                     top_level: false,
