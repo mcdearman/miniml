@@ -1,4 +1,5 @@
 use crate::{
+    call_frame::CallFrame,
     chunk::Chunk,
     error::{Result, RuntimeError},
     opcode::OpCode,
@@ -9,19 +10,15 @@ use std::collections::HashMap;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct VM {
-    chunk: Chunk,
-    ip: usize,
+    frames: Vec<CallFrame>,
     stack: Vec<Value>,
     globals: HashMap<InternedString, Value>,
 }
 
 impl VM {
-    const STACK_MAX: usize = 256;
-
-    pub fn new(chunk: Chunk) -> Self {
+    pub fn new() -> Self {
         Self {
-            chunk,
-            ip: 0,
+            frames: vec![],
             stack: vec![],
             globals: HashMap::new(),
         }
@@ -32,7 +29,6 @@ impl VM {
             let instr = self.read_instr();
             log::trace!("Instr: {:?}", instr);
             log::trace!("Stack: {:?}", self.stack);
-            log::trace!("IP: {}", self.ip);
             // log::trace!("Chunk: {:?}", self.chunk);
             match instr {
                 OpCode::Pop => {
@@ -140,7 +136,7 @@ impl VM {
                     let cond = self.pop();
                     match cond {
                         Value::Bool(true) => {}
-                        Value::Bool(false) => self.ip += offset,
+                        Value::Bool(false) => self.frame().ip += offset,
                         _ => {
                             return Err(RuntimeError(format!(
                                 "Cannot jump if non-boolean `{:?}`",
@@ -160,21 +156,27 @@ impl VM {
         Ok(Value::Unit)
     }
 
+    fn frame<'a>(&'a mut self) -> &'a mut CallFrame {
+        self.frames.last_mut().expect("No frames")
+    }
+
     fn read_instr(&mut self) -> OpCode {
-        log::trace!("ip instr: {}", self.ip);
-        let instr = self.chunk.code[self.ip];
-        self.ip += 1;
+        let ip = self.frame().ip;
+        log::trace!("ip instr: {}", ip);
+        let instr = self.frame().fun.chunk.code[ip];
+        self.frame().ip += 1;
         OpCode::from(instr)
     }
 
     fn read_constant(&mut self) -> Value {
-        log::trace!("ip const: {}", self.ip);
+        let frame = self.frames.last_mut().expect("No frames");
+        log::trace!("ip const: {}", frame.ip);
         let op = self.read_instr();
-        self.chunk.constants[op as usize].clone()
+        self.frame().fun.chunk.constants[op as usize].clone()
     }
 
     fn read_string(&mut self) -> InternedString {
-        log::trace!("ip string: {}", self.ip);
+        log::trace!("ip string: {}", self.frame().ip);
         match self.read_constant() {
             Value::String(s) => s,
             _ => panic!("Expected string"),
@@ -182,9 +184,6 @@ impl VM {
     }
 
     fn push(&mut self, value: Value) {
-        if self.stack.len() >= Self::STACK_MAX {
-            panic!("Stack overflow");
-        }
         self.stack.push(value);
     }
 

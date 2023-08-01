@@ -4,7 +4,7 @@ use miniml_util::{
     intern::InternedString,
     span::{Span, Spanned},
 };
-use miniml_vm::{chunk::Chunk, opcode::OpCode, value::Value};
+use miniml_vm::{chunk::Chunk, object::Function, opcode::OpCode, value::Value};
 use std::fmt::Display;
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -32,29 +32,35 @@ pub struct Local {
 
 #[derive(Debug)]
 pub struct Compiler {
-    chunk: Chunk,
+    fun: Function,
+    top_level: bool,
     locals: Vec<Local>,
 }
 
 impl Compiler {
     pub fn new() -> Self {
         Self {
-            chunk: Chunk::new(),
+            fun: Function::new(0, Box::new(Chunk::new()), ""),
+            top_level: true,
             locals: vec![],
         }
     }
 
-    pub fn compile(&mut self, ast: &Root) -> CompileResult<Chunk> {
+    fn chunk<'a>(&'a mut self) -> &'a mut Chunk {
+        &mut self.fun.chunk
+    }
+
+    pub fn compile(&mut self, ast: &Root) -> CompileResult<&Function> {
         for d in &ast.decls {
             self.compile_decl(&d.0);
         }
-        self.chunk.write(OpCode::Return as u8, Span::from(1..0));
+        self.chunk().write(OpCode::Return as u8, Span::from(1..0));
 
-        Ok(self.chunk.clone())
+        Ok(&self.fun)
     }
 
     fn emit_byte(&mut self, byte: u8) {
-        self.chunk.write(byte, Span::from(1..0))
+        self.chunk().write(byte, Span::from(1..0))
     }
 
     fn emit_bytes(&mut self, byte1: u8, byte2: u8) {
@@ -66,21 +72,21 @@ impl Compiler {
         self.emit_byte(op as u8);
         self.emit_byte(0xff);
         self.emit_byte(0xff);
-        self.chunk.code.len() - 2
+        self.chunk().code.len() - 2
     }
 
     fn patch_jump(&mut self, offset: usize) {
-        let jump = self.chunk.code.len() - offset - 2;
+        let jump = self.chunk().code.len() - offset - 2;
         if jump > u16::MAX as usize {
             log::error!("Too much code to jump over!");
             return;
         }
-        self.chunk.code[offset] = ((jump >> 8) & 0xff) as u8;
-        self.chunk.code[offset + 1] = (jump & 0xff) as u8;
+        self.chunk().code[offset] = ((jump >> 8) & 0xff) as u8;
+        self.chunk().code[offset + 1] = (jump & 0xff) as u8;
     }
 
     fn make_const(&mut self, val: Value) -> u8 {
-        let idx = self.chunk.add_constant(val);
+        let idx = self.chunk().add_constant(val);
         if idx > u8::MAX as usize {
             log::error!("Too many constants in one chunk!");
             return 1;

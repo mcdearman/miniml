@@ -2,7 +2,8 @@
 -- Every MiniML script must have a main function that serves as the entry point.
 fn main = 
   -- You can use `;` to chain expressions together.
-  -- You can think of this as a binary op that always returns unit.
+  -- You can think of this as a binary op that always 
+  -- discards the left hand side.
   -- It's equivalent to `let _ = ... in ...`
   println "Hello World!";
 
@@ -31,7 +32,7 @@ fn main =
   -- symbols like Lisp
   :foo;
 
-  -- main function must return unit
+  -- main function must return unit or int
   ()
   
 -- The only declarations that can appear outside of functions 
