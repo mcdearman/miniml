@@ -35,8 +35,9 @@ pub struct Local {
     depth: usize,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Compiler {
+    parent: Option<Box<Compiler>>,
     fun: Function,
     top_level: bool,
     locals: Vec<Local>,
@@ -45,6 +46,7 @@ pub struct Compiler {
 impl Compiler {
     pub fn new() -> Self {
         Self {
+            parent: None,
             fun: Function::new(0, Box::new(Chunk::new()), ""),
             top_level: true,
             locals: vec![],
@@ -118,6 +120,7 @@ impl Compiler {
             Decl::Fn { name, params, body } => {
                 let fun = Function::new(params.len(), Box::new(Chunk::new()), &name.0);
                 let mut compiler = Compiler {
+                    parent: Some(Box::new(self.clone())),
                     fun,
                     top_level: false,
                     locals: vec![],
