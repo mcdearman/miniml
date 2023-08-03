@@ -24,6 +24,10 @@ impl Display for Root {
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Decl {
+    Const {
+        name: Spanned<InternedString>,
+        expr: Box<Spanned<Expr>>,
+    },
     Let {
         name: Spanned<InternedString>,
         expr: Box<Spanned<Expr>>,
@@ -44,11 +48,12 @@ impl Decl {
 impl Display for Decl {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
+            Decl::Const { name, expr } => write!(f, "const {} = {}", name.0, expr.0),
             Decl::Let { name, expr } => write!(f, "let {} = {}", name.0, expr.0),
             Decl::Fn { name, params, body } => {
                 write!(
                     f,
-                    "fn {} {} = {};",
+                    "fn {} {} = {}",
                     name.0,
                     join(params.into_iter().map(|p| p.0), ", "),
                     body.0

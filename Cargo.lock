@@ -524,6 +524,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "miniml-eval"
+version = "0.1.0"
+dependencies = [
+ "insta",
+ "itertools",
+ "log",
+ "miniml-util",
+ "num-bigint",
+ "num-complex",
+ "num-rational",
+]
+
+[[package]]
 name = "miniml-repl"
 version = "0.1.0"
 dependencies = [

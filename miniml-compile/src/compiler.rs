@@ -113,6 +113,10 @@ impl Compiler {
 
     fn compile_decl(&mut self, decl: &Decl) {
         match decl.clone() {
+            Decl::Const { name, expr } => {
+                self.compile_expr(&expr.0);
+                self.define_var(name.0);
+            }
             Decl::Let { name, expr } => {
                 self.compile_expr(&expr.0);
                 self.define_var(name.0);

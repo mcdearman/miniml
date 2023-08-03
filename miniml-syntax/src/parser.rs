@@ -44,6 +44,7 @@ impl Parser {
 
     fn decl(&mut self) -> Result<Spanned<Decl>, Spanned<SyntaxError>> {
         match self.tokens.peek().0 {
+            Token::Const => self.const_(),
             Token::Let => self.let_(),
             Token::Fn => self.fn_(),
             _ => Err((
@@ -51,6 +52,20 @@ impl Parser {
                 self.tokens.peek().1.clone(),
             )),
         }
+    }
+
+    fn const_(&mut self) -> Result<Spanned<Decl>, Spanned<SyntaxError>> {
+        let start = self.tokens.peek().1;
+        self.tokens.eat(&Token::Const)?;
+        let name = self.ident()?;
+        self.tokens.eat(&Token::Eq)?;
+        let expr = self.expr()?;
+        let span = start.extend(self.tokens.peek().1);
+        Ok(Decl::Const {
+            name,
+            expr: Box::new(expr),
+        }
+        .spanned(span))
     }
 
     fn let_(&mut self) -> Result<Spanned<Decl>, Spanned<SyntaxError>> {
