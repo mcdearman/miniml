@@ -530,6 +530,7 @@ dependencies = [
  "insta",
  "itertools",
  "log",
+ "miniml-syntax",
  "miniml-util",
  "num-bigint",
  "num-complex",

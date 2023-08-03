@@ -7,6 +7,7 @@ edition = "2021"
 
 [dependencies]
 miniml-util = { path = "../miniml-util" }
+miniml-syntax = { path = "../miniml-syntax" }
 insta = { version = "1.28.0", features = ["yaml"] }
 itertools = "0.10.5"
 num-bigint = "0.4.3"
