@@ -28,6 +28,7 @@ impl Parser {
         let start = self.tokens.peek().1.start;
 
         while !self.tokens.at(&Token::Eof) {
+            log::trace!("decls: {:?}", decls);
             match self.decl() {
                 Ok(d) => decls.push(d),
                 Err(err) => errors.push(err),
@@ -263,6 +264,35 @@ impl Parser {
                 self.tokens.peek().1.clone(),
             )),
         }
+    }
+
+    //  <if> ::= "if" <ws>+ <expr> <ws>+ "then" <ws>+ <expr>
+    //  ("elif" <ws>+ <expr> "then" <expr>)* <ws>+ "else" <ws>+ <expr>
+    fn if_(&mut self) -> Result<Spanned<Expr>, Spanned<SyntaxError>> {
+        let start = self.tokens.peek().1;
+        self.tokens.eat(&Token::If)?;
+        let cond = self.expr()?;
+        self.tokens.eat(&Token::Then)?;
+        let then = self.expr()?;
+        let mut elifs = vec![];
+        while self.tokens.at(&Token::Elif) {
+            self.tokens.eat(&Token::Elif)?;
+            let cond = self.expr()?;
+            self.tokens.eat(&Token::Then)?;
+            let then = self.expr()?;
+            elifs.push((cond, then));
+        }
+        self.tokens.eat(&Token::Else)?;
+        let else_ = self.expr()?;
+        let span = start.extend(self.tokens.peek().1);
+        Ok((
+            Expr::If {
+                cond: Box::new(cond),
+                then: Box::new(then),
+                else_: Box::new(else_),
+            },
+            span,
+        ))
     }
 
     fn lit(&mut self) -> Result<Spanned<Lit>, Spanned<SyntaxError>> {

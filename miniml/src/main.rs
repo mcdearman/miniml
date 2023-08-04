@@ -42,7 +42,7 @@ use miniml_vm::{call_frame::CallFrame, vm::VM};
 
 fn main() {
     env_logger::init();
-    let src = "fn add x y = x + y\nfn main = add 1 2";
+    let src = "fn gcd a b = if b = 0 then a else gcd b (a % b)";
     let tokens = lex(src).expect("failed to lex");
     log::trace!("tokens: {}", tokens);
     let mut parser = Parser::new(tokens);
