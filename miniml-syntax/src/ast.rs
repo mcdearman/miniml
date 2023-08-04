@@ -81,11 +81,6 @@ pub enum Expr {
         expr: Box<Spanned<Self>>,
         body: Box<Spanned<Self>>,
     },
-    Fn {
-        name: InternedString,
-        params: Vec<InternedString>,
-        body: Box<Spanned<Self>>,
-    },
     Apply {
         fun: Box<Spanned<Self>>,
         args: Vec<Spanned<Self>>,
@@ -96,7 +91,7 @@ pub enum Expr {
         else_: Box<Spanned<Self>>,
     },
     Lambda {
-        param: Spanned<InternedString>,
+        params: Vec<Spanned<InternedString>>,
         body: Box<Spanned<Self>>,
     },
     Unit,
@@ -119,15 +114,6 @@ impl Display for Expr {
             Expr::Let { name, expr, body } => {
                 write!(f, "let {} = {} in {}", name.0, expr.0, body.0)
             }
-            Expr::Fn { name, params, body } => {
-                write!(
-                    f,
-                    "fn {} {} = {}",
-                    name,
-                    join(params.into_iter(), " "),
-                    body.0
-                )
-            }
             Expr::Apply { fun, args } => {
                 write!(f, "({}", fun.0)?;
                 for arg in args {
@@ -138,7 +124,12 @@ impl Display for Expr {
             Expr::If { cond, then, else_ } => {
                 write!(f, "if {} then {} else {}", cond.0, then.0, else_.0)
             }
-            Expr::Lambda { param, body } => write!(f, "fn {} => {}", param.0, body.0),
+            Expr::Lambda { params, body } => write!(
+                f,
+                "\\{} => {}",
+                join(params.into_iter().map(|p| p.0), " "),
+                body.0
+            ),
             Expr::Unit => write!(f, "()"),
             Expr::Error => write!(f, "error"),
         }

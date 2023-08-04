@@ -38,28 +38,26 @@
 
 <map> ::= "{" <ws>* <string> ":" <ws>* <expr> (<ws>* "," <ws>* <string> ":" <ws>* <expr>)* <ws>* "}"
 
-<string> ::= "\"" <ascii>* "\""
+# Nonterminals/Tokens
 
-<char> ::= "'" <ascii> "'"
+<ident> ::= ([A-Za-z]|_)([A-Za-z]|_|\d)*
 
-<ascii> ::= <letterOrDigit> | <ws>
+<int> ::= -?((0b[0-1]+)|(0o[0-7]+)|(0x[0-9a-fA-F]+)|([1-9]\d*|0))
 
-<ident> ::= <letter> <letterOrDigit>*
+<rational> ::= \d+/\d+
 
-<letterOrDigit> ::= <letter> | <digit>
+<real> ::= ((\d+(\.\d+))|(\.\d+))([Ee](\+|-)?\d+)?
 
-<letter> ::= <wildcard> | [a-z] | [A-Z]
+<imag> ::= ((\d+(\.\d+)?)|(\.\d+))([Ee](\+|-)?\d+)?i
 
-<real> ::= <int> "." <digit>+
+<char> ::= '\w'
 
-<int> ::= "0" | <nonzero> <digit>*
+<string> ::= "((\\"|\\\\)|[^\\"])*"
 
-<nonzero> ::= [1-9]
+<comment> ::= --[^\n]*|/\*([^*]|\**[^*/])*\*+/
 
-<digit> ::= "0" | <nonzero>
-
-<ws> ::= " " | "\n" | "\t" | "\r"
+<ws> ::= [ \n\t\r]+
 
 <wildcard> ::= "_"
 
-<unit> ::= "()"
+<eof> ::= EOF

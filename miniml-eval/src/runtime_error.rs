@@ -1,4 +1,5 @@
 use miniml_util::intern::InternedString;
+use std::fmt::Display;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct RuntimeError(InternedString);
@@ -6,6 +7,12 @@ pub struct RuntimeError(InternedString);
 impl RuntimeError {
     pub fn new(msg: String) -> Self {
         Self(msg.into())
+    }
+}
+
+impl Display for RuntimeError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "Runtime Error: {}", self.0)
     }
 }
 

@@ -36,23 +36,29 @@
 // }
 
 use miniml_compile::compiler::Compiler;
+use miniml_eval::interpreter::exec;
 use miniml_syntax::{lex::lex, parser::Parser};
 use miniml_vm::{call_frame::CallFrame, vm::VM};
 
 fn main() {
     env_logger::init();
-    let src = "fn add x y = x + y";
+    let src = "fn add x y = x + y\nfn main = add 1 2";
     let tokens = lex(src).expect("failed to lex");
     log::trace!("tokens: {}", tokens);
     let mut parser = Parser::new(tokens);
     let ast = parser.parse().expect("failed to parse");
     log::trace!("ast: {:?}", ast);
-    let mut compiler = Compiler::new();
-    let fun = compiler.compile(&ast.0).expect("failed to compile");
-    let frame = CallFrame::new(Box::new(fun));
-    // log::trace!("chunk: {:?}", chunk);
-    // log::trace!("disasm: {}", chunk);
-    let mut vm = VM::new(frame);
-    let res = vm.run().expect("runtime error");
-    println!("{}", res);
+    let v = exec(&ast.0);
+    match v {
+        Ok(v) => println!("{}", v),
+        Err(err) => eprintln!("Error: {}", err),
+    }
+    // let mut compiler = Compiler::new();
+    // let fun = compiler.compile(&ast.0).expect("failed to compile");
+    // let frame = CallFrame::new(Box::new(fun));
+    // // log::trace!("chunk: {:?}", chunk);
+    // // log::trace!("disasm: {}", chunk);
+    // let mut vm = VM::new(frame);
+    // let res = vm.run().expect("runtime error");
+    // println!("{}", res);
 }

@@ -502,6 +502,7 @@ dependencies = [
  "insta",
  "log",
  "miniml-compile",
+ "miniml-eval",
  "miniml-repl",
  "miniml-syntax",
  "miniml-util",

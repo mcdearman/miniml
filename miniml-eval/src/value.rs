@@ -1,19 +1,23 @@
 use itertools::join;
+use miniml_syntax::ast::Expr;
 use miniml_util::{intern::InternedString, list::List};
-use std::{collections::HashMap, fmt::Display};
+use std::{cell::RefCell, collections::HashMap, fmt::Display, rc::Rc};
 
-#[derive(Debug, Clone, PartialEq)]
+use crate::env::Env;
+
+#[derive(Debug, Clone)]
 pub enum Value {
     Int(i64),
     Bool(bool),
     Real(f64),
-    String(String),
+    String(InternedString),
     List(List<Value>),
     Tuple(Vec<Value>),
     Record(HashMap<InternedString, Value>),
-    Fn {
+    Lambda {
+        env: Rc<RefCell<Env>>,
         params: Vec<InternedString>,
-        body: Box<Value>,
+        body: Box<Expr>,
     },
     Unit,
 }
@@ -35,13 +39,40 @@ impl Display for Value {
                     ", "
                 )
             ),
-            Value::Fn { params, body } => write!(
+            Value::Lambda { env, params, body } => write!(
                 f,
                 "fn {} => {}",
                 join(params.clone().into_iter(), ", "),
                 body
             ),
             Value::Unit => write!(f, "()"),
+        }
+    }
+}
+
+impl PartialEq for Value {
+    fn eq(&self, other: &Self) -> bool {
+        match (self, other) {
+            (Self::Int(l0), Self::Int(r0)) => l0 == r0,
+            (Self::Bool(l0), Self::Bool(r0)) => l0 == r0,
+            (Self::Real(l0), Self::Real(r0)) => l0 == r0,
+            (Self::String(l0), Self::String(r0)) => l0 == r0,
+            (Self::List(l0), Self::List(r0)) => l0 == r0,
+            (Self::Tuple(l0), Self::Tuple(r0)) => l0 == r0,
+            (Self::Record(l0), Self::Record(r0)) => l0 == r0,
+            (
+                Self::Lambda {
+                    env: l_env,
+                    params: l_params,
+                    body: l_body,
+                },
+                Self::Lambda {
+                    env: r_env,
+                    params: r_params,
+                    body: r_body,
+                },
+            ) => l_params == r_params && l_body == r_body,
+            _ => false,
         }
     }
 }
