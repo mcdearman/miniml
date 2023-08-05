@@ -1,4 +1,5 @@
 use crate::lex::Token;
+use miniml_util::span::Spanned;
 use std::fmt::Display;
 
 #[derive(Debug, Clone, PartialEq)]
@@ -17,3 +18,5 @@ impl Display for SyntaxError {
         }
     }
 }
+
+pub type ParseResult<T> = Result<Spanned<T>, Spanned<SyntaxError>>;

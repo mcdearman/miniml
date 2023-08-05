@@ -1,6 +1,6 @@
 use crate::{
     ast::{Decl, Expr, InfixOp, Lit, PrefixOp, Root},
-    error::SyntaxError,
+    error::{ParseResult, SyntaxError},
     lex::{Token, TokenStream},
 };
 use miniml_util::{
@@ -44,18 +44,20 @@ impl Parser {
     }
 
     fn decl(&mut self) -> Result<Spanned<Decl>, Spanned<SyntaxError>> {
+        log::trace!("decl: {:?}", self.tokens.peek());
         match self.tokens.peek().0 {
             Token::Const => self.const_(),
             Token::Let => self.let_(),
             Token::Fn => self.fn_(),
-            _ => Err((
-                SyntaxError::UnexpectedToken(self.tokens.peek().0.clone()),
-                self.tokens.peek().1.clone(),
-            )),
+            _ => {
+                let next = self.tokens.next();
+                Err((SyntaxError::UnexpectedToken(next.0.clone()), next.1.clone()))
+            }
         }
     }
 
     fn const_(&mut self) -> Result<Spanned<Decl>, Spanned<SyntaxError>> {
+        log::trace!("const: {:?}", self.tokens.peek());
         let start = self.tokens.peek().1;
         self.tokens.eat(&Token::Const)?;
         let name = self.ident()?;
@@ -70,6 +72,7 @@ impl Parser {
     }
 
     fn let_(&mut self) -> Result<Spanned<Decl>, Spanned<SyntaxError>> {
+        log::trace!("let: {:?}", self.tokens.peek());
         let start = self.tokens.peek().1;
         self.tokens.eat(&Token::Let)?;
         let name = self.ident()?;
@@ -103,10 +106,111 @@ impl Parser {
     }
 
     fn expr(&mut self) -> Result<Spanned<Expr>, Spanned<SyntaxError>> {
-        self.term()
+        self.cmp()
     }
 
-    fn term(&mut self) -> Result<Spanned<Expr>, Spanned<SyntaxError>> {
+    // <cmp> ::= <term> (<ws>* ("<" | ">" | "<=" | ">=" | "=" | "!=") <ws>* <cmp>)?
+    fn cmp(&mut self) -> ParseResult<Expr> {
+        log::trace!("cmp: {:?}", self.tokens.peek());
+        let start = self.tokens.peek().1.start;
+        let lhs = self.term()?;
+        match self.tokens.peek().0 {
+            Token::Lss => {
+                self.tokens.next();
+                let rhs = self.cmp()?;
+                Ok((
+                    Expr::Infix {
+                        op: (
+                            InfixOp::Lss,
+                            Span::new(lhs.1.end + 1, self.tokens.peek().1.start),
+                        ),
+                        lhs: Box::new(lhs),
+                        rhs: Box::new(rhs),
+                    },
+                    Span::new(start, self.tokens.peek().1.end),
+                ))
+            }
+            Token::Gtr => {
+                self.tokens.next();
+                let rhs = self.cmp()?;
+                Ok((
+                    Expr::Infix {
+                        op: (
+                            InfixOp::Gtr,
+                            Span::new(lhs.1.end + 1, self.tokens.peek().1.start),
+                        ),
+                        lhs: Box::new(lhs),
+                        rhs: Box::new(rhs),
+                    },
+                    Span::new(start, self.tokens.peek().1.end),
+                ))
+            }
+            Token::Leq => {
+                self.tokens.next();
+                let rhs = self.cmp()?;
+                Ok((
+                    Expr::Infix {
+                        op: (
+                            InfixOp::Leq,
+                            Span::new(lhs.1.end + 1, self.tokens.peek().1.start),
+                        ),
+                        lhs: Box::new(lhs),
+                        rhs: Box::new(rhs),
+                    },
+                    Span::new(start, self.tokens.peek().1.end),
+                ))
+            }
+            Token::Geq => {
+                self.tokens.next();
+                let rhs = self.cmp()?;
+                Ok((
+                    Expr::Infix {
+                        op: (
+                            InfixOp::Geq,
+                            Span::new(lhs.1.end + 1, self.tokens.peek().1.start),
+                        ),
+                        lhs: Box::new(lhs),
+                        rhs: Box::new(rhs),
+                    },
+                    Span::new(start, self.tokens.peek().1.end),
+                ))
+            }
+            Token::Eq => {
+                self.tokens.next();
+                let rhs = self.cmp()?;
+                Ok((
+                    Expr::Infix {
+                        op: (
+                            InfixOp::Eq,
+                            Span::new(lhs.1.end + 1, self.tokens.peek().1.start),
+                        ),
+                        lhs: Box::new(lhs),
+                        rhs: Box::new(rhs),
+                    },
+                    Span::new(start, self.tokens.peek().1.end),
+                ))
+            }
+            Token::Neq => {
+                self.tokens.next();
+                let rhs = self.cmp()?;
+                Ok((
+                    Expr::Infix {
+                        op: (
+                            InfixOp::Neq,
+                            Span::new(lhs.1.end + 1, self.tokens.peek().1.start),
+                        ),
+                        lhs: Box::new(lhs),
+                        rhs: Box::new(rhs),
+                    },
+                    Span::new(start, self.tokens.peek().1.end),
+                ))
+            }
+            _ => Ok(lhs),
+        }
+    }
+
+    fn term(&mut self) -> ParseResult<Expr> {
+        log::trace!("term: {:?}", self.tokens.peek());
         let start = self.tokens.peek().1.start;
         let lhs = self.factor()?;
         match self.tokens.peek().0 {
@@ -145,6 +249,7 @@ impl Parser {
     }
 
     fn factor(&mut self) -> Result<Spanned<Expr>, Spanned<SyntaxError>> {
+        log::trace!("factor: {:?}", self.tokens.peek());
         let start = self.tokens.peek().1.start;
         let lhs = self.power()?;
         match self.tokens.peek().0 {
@@ -178,11 +283,27 @@ impl Parser {
                     Span::new(start, self.tokens.peek().1.end),
                 ))
             }
+            Token::Rem => {
+                self.tokens.next();
+                let rhs = self.factor()?;
+                Ok((
+                    Expr::Infix {
+                        op: (
+                            InfixOp::Mod,
+                            Span::new(lhs.1.end, self.tokens.peek().1.start),
+                        ),
+                        lhs: Box::new(lhs),
+                        rhs: Box::new(rhs),
+                    },
+                    Span::new(start, self.tokens.peek().1.end),
+                ))
+            }
             _ => Ok(lhs),
         }
     }
 
     fn power(&mut self) -> Result<Spanned<Expr>, Spanned<SyntaxError>> {
+        log::trace!("power: {:?}", self.tokens.peek());
         let start = self.tokens.peek().1.start;
         let lhs = self.unary()?;
         match self.tokens.peek().0 {
@@ -206,6 +327,7 @@ impl Parser {
     }
 
     fn unary(&mut self) -> Result<Spanned<Expr>, Spanned<SyntaxError>> {
+        log::trace!("unary: {:?}", self.tokens.peek());
         let start = self.tokens.peek().1.start;
         match self.tokens.peek().0 {
             Token::Sub => {
@@ -223,6 +345,7 @@ impl Parser {
     }
 
     fn apply(&mut self) -> Result<Spanned<Expr>, Spanned<SyntaxError>> {
+        log::trace!("apply: {:?}", self.tokens.peek());
         let start = self.tokens.peek().1.start;
         let call = self.atom()?;
         match self.tokens.peek().0 {
@@ -245,7 +368,8 @@ impl Parser {
         }
     }
 
-    fn atom(&mut self) -> Result<Spanned<Expr>, Spanned<SyntaxError>> {
+    fn atom(&mut self) -> ParseResult<Expr> {
+        log::trace!("atom: {:?}", self.tokens.peek());
         let start = self.tokens.peek().1.start;
         match self.tokens.peek().0 {
             Token::Ident(name) => {
@@ -259,6 +383,13 @@ impl Parser {
                 let (lit, span) = self.lit()?;
                 Ok(Expr::Lit(lit).spanned(span))
             }
+            Token::If => self.if_(),
+            Token::LParen => {
+                self.tokens.eat(&Token::LParen)?;
+                let expr = self.expr()?;
+                self.tokens.eat(&Token::RParen)?;
+                Ok(expr)
+            }
             _ => Err((
                 SyntaxError::UnexpectedToken(self.tokens.peek().0.clone()),
                 self.tokens.peek().1.clone(),
@@ -269,6 +400,7 @@ impl Parser {
     //  <if> ::= "if" <ws>+ <expr> <ws>+ "then" <ws>+ <expr>
     //  ("elif" <ws>+ <expr> "then" <expr>)* <ws>+ "else" <ws>+ <expr>
     fn if_(&mut self) -> Result<Spanned<Expr>, Spanned<SyntaxError>> {
+        log::trace!("if: {:?}", self.tokens.peek());
         let start = self.tokens.peek().1;
         self.tokens.eat(&Token::If)?;
         let cond = self.expr()?;
@@ -284,12 +416,20 @@ impl Parser {
         }
         self.tokens.eat(&Token::Else)?;
         let else_ = self.expr()?;
+        let top_else = elifs.into_iter().fold(else_, |else_, (cond, then)| {
+            Expr::If {
+                cond: Box::new(cond),
+                then: Box::new(then.clone()),
+                else_: Box::new(else_),
+            }
+            .spanned(Span::new(start.start, then.1.end))
+        });
         let span = start.extend(self.tokens.peek().1);
         Ok((
             Expr::If {
                 cond: Box::new(cond),
                 then: Box::new(then),
-                else_: Box::new(else_),
+                else_: Box::new(top_else),
             },
             span,
         ))
