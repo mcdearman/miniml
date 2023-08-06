@@ -51,15 +51,6 @@ impl From<Range<usize>> for Span {
     }
 }
 
-// impl From<Range<u32>> for Span {
-//     fn from(range: Range<u32>) -> Self {
-//         Self {
-//             start: range.start,
-//             end: range.end,
-//         }
-//     }
-// }
-
 impl Index<Span> for str {
     type Output = str;
 

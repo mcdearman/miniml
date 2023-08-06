@@ -1,14 +1,24 @@
-<root> ::= (<item> <ws>+)+
+<root> ::= (<decl> <ws>+)+
 
-<item> ::= <decl>
+<decl> ::= <const> | <let> | <fn>
 
-<decl> ::= <let> | <fn>
+<const> ::= "const" <ws>+ <ident> <ws>* "=" <ws>* <expr>
 
 <let> ::= "let" <ws>+ <ident> <ws>* "=" <ws>* <expr>
 
 <fn> ::= <ident> (<ws>+ <ident>)* <ws>+ "=" <ws>+ <expr>
 
-<expr> ::= <term>
+<expr> ::= <pipe>
+
+<pipe> ::= <stmt> (<ws>* "|>" <ws>* <pipe>)?
+
+<stmt> ::= <or> (<ws>* ";" <ws>* <stmt>)?
+
+<or> ::= <and> (<ws>* "or" <ws>* <or>)?
+
+<and> ::= <cmp> (<ws>* "and" <ws>* <and>)?
+
+<cmp> ::= <add> (<ws>* ("<" | ">" | "<=" | ">=" | "=" | "!=") <ws>* <cmp>)?
 
 <term> ::= <factor> (<ws>* ("+" | "-") <ws>* <term>)?
 
@@ -16,7 +26,7 @@
 
 <power> ::= <unary> (<ws>* "^" <ws>* <power>)?
 
-<unary> ::= <apply> | ("-" | "!") <unary>
+<unary> ::= <apply> | ("-" | "not") <unary>
 
 <apply> ::= <atom> (<ws>+ <atom>)*
 

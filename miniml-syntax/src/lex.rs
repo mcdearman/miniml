@@ -51,10 +51,6 @@ pub enum Token {
     #[token("^")]
     Pow,
 
-    #[token("&&")]
-    And,
-    #[token("||")]
-    Or,
     #[token("\\")]
     Lambda,
     #[token("->")]
@@ -72,8 +68,6 @@ pub enum Token {
     Lss,
     #[token(">")]
     Gtr,
-    #[token("!")]
-    Not,
     #[token("!=")]
     Neq,
     #[token("<=")]
@@ -124,6 +118,12 @@ pub enum Token {
     Match,
     #[token("with")]
     With,
+    #[token("and")]
+    And,
+    #[token("or")]
+    Or,
+    #[token("not")]
+    Not,
     #[token("if")]
     If,
     #[token("then")]
@@ -158,8 +158,6 @@ impl Display for Token {
                 Token::Div => "/".to_string(),
                 Token::Rem => "%".to_string(),
                 Token::Pow => "^".to_string(),
-                Token::And => "&&".to_string(),
-                Token::Or => "||".to_string(),
                 Token::Lambda => "lambda".to_string(),
                 Token::Arrow => "->".to_string(),
                 Token::FatArrow => "=>".to_string(),
@@ -168,7 +166,6 @@ impl Display for Token {
                 Token::Eq => "=".to_string(),
                 Token::Lss => "<".to_string(),
                 Token::Gtr => ">".to_string(),
-                Token::Not => "!".to_string(),
                 Token::Neq => "!=".to_string(),
                 Token::Leq => "<=".to_string(),
                 Token::Geq => ">=".to_string(),
@@ -193,6 +190,9 @@ impl Display for Token {
                 Token::Struct => "struct".to_string(),
                 Token::Match => "match".to_string(),
                 Token::With => "with".to_string(),
+                Token::And => "and".to_string(),
+                Token::Or => "or".to_string(),
+                Token::Not => "not".to_string(),
                 Token::If => "if".to_string(),
                 Token::Then => "then".to_string(),
                 Token::Elif => "elif".to_string(),

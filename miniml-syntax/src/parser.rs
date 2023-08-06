@@ -112,7 +112,107 @@ impl Parser {
     }
 
     fn expr(&mut self) -> Result<Spanned<Expr>, Spanned<SyntaxError>> {
-        self.cmp()
+        self.pipe()
+    }
+
+    // <pipe> ::= <stmt> (<ws>* "|>" <ws>* <pipe>)?
+    fn pipe(&mut self) -> ParseResult<Expr> {
+        let start = self.tokens.peek().1.start;
+        let lhs = self.stmt()?;
+        match self.tokens.peek().0 {
+            Token::PipeArrow => {
+                log::trace!("pipe: {:?}", self.tokens.peek());
+                self.tokens.eat(&Token::PipeArrow)?;
+                let rhs = self.pipe()?;
+                Ok((
+                    Expr::Infix {
+                        op: (
+                            InfixOp::Pipe,
+                            Span::new(lhs.1.end + 1, self.tokens.peek().1.start),
+                        ),
+                        lhs: Box::new(lhs),
+                        rhs: Box::new(rhs),
+                    },
+                    Span::new(start, self.tokens.peek().1.end),
+                ))
+            }
+            _ => Ok(lhs),
+        }
+    }
+
+    // <stmt> ::= <or> (<ws>* ";" <ws>* <stmt>)?
+    fn stmt(&mut self) -> ParseResult<Expr> {
+        let start = self.tokens.peek().1.start;
+        let lhs = self.or()?;
+        match self.tokens.peek().0 {
+            Token::Semicolon => {
+                log::trace!("stmt: {:?}", self.tokens.peek());
+                self.tokens.eat(&Token::Semicolon)?;
+                let rhs = self.stmt()?;
+                Ok((
+                    Expr::Let {
+                        name: (
+                            InternedString::from("_"),
+                            Span::new(start, self.tokens.peek().1.start),
+                        ),
+                        expr: Box::new(lhs),
+                        body: Box::new(rhs),
+                    },
+                    Span::new(start, self.tokens.peek().1.end),
+                ))
+            }
+            _ => Ok(lhs),
+        }
+    }
+
+    // <or> ::= <and> (<ws>* "or" <ws>* <or>)?
+    fn or(&mut self) -> ParseResult<Expr> {
+        let start = self.tokens.peek().1.start;
+        let lhs = self.and()?;
+        match self.tokens.peek().0 {
+            Token::Or => {
+                log::trace!("or: {:?}", self.tokens.peek());
+                self.tokens.eat(&Token::Or)?;
+                let rhs = self.or()?;
+                Ok((
+                    Expr::Infix {
+                        op: (
+                            InfixOp::Or,
+                            Span::new(lhs.1.end + 1, self.tokens.peek().1.start),
+                        ),
+                        lhs: Box::new(lhs),
+                        rhs: Box::new(rhs),
+                    },
+                    Span::new(start, self.tokens.peek().1.end),
+                ))
+            }
+            _ => Ok(lhs),
+        }
+    }
+
+    // <and> ::= <cmp> (<ws>* "and" <ws>* <and>)?
+    fn and(&mut self) -> ParseResult<Expr> {
+        let start = self.tokens.peek().1.start;
+        let lhs = self.cmp()?;
+        match self.tokens.peek().0 {
+            Token::And => {
+                log::trace!("and: {:?}", self.tokens.peek());
+                self.tokens.eat(&Token::And)?;
+                let rhs = self.and()?;
+                Ok((
+                    Expr::Infix {
+                        op: (
+                            InfixOp::And,
+                            Span::new(lhs.1.end + 1, self.tokens.peek().1.start),
+                        ),
+                        lhs: Box::new(lhs),
+                        rhs: Box::new(rhs),
+                    },
+                    Span::new(start, self.tokens.peek().1.end),
+                ))
+            }
+            _ => Ok(lhs),
+        }
     }
 
     // <cmp> ::= <term> (<ws>* ("<" | ">" | "<=" | ">=" | "=" | "!=") <ws>* <cmp>)?
@@ -358,7 +458,8 @@ impl Parser {
         }
     }
 
-    fn apply(&mut self) -> Result<Spanned<Expr>, Spanned<SyntaxError>> {
+    // <apply> ::= <atom> (<ws>+ <atom>)*
+    fn apply(&mut self) -> ParseResult<Expr> {
         let start = self.tokens.peek().1.start;
         let call = self.atom()?;
         match self.tokens.peek().0 {
@@ -491,5 +592,18 @@ impl Parser {
                 self.tokens.peek().1.clone(),
             )),
         }
+    }
+}
+
+mod tests {
+    use super::Parser;
+    use crate::{error, lex::lex};
+
+    #[test]
+    fn test_pipe() {
+        let src = "foo 2 |> bar 1";
+        let mut parser = Parser::new(lex(src).unwrap());
+        let expr = parser.expr().expect("parse error");
+        insta::assert_debug_snapshot!(expr);
     }
 }
