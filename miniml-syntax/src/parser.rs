@@ -31,7 +31,16 @@ impl Parser {
             log::trace!("decls: {:?}", decls);
             match self.decl() {
                 Ok(d) => decls.push(d),
-                Err(err) => errors.push(err),
+                Err(err) => {
+                    errors.push(err);
+                    while !(self.tokens.at(&Token::Fn)
+                        || self.tokens.at(&Token::Let)
+                        || self.tokens.at(&Token::Const)
+                        || self.tokens.at(&Token::Eof))
+                    {
+                        self.tokens.next();
+                    }
+                }
             }
         }
 
@@ -51,6 +60,7 @@ impl Parser {
             Token::Fn => self.fn_(),
             _ => {
                 let next = self.tokens.next();
+                log::trace!("unexpected token in decl: {:?}", next);
                 Err((SyntaxError::UnexpectedToken(next.0.clone()), next.1.clone()))
             }
         }
@@ -390,10 +400,14 @@ impl Parser {
                 self.tokens.eat(&Token::RParen)?;
                 Ok(expr)
             }
-            _ => Err((
-                SyntaxError::UnexpectedToken(self.tokens.peek().0.clone()),
-                self.tokens.peek().1.clone(),
-            )),
+            _ => {
+                let next = self.tokens.next();
+                log::trace!("unexpected token in atom: {:?}", next);
+                Err((
+                    SyntaxError::UnexpectedToken(next.0.clone()),
+                    self.tokens.peek().1.clone(),
+                ))
+            }
         }
     }
 
