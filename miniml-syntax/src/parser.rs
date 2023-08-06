@@ -18,11 +18,11 @@ impl Parser {
         Self { tokens }
     }
 
-    pub fn parse(&mut self) -> Result<Spanned<Root>, Vec<Spanned<SyntaxError>>> {
+    pub fn parse(&mut self) -> (Spanned<Root>, Vec<Spanned<SyntaxError>>) {
         self.root()
     }
 
-    fn root(&mut self) -> Result<Spanned<Root>, Vec<Spanned<SyntaxError>>> {
+    fn root(&mut self) -> (Spanned<Root>, Vec<Spanned<SyntaxError>>) {
         let mut errors = Vec::new();
         let mut decls = Vec::new();
         let start = self.tokens.peek().1.start;
@@ -45,11 +45,7 @@ impl Parser {
         }
 
         let end = self.tokens.peek().1.end;
-        if errors.is_empty() {
-            Ok((Root { decls }, Span::new(start, end)))
-        } else {
-            Err(errors)
-        }
+        ((Root { decls }, Span::new(start, end)), errors)
     }
 
     fn decl(&mut self) -> Result<Spanned<Decl>, Spanned<SyntaxError>> {
@@ -121,12 +117,12 @@ impl Parser {
 
     // <cmp> ::= <term> (<ws>* ("<" | ">" | "<=" | ">=" | "=" | "!=") <ws>* <cmp>)?
     fn cmp(&mut self) -> ParseResult<Expr> {
-        log::trace!("cmp: {:?}", self.tokens.peek());
         let start = self.tokens.peek().1.start;
         let lhs = self.term()?;
         match self.tokens.peek().0 {
             Token::Lss => {
-                self.tokens.next();
+                log::trace!("cmp: {:?}", self.tokens.peek());
+                self.tokens.eat(&Token::Lss)?;
                 let rhs = self.cmp()?;
                 Ok((
                     Expr::Infix {
@@ -141,7 +137,8 @@ impl Parser {
                 ))
             }
             Token::Gtr => {
-                self.tokens.next();
+                log::trace!("cmp: {:?}", self.tokens.peek());
+                self.tokens.eat(&Token::Gtr)?;
                 let rhs = self.cmp()?;
                 Ok((
                     Expr::Infix {
@@ -156,7 +153,8 @@ impl Parser {
                 ))
             }
             Token::Leq => {
-                self.tokens.next();
+                log::trace!("cmp: {:?}", self.tokens.peek());
+                self.tokens.eat(&Token::Leq)?;
                 let rhs = self.cmp()?;
                 Ok((
                     Expr::Infix {
@@ -171,7 +169,8 @@ impl Parser {
                 ))
             }
             Token::Geq => {
-                self.tokens.next();
+                log::trace!("cmp: {:?}", self.tokens.peek());
+                self.tokens.eat(&Token::Geq)?;
                 let rhs = self.cmp()?;
                 Ok((
                     Expr::Infix {
@@ -186,7 +185,8 @@ impl Parser {
                 ))
             }
             Token::Eq => {
-                self.tokens.next();
+                log::trace!("cmp: {:?}", self.tokens.peek());
+                self.tokens.eat(&Token::Eq)?;
                 let rhs = self.cmp()?;
                 Ok((
                     Expr::Infix {
@@ -201,7 +201,8 @@ impl Parser {
                 ))
             }
             Token::Neq => {
-                self.tokens.next();
+                log::trace!("cmp: {:?}", self.tokens.peek());
+                self.tokens.eat(&Token::Neq)?;
                 let rhs = self.cmp()?;
                 Ok((
                     Expr::Infix {
@@ -220,12 +221,12 @@ impl Parser {
     }
 
     fn term(&mut self) -> ParseResult<Expr> {
-        log::trace!("term: {:?}", self.tokens.peek());
         let start = self.tokens.peek().1.start;
         let lhs = self.factor()?;
         match self.tokens.peek().0 {
             Token::Add => {
-                self.tokens.next();
+                log::trace!("term: {:?}", self.tokens.peek());
+                self.tokens.eat(&Token::Add)?;
                 let rhs = self.term()?;
                 Ok((
                     Expr::Infix {
@@ -240,7 +241,8 @@ impl Parser {
                 ))
             }
             Token::Sub => {
-                self.tokens.next();
+                log::trace!("term: {:?}", self.tokens.peek());
+                self.tokens.eat(&Token::Sub)?;
                 let rhs = self.term()?;
                 Ok((
                     Expr::Infix {
@@ -259,12 +261,12 @@ impl Parser {
     }
 
     fn factor(&mut self) -> Result<Spanned<Expr>, Spanned<SyntaxError>> {
-        log::trace!("factor: {:?}", self.tokens.peek());
         let start = self.tokens.peek().1.start;
         let lhs = self.power()?;
         match self.tokens.peek().0 {
             Token::Mul => {
-                self.tokens.next();
+                log::trace!("factor: {:?}", self.tokens.peek());
+                self.tokens.eat(&Token::Mul)?;
                 let rhs = self.factor()?;
                 Ok((
                     Expr::Infix {
@@ -279,7 +281,8 @@ impl Parser {
                 ))
             }
             Token::Div => {
-                self.tokens.next();
+                log::trace!("factor: {:?}", self.tokens.peek());
+                self.tokens.eat(&Token::Div)?;
                 let rhs = self.factor()?;
                 Ok((
                     Expr::Infix {
@@ -294,7 +297,8 @@ impl Parser {
                 ))
             }
             Token::Rem => {
-                self.tokens.next();
+                log::trace!("factor: {:?}", self.tokens.peek());
+                self.tokens.eat(&Token::Rem)?;
                 let rhs = self.factor()?;
                 Ok((
                     Expr::Infix {
@@ -313,12 +317,12 @@ impl Parser {
     }
 
     fn power(&mut self) -> Result<Spanned<Expr>, Spanned<SyntaxError>> {
-        log::trace!("power: {:?}", self.tokens.peek());
         let start = self.tokens.peek().1.start;
         let lhs = self.unary()?;
         match self.tokens.peek().0 {
             Token::Pow => {
-                self.tokens.next();
+                log::trace!("power: {:?}", self.tokens.peek());
+                self.tokens.eat(&Token::Pow)?;
                 let rhs = self.power()?;
                 Ok((
                     Expr::Infix {
@@ -337,11 +341,11 @@ impl Parser {
     }
 
     fn unary(&mut self) -> Result<Spanned<Expr>, Spanned<SyntaxError>> {
-        log::trace!("unary: {:?}", self.tokens.peek());
         let start = self.tokens.peek().1.start;
         match self.tokens.peek().0 {
             Token::Sub => {
-                self.tokens.next();
+                log::trace!("unary: {:?}", self.tokens.peek());
+                self.tokens.eat(&Token::Sub)?;
                 Ok((
                     Expr::Prefix {
                         op: (PrefixOp::Neg, Span::new(start, self.tokens.peek().1.start)),
@@ -355,13 +359,17 @@ impl Parser {
     }
 
     fn apply(&mut self) -> Result<Spanned<Expr>, Spanned<SyntaxError>> {
-        log::trace!("apply: {:?}", self.tokens.peek());
         let start = self.tokens.peek().1.start;
         let call = self.atom()?;
         match self.tokens.peek().0 {
             Token::Int(_) | Token::Real(_) | Token::String(_) | Token::Ident(_) => {
+                log::trace!("apply: {:?}", self.tokens.peek());
                 let mut args = vec![];
-                while !self.tokens.at(&Token::Eof) {
+                while !(self.tokens.at(&Token::Let)
+                    || self.tokens.at(&Token::Fn)
+                    || self.tokens.at(&Token::Const)
+                    || self.tokens.at(&Token::Eof))
+                {
                     match self.atom()? {
                         arg => args.push(arg),
                     }
@@ -398,15 +406,14 @@ impl Parser {
                 self.tokens.eat(&Token::LParen)?;
                 let expr = self.expr()?;
                 self.tokens.eat(&Token::RParen)?;
+                log::trace!("paren atom expr: {:?}", expr);
+                log::trace!("paren atom: {:?}", self.tokens.peek());
                 Ok(expr)
             }
             _ => {
                 let next = self.tokens.next();
                 log::trace!("unexpected token in atom: {:?}", next);
-                Err((
-                    SyntaxError::UnexpectedToken(next.0.clone()),
-                    self.tokens.peek().1.clone(),
-                ))
+                Err((SyntaxError::UnexpectedToken(next.0.clone()), next.1.clone()))
             }
         }
     }
@@ -464,10 +471,11 @@ impl Parser {
                 self.tokens.next();
                 Ok(Lit::String(s).spanned(span))
             }
-            _ => Err((
-                SyntaxError::UnexpectedToken(self.tokens.peek().0.clone()),
-                self.tokens.peek().1.clone(),
-            )),
+            _ => {
+                let next = self.tokens.next();
+                log::trace!("unexpected token in lit: {:?}", next);
+                Err((SyntaxError::UnexpectedToken(next.0.clone()), next.1.clone()))
+            }
         }
     }
 

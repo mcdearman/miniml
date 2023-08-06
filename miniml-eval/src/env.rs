@@ -18,11 +18,11 @@ impl Env {
         }
     }
 
-    pub fn with_parent(parent: Rc<RefCell<Env>>) -> Self {
-        Self {
+    pub fn with_parent(parent: Rc<RefCell<Env>>) -> Rc<RefCell<Self>> {
+        Rc::new(RefCell::new(Self {
             parent: Some(parent),
             bindings: HashMap::new(),
-        }
+        }))
     }
 
     pub fn find(&self, name: &InternedString) -> Option<Value> {

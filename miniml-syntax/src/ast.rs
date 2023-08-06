@@ -12,6 +12,12 @@ pub struct Root {
     pub decls: Vec<Spanned<Decl>>,
 }
 
+impl Root {
+    pub fn spanned(self, span: Span) -> Spanned<Self> {
+        (self, span)
+    }
+}
+
 impl Display for Root {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(

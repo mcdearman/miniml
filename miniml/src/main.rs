@@ -42,12 +42,13 @@ use miniml_vm::{call_frame::CallFrame, vm::VM};
 
 fn main() {
     env_logger::init();
-    let src = "fn gcd a b = if b = 0 then a else gcd b (a % b)\nfn main = gcd 12 8";
+    let src = "fn gcd a b = if b = 0 then a else gcd b (a % b)\nfn main = gcd 85 51";
     let tokens = lex(src).expect("failed to lex");
     log::trace!("tokens: {}", tokens);
     let mut parser = Parser::new(tokens);
-    let ast = parser.parse().expect("failed to parse");
+    let (ast, errors) = parser.parse();
     log::trace!("ast: {:?}", ast);
+    log::trace!("errors: {:?}", errors);
     let v = exec(&ast.0);
     match v {
         Ok(v) => println!("{}", v),

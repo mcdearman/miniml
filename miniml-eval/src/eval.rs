@@ -22,7 +22,7 @@ pub fn eval(env: Rc<RefCell<Env>>, decl: &Decl) -> EvalResult<Value> {
             env.borrow_mut().define(
                 name.0,
                 Value::Lambda {
-                    env: Rc::new(RefCell::new(Env::with_parent(env.clone()))),
+                    env: Env::with_parent(env.clone()),
                     params: params.into_iter().map(|p| p.0).collect(),
                     body: Box::new(body.0),
                 },
@@ -122,7 +122,7 @@ pub fn eval_expr(env: Rc<RefCell<Env>>, expr: &Expr) -> EvalResult<Value> {
         },
         Expr::Let { name, expr, body } => {
             let value = eval_expr(env.clone(), &expr.0)?;
-            let let_env = Rc::new(RefCell::new(Env::with_parent(env.clone())));
+            let let_env = Env::with_parent(env.clone());
             let_env.borrow_mut().define(name.0, value);
             eval_expr(let_env.clone(), &body.0)
         }
@@ -152,7 +152,7 @@ pub fn eval_expr(env: Rc<RefCell<Env>>, expr: &Expr) -> EvalResult<Value> {
             _ => Err(RuntimeError::from("Invalid operand type")),
         },
         Expr::Lambda { params, body } => Ok(Value::Lambda {
-            env: Rc::new(RefCell::new(Env::with_parent(env.clone()))),
+            env: Env::with_parent(env.clone()),
             params: params.into_iter().map(|p| p.0).collect(),
             body: Box::new(body.0),
         }),
