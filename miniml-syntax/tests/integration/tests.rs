@@ -1,11 +1,4 @@
 // #[test]
-// fn parse_int() {
-//     let src = "523";
-//     let (tree, _) = parse(src);
-//     insta::assert_debug_snapshot!(tree.expect("Tree is empty"));
-// }
-
-// #[test]
 // fn parse_binary() {
 //     let src = "0b101010";
 //     let (tree, _) = parse(src);

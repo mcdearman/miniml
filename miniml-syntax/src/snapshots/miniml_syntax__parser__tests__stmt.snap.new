@@ -1,6 +1,6 @@
 ---
 source: miniml-syntax/src/parser.rs
-assertion_line: 540
+assertion_line: 555
 expression: expr
 ---
 Let(InternedString(_) @ 0..7 = Apply(Ident(InternedString(println)) @ 0..9 "1 @ <8, 9>") @ 0..10 in Lit(Int(2)) @ 11..12) @ 0..7

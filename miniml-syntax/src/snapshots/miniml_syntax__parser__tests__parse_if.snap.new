@@ -1,0 +1,6 @@
+---
+source: miniml-syntax/src/parser.rs
+assertion_line: 539
+expression: expr
+---
+If(Ident(InternedString(a)) @ 3..9 Ident(InternedString(b)) @ 10..16 Ident(InternedString(c)) @ 1..18) @ 0..2

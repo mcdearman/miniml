@@ -523,6 +523,21 @@ impl Parser {
 mod tests {
     use super::Parser;
     use crate::{error, lex::lex};
+    #[test]
+    fn parse_int() {
+        let src = "523";
+        let mut parser = Parser::new(lex(src).unwrap());
+        let expr = parser.expr().expect("parse error");
+        insta::assert_debug_snapshot!(expr);
+    }
+
+    #[test]
+    fn parse_if() {
+        let src = "if a then b else c";
+        let mut parser = Parser::new(lex(src).unwrap());
+        let expr = parser.expr().expect("parse error");
+        insta::assert_debug_snapshot!(expr);
+    }
 
     #[test]
     fn test_pipe() {

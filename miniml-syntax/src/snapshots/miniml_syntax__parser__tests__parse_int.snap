@@ -1,0 +1,5 @@
+---
+source: miniml-syntax/src/parser.rs
+expression: expr
+---
+Lit(Int(523)) @ 0..3
