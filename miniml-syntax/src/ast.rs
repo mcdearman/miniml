@@ -107,16 +107,22 @@ pub enum Expr {
 }
 
 impl Expr {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>, indent: u8) -> std::fmt::Result {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>, indent: usize) -> std::fmt::Result {
         // debug prints but repeat indent
         match self.clone() {
-            Expr::Ident(i) => write!(f, "{:?}", i),
+            Expr::Ident(i) => write!(f, "{}Indent({:?})", " ".repeat(indent), i),
             Expr::Lit(l) => write!(f, "{:?}", l),
-            Expr::Prefix { op, expr } => write!(f, "{}Prefix{:?}{:?}", op.value, expr.value),
-            Expr::Infix { op, lhs, rhs } => write!(f, "{:?} {:?} {:?}", lhs.value, op.value, rhs.value),
-
+            Expr::Prefix { op, expr } => write!(
+                f,
+                "{}Prefix{:?}{:?}",
+                " ".repeat(indent),
+                op.value,
+                expr.value
+            ),
+            Expr::Infix { op, lhs, rhs } => {
+                write!(f, "{:?} {:?} {:?}", lhs.value, op.value, rhs.value)
+            }
         }
-        
     }
 }
 
