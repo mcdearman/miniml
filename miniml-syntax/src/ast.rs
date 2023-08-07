@@ -148,8 +148,10 @@ impl Debug for Expr {
             Self::Ident(name) => write!(f, "Ident({:?})", name),
             Self::Lit(l) => write!(f, "Lit({:?})", l),
             Self::Prefix { op, expr } => write!(f, "Prefix({:?}{:?})", op, expr),
-            Self::Infix { op, lhs, rhs } => write!(f, "Infix({:?} {:?} {})", lhs, op, rhs),
-            Self::Let { name, expr, body } => write!(f, "Let({:?} = {:?} in {})", name, expr, body),
+            Self::Infix { op, lhs, rhs } => write!(f, "Infix({:?} {:?} {:?})", lhs, op, rhs),
+            Self::Let { name, expr, body } => {
+                write!(f, "Let({:?} = {:?} in {:?})", name, expr, body)
+            }
             Self::Apply { fun, args } => write!(f, "Apply({:?} {:?})", fun, join(args, " ")),
             Self::If { cond, then, else_ } => write!(f, "If({:?} {:?} {:?})", cond, then, else_),
             Self::Lambda { params, body } => {
