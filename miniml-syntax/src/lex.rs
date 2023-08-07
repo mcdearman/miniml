@@ -3,7 +3,7 @@ use itertools::join;
 use logos::Logos;
 use miniml_util::{
     intern::InternedString,
-    span::{Span, Spanned},
+    span::{Span, Spannable, Spanned},
 };
 use num_complex::Complex;
 use num_rational::Rational64;
@@ -215,30 +215,42 @@ impl TokenStream {
         }
     }
 
+    fn eof_span(&self) -> Span {
+        let eofs = self
+            .tokens
+            .clone()
+            .last()
+            .unwrap_or(Token::Eof.spanned(Span::new(0, 0)))
+            .span
+            .end
+            + 1;
+        Span::new(eofs, eofs)
+    }
+
     pub fn peek(&mut self) -> Spanned<Token> {
+        let eofs = self.eof_span();
         self.tokens
             .peek()
-            .unwrap_or(&(Token::Eof, Span::new(0, 0)))
+            .unwrap_or(&Token::Eof.spanned(eofs))
             .clone()
     }
 
     pub fn next(&mut self) -> Spanned<Token> {
-        self.tokens.next().unwrap_or((Token::Eof, Span::new(0, 0)))
+        self.tokens
+            .next()
+            .unwrap_or(Token::Eof.spanned(self.eof_span()))
     }
 
-    pub fn at(&mut self, token: &Token) -> bool {
-        self.peek().0 == token.clone()
+    pub fn at(&mut self, token: Token) -> bool {
+        self.peek().value == token.clone()
     }
 
-    pub fn eat(&mut self, token: &Token) -> Result<(), Spanned<SyntaxError>> {
+    pub fn eat(&mut self, token: Token) -> Result<(), Spanned<SyntaxError>> {
         if self.at(token) {
             self.next();
             Ok(())
         } else {
-            Err((
-                SyntaxError::UnexpectedToken(self.peek().0.clone()),
-                self.peek().1,
-            ))
+            Err(SyntaxError::UnexpectedToken(self.peek().value.clone()).spanned(self.peek().span))
         }
     }
 }
@@ -249,7 +261,9 @@ impl Display for TokenStream {
             f,
             "{}",
             join(
-                self.tokens.clone().map(|(t, s)| format!("{} - {}", t, s)),
+                self.tokens
+                    .clone()
+                    .map(|spnd| format!("{} - {}", spnd.value, spnd.span)),
                 "\n"
             )
         )
@@ -263,8 +277,11 @@ pub fn lex<'src>(src: &'src str) -> Result<TokenStream, Vec<Spanned<SyntaxError>
     ) = Token::lexer(src)
         .spanned()
         .map(|(res, span)| match res {
-            Ok(t) => (Some((t, Span::from(span))), None),
-            Err(_) => (None, Some((SyntaxError::LexerError, Span::from(span)))),
+            Ok(t) => (Some(t.spanned(Span::from(span))), None),
+            Err(_) => (
+                None,
+                Some(SyntaxError::LexerError.spanned(Span::from(span))),
+            ),
         })
         .unzip();
 

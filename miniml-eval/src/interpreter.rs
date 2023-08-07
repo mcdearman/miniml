@@ -5,7 +5,10 @@ use crate::{
     value::Value,
 };
 use miniml_syntax::ast::{Decl, Expr, Root};
-use miniml_util::{intern::InternedString, span::Span};
+use miniml_util::{
+    intern::InternedString,
+    span::{Span, Spannable},
+};
 use std::{
     cell::{Ref, RefCell},
     rc::Rc,
@@ -43,7 +46,7 @@ fn default_env() -> Rc<RefCell<Env>> {
 pub fn exec(root: &Root) -> EvalResult<Value> {
     let env = default_env();
     for d in root.decls.iter() {
-        eval(env.clone(), &d.0)?;
+        eval(env.clone(), &d.value)?;
     }
     let v = match env.borrow().find(&"main".into()) {
         Some(_) => eval_expr(

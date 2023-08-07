@@ -1,0 +1,6 @@
+---
+source: miniml-syntax/src/parser.rs
+assertion_line: 532
+expression: expr
+---
+Infix(Apply(Ident(InternedString(foo)) @ 0..5 "2 @ <4, 5>") @ 0..8 Pipe @ 6..8 (bar 1) @ <1, 12>) @ 0..3

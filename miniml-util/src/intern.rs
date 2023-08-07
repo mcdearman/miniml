@@ -16,8 +16,11 @@ pub struct InternedString {
 }
 
 impl InternedString {
-    pub fn spanned(self, span: Span) -> Spanned<Self> {
-        (self, span)
+    pub fn spanned(&self, span: Span) -> Spanned<Self> {
+        Spanned {
+            value: self.clone(),
+            span,
+        }
     }
 }
 

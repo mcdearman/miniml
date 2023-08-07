@@ -59,15 +59,15 @@ impl Compiler {
 
     pub fn compile(&mut self, ast: &Root) -> CompileResult<Function> {
         for d in &ast.decls {
-            self.compile_decl(&d.0);
+            self.compile_decl(&d.value);
         }
-        self.chunk().write(OpCode::Return as u8, Span::from(1..0));
+        self.chunk().write(OpCode::Return as u8, Span::from(0..0));
 
         Ok(self.fun.clone())
     }
 
     fn emit_byte(&mut self, byte: u8) {
-        self.chunk().write(byte, Span::from(1..0))
+        self.chunk().write(byte, Span::from(0..0))
     }
 
     fn emit_bytes(&mut self, byte1: u8, byte2: u8) {
@@ -114,15 +114,15 @@ impl Compiler {
     fn compile_decl(&mut self, decl: &Decl) {
         match decl.clone() {
             Decl::Const { name, expr } => {
-                self.compile_expr(&expr.0);
-                self.define_var(name.0);
+                self.compile_expr(&expr.value);
+                self.define_var(name.value);
             }
             Decl::Let { name, expr } => {
-                self.compile_expr(&expr.0);
-                self.define_var(name.0);
+                self.compile_expr(&expr.value);
+                self.define_var(name.value);
             }
             Decl::Fn { name, params, body } => {
-                let fun = Function::new(params.len(), Box::new(Chunk::new()), &name.0);
+                let fun = Function::new(params.len(), Box::new(Chunk::new()), &name.value);
                 let mut compiler = Compiler {
                     parent: Some(Box::new(self.clone())),
                     fun,
@@ -131,17 +131,17 @@ impl Compiler {
                 };
                 for p in &params {
                     compiler.locals.push(Local {
-                        name: p.0,
+                        name: p.value,
                         depth: 0,
                     });
                 }
-                compiler.compile_expr(&body.0);
+                compiler.compile_expr(&body.value);
                 compiler
                     .chunk()
                     .write(OpCode::Return as u8, Span::from(1..0));
                 let idx = self.make_const(Value::Object(Object::Function(compiler.fun)));
                 self.emit_bytes(OpCode::Const as u8, idx);
-                self.define_var(name.0);
+                self.define_var(name.value);
             }
         }
     }
@@ -157,17 +157,17 @@ impl Compiler {
                 Lit::Real(r) => self.emit_const(Value::Real(r)),
                 Lit::String(s) => self.emit_const(Value::String(s)),
             },
-            Expr::Prefix { op, expr } => match op.clone().0 {
+            Expr::Prefix { op, expr } => match op.clone().value {
                 PrefixOp::Neg => {
-                    self.compile_expr(&expr.0);
+                    self.compile_expr(&expr.value);
                     self.emit_byte(OpCode::Neg as u8);
                 }
                 PrefixOp::Not => todo!(),
             },
             Expr::Infix { op, lhs, rhs } => {
-                self.compile_expr(&lhs.0);
-                self.compile_expr(&rhs.0);
-                match op.clone().0 {
+                self.compile_expr(&lhs.value);
+                self.compile_expr(&rhs.value);
+                match op.clone().value {
                     InfixOp::Add => self.emit_byte(OpCode::Add as u8),
                     InfixOp::Sub => self.emit_byte(OpCode::Sub as u8),
                     InfixOp::Mul => self.emit_byte(OpCode::Mul as u8),
