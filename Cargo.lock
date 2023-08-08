@@ -190,12 +190,24 @@ version = "0.12.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "81b0cb07675f2025784ff3964c5b8fdcf0cc86c1288ae2d798549b7866b66d96"
 dependencies = [
+ "cstree_derive",
  "fxhash",
  "indexmap",
  "parking_lot",
  "sptr",
  "text-size",
  "triomphe",
+]
+
+[[package]]
+name = "cstree_derive"
+version = "0.12.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0da6c38bede0ecec78757fe92451c463ac9e6d37961c2cbce6a20be917951baf"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn",
 ]
 
 [[package]]

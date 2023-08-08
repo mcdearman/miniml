@@ -35,10 +35,7 @@
 //     }
 // }
 
-use miniml_compile::compiler::Compiler;
-use miniml_eval::interpreter::exec;
-use miniml_syntax::{lex::lex, parser::Parser};
-use miniml_vm::{call_frame::CallFrame, vm::VM};
+use miniml_syntax::lex::lex;
 
 fn main() {
     env_logger::init();
@@ -46,21 +43,7 @@ fn main() {
     // let src = "fn main = foo 1 |> bar 2";
     let tokens = lex(src).expect("failed to lex");
     log::trace!("tokens: {}", tokens);
-    let mut parser = Parser::new(tokens);
-    let (ast, errors) = parser.parse();
-    log::trace!("ast: {:?}", ast);
-    log::trace!("errors: {:?}", errors);
-    if !errors.is_empty() {
-        for err in errors {
-            eprintln!("Parser Error: {:?}", err);
-        }
-        return;
-    }
-    let v = exec(&ast.value);
-    match v {
-        Ok(v) => println!("{}", v),
-        Err(err) => eprintln!("Error: {}", err),
-    }
+
     // let mut compiler = Compiler::new();
     // let fun = compiler.compile(&ast.0).expect("failed to compile");
     // let frame = CallFrame::new(Box::new(fun));
