@@ -1,15 +1,25 @@
-use cstree::testing::GreenNodeBuilder;
-use miniml_util::{intern::InternedString, span::Spanned};
-
 use crate::{
+    error::SyntaxError,
     lex::{Token, TokenStream},
     syntax_kind::{Miniml, SyntaxKind},
 };
+use cstree::{
+    interning::Resolver,
+    testing::{GreenNode, GreenNodeBuilder},
+};
+use miniml_util::{intern::InternedString, span::Spanned};
 
 #[derive(Debug)]
 pub struct Parser {
     tokens: TokenStream,
     builder: GreenNodeBuilder<'static, 'static, Miniml>,
+    errors: Vec<Spanned<SyntaxError>>,
+}
+
+pub struct Parse<T> {
+    green_node: GreenNode,
+    resolver: T,
+    errors: Vec<Spanned<SyntaxError>>,
 }
 
 impl Parser {
@@ -17,6 +27,7 @@ impl Parser {
         Self {
             tokens,
             builder: GreenNodeBuilder::new(),
+            errors: vec![],
         }
     }
 
@@ -24,40 +35,38 @@ impl Parser {
         self.tokens.next()
     }
 
-    pub fn parse(&mut self) -> Result<(), InternedString> {
+    pub fn parse(&mut self) -> Parse<impl Resolver> {
         self.builder.start_node(SyntaxKind::Root);
-        self.parse_expr()?;
+        self.expr();
         self.builder.finish_node();
-        Ok(())
+        todo!()
     }
 
-    fn parse_expr(&mut self) -> Result<(), InternedString> {
+    fn expr(&mut self) {
         self.builder.start_node(SyntaxKind::Term);
-        self.parse_term()?;
+        self.term();
         while self.tokens.at(Token::Add) || self.tokens.at(Token::Sub) {
             self.builder.start_node(SyntaxKind::Term);
             self.bump();
-            self.parse_term()?;
+            self.term();
             self.builder.finish_node();
         }
         self.builder.finish_node();
-        Ok(())
     }
 
-    fn parse_term(&mut self) -> Result<(), InternedString> {
+    fn term(&mut self) {
         self.builder.start_node(SyntaxKind::Factor);
-        self.parse_factor()?;
+        self.factor();
         while self.tokens.at(Token::Mul) || self.tokens.at(Token::Div) {
             self.builder.start_node(SyntaxKind::Factor);
             self.bump();
-            self.parse_factor()?;
+            self.factor();
             self.builder.finish_node();
         }
         self.builder.finish_node();
-        Ok(())
     }
 
-    fn parse_factor(&mut self) -> Result<(), InternedString> {
+    fn factor(&mut self) {
         match self.tokens.peek().value {
             Token::Int(n) => {
                 self.builder.start_node(SyntaxKind::Factor);
@@ -67,14 +76,13 @@ impl Parser {
             Token::LParen => {
                 self.builder.start_node(SyntaxKind::Factor);
                 self.bump();
-                self.parse_expr()?;
+                self.expr();
                 self.tokens.eat(Token::RParen).or(Err("expected `(`"))?;
                 self.builder.finish_node();
             }
             _ => {
-                return Err("expected int or paren".into());
+                self.errors.push(Err("expected int or paren".into()));
             }
         }
-        Ok(())
     }
 }
