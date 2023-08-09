@@ -1,4 +1,4 @@
-use cstree::{RawSyntaxKind, Syntax};
+use cstree::Syntax;
 
 #[repr(u32)]
 #[derive(Syntax, Debug, Clone, Copy, PartialEq, Eq)]
@@ -12,6 +12,9 @@ pub enum SyntaxKind {
     LParen,
     RParen,
     // Nodes
-    BinExpr,
+    Factor,
+    Term,
     Root,
 }
+
+pub type Miniml = SyntaxKind;
