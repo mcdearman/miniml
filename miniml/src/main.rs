@@ -35,14 +35,19 @@
 //     }
 // }
 
-use miniml_syntax::lex::lex;
+use miniml_syntax::{lex::lex, parser::Parser};
 
 fn main() {
     env_logger::init();
-    let src = "fn gcd a b = if b = 0 then a else gcd b (a % b)\nfn main = println gcd 85 51; ()";
+    // let src = "fn gcd a b = if b = 0 then a else gcd b (a % b)\nfn main = println gcd 85 51; ()";
+    let src = "1 + 1";
     // let src = "fn main = foo 1 |> bar 2";
-    let tokens = lex(src).expect("failed to lex");
-    log::trace!("tokens: {}", tokens);
+    let parser = Parser::new(src);
+    let parse = parser.parse();
+    log::trace!("parse errors: {:?}", parse.errors);
+    let node = parse.syntax();
+    let res = &parse.resolver;
+    println!("{}", node.debug(res, true));
 
     // let mut compiler = Compiler::new();
     // let fun = compiler.compile(&ast.0).expect("failed to compile");

@@ -4,16 +4,24 @@ use cstree::Syntax;
 #[derive(Syntax, Debug, Clone, Copy, PartialEq, Eq)]
 pub enum SyntaxKind {
     // Tokens
+    Error,
     Int,
+    #[static_text("+")]
     Plus,
+    #[static_text("-")]
     Minus,
+    #[static_text("*")]
     Star,
+    #[static_text("/")]
     Slash,
     LParen,
     RParen,
     // Nodes
+    Lit,
+    Atom,
     Factor,
     Term,
+    Expr,
     Root,
 }
 

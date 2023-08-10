@@ -19,4 +19,4 @@ impl Display for SyntaxError {
     }
 }
 
-pub type ParseResult<T> = Result<Spanned<T>, Spanned<SyntaxError>>;
+pub type ParserError = Spanned<SyntaxError>;
