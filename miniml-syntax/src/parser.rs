@@ -1,13 +1,13 @@
 use crate::{
     error::{ParserError, SyntaxError},
-    lex::{lex, Token, TokenKind, TokenStream},
+    lex::{Token, TokenKind},
     syntax_kind::{Miniml, SyntaxKind},
 };
 use cstree::{
     interning::Resolver,
     testing::{GreenNode, GreenNodeBuilder, SyntaxNode},
 };
-use logos::{Lexer, Logos};
+use logos::{Lexer, Logos, SpannedIter};
 use miniml_util::{
     intern::{self, InternedString},
     span::{Span, Spannable, Spanned},
@@ -47,7 +47,6 @@ impl<'src> Parser<'src> {
         }
     }
 
-
     fn fetch_token(&mut self) -> Token {
         match self.lexer.clone().spanned().next() {
             Some(res) => match res {
@@ -77,10 +76,6 @@ impl<'src> Parser<'src> {
         } else {
             self.fetch_token()
         }
-    }
-
-    fn at(&mut self, token: TokenKind) -> bool {
-        self.peek().value == token
     }
 
     fn eat(&mut self, token: TokenKind) {

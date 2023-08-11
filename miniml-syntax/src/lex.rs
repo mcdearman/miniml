@@ -1,4 +1,4 @@
-use crate::error::ParserError;
+use crate::{error::ParserError, parser::Parser};
 
 use super::error::SyntaxError;
 use itertools::join;
@@ -203,93 +203,116 @@ impl Display for TokenKind {
 
 pub type Token = Spanned<TokenKind>;
 
-#[derive(Debug, Clone)]
-pub struct TokenStream<I: Iterator<Item = Token> + Clone> {
-    tokens: Peekable<I>,
-}
+// #[derive(Debug, Clone)]
+// pub struct TokenStream<I: Iterator<Item = Token> + Clone> {
+//     tokens: Peekable<I>,
+//     errors: Vec<ParserError>,
+// }
 
-impl<I: Iterator<Item = Token> + Clone> TokenStream<I> {
-    pub fn new(tokens: I) -> Self {
-        Self {
-            tokens: tokens.peekable(),
-        }
-    }
+// impl<I: Iterator<Item = Token> + Clone> TokenStream<I> {
+//     pub fn new(tokens: I) -> Self {
+//         Self {
+//             tokens: tokens.peekable(),
+//             errors: vec![]
+//         }
+//     }
 
-    fn eof_span(&self) -> Span {
-        let eofs = self
-            .tokens
-            .clone()
-            .last()
-            .unwrap_or(TokenKind::Eof.spanned(Span::new(0, 0)))
-            .span
-            .end
-            + 1;
-        Span::new(eofs, eofs)
-    }
+//     fn eof_span(&self) -> Span {
+//         let eofs = self
+//             .tokens
+//             .clone()
+//             .last()
+//             .unwrap_or(TokenKind::Eof.spanned(Span::new(0, 0)))
+//             .span
+//             .end
+//             + 1;
+//         Span::new(eofs, eofs)
+//     }
 
-    pub fn peek(&mut self) -> Token {
-        let eofs = self.eof_span();
-        self.tokens
-            .peek()
-            .unwrap_or(&TokenKind::Eof.spanned(eofs))
-            .clone()
-    }
+//     pub fn peek(&mut self) -> Token {
+//         let eofs = self.eof_span();
+//         self.tokens
+//             .peek()
+//             .unwrap_or(&TokenKind::Eof.spanned(eofs))
+//             .clone()
+//     }
 
-    pub fn next(&mut self) -> Token {
-        self.tokens
-            .next()
-            .unwrap_or(TokenKind::Eof.spanned(self.eof_span()))
-    }
+//     pub fn next(&mut self) -> Token {
+//         self.tokens
+//             .next()
+//             .unwrap_or(TokenKind::Eof.spanned(self.eof_span()))
+//     }
 
-    pub fn at(&mut self, token: TokenKind) -> bool {
-        self.peek().value == token.clone()
-    }
+//     pub fn at(&mut self, token: TokenKind) -> bool {
+//         self.peek().value == token.clone()
+//     }
 
-    pub fn eat(&mut self, token: TokenKind) -> Result<(), Spanned<SyntaxError>> {
-        if self.at(token) {
-            self.next();
-            Ok(())
-        } else {
-            Err(SyntaxError::UnexpectedToken(self.peek()).spanned(self.peek().span))
-        }
-    }
-}
+//     pub fn eat(&mut self, token: TokenKind) -> Result<(), Spanned<SyntaxError>> {
+//         if self.at(token) {
+//             self.next();
+//             Ok(())
+//         } else {
+//             Err(SyntaxError::UnexpectedToken(self.peek()).spanned(self.peek().span))
+//         }
+//     }
+// }
 
-impl<I: Iterator<Item = Token> + Clone> Display for TokenStream<I> {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(
-            f,
-            "{}",
-            join(
-                self.tokens
-                    .clone()
-                    .map(|spnd| format!("{} - {}", spnd.value, spnd.span)),
-                "\n"
-            )
-        )
-    }
-}
+// impl<I: Iterator<Item = Token> + Clone> Display for TokenStream<I> {
+//     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+//         write!(
+//             f,
+//             "{}",
+//             join(
+//                 self.tokens
+//                     .clone()
+//                     .map(|spnd| format!("{} - {}", spnd.value, spnd.span)),
+//                 "\n"
+//             )
+//         )
+//     }
+// }
 
-pub fn lex<'src>(src: &'src str) -> (TokenStream<IntoIter<Token>>, Vec<ParserError>) {
-    let (tokens, errors): (
-        Vec<Option<Spanned<TokenKind>>>,
-        Vec<Option<Spanned<SyntaxError>>>,
-    ) = TokenKind::lexer(src)
-        .spanned()
-        .map(|(res, span)| match res {
-            Ok(t) => (Some(t.spanned(Span::from(span))), None),
-            Err(_) => (
-                None,
-                Some(SyntaxError::LexerError.spanned(Span::from(span))),
-            ),
-        })
-        .unzip();
+// impl<I: Iterator<Item = Token> + Clone> FromIterator<I> for TokenStream<I> {
+//     fn from_iter<T: IntoIterator<Item = Token>>(iter: T) -> Self {
+//         Self::new(iter.into_iter())
+//     }
+// }
 
-    (
-        TokenStream::new(tokens.into_iter().flatten().collect::<Vec<_>>().into_iter()),
-        errors.into_iter().flatten().collect(),
-    )
-}
+// pub fn lazy_lex(src: &str) -> TokenStream<impl Iterator<Item = Token> + Clone> {
+//     TokenStream::from(
+//         TokenKind::lexer(src)
+//             .spanned()
+//             .map(|(res, span)| match res {
+//                 Ok(t) => t.spanned(Span::from(span)),
+//                 Err(_) => SyntaxError::LexerError.spanned(Span::from(span)),
+//             }),
+//     )
+//     // TokenKind::lexer(src).spanned().map(|(res, span)| match res {
+//     //     Ok(t) => t.spanned(Span::from(span)),
+//     //     Err(_) => SyntaxError::LexerError.spanned(Span::from(span)),
+//     // })
+// }
+
+// pub fn lex(src: &str) -> (TokenStream<IntoIter<Token>>, Vec<ParserError>) {
+//     let (tokens, errors): (
+//         Vec<Option<Spanned<TokenKind>>>,
+//         Vec<Option<Spanned<SyntaxError>>>,
+//     ) = TokenKind::lexer(src)
+//         .spanned()
+//         .map(|(res, span)| match res {
+//             Ok(t) => (Some(t.spanned(Span::from(span))), None),
+//             Err(_) => (
+//                 None,
+//                 Some(SyntaxError::LexerError.spanned(Span::from(span))),
+//             ),
+//         })
+//         .unzip();
+
+//     (
+//         TokenStream::new(tokens.into_iter().flatten().collect::<Vec<_>>().into_iter()),
+//         errors.into_iter().flatten().collect(),
+//     )
+// }
 
 // #[cfg(test)]
 // mod tests {

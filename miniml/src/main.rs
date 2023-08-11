@@ -35,12 +35,12 @@
 //     }
 // }
 
-use miniml_syntax::{lex::lex, parser::Parser};
+use miniml_syntax::parser::Parser;
 
 fn main() {
     env_logger::init();
     // let src = "fn gcd a b = if b = 0 then a else gcd b (a % b)\nfn main = println gcd 85 51; ()";
-    let src = "1 + 1 + 1";
+    let src = "2 + 1";
     // let src = "fn main = foo 1 |> bar 2";
     let parser = Parser::new(src);
     let parse = parser.parse();
