@@ -47,6 +47,7 @@ impl<'src> Parser<'src> {
         }
     }
 
+
     fn fetch_token(&mut self) -> Token {
         match self.lexer.clone().spanned().next() {
             Some(res) => match res {
@@ -78,12 +79,18 @@ impl<'src> Parser<'src> {
         }
     }
 
-    fn eat(&mut self, token: TokenKind) -> Result<(), Spanned<SyntaxError>> {
+    fn at(&mut self, token: TokenKind) -> bool {
+        self.peek().value == token
+    }
+
+    fn eat(&mut self, token: TokenKind) {
         if self.peek().value == token {
             self.next();
-            Ok(())
         } else {
-            Err(SyntaxError::UnexpectedToken(self.peek()).spanned(self.peek().span))
+            let peek = self.peek();
+            self.errors
+                .push(SyntaxError::UnexpectedToken(peek.clone()).spanned(peek.span));
+            self.next();
         }
     }
 
@@ -165,15 +172,9 @@ impl<'src> Parser<'src> {
         match self.peek().value {
             TokenKind::Int => self.lit(),
             TokenKind::LParen => {
-                if let Err(e) = self.eat(TokenKind::LParen) {
-                    self.errors.push(e);
-                    self.next();
-                }
+                self.eat(TokenKind::LParen);
                 self.expr();
-                if let Err(e) = self.eat(TokenKind::RParen) {
-                    self.errors.push(e);
-                    self.next();
-                }
+                self.eat(TokenKind::RParen);
             }
             _ => {}
         }
