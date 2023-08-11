@@ -204,14 +204,14 @@ impl Display for TokenKind {
 pub type Token = Spanned<TokenKind>;
 
 #[derive(Debug, Clone)]
-pub struct TokenStream {
-    tokens: Peekable<IntoIter<Spanned<TokenKind>>>,
+pub struct TokenStream<I: Iterator<Item = Token> + Clone> {
+    tokens: Peekable<I>,
 }
 
-impl TokenStream {
-    pub fn new(tokens: Vec<Token>) -> Self {
+impl<I: Iterator<Item = Token> + Clone> TokenStream<I> {
+    pub fn new(tokens: I) -> Self {
         Self {
-            tokens: tokens.into_iter().peekable(),
+            tokens: tokens.peekable(),
         }
     }
 
@@ -255,7 +255,7 @@ impl TokenStream {
     }
 }
 
-impl Display for TokenStream {
+impl<I: Iterator<Item = Token> + Clone> Display for TokenStream<I> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(
             f,
@@ -270,7 +270,7 @@ impl Display for TokenStream {
     }
 }
 
-pub fn lex<'src>(src: &'src str) -> (TokenStream, Vec<ParserError>) {
+pub fn lex<'src>(src: &'src str) -> (TokenStream<IntoIter<Token>>, Vec<ParserError>) {
     let (tokens, errors): (
         Vec<Option<Spanned<TokenKind>>>,
         Vec<Option<Spanned<SyntaxError>>>,
@@ -286,7 +286,7 @@ pub fn lex<'src>(src: &'src str) -> (TokenStream, Vec<ParserError>) {
         .unzip();
 
     (
-        TokenStream::new(tokens.into_iter().flatten().collect::<Vec<_>>()),
+        TokenStream::new(tokens.into_iter().flatten().collect::<Vec<_>>().into_iter()),
         errors.into_iter().flatten().collect(),
     )
 }
