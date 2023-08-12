@@ -42,7 +42,7 @@ use miniml_syntax::parser::Parser;
 fn main() {
     env_logger::init();
     // let src = "fn gcd a b = if b = 0 then a else gcd b (a % b)\nfn main = println gcd 85 51; ()";
-    let src = "2 + 1/2";
+    let src = "-x + 2 + 2^-1/-2 * (4.5 - 2)";
     let tokens = TokenKind::lexer(src).spanned().collect::<Vec<_>>();
     println!("tokens: {:?}", tokens);
     // let src = "fn main = foo 1 |> bar 2";

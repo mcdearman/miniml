@@ -99,8 +99,7 @@ impl<'src> Parser<'src> {
     }
 
     fn text(&self) -> &'src str {
-        let span = self.lexer.span();
-        &self.src[span]
+        &self.src[self.lexer.span()]
     }
 
     pub fn parse(mut self) -> Parse<impl Resolver> {
@@ -150,7 +149,7 @@ impl<'src> Parser<'src> {
 
     fn factor(&mut self) {
         let factor = self.builder.checkpoint();
-        self.atom();
+        self.power();
 
         match self.peek().value {
             TokenKind::Star => {
@@ -171,17 +170,62 @@ impl<'src> Parser<'src> {
         }
     }
 
+    fn power(&mut self) {
+        let power = self.builder.checkpoint();
+        self.unary();
+
+        match self.peek().value {
+            TokenKind::Caret => {
+                self.builder.start_node_at(power, SyntaxKind::Power);
+                self.builder.static_token(SyntaxKind::Caret);
+                self.next();
+                self.power();
+                self.builder.finish_node();
+            }
+            _ => {}
+        }
+    }
+
+    fn unary(&mut self) {
+        match self.peek().value {
+            TokenKind::Minus => {
+                self.builder.start_node(SyntaxKind::Unary);
+                self.builder.static_token(SyntaxKind::Minus);
+                self.next();
+                self.unary();
+                self.builder.finish_node();
+            }
+            _ => self.atom(),
+        }
+    }
+
     fn atom(&mut self) {
         self.builder.start_node(SyntaxKind::Atom);
         match self.peek().value {
-            TokenKind::Int | TokenKind::Rational => self.lit(),
+            TokenKind::Int
+            | TokenKind::Rational
+            | TokenKind::Real
+            | TokenKind::Complex
+            | TokenKind::String
+            | TokenKind::Char => self.lit(),
+            TokenKind::Ident => self.ident(),
             TokenKind::LParen => {
+                self.builder.static_token(SyntaxKind::LParen);
                 self.eat(TokenKind::LParen);
                 self.expr();
+                self.builder.static_token(SyntaxKind::RParen);
                 self.eat(TokenKind::RParen);
             }
             _ => {}
         }
+        self.builder.finish_node();
+    }
+
+    fn ident(&mut self) {
+        self.builder.start_node(SyntaxKind::Ident);
+        let text = self.text();
+        self.builder.token(SyntaxKind::Ident, text);
+        self.next();
         self.builder.finish_node();
     }
 
@@ -198,8 +242,50 @@ impl<'src> Parser<'src> {
                 self.builder.token(SyntaxKind::Rational, text);
                 self.next();
             }
+            TokenKind::Real => {
+                let text = self.text();
+                self.builder.token(SyntaxKind::Real, text);
+                self.next();
+            }
+            TokenKind::Complex => {
+                let text = self.text();
+                self.builder.token(SyntaxKind::Complex, text);
+                self.next();
+            }
+            TokenKind::String => {
+                let text = self.text();
+                self.builder.token(SyntaxKind::String, text);
+                self.next();
+            }
+            TokenKind::Char => {
+                let text = self.text();
+                self.builder.token(SyntaxKind::Char, text);
+                self.next();
+            }
             _ => {}
         }
         self.builder.finish_node();
     }
+}
+
+mod tests {
+    use super::Parser;
+
+    // #[test]
+    // fn test_int() {
+    //     let src = "42";
+    //     let parse = Parser::new(src).parse();
+    //     let node = parse.syntax();
+    //     let res = &parse.resolver;
+    //     insta::assert_snapshot!(node.debug(res, true));
+    // }
+
+    // #[test]
+    // fn test_rational() {
+    //     let src = "42/7";
+    //     let parse = Parser::new(src).parse();
+    //     let node = parse.syntax();
+    //     let res = &parse.resolver;
+    //     insta::assert_snapshot!(node.debug(res, true));
+    // }
 }

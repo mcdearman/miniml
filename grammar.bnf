@@ -38,7 +38,9 @@
     ("elif" <ws>+ <expr> "then" <expr>)* <ws>+ "else" <ws>+ <expr>
 
 <lit> ::= <int> 
+| <rational>
 | <real> 
+| <complex>
 | <string> 
 | <char> 
 | <bool> 
@@ -61,7 +63,7 @@
 
 <real> ::= ((\d+(\.\d+))|(\.\d+))([Ee](\+|-)?\d+)?
 
-<imag> ::= ((\d+(\.\d+)?)|(\.\d+))([Ee](\+|-)?\d+)?i
+<complex> ::= ((\d+(\.\d+)?)|(\.\d+))([Ee](\+|-)?\d+)?i
 
 <char> ::= '\w'
 

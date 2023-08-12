@@ -29,12 +29,15 @@ pub enum TokenKind {
         priority = 2
     )]
     Int,
-    #[regex(r#"\d+/\d+"#, priority = 1)]
+    #[regex(
+        r#"-?((0b[0-1]+)|(0o[0-7]+)|(0x[0-9a-fA-F]+)|([1-9]\d*|0))/-?((0b[0-1]+)|(0o[0-7]+)|(0x[0-9a-fA-F]+)|([1-9]\d*|0))"#, 
+        priority = 1
+    )]
     Rational,
     #[regex(r#"((\d+(\.\d+))|(\.\d+))([Ee](\+|-)?\d+)?"#, priority = 1)]
     Real,
     #[regex(r#"((\d+(\.\d+)?)|(\.\d+))([Ee](\+|-)?\d+)?i"#, priority = 0)]
-    Imag,
+    Complex,
     #[regex(r#"'\w'"#)]
     Char,
     #[regex(r#""((\\"|\\\\)|[^\\"])*""#)]
@@ -148,7 +151,7 @@ impl Display for TokenKind {
                 TokenKind::Int => "Int",
                 TokenKind::Rational => "Rational",
                 TokenKind::Real => "Real",
-                TokenKind::Imag => "Imag",
+                TokenKind::Complex => "Complex",
                 TokenKind::Char => "Char",
                 TokenKind::String => "String",
                 TokenKind::Plus => "+",
