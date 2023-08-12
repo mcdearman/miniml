@@ -513,6 +513,7 @@ dependencies = [
  "env_logger",
  "insta",
  "log",
+ "logos",
  "miniml-compile",
  "miniml-eval",
  "miniml-repl",

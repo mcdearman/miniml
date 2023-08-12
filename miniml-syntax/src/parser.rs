@@ -48,10 +48,19 @@ impl<'src> Parser<'src> {
     }
 
     fn fetch_token(&mut self) -> Token {
-        match self.lexer.clone().spanned().next() {
-            Some(res) => match res {
-                (Ok(t), s) => t.spanned(s.into()),
-                (Err(_), s) => {
+        match self.lexer.next().map(|res| (res, self.lexer.span())) {
+            Some((res, s)) => match res {
+                Ok(t) => {
+                    if let TokenKind::Whitespace = t {
+                        let text = self.text();
+                        self.builder.token(SyntaxKind::Whitespace, text);
+                        self.fetch_token()
+                    } else {
+                        let tok = t.spanned(s.into());
+                        tok
+                    }
+                }
+                Err(_) => {
                     self.errors.push(SyntaxError::LexerError.spanned(s.into()));
                     self.fetch_token()
                 }
@@ -89,8 +98,8 @@ impl<'src> Parser<'src> {
         }
     }
 
-    fn text(&mut self) -> &'src str {
-        let span = self.peek().span;
+    fn text(&self) -> &'src str {
+        let span = self.lexer.span();
         &self.src[span]
     }
 
@@ -165,7 +174,7 @@ impl<'src> Parser<'src> {
     fn atom(&mut self) {
         self.builder.start_node(SyntaxKind::Atom);
         match self.peek().value {
-            TokenKind::Int => self.lit(),
+            TokenKind::Int | TokenKind::Rational => self.lit(),
             TokenKind::LParen => {
                 self.eat(TokenKind::LParen);
                 self.expr();
@@ -182,6 +191,11 @@ impl<'src> Parser<'src> {
             TokenKind::Int => {
                 let text = self.text();
                 self.builder.token(SyntaxKind::Int, text);
+                self.next();
+            }
+            TokenKind::Rational => {
+                let text = self.text();
+                self.builder.token(SyntaxKind::Rational, text);
                 self.next();
             }
             _ => {}

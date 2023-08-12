@@ -5,6 +5,8 @@ use cstree::Syntax;
 pub enum SyntaxKind {
     // Tokens
     Error,
+    Whitespace,
+    Rational,
     Int,
     #[static_text("+")]
     Plus,
