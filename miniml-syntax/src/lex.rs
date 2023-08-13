@@ -1,49 +1,43 @@
 use logos::Logos;
-use miniml_util::{intern::InternedString, span::Spanned};
-use num_complex::Complex64;
+use miniml_util::{
+    intern::InternedString,
+    span::{Span, Spannable, Spanned},
+};
+use num_complex::Complex;
 use num_rational::Rational64;
-use std::fmt::{Debug, Display};
+use std::{
+    fmt::{Debug, Display},
+    iter::Peekable,
+    vec::IntoIter,
+};
 
 #[derive(Logos, Debug, Clone, PartialEq)]
-pub enum Token {
+pub enum TokenKind {
     Eof,
     #[regex("[ \n\t\r]+")]
     Whitespace,
     #[regex(r#"--[^\n]*|/\*([^*]|\**[^*/])*\*+/"#)]
     Comment,
-    #[regex(
-        r##"([A-Za-z]|_)([A-Za-z]|_|\d)*"##,
-        |lex| InternedString::from(lex.slice())
-    )]
-    Ident(InternedString),
+    #[regex(r##"([A-Za-z]|_)([A-Za-z]|_|\d)*"##)]
+    Ident,
     #[regex(
         r#"-?((0b[0-1]+)|(0o[0-7]+)|(0x[0-9a-fA-F]+)|([1-9]\d*|0))"#,
-        priority = 2,
-        callback = |lex| lex.slice().parse().ok()
+        priority = 2
     )]
-    Int(i64),
+    Int,
     #[regex(
         r#"-?((0b[0-1]+)|(0o[0-7]+)|(0x[0-9a-fA-F]+)|([1-9]\d*|0))/-?((0b[0-1]+)|(0o[0-7]+)|(0x[0-9a-fA-F]+)|([1-9]\d*|0))"#,
-        priority = 1,
-        callback = |lex| lex.slice().parse().ok()
+        priority = 1
     )]
-    Rational(Rational64),
-    #[regex(
-        r#"((\d+(\.\d+))|(\.\d+))([Ee](\+|-)?\d+)?"#, 
-        priority = 1,
-        callback = |lex| lex.slice().parse().ok()
-    )]
-    Real(f64),
-    #[regex(
-        r#"((\d+(\.\d+)?)|(\.\d+))([Ee](\+|-)?\d+)?i"#, 
-        priority = 0,
-        callback = |lex| lex.slice().parse().ok()
-    )]
-    Complex(Complex64),
-    #[regex(r#"'\w'"#, |lex| lex.slice().chars().nth(1).unwrap())]
-    Char(char),
-    #[regex(r#""((\\"|\\\\)|[^\\"])*""#, |lex| InternedString::from(lex.slice()))]
-    String(InternedString),
+    Rational,
+    #[regex(r#"((\d+(\.\d+))|(\.\d+))([Ee](\+|-)?\d+)?"#, priority = 1)]
+    Real,
+    #[regex(r#"((\d+(\.\d+)?)|(\.\d+))([Ee](\+|-)?\d+)?i"#, priority = 0)]
+    Complex,
+    #[regex(r#"'\w'"#)]
+    Char,
+    #[regex(r#""((\\"|\\\\)|[^\\"])*""#)]
+    String,
     #[token("+")]
     Plus,
     #[token("-")]
@@ -140,64 +134,111 @@ pub enum Token {
     In,
 }
 
-impl Display for Token {
+impl Display for TokenKind {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            Token::Eof => f.write_str("<EOF>"),
-            Token::Whitespace => f.write_str("<WS>"),
-            Token::Comment => f.write_str("Comment"),
-            Token::Ident(name) => write!(f, "Ident({})", name),
-            Token::Int(i) => write!(f, "Int({})", i),
-            Token::Rational(r) => write!(f, "Rational({})", r),
-            Token::Real(r) => write!(f, "Real({})", r),
-            Token::Complex(c) => write!(f, "Complex({})", c),
-            Token::Char(c) => write!(f, "Char({})", c),
-            Token::String(s) => write!(f, "String({})", s),
-            Token::Plus => f.write_str("+"),
-            Token::Minus => f.write_str("-"),
-            Token::Star => f.write_str("*"),
-            Token::Slash => f.write_str("/"),
-            Token::Percent => f.write_str("%"),
-            Token::Caret => f.write_str("^"),
-            Token::Backslash => f.write_str("\\"),
-            Token::Arrow => f.write_str("->"),
-            Token::FatArrow => f.write_str("=>"),
-            Token::Pipe => f.write_str("|"),
-            Token::PipeArrow => f.write_str("|>"),
-            Token::Eq => f.write_str("="),
-            Token::Lt => f.write_str("<"),
-            Token::Gt => f.write_str(">"),
-            Token::Neq => f.write_str("!="),
-            Token::Leq => f.write_str("<="),
-            Token::Geq => f.write_str(">="),
-            Token::LParen => f.write_str("("),
-            Token::RParen => f.write_str(")"),
-            Token::LBrack => f.write_str("["),
-            Token::RBrack => f.write_str("]"),
-            Token::LBrace => f.write_str("{"),
-            Token::RBrace => f.write_str("}"),
-            Token::Comma => f.write_str(","),
-            Token::Period => f.write_str("."),
-            Token::Semicolon => f.write_str(";"),
-            Token::Colon => f.write_str(":"),
-            Token::Pub => f.write_str("pub"),
-            Token::Module => f.write_str("mod"),
-            Token::End => f.write_str("end"),
-            Token::Use => f.write_str("use"),
-            Token::Const => f.write_str("const"),
-            Token::Let => f.write_str("let"),
-            Token::Fn => f.write_str("fn"),
-            Token::Struct => f.write_str("struct"),
-            Token::Match => f.write_str("match"),
-            Token::With => f.write_str("with"),
-            Token::And => f.write_str("and"),
-            Token::Or => f.write_str("or"),
-            Token::Not => f.write_str("not"),
-            Token::If => f.write_str("if"),
-            Token::Then => f.write_str("then"),
-            Token::Elif => f.write_str("elif"),
-            Token::Else => f.write_str("else"),
-            Token::In => f.write_str("in"),
-        }
+        write!(
+            f,
+            "{}",
+            match self {
+                TokenKind::Eof => "<EOF>",
+                TokenKind::Whitespace => "<WS>",
+                TokenKind::Comment => "Comment",
+                TokenKind::Ident => "Ident",
+                TokenKind::Int => "Int",
+                TokenKind::Rational => "Rational",
+                TokenKind::Real => "Real",
+                TokenKind::Complex => "Complex",
+                TokenKind::Char => "Char",
+                TokenKind::String => "String",
+                TokenKind::Plus => "+",
+                TokenKind::Minus => "-",
+                TokenKind::Star => "*",
+                TokenKind::Slash => "/",
+                TokenKind::Percent => "%",
+                TokenKind::Caret => "^",
+                TokenKind::Backslash => "\\",
+                TokenKind::Arrow => "->",
+                TokenKind::FatArrow => "=>",
+                TokenKind::Pipe => "|",
+                TokenKind::PipeArrow => "|>",
+                TokenKind::Eq => "=",
+                TokenKind::Lt => "<",
+                TokenKind::Gt => ">",
+                TokenKind::Neq => "!=",
+                TokenKind::Leq => "<=",
+                TokenKind::Geq => ">=",
+                TokenKind::LParen => "(",
+                TokenKind::RParen => ")",
+                TokenKind::LBrack => "[",
+                TokenKind::RBrack => "]",
+                TokenKind::LBrace => "{",
+                TokenKind::RBrace => "}",
+                TokenKind::Comma => ",",
+                TokenKind::Period => ".",
+                TokenKind::Semicolon => ";",
+                TokenKind::Colon => ":",
+                TokenKind::Pub => "pub",
+                TokenKind::Module => "mod",
+                TokenKind::End => "end",
+                TokenKind::Use => "use",
+                TokenKind::Const => "const",
+                TokenKind::Let => "let",
+                TokenKind::Fn => "fn",
+                TokenKind::Struct => "struct",
+                TokenKind::Match => "match",
+                TokenKind::With => "with",
+                TokenKind::And => "and",
+                TokenKind::Or => "or",
+                TokenKind::Not => "not",
+                TokenKind::If => "if",
+                TokenKind::Then => "then",
+                TokenKind::Elif => "elif",
+                TokenKind::Else => "else",
+                TokenKind::In => "in",
+            }
+        )
     }
 }
+
+pub type Token = Spanned<TokenKind>;
+
+// #[derive(Debug, Clone)]
+// pub struct TokenStream {
+//     tokens: Peekable<IntoIter<Spanned<Token>>>,
+// }
+
+// impl TokenStream {
+//     pub fn new(tokens: Vec<Spanned<Token>>) -> Self {
+//         Self {
+//             tokens: tokens.into_iter().peekable()
+//         }
+//     }
+
+//     pub fn peek(&mut self) -> Option<&Spanned<Token>> {
+//         self.tokens.peek()
+//     }
+// }
+
+// pub fn lex<'src>(src: &'src str) -> (TokenStream, Vec<LexerError>) {
+//     let (tokens, errors): (
+//         Vec<Option<Spanned<Token>>>,
+//         Vec<Option<LexerError>>,
+//     ) = Token::lexer(src)
+//         .spanned()
+//         .map(|(res, span)| match res {
+//             Ok(t) => (Some(t.spanned(Span::from(span))), None),
+//             Err(_) => (
+//                 None,
+//                 Some(SyntaxError::LexerError.spanned(Span::from(span))),
+//             ),
+//         })
+//         .unzip();
+
+//     if errors.iter().any(|e| e.is_some()) {
+//         Err(errors.into_iter().flatten().collect())
+//     } else {
+//         Ok(TokenStream::new(
+//             tokens.into_iter().flatten().collect::<Vec<_>>(),
+//         ))
+//     }
+// }
