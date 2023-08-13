@@ -1,33 +1,40 @@
+use crate::lex::Token;
+use chumsky::span::SimpleSpan;
 use itertools::join;
-use miniml_util::{intern::InternedString, span::Spanned};
+use miniml_util::intern::InternedString;
 use num_complex::Complex64;
 use num_rational::Rational64;
 use std::fmt::{Debug, Display};
 
-use crate::lex::Token;
+pub type Span = SimpleSpan;
+pub type Spanned<T> = (T, Span);
 
-#[derive(Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Root {
     pub decls: Vec<Spanned<Decl>>,
 }
 
-impl Display for Root {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(
-            f,
-            "{}",
-            join(self.clone().decls.into_iter().map(|d| d.value), "\n")
-        )
-    }
-}
+// impl Display for Root {
+//     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+//         write!(
+//             f,
+//             "{}",
+//             join(self.clone().decls.into_iter().map(|d| d.0), "\n")
+//         )
+//     }
+// }
 
-impl Debug for Root {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{:?}", join(self.decls.clone().into_iter(), "\n"))
-    }
-}
+// impl Debug for Root {
+//     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+//         write!(
+//             f,
+//             "{:?}",
+//             join(self.decls.clone().into_iter().map(|(d, s)| d), "\n")
+//         )
+//     }
+// }
 
-#[derive(Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum Decl {
     Const {
         name: Spanned<InternedString>,
@@ -44,37 +51,37 @@ pub enum Decl {
     },
 }
 
-impl Display for Decl {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            Decl::Const { name, expr } => write!(f, "const {} = {}", name.value, expr.value),
-            Decl::Let { name, expr } => write!(f, "let {} = {}", name.value, expr.value),
-            Decl::Fn { name, params, body } => {
-                write!(
-                    f,
-                    "fn {} {} = {}",
-                    name.value,
-                    join(params.into_iter().map(|p| p.value), ", "),
-                    body.value
-                )
-            }
-        }
-    }
-}
+// impl Display for Decl {
+//     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+//         match self {
+//             Decl::Const { name, expr } => write!(f, "const {} = {}", name.0, expr.0),
+//             Decl::Let { name, expr } => write!(f, "let {} = {}", name.0, expr.0),
+//             Decl::Fn { name, params, body } => {
+//                 write!(
+//                     f,
+//                     "fn {} {} = {}",
+//                     name.0,
+//                     join(params.into_iter().map(|p| p.0), ", "),
+//                     body.0
+//                 )
+//             }
+//         }
+//     }
+// }
 
-impl Debug for Decl {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            Decl::Const { name, expr } => write!(f, "Const({:?} = {:?})", name, expr),
-            Decl::Let { name, expr } => write!(f, "Let({:?} = {:?})", name, expr),
-            Decl::Fn { name, params, body } => {
-                write!(f, "Fn({:?} {:?} = {:?})", name, join(params, " "), body)
-            }
-        }
-    }
-}
+// impl Debug for Decl {
+//     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+//         match self {
+//             Decl::Const { name, expr } => write!(f, "Const({:?} = {:?})", name, expr),
+//             Decl::Let { name, expr } => write!(f, "Let({:?} = {:?})", name, expr),
+//             Decl::Fn { name, params, body } => {
+//                 write!(f, "Fn({:?} {:?} = {:?})", name, join(params, " "), body)
+//             }
+//         }
+//     }
+// }
 
-#[derive(Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum Expr {
     Ident(InternedString),
     Lit(Lit),
@@ -109,83 +116,75 @@ pub enum Expr {
     Error,
 }
 
-impl Expr {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>, indent: usize) -> std::fmt::Result {
-        // debug prints but repeat indent
-        match self.clone() {
-            Expr::Ident(i) => write!(f, "{}Indent({:?})", " ".repeat(indent), i),
-            Expr::Lit(l) => write!(f, "{:?}", l),
-            Expr::Prefix { op, expr } => write!(
-                f,
-                "{}Prefix{:?}{:?}",
-                " ".repeat(indent),
-                op.value,
-                expr.value
-            ),
-            Expr::Infix { op, lhs, rhs } => {
-                write!(f, "{:?} {:?} {:?}", lhs.value, op.value, rhs.value)
-            }
-            _ => todo!(),
-        }
-    }
-}
+// impl Expr {
+//     fn fmt(&self, f: &mut std::fmt::Formatter<'_>, indent: usize) -> std::fmt::Result {
+//         // debug prints but repeat indent
+//         match self.clone() {
+//             Expr::Ident(i) => write!(f, "{}Indent({:?})", " ".repeat(indent), i),
+//             Expr::Lit(l) => write!(f, "{:?}", l),
+//             Expr::Prefix { op, expr } => {
+//                 write!(f, "{}Prefix{:?}{:?}", " ".repeat(indent), op.0, expr.0)
+//             }
+//             Expr::Infix { op, lhs, rhs } => {
+//                 write!(f, "{:?} {:?} {:?}", lhs.0, op.0, rhs.0)
+//             }
+//             _ => todo!(),
+//         }
+//     }
+// }
 
-impl Display for Expr {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self.clone() {
-            Expr::Ident(i) => write!(f, "{}", i),
-            Expr::Lit(l) => write!(f, "{}", l),
-            Expr::Prefix { op, expr } => write!(f, "{}{}", op.value, expr.value),
-            Expr::Infix { op, lhs, rhs } => write!(f, "{} {} {}", lhs.value, op.value, rhs.value),
-            Expr::Let { name, expr, body } => {
-                write!(f, "let {} = {} in {}", name.value, expr.value, body.value)
-            }
-            Expr::Apply { fun, args } => {
-                write!(f, "({}", fun.value)?;
-                for arg in args {
-                    write!(f, " {}", arg.value)?;
-                }
-                write!(f, ")")
-            }
-            Expr::If { cond, then, else_ } => {
-                write!(
-                    f,
-                    "if {} then {} else {}",
-                    cond.value, then.value, else_.value
-                )
-            }
-            Expr::Lambda { params, body } => write!(
-                f,
-                "\\{} => {}",
-                join(params.into_iter().map(|p| p.value), " "),
-                body.value
-            ),
-            Expr::Unit => write!(f, "()"),
-            Expr::Error => write!(f, "error"),
-        }
-    }
-}
+// impl Display for Expr {
+//     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+//         match self.clone() {
+//             Expr::Ident(i) => write!(f, "{}", i),
+//             Expr::Lit(l) => write!(f, "{}", l),
+//             Expr::Prefix { op, expr } => write!(f, "{}{}", op.0, expr.0),
+//             Expr::Infix { op, lhs, rhs } => write!(f, "{} {} {}", lhs.0, op.0, rhs.0),
+//             Expr::Let { name, expr, body } => {
+//                 write!(f, "let {} = {} in {}", name.0, expr.0, body.0)
+//             }
+//             Expr::Apply { fun, args } => {
+//                 write!(f, "({}", fun.0)?;
+//                 for arg in args {
+//                     write!(f, " {}", arg.0)?;
+//                 }
+//                 write!(f, ")")
+//             }
+//             Expr::If { cond, then, else_ } => {
+//                 write!(f, "if {} then {} else {}", cond.0, then.0, else_.0)
+//             }
+//             Expr::Lambda { params, body } => write!(
+//                 f,
+//                 "\\{} => {}",
+//                 join(params.into_iter().map(|p| p.0), " "),
+//                 body.0
+//             ),
+//             Expr::Unit => write!(f, "()"),
+//             Expr::Error => write!(f, "error"),
+//         }
+//     }
+// }
 
-impl Debug for Expr {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self.clone() {
-            Self::Ident(name) => write!(f, "Ident({:?})", name),
-            Self::Lit(l) => write!(f, "Lit({:?})", l),
-            Self::Prefix { op, expr } => write!(f, "Prefix({:?}{:?})", op, expr),
-            Self::Infix { op, lhs, rhs } => write!(f, "Infix({:?} {:?} {:?})", lhs, op, rhs),
-            Self::Let { name, expr, body } => {
-                write!(f, "Let({:?} = {:?} in {:?})", name, expr, body)
-            }
-            Self::Apply { fun, args } => write!(f, "Apply({:?} {:?})", fun, join(args, " ")),
-            Self::If { cond, then, else_ } => write!(f, "If({:?} {:?} {:?})", cond, then, else_),
-            Self::Lambda { params, body } => {
-                write!(f, "Lambda({:?} -> {:?})", join(params, " "), body)
-            }
-            Self::Unit => write!(f, "Unit"),
-            Self::Error => write!(f, "Error"),
-        }
-    }
-}
+// impl Debug for Expr {
+//     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+//         match self.clone() {
+//             Self::Ident(name) => write!(f, "Ident({:?})", name),
+//             Self::Lit(l) => write!(f, "Lit({:?})", l),
+//             Self::Prefix { op, expr } => write!(f, "Prefix({:?}{:?})", op, expr),
+//             Self::Infix { op, lhs, rhs } => write!(f, "Infix({:?} {:?} {:?})", lhs, op, rhs),
+//             Self::Let { name, expr, body } => {
+//                 write!(f, "Let({:?} = {:?} in {:?})", name, expr, body)
+//             }
+//             Self::Apply { fun, args } => write!(f, "Apply({:?} {:?})", fun, join(args, " ")),
+//             Self::If { cond, then, else_ } => write!(f, "If({:?} {:?} {:?})", cond, then, else_),
+//             Self::Lambda { params, body } => {
+//                 write!(f, "Lambda({:?} -> {:?})", join(params, " "), body)
+//             }
+//             Self::Unit => write!(f, "Unit"),
+//             Self::Error => write!(f, "Error"),
+//         }
+//     }
+// }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum PrefixOp {
