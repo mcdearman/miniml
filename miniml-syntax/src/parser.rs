@@ -1,10 +1,13 @@
 use crate::{
-    ast::{Decl, Root},
+    ast::{Decl, Expr, Root},
     error::{ParserError, SyntaxError},
     lex::{Token, TokenKind},
 };
 use logos::{Lexer, Logos};
-use miniml_util::span::{Spannable, Spanned};
+use miniml_util::{
+    intern::InternedString,
+    span::{Spannable, Spanned},
+};
 
 #[derive(Debug)]
 pub struct Parser<'src> {
@@ -55,8 +58,8 @@ impl<'src> Parser<'src> {
         }
     }
 
-    fn eat(&mut self, token: TokenKind) {
-        if self.peek().value == token {
+    fn eat(&mut self, kind: TokenKind) {
+        if self.peek().value == kind {
             self.next();
         } else {
             let peek = self.peek();
@@ -73,12 +76,53 @@ impl<'src> Parser<'src> {
     pub fn parse(mut self) -> (Root, Vec<ParserError>) {
         let mut decls = vec![];
         while self.peek().value != TokenKind::Eof {
-            match self.de
+            decls.push(self.decl());
         }
         (Root { decls }, self.errors)
     }
 
-    fn decl(&mut self) {
+    fn decl(&mut self) -> Spanned<Decl> {
+        log::trace!("decl: {:?}", self.peek());
+        match self.peek().value {
+            TokenKind::Const => self.const_(),
+            TokenKind::Let => self.let_(),
+            TokenKind::Fn => self.fn_(),
+            _ => {
+                let next @ Spanned { value, span } = &self.tokens.next();
+                log::trace!("unexpected token in decl: {:?}", next);
+                Err(SyntaxError::UnexpectedToken(value.clone()).spanned(span.clone()))
+            }
+        }
+    }
 
+    fn const_(&mut self) -> Spanned<Decl> {
+        log::trace!("const: {:?}", self.peek());
+        let start = self.peek().span;
+        self.eat(TokenKind::Const);
+        let name = self.ident();
+        self.eat(TokenKind::Eq);
+        let expr = self.expr()?;
+        Decl::Const {
+            name,
+            expr: Box::new(expr),
+        }
+        .spanned(start.extend(self.peek().span))
+    }
+
+    fn ident(&mut self) -> Spanned<InternedString> {
+        let span = self.peek().span.clone();
+        match self.peek().value {
+            TokenKind::Ident => {
+                let name = self.text();
+                self.next();
+                InternedString::from(name).spanned(span)
+            }
+            _ => {
+                let tok @ Spanned { value, span } = self.next();
+                self.errors
+                    .push(SyntaxError::UnexpectedToken(tok).spanned(span));
+                Expr::Error.spanned(span)
+            }
+        }
     }
 }

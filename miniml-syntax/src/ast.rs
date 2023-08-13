@@ -1,6 +1,8 @@
 use crate::lex::TokenKind;
 use itertools::join;
 use miniml_util::{intern::InternedString, span::Spanned};
+use num_complex::Complex64;
+use num_rational::Rational64;
 use std::fmt::{Debug, Display};
 
 #[derive(Clone, PartialEq)]
@@ -276,7 +278,10 @@ impl From<TokenKind> for InfixOp {
 #[derive(Clone, PartialEq)]
 pub enum Lit {
     Int(i64),
+    Rational(Rational64),
     Real(f64),
+    Complex(Complex64),
+    Char(char),
     String(InternedString),
 }
 

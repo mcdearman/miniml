@@ -20,3 +20,4 @@ impl Display for SyntaxError {
 }
 
 pub type ParserError = Spanned<SyntaxError>;
+// pub type ParseResult<T> = Result<T, Vec<ParserError>>;
