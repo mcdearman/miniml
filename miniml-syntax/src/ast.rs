@@ -84,7 +84,7 @@ pub enum Decl {
 #[derive(Debug, Clone, PartialEq)]
 pub enum Expr {
     Ident(InternedString),
-    Lit(Spanned<Lit>),
+    Lit(Lit),
     Prefix {
         op: Spanned<PrefixOp>,
         expr: Box<Spanned<Self>>,
@@ -106,7 +106,6 @@ pub enum Expr {
     If {
         cond: Box<Spanned<Self>>,
         then: Box<Spanned<Self>>,
-        elifs: Vec<(Box<Spanned<Self>>, Box<Spanned<Self>>)>,
         else_: Box<Spanned<Self>>,
     },
     Lambda {
@@ -229,7 +228,6 @@ pub enum InfixOp {
     And,
     Or,
     Pipe,
-    Stmt,
 }
 
 impl Display for InfixOp {
@@ -250,7 +248,6 @@ impl Display for InfixOp {
             InfixOp::And => write!(f, "&&"),
             InfixOp::Or => write!(f, "||"),
             InfixOp::Pipe => write!(f, "|>"),
-            InfixOp::Stmt => write!(f, ";"),
         }
     }
 }
