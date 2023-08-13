@@ -1,7 +1,3 @@
-use crate::{error::ParserError, parser::Parser};
-
-use super::error::SyntaxError;
-use itertools::join;
 use logos::Logos;
 use miniml_util::{
     intern::InternedString,
@@ -30,7 +26,7 @@ pub enum TokenKind {
     )]
     Int,
     #[regex(
-        r#"-?((0b[0-1]+)|(0o[0-7]+)|(0x[0-9a-fA-F]+)|([1-9]\d*|0))/-?((0b[0-1]+)|(0o[0-7]+)|(0x[0-9a-fA-F]+)|([1-9]\d*|0))"#, 
+        r#"-?((0b[0-1]+)|(0o[0-7]+)|(0x[0-9a-fA-F]+)|([1-9]\d*|0))/-?((0b[0-1]+)|(0o[0-7]+)|(0x[0-9a-fA-F]+)|([1-9]\d*|0))"#,
         priority = 1
     )]
     Rational,
@@ -205,3 +201,44 @@ impl Display for TokenKind {
 }
 
 pub type Token = Spanned<TokenKind>;
+
+// #[derive(Debug, Clone)]
+// pub struct TokenStream {
+//     tokens: Peekable<IntoIter<Spanned<Token>>>,
+// }
+
+// impl TokenStream {
+//     pub fn new(tokens: Vec<Spanned<Token>>) -> Self {
+//         Self {
+//             tokens: tokens.into_iter().peekable()
+//         }
+//     }
+
+//     pub fn peek(&mut self) -> Option<&Spanned<Token>> {
+//         self.tokens.peek()
+//     }
+// }
+
+// pub fn lex<'src>(src: &'src str) -> (TokenStream, Vec<LexerError>) {
+//     let (tokens, errors): (
+//         Vec<Option<Spanned<Token>>>,
+//         Vec<Option<LexerError>>,
+//     ) = Token::lexer(src)
+//         .spanned()
+//         .map(|(res, span)| match res {
+//             Ok(t) => (Some(t.spanned(Span::from(span))), None),
+//             Err(_) => (
+//                 None,
+//                 Some(SyntaxError::LexerError.spanned(Span::from(span))),
+//             ),
+//         })
+//         .unzip();
+
+//     if errors.iter().any(|e| e.is_some()) {
+//         Err(errors.into_iter().flatten().collect())
+//     } else {
+//         Ok(TokenStream::new(
+//             tokens.into_iter().flatten().collect::<Vec<_>>(),
+//         ))
+//     }
+// }

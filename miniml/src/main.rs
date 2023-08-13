@@ -36,8 +36,7 @@
 // }
 
 use logos::Logos;
-use miniml_syntax::lex::TokenKind;
-use miniml_syntax::parser::Parser;
+use miniml_syntax::lex::{Token, TokenKind};
 
 fn main() {
     env_logger::init();
@@ -46,12 +45,6 @@ fn main() {
     let tokens = TokenKind::lexer(src).spanned().collect::<Vec<_>>();
     println!("tokens: {:?}", tokens);
     // let src = "fn main = foo 1 |> bar 2";
-    let parser = Parser::new(src);
-    let parse = parser.parse();
-    log::trace!("parse errors: {:?}", parse.errors);
-    let node = parse.syntax();
-    let res = &parse.resolver;
-    println!("{}", node.debug(res, true));
 
     // let mut compiler = Compiler::new();
     // let fun = compiler.compile(&ast.0).expect("failed to compile");
