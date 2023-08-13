@@ -1,7 +1,10 @@
-use crate::lex::TokenKind;
 use itertools::join;
 use miniml_util::{intern::InternedString, span::Spanned};
+use num_complex::Complex64;
+use num_rational::Rational64;
 use std::fmt::{Debug, Display};
+
+use crate::lex::Token;
 
 #[derive(Clone, PartialEq)]
 pub struct Root {
@@ -199,11 +202,11 @@ impl Display for PrefixOp {
     }
 }
 
-impl From<TokenKind> for PrefixOp {
-    fn from(kind: TokenKind) -> Self {
+impl From<Token> for PrefixOp {
+    fn from(kind: Token) -> Self {
         match kind {
-            TokenKind::Minus => PrefixOp::Neg,
-            TokenKind::Not => PrefixOp::Not,
+            Token::Minus => PrefixOp::Neg,
+            Token::Not => PrefixOp::Not,
             _ => panic!("Not a prefix operator: {:?}", kind),
         }
     }
@@ -250,24 +253,24 @@ impl Display for InfixOp {
     }
 }
 
-impl From<TokenKind> for InfixOp {
-    fn from(kind: TokenKind) -> Self {
+impl From<Token> for InfixOp {
+    fn from(kind: Token) -> Self {
         match kind {
-            TokenKind::Plus => InfixOp::Add,
-            TokenKind::Minus => InfixOp::Sub,
-            TokenKind::Star => InfixOp::Mul,
-            TokenKind::Slash => InfixOp::Div,
-            TokenKind::Percent => InfixOp::Rem,
-            TokenKind::Caret => InfixOp::Pow,
-            TokenKind::Eq => InfixOp::Eq,
-            TokenKind::Neq => InfixOp::Neq,
-            TokenKind::Lt => InfixOp::Lt,
-            TokenKind::Gt => InfixOp::Gt,
-            TokenKind::Leq => InfixOp::Leq,
-            TokenKind::Geq => InfixOp::Geq,
-            TokenKind::And => InfixOp::And,
-            TokenKind::Or => InfixOp::Or,
-            TokenKind::Pipe => InfixOp::Pipe,
+            Token::Plus => InfixOp::Add,
+            Token::Minus => InfixOp::Sub,
+            Token::Star => InfixOp::Mul,
+            Token::Slash => InfixOp::Div,
+            Token::Percent => InfixOp::Rem,
+            Token::Caret => InfixOp::Pow,
+            Token::Eq => InfixOp::Eq,
+            Token::Neq => InfixOp::Neq,
+            Token::Lt => InfixOp::Lt,
+            Token::Gt => InfixOp::Gt,
+            Token::Leq => InfixOp::Leq,
+            Token::Geq => InfixOp::Geq,
+            Token::And => InfixOp::And,
+            Token::Or => InfixOp::Or,
+            Token::Pipe => InfixOp::Pipe,
             _ => panic!("Not an infix operator: {:?}", kind),
         }
     }
@@ -276,7 +279,10 @@ impl From<TokenKind> for InfixOp {
 #[derive(Clone, PartialEq)]
 pub enum Lit {
     Int(i64),
+    Rational(Rational64),
     Real(f64),
+    Complex(Complex64),
+    Char(char),
     String(InternedString),
 }
 
@@ -284,7 +290,10 @@ impl Display for Lit {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Lit::Int(i) => write!(f, "{}", i),
+            Lit::Rational(r) => write!(f, "{}", r),
             Lit::Real(r) => write!(f, "{}", r),
+            Lit::Complex(c) => write!(f, "{}", c),
+            Lit::Char(c) => write!(f, "'{}'", c),
             Lit::String(s) => write!(f, "\"{}\"", s),
         }
     }
@@ -294,7 +303,10 @@ impl Debug for Lit {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Lit::Int(i) => write!(f, "Int({})", i),
+            Lit::Rational(r) => write!(f, "Rational({})", r),
             Lit::Real(r) => write!(f, "Real({})", r),
+            Lit::Complex(c) => write!(f, "{}", c),
+            Lit::Char(c) => write!(f, "'{}'", c),
             Lit::String(s) => write!(f, "String({})", s),
         }
     }

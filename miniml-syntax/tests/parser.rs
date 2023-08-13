@@ -1,3 +1,10 @@
+use miniml_syntax::parse::*;
+
+#[test]
+fn parse_int() {
+    let src = "42";
+}
+
 // #[test]
 // fn parse_binary() {
 //     let src = "0b101010";
