@@ -14,9 +14,9 @@ use std::{
 #[derive(Logos, Debug, Clone, PartialEq)]
 pub enum TokenKind {
     Eof,
-    #[regex("[ \n\t\r]+")]
+    #[regex("[ \n\t\r]+", logos::skip)]
     Whitespace,
-    #[regex(r#"--[^\n]*|/\*([^*]|\**[^*/])*\*+/"#)]
+    #[regex(r#"--[^\n]*|/\*([^*]|\**[^*/])*\*+/"#, logos::skip)]
     Comment,
     #[regex(r##"([A-Za-z]|_)([A-Za-z]|_|\d)*"##)]
     Ident,

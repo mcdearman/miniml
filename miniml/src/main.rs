@@ -36,16 +36,23 @@
 // }
 
 use logos::Logos;
-use miniml_syntax::lex::{Token, TokenKind};
+use miniml_syntax::{
+    lex::{Token, TokenKind},
+    parser::Parser,
+};
 
 fn main() {
     env_logger::init();
     // let src = "fn gcd a b = if b = 0 then a else gcd b (a % b)\nfn main = println gcd 85 51; ()";
-    let src = "-x + 2 + 2^-1/-2 * (4.5 - 2)";
+    // let src = "fn main = -x + 2 + 2^-1/-2 * (4.5 - 2); ()";
+    let src = "fn main = 1 + 2; ()";
     let tokens = TokenKind::lexer(src).spanned().collect::<Vec<_>>();
     println!("tokens: {:?}", tokens);
     // let src = "fn main = foo 1 |> bar 2";
-
+    let parser = Parser::new(src);
+    let (ast, errors) = parser.parse();
+    println!("ast: {:#?}", ast);
+    println!("errors: {:?}", errors);
     // let mut compiler = Compiler::new();
     // let fun = compiler.compile(&ast.0).expect("failed to compile");
     // let frame = CallFrame::new(Box::new(fun));

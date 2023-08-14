@@ -5,7 +5,7 @@ use num_complex::Complex64;
 use num_rational::Rational64;
 use std::fmt::{Debug, Display};
 
-#[derive(Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Root {
     pub decls: Vec<Spanned<Decl>>,
 }
@@ -20,13 +20,13 @@ impl Display for Root {
     }
 }
 
-impl Debug for Root {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{:?}", join(self.decls.clone().into_iter(), "\n"))
-    }
-}
+// impl Debug for Root {
+//     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+//         write!(f, "{:?}", join(self.decls.clone().into_iter(), "\n"))
+//     }
+// }
 
-#[derive(Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum Decl {
     Const {
         name: Spanned<InternedString>,
@@ -61,19 +61,19 @@ impl Display for Decl {
     }
 }
 
-impl Debug for Decl {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            Decl::Const { name, expr } => write!(f, "Const({:?} = {:?})", name, expr),
-            Decl::Let { name, expr } => write!(f, "Let({:?} = {:?})", name, expr),
-            Decl::Fn { name, params, body } => {
-                write!(f, "Fn({:?} {:?} = {:?})", name, join(params, " "), body)
-            }
-        }
-    }
-}
+// impl Debug for Decl {
+//     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+//         match self {
+//             Decl::Const { name, expr } => write!(f, "Const({:?} = {:?})", name, expr),
+//             Decl::Let { name, expr } => write!(f, "Let({:?} = {:?})", name, expr),
+//             Decl::Fn { name, params, body } => {
+//                 write!(f, "Fn({:?} {:?} = {:?})", name, join(params, " "), body)
+//             }
+//         }
+//     }
+// }
 
-#[derive(Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum Expr {
     Ident(InternedString),
     Lit(Lit),
@@ -111,21 +111,27 @@ pub enum Expr {
 impl Expr {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>, indent: usize) -> std::fmt::Result {
         // debug prints but repeat indent
-        match self.clone() {
-            Expr::Ident(i) => write!(f, "{}Indent({:?})", " ".repeat(indent), i),
-            Expr::Lit(l) => write!(f, "{:?}", l),
-            Expr::Prefix { op, expr } => write!(
-                f,
-                "{}Prefix{:?}{:?}",
-                " ".repeat(indent),
-                op.value,
-                expr.value
-            ),
-            Expr::Infix { op, lhs, rhs } => {
-                write!(f, "{:?} {:?} {:?}", lhs.value, op.value, rhs.value)
-            }
-            _ => todo!(),
-        }
+        // match self.clone() {
+        //     Expr::Ident(i) => write!(f, "{}Indent({:?})", " ".repeat(indent), i),
+        //     Expr::Lit(l) => write!(f, "{:?}", l),
+        //     Expr::Prefix { op, expr } => {
+        //         write!(
+        //             f,
+        //             "{}Prefix{:?}{:?}",
+        //             " ".repeat(indent),
+        //             op.value,
+        //             expr.value
+        //         )?;
+        //         expr.value.fmt(f, indent + 2)?;
+        //         write!(f, "{}", " ".repeat(indent))
+        //     }
+        //     Expr::Infix { op, lhs, rhs } => {
+        //         write!(f, "Expr\n{:?} {:?} {:?}", lhs.value, op.value, rhs.value)
+        //     }
+        //     Expr::Unit => write!(f, "{}Unit", " ".repeat(indent)),
+        //     _ => todo!(),
+        // }
+        todo!()
     }
 }
 
@@ -161,27 +167,6 @@ impl Display for Expr {
             ),
             Expr::Unit => write!(f, "()"),
             Expr::Error => write!(f, "error"),
-        }
-    }
-}
-
-impl Debug for Expr {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self.clone() {
-            Self::Ident(name) => write!(f, "Ident({:?})", name),
-            Self::Lit(l) => write!(f, "Lit({:?})", l),
-            Self::Prefix { op, expr } => write!(f, "Prefix({:?}{:?})", op, expr),
-            Self::Infix { op, lhs, rhs } => write!(f, "Infix({:?} {:?} {:?})", lhs, op, rhs),
-            Self::Let { name, expr, body } => {
-                write!(f, "Let({:?} = {:?} in {:?})", name, expr, body)
-            }
-            Self::Apply { fun, args } => write!(f, "Apply({:?} {:?})", fun, join(args, " ")),
-            Self::If { cond, then, else_ } => write!(f, "If({:?} {:?} {:?})", cond, then, else_),
-            Self::Lambda { params, body } => {
-                write!(f, "Lambda({:?} -> {:?})", join(params, " "), body)
-            }
-            Self::Unit => write!(f, "Unit"),
-            Self::Error => write!(f, "Error"),
         }
     }
 }
@@ -228,6 +213,7 @@ pub enum InfixOp {
     And,
     Or,
     Pipe,
+    Stmt,
 }
 
 impl Display for InfixOp {
@@ -248,6 +234,7 @@ impl Display for InfixOp {
             InfixOp::And => write!(f, "&&"),
             InfixOp::Or => write!(f, "||"),
             InfixOp::Pipe => write!(f, "|>"),
+            InfixOp::Stmt => write!(f, ";"),
         }
     }
 }
@@ -275,7 +262,7 @@ impl From<TokenKind> for InfixOp {
     }
 }
 
-#[derive(Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum Lit {
     Int(i64),
     Rational(Rational64),
@@ -289,18 +276,11 @@ impl Display for Lit {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Lit::Int(i) => write!(f, "{}", i),
+            Lit::Rational(r) => write!(f, "{}", r),
             Lit::Real(r) => write!(f, "{}", r),
+            Lit::Complex(c) => write!(f, "{}", c),
+            Lit::Char(c) => write!(f, "'{}'", c),
             Lit::String(s) => write!(f, "\"{}\"", s),
-        }
-    }
-}
-
-impl Debug for Lit {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            Lit::Int(i) => write!(f, "Int({})", i),
-            Lit::Real(r) => write!(f, "Real({})", r),
-            Lit::String(s) => write!(f, "String({})", s),
         }
     }
 }
