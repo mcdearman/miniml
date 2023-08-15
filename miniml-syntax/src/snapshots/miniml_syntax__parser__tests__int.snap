@@ -1,0 +1,7 @@
+---
+source: miniml-syntax/src/parser.rs
+expression: fmt
+---
+Expr @ <0, 3>
+  Lit @ <0, 3>
+    123

@@ -76,7 +76,7 @@ impl Index<Span> for String {
     }
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Clone, PartialEq)]
 pub struct Spanned<T> {
     pub value: T,
     pub span: Span,
@@ -94,11 +94,11 @@ impl<T: Display> Display for Spanned<T> {
     }
 }
 
-// impl<T: Debug> Debug for Spanned<T> {
-//     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-//         write!(f, "{:?} @ {:?}", self.value, self.span)
-//     }
-// }
+impl<T: Debug> Debug for Spanned<T> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{:?} @ {:?}", self.value, self.span)
+    }
+}
 
 pub trait Spannable: Sized + Clone {
     fn spanned(&self, span: Span) -> Spanned<Self> {

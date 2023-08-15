@@ -1,0 +1,25 @@
+123
+Spanned {
+    value: Lit(
+        Int(
+            123,
+        ),
+    ),
+    span: 0..3,
+}
+
+Expr @ 0..3
+  Lit @ 0..3
+    Int @ 0..3
+      123
+
+1 + 2
+Expr @ 0..5
+  Infix @ 0..5
+    Lit @ 0..1
+      Int @ 0..1
+        1
+    Add @ 2..3
+    Lit @ 4..5
+      Int @ 4..5
+        2

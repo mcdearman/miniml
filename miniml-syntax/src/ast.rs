@@ -1,6 +1,9 @@
 use crate::lex::TokenKind;
 use itertools::join;
-use miniml_util::{intern::InternedString, span::Spanned};
+use miniml_util::{
+    intern::InternedString,
+    span::{Span, Spanned},
+};
 use num_complex::Complex64;
 use num_rational::Rational64;
 use std::fmt::{Debug, Display};
@@ -75,8 +78,8 @@ impl Display for Decl {
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Expr {
-    Ident(InternedString),
-    Lit(Lit),
+    Ident(Spanned<InternedString>),
+    Lit(Spanned<Lit>),
     Prefix {
         op: Spanned<PrefixOp>,
         expr: Box<Spanned<Self>>,
@@ -108,38 +111,42 @@ pub enum Expr {
     Error,
 }
 
-impl Expr {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>, indent: usize) -> std::fmt::Result {
-        // debug prints but repeat indent
-        // match self.clone() {
-        //     Expr::Ident(i) => write!(f, "{}Indent({:?})", " ".repeat(indent), i),
-        //     Expr::Lit(l) => write!(f, "{:?}", l),
-        //     Expr::Prefix { op, expr } => {
-        //         write!(
-        //             f,
-        //             "{}Prefix{:?}{:?}",
-        //             " ".repeat(indent),
-        //             op.value,
-        //             expr.value
-        //         )?;
-        //         expr.value.fmt(f, indent + 2)?;
-        //         write!(f, "{}", " ".repeat(indent))
-        //     }
-        //     Expr::Infix { op, lhs, rhs } => {
-        //         write!(f, "Expr\n{:?} {:?} {:?}", lhs.value, op.value, rhs.value)
-        //     }
-        //     Expr::Unit => write!(f, "{}Unit", " ".repeat(indent)),
-        //     _ => todo!(),
-        // }
-        todo!()
-    }
-}
+// impl Expr {
+//     fn fmt(&self, f: &mut std::fmt::Formatter<'_>, indent: usize) -> std::fmt::Result {
+//         match self.clone() {
+//             Expr::Ident(i) => write!(
+//                 f,
+//                 "{}Expr\n{}Indent({})",
+//                 " ".repeat(indent),
+//                 " ".repeat(indent + 2),
+//                 i
+//             ),
+//             Expr::Lit(l) => write!(f, "{}", l.fmt(indent)),
+//             Expr::Prefix { op, expr } => {
+//                 write!(
+//                     f,
+//                     "{}Prefix{:?}{:?}",
+//                     " ".repeat(indent),
+//                     op.value,
+//                     expr.value
+//                 )?;
+//                 expr.value.fmt(f, indent + 2)?;
+//                 write!(f, "{}", " ".repeat(indent))
+//             }
+//             Expr::Infix { op, lhs, rhs } => {
+//                 write!(f, "Expr\n{:?} {:?} {:?}", lhs.value, op.value, rhs.value)
+//             }
+//             Expr::Unit => write!(f, "{}Unit", " ".repeat(indent)),
+//             _ => todo!(),
+//         }
+//     }
+// }
 
 impl Display for Expr {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self.clone() {
             Expr::Ident(i) => write!(f, "{}", i),
-            Expr::Lit(l) => write!(f, "{}", l),
+            Expr::Lit(l) => write!(f, "{}", l.value),
             Expr::Prefix { op, expr } => write!(f, "{}{}", op.value, expr.value),
             Expr::Infix { op, lhs, rhs } => write!(f, "{} {} {}", lhs.value, op.value, rhs.value),
             Expr::Let { name, expr, body } => {
@@ -280,7 +287,107 @@ impl Display for Lit {
             Lit::Real(r) => write!(f, "{}", r),
             Lit::Complex(c) => write!(f, "{}", c),
             Lit::Char(c) => write!(f, "'{}'", c),
-            Lit::String(s) => write!(f, "\"{}\"", s),
+            Lit::String(s) => write!(f, "{}", s),
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct SpannedLit {
+    pub value: Lit,
+    pub span: Span,
+}
+
+impl From<Spanned<Lit>> for SpannedLit {
+    fn from(value: Spanned<Lit>) -> Self {
+        SpannedLit {
+            value: value.value,
+            span: value.span,
+        }
+    }
+}
+
+#[derive(Clone, PartialEq)]
+pub struct Format<T> {
+    pub indent: usize,
+    pub value: T,
+}
+
+impl Debug for Format<Spanned<Expr>> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self.value.clone().value {
+            Expr::Ident(name) => write!(
+                f,
+                "{}Expr @ {}\n{}",
+                " ".repeat(self.indent),
+                self.value.span,
+                name
+            ),
+            Expr::Lit(l) => {
+                let lit = Format {
+                    indent: self.indent + 2,
+                    value: l,
+                };
+                write!(
+                    f,
+                    "{}Expr @ {}\n{}{:?}",
+                    " ".repeat(self.indent),
+                    self.value.span,
+                    " ".repeat(self.indent),
+                    lit
+                )
+            }
+            Expr::Prefix { op, expr } => todo!(),
+            Expr::Infix { op, lhs, rhs } => {
+                let lhs = Format {
+                    indent: self.indent + 2,
+                    value: *lhs,
+                };
+                let rhs = Format {
+                    indent: self.indent + 2,
+                    value: *rhs,
+                };
+                write!(
+                    f,
+                    "{}Expr @ {}\n{}Infix @ {}\n{}{:?}\n{}{:?}\n{}{:?}",
+                    " ".repeat(self.indent),
+                    self.value.span,
+                    " ".repeat(self.indent + 2),
+                    self.value.span,
+                    " ".repeat(self.indent + 2),
+                    lhs,
+                    " ".repeat(self.indent + 4),
+                    op,
+                    " ".repeat(self.indent + 2),
+                    rhs
+                )
+            }
+            Expr::Let { name, expr, body } => todo!(),
+            Expr::Apply { fun, args } => todo!(),
+            Expr::If { cond, then, else_ } => todo!(),
+            Expr::Lambda { params, body } => todo!(),
+            Expr::Unit => todo!(),
+            Expr::Error => todo!(),
+        }
+    }
+}
+
+impl Debug for Format<Spanned<Lit>> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self.value.value {
+            Lit::Int(i) => write!(
+                f,
+                "{}Lit @ {}\n{}{}",
+                " ".repeat(self.indent),
+                self.value.span,
+                " ".repeat(self.indent + 2),
+                i
+            ),
+            Lit::Rational(_) => todo!(),
+            Lit::Real(_) => todo!(),
+            Lit::Complex(_) => todo!(),
+            Lit::Char(_) => todo!(),
+            Lit::String(_) => todo!(),
         }
     }
 }

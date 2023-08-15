@@ -1,0 +1,14 @@
+---
+source: miniml-syntax/src/parser.rs
+assertion_line: 600
+expression: fmt
+---
+Expr @ <0, 5>
+  Infix @ <0, 5>
+    Expr @ <0, 3>
+      Lit @ <0, 3>
+      1
+    Add @ 2..3
+    Expr @ <4, 5>
+      Lit @ <4, 5>
+      2

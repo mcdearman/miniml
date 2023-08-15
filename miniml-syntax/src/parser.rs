@@ -507,7 +507,7 @@ impl<'src> Parser<'src> {
             TokenKind::Ident => {
                 log::trace!("atom: {:?}", self.peek());
                 let name = self.ident()?;
-                Ok(Expr::Ident(name.value).spanned(start.extend(self.peek().span)))
+                Ok(Expr::Ident(name).spanned(start.extend(self.peek().span)))
             }
             TokenKind::Int
             | TokenKind::Rational
@@ -516,7 +516,7 @@ impl<'src> Parser<'src> {
             | TokenKind::Char
             | TokenKind::String => {
                 let lit = self.lit()?;
-                Ok(Expr::Lit(lit.value).spanned(start.extend(self.peek().span)))
+                Ok(Expr::Lit(lit.into()).spanned(start.extend(self.peek().span)))
             }
             TokenKind::LParen => {
                 log::trace!("atom: {:?}", self.peek());
@@ -572,5 +572,31 @@ impl<'src> Parser<'src> {
                 Err(SyntaxError::UnexpectedToken(tok.value).spanned(tok.span))
             }
         }
+    }
+}
+
+mod tests {
+    use crate::{ast::Format, parser::Parser};
+
+    #[test]
+    fn test_int() {
+        let mut parser = Parser::new("123");
+        let expr = parser.expr().expect("parse error");
+        let fmt = Format {
+            indent: 0,
+            value: expr,
+        };
+        insta::assert_debug_snapshot!(fmt);
+    }
+
+    #[test]
+    fn test_infix() {
+        let mut parser = Parser::new("1 + 2");
+        let expr = parser.expr().expect("parse error");
+        let fmt = Format {
+            indent: 0,
+            value: expr,
+        };
+        insta::assert_debug_snapshot!(fmt);
     }
 }
