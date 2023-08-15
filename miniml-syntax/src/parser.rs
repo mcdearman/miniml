@@ -516,7 +516,7 @@ impl<'src> Parser<'src> {
             | TokenKind::Char
             | TokenKind::String => {
                 let lit = self.lit()?;
-                Ok(Expr::Lit(lit.into()).spanned(start.extend(self.peek().span)))
+                Ok(Expr::Lit(lit.clone().into()).spanned(lit.span))
             }
             TokenKind::LParen => {
                 log::trace!("atom: {:?}", self.peek());
@@ -565,7 +565,31 @@ impl<'src> Parser<'src> {
                         .parse()
                         .map_err(|_| SyntaxError::LitParseError.spanned(span))?,
                 )
-                .spanned(start.extend(self.peek().span)))
+                .spanned(span))
+            }
+            TokenKind::Rational => {
+                log::trace!("lit: {:?}", self.peek());
+                let value = self.text();
+                let span = self.peek().span.clone();
+                self.next();
+                Ok(Lit::Rational(
+                    value
+                        .parse()
+                        .map_err(|_| SyntaxError::LitParseError.spanned(span))?,
+                )
+                .spanned(span))
+            }
+            TokenKind::Real => {
+                log::trace!("lit: {:?}", self.peek());
+                let value = self.text();
+                let span = self.peek().span.clone();
+                self.next();
+                Ok(Lit::Real(
+                    value
+                        .parse()
+                        .map_err(|_| SyntaxError::LitParseError.spanned(span))?,
+                )
+                .spanned(span))
             }
             _ => {
                 let tok = self.next();
@@ -590,8 +614,19 @@ mod tests {
     }
 
     #[test]
-    fn test_infix() {
+    fn test_add() {
         let mut parser = Parser::new("1 + 2");
+        let expr = parser.expr().expect("parse error");
+        let fmt = Format {
+            indent: 0,
+            value: expr,
+        };
+        insta::assert_debug_snapshot!(fmt);
+    }
+
+    #[test]
+    fn test_infix() {
+        let mut parser = Parser::new("1 + 2 * 3 / 4^1/2 - 2.5");
         let expr = parser.expr().expect("parse error");
         let fmt = Format {
             indent: 0,

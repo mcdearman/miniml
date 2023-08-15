@@ -1,0 +1,43 @@
+---
+source: miniml-syntax/src/parser.rs
+expression: fmt
+---
+Expr @ 0..23
+  Infix @ 0..23
+    Expr @ 0..1
+      Lit @ 0..1
+        Int @ 0..1
+          1
+    Add @ 2..3
+    Expr @ 4..23
+      Infix @ 4..23
+        Expr @ 4..19
+          Infix @ 4..19
+            Expr @ 4..5
+              Lit @ 4..5
+                Int @ 4..5
+                  2
+            Mul @ 6..7
+            Expr @ 8..19
+              Infix @ 8..19
+                Expr @ 8..9
+                  Lit @ 8..9
+                    Int @ 8..9
+                      3
+                Div @ 10..11
+                Expr @ 12..19
+                  Infix @ 12..19
+                    Expr @ 12..13
+                      Lit @ 12..13
+                        Int @ 12..13
+                          4
+                    Pow @ 13..14
+                    Expr @ 14..17
+                      Lit @ 14..17
+                        Rational @ 14..17
+                          1/2
+        Sub @ 18..19
+        Expr @ 20..23
+          Lit @ 20..23
+            Real @ 20..23
+              2.5

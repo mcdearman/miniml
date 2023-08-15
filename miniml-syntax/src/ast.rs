@@ -318,7 +318,7 @@ impl Debug for Format<Spanned<Expr>> {
         match self.value.clone().value {
             Expr::Ident(name) => write!(
                 f,
-                "{}Expr @ {}\n{}",
+                "{}Expr @ {:?}\n{}",
                 " ".repeat(self.indent),
                 self.value.span,
                 name
@@ -330,44 +330,81 @@ impl Debug for Format<Spanned<Expr>> {
                 };
                 write!(
                     f,
-                    "{}Expr @ {}\n{}{:?}",
+                    "{}Expr @ {:?}\n{:?}",
                     " ".repeat(self.indent),
                     self.value.span,
-                    " ".repeat(self.indent),
+                    // " ".repeat(self.indent),
                     lit
                 )
             }
             Expr::Prefix { op, expr } => todo!(),
             Expr::Infix { op, lhs, rhs } => {
                 let lhs = Format {
-                    indent: self.indent + 2,
+                    indent: self.indent + 4,
                     value: *lhs,
                 };
                 let rhs = Format {
-                    indent: self.indent + 2,
+                    indent: self.indent + 4,
                     value: *rhs,
                 };
                 write!(
                     f,
-                    "{}Expr @ {}\n{}Infix @ {}\n{}{:?}\n{}{:?}\n{}{:?}",
+                    "{}Expr @ {:?}\n{}Infix @ {:?}\n{:?}\n{}{:?}\n{:?}",
                     " ".repeat(self.indent),
                     self.value.span,
                     " ".repeat(self.indent + 2),
                     self.value.span,
-                    " ".repeat(self.indent + 2),
                     lhs,
                     " ".repeat(self.indent + 4),
                     op,
-                    " ".repeat(self.indent + 2),
                     rhs
                 )
             }
             Expr::Let { name, expr, body } => todo!(),
             Expr::Apply { fun, args } => todo!(),
-            Expr::If { cond, then, else_ } => todo!(),
+            Expr::If { cond, then, else_ } => {
+                let cond = Format {
+                    indent: self.indent + 4,
+                    value: *cond,
+                };
+                let then = Format {
+                    indent: self.indent + 4,
+                    value: *then,
+                };
+                let else_ = Format {
+                    indent: self.indent + 4,
+                    value: *else_,
+                };
+                write!(
+                    f,
+                    "{}Expr @ {:?}\n{}If @ {:?}\n{}Cond\n{:?}\n{}Then\n{:?}\n{}Else\n{:?}",
+                    " ".repeat(self.indent),
+                    self.value.span,
+                    " ".repeat(self.indent + 2),
+                    self.value.span,
+                    " ".repeat(self.indent + 4),
+                    cond,
+                    " ".repeat(self.indent + 4),
+                    then,
+                    " ".repeat(self.indent + 4),
+                    else_
+                )
+            }
             Expr::Lambda { params, body } => todo!(),
-            Expr::Unit => todo!(),
-            Expr::Error => todo!(),
+            Expr::Unit => write!(
+                f,
+                "{}Expr @ {:?}\n{}Unit",
+                " ".repeat(self.indent),
+                self.value.span,
+                " ".repeat(self.indent + 2)
+            ),
+            Expr::Error => write!(
+                f,
+                "{}Expr @ {:?}\n{}Error",
+                " ".repeat(self.indent),
+                self.value.span,
+                " ".repeat(self.indent + 2)
+            ),
         }
     }
 }
@@ -377,17 +414,64 @@ impl Debug for Format<Spanned<Lit>> {
         match self.value.value {
             Lit::Int(i) => write!(
                 f,
-                "{}Lit @ {}\n{}{}",
+                "{}Lit @ {:?}\n{}Int @ {:?}\n{}{}",
                 " ".repeat(self.indent),
                 self.value.span,
                 " ".repeat(self.indent + 2),
+                self.value.span,
+                " ".repeat(self.indent + 4),
                 i
             ),
-            Lit::Rational(_) => todo!(),
-            Lit::Real(_) => todo!(),
-            Lit::Complex(_) => todo!(),
-            Lit::Char(_) => todo!(),
-            Lit::String(_) => todo!(),
+            Lit::Rational(r) => write!(
+                f,
+                "{}Lit @ {:?}\n{}Rational @ {:?}\n{}{}",
+                " ".repeat(self.indent),
+                self.value.span,
+                " ".repeat(self.indent + 2),
+                self.value.span,
+                " ".repeat(self.indent + 4),
+                r
+            ),
+            Lit::Real(r) => write!(
+                f,
+                "{}Lit @ {:?}\n{}Real @ {:?}\n{}{}",
+                " ".repeat(self.indent),
+                self.value.span,
+                " ".repeat(self.indent + 2),
+                self.value.span,
+                " ".repeat(self.indent + 4),
+                r
+            ),
+            Lit::Complex(c) => write!(
+                f,
+                "{}Lit @ {:?}\n{}Complex @ {:?}\n{}{}",
+                " ".repeat(self.indent),
+                self.value.span,
+                " ".repeat(self.indent + 2),
+                self.value.span,
+                " ".repeat(self.indent + 4),
+                c
+            ),
+            Lit::Char(c) => write!(
+                f,
+                "{}Lit @ {:?}\n{}Char @ {:?}\n{}'{}'",
+                " ".repeat(self.indent),
+                self.value.span,
+                " ".repeat(self.indent + 2),
+                self.value.span,
+                " ".repeat(self.indent + 4),
+                c
+            ),
+            Lit::String(s) => write!(
+                f,
+                "{}Lit @ {:?}\n{}String @ {:?}\n{}{}",
+                " ".repeat(self.indent),
+                self.value.span,
+                " ".repeat(self.indent + 2),
+                self.value.span,
+                " ".repeat(self.indent + 4),
+                s
+            ),
         }
     }
 }
