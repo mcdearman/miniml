@@ -92,7 +92,8 @@ impl<'src> Parser<'src> {
         &self.src[self.lexer.span()]
     }
 
-    pub fn parse(mut self) -> (Root, Vec<ParserError>) {
+    pub fn parse(mut self) -> (Spanned<Root>, Vec<ParserError>) {
+        let start = self.peek().span;
         let mut decls = vec![];
         while self.peek().value != TokenKind::Eof {
             match self.decl() {
@@ -100,7 +101,8 @@ impl<'src> Parser<'src> {
                 Err(err) => self.errors.push(err),
             }
         }
-        (Root { decls }, self.errors)
+        let end = self.peek().span;
+        (Root { decls }.spanned(start.extend(end)), self.errors)
     }
 
     fn decl(&mut self) -> ParseResult<Spanned<Decl>> {
@@ -542,6 +544,8 @@ impl<'src> Parser<'src> {
             TokenKind::Ident => {
                 let name = self.text();
                 self.next();
+                println!("ident: {:?}", name);
+                println!("span: {:?}", span);
                 Ok(InternedString::from(name).spanned(span))
             }
             _ => {

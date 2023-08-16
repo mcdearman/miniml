@@ -28,12 +28,6 @@ impl Display for Root {
     }
 }
 
-// impl Debug for Root {
-//     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-//         write!(f, "{:?}", join(self.decls.clone().into_iter(), "\n"))
-//     }
-// }
-
 #[derive(Debug, Clone, PartialEq)]
 pub enum Decl {
     Const {
@@ -343,15 +337,111 @@ pub struct Format<T> {
     pub value: T,
 }
 
+impl Debug for Format<Spanned<Root>> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "Root @ {:?}", self.value.span)?;
+        for decl in &self.value.value.decls {
+            let decl = Format {
+                indent: self.indent + 2,
+                value: decl.clone(),
+            };
+            write!(f, "\n{:?}", decl)?;
+        }
+        Ok(())
+    }
+}
+
+impl Debug for Format<Spanned<Decl>> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self.value.clone().value {
+            Decl::Const { name, expr } => {
+                let expr = Format {
+                    indent: self.indent + 2,
+                    value: *expr,
+                };
+                write!(
+                    f,
+                    "{}Decl @ {:?}\n{}{} = {:?}",
+                    " ".repeat(self.indent),
+                    self.value.span,
+                    " ".repeat(self.indent + 2),
+                    name.value,
+                    expr
+                )
+            }
+            Decl::Let { name, expr } => {
+                let expr = Format {
+                    indent: self.indent + 2,
+                    value: *expr,
+                };
+                write!(
+                    f,
+                    "{}Decl @ {:?}\n{}{} = {:?}",
+                    " ".repeat(self.indent),
+                    self.value.span,
+                    " ".repeat(self.indent + 2),
+                    name.value,
+                    expr
+                )
+            }
+            Decl::Fn { name, params, body } => {
+                let params = Format {
+                    indent: self.indent + 4,
+                    value: params.clone(),
+                };
+                let body = Format {
+                    indent: self.indent + 4,
+                    value: *body,
+                };
+                write!(
+                    f,
+                    "{}Decl @ {:?}\n{}Fn @ {:?}\n{}Ident @ {:?}\n{}{}\n{:?}\n{:?}",
+                    " ".repeat(self.indent),
+                    self.value.span,
+                    " ".repeat(self.indent + 2),
+                    self.value.span,
+                    " ".repeat(self.indent + 4),
+                    name.span,
+                    " ".repeat(self.indent + 6),
+                    name.value,
+                    params,
+                    body
+                )
+            }
+        }
+    }
+}
+
+impl Debug for Format<Vec<Spanned<InternedString>>> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        for (i, param) in self.value.iter().enumerate() {
+            write!(
+                f,
+                "{}Ident @ {:?}\n{}{}",
+                " ".repeat(self.indent),
+                param.span,
+                " ".repeat(self.indent + 2),
+                param.value
+            )?;
+            if i != self.value.len() - 1 {
+                write!(f, "\n")?;
+            }
+        }
+        Ok(())
+    }
+}
+
 impl Debug for Format<Spanned<Expr>> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self.value.clone().value {
             Expr::Ident(name) => write!(
                 f,
-                "{}Expr @ {:?}\n{}{}",
+                "{}Expr @ {:?}\n{}Ident @ {:?}\n{}{}",
                 " ".repeat(self.indent),
                 self.value.span,
                 " ".repeat(self.indent + 2),
+                self.value.span,
+                " ".repeat(self.indent + 4),
                 name.value
             ),
             Expr::Lit(l) => {

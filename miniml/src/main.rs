@@ -37,27 +37,32 @@
 
 use logos::Logos;
 use miniml_syntax::{
+    ast::Format,
     lex::{Token, TokenKind},
     parser::Parser,
 };
-use miniml_util::intern::InternedString;
+use miniml_util::{intern::InternedString, span::Spannable};
 
 fn main() {
     env_logger::init();
     // let src = "fn gcd a b = if b = 0 then a else gcd b (a % b)\nfn main = println gcd 85 51; ()";
     // let src = "fn main = -x + 2 + 2^-1/-2 * (4.5 - 2); ()";
 
-    let src = "fn main = 1 + 2; ()";
+    // let src = "fn main = 1 + 2; ()";
+    let src = "fn add x y = x + y";
     let tokens = TokenKind::lexer(src).spanned().collect::<Vec<_>>();
     println!("tokens: {:?}", tokens);
     // let src = "fn main = foo 1 |> bar 2";
     let parser = Parser::new(src);
-    let (ast, errors) = parser.parse();
-    println!("ast: {:#?}", ast);
+    let (root, errors) = parser.parse();
+    // println!("root: {:#?}", root);
+    let ast = Format {
+        indent: 0,
+        value: root.clone(),
+    }
+    .spanned(root.span);
+    println!("{:?}", ast);
     println!("errors: {:?}", errors);
-    let i = "0b10101";
-    let i = i64::from_str_radix(&i[2..], 2);
-    println!("i: {:?}", i);
 
     // let mut compiler = Compiler::new();
     // let fun = compiler.compile(&ast.0).expect("failed to compile");
