@@ -1,0 +1,9 @@
+---
+source: miniml-syntax/src/parser.rs
+expression: fmt
+---
+Expr @ 0..2
+  Prefix @ 0..2
+    Neg @ 0..1
+    Expr @ 1..2
+      "x"

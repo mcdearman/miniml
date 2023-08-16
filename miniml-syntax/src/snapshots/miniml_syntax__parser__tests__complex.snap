@@ -1,0 +1,8 @@
+---
+source: miniml-syntax/src/parser.rs
+expression: fmt
+---
+Expr @ 0..8
+  Lit @ 0..8
+    Complex @ 0..8
+      0+123.456i

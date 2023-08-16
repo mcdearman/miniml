@@ -55,6 +55,9 @@ fn main() {
     let (ast, errors) = parser.parse();
     println!("ast: {:#?}", ast);
     println!("errors: {:?}", errors);
+    let i = "0b10101";
+    let i = i64::from_str_radix(&i[2..], 2);
+    println!("i: {:?}", i);
 
     // let mut compiler = Compiler::new();
     // let fun = compiler.compile(&ast.0).expect("failed to compile");

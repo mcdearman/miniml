@@ -1,0 +1,27 @@
+---
+source: miniml-vm/src/chunk.rs
+assertion_line: 131
+expression: chunk
+---
+Chunk {
+    code: [
+        3,
+        0,
+        3,
+        1,
+    ],
+    constants: [
+        Real(
+            1.2,
+        ),
+        Real(
+            2.3,
+        ),
+    ],
+    spans: [
+        0..0,
+        0..0,
+        1..1,
+        1..1,
+    ],
+}

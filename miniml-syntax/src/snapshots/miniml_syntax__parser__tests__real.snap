@@ -1,0 +1,8 @@
+---
+source: miniml-syntax/src/parser.rs
+expression: fmt
+---
+Expr @ 0..7
+  Lit @ 0..7
+    Real @ 0..7
+      123.456

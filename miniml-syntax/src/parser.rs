@@ -553,8 +553,8 @@ impl<'src> Parser<'src> {
 
     fn lit(&mut self) -> ParseResult<Spanned<Lit>> {
         log::trace!("enter lit: {:?}", self.peek());
-        let start = self.peek().span;
-        match self.peek().value {
+        let peek = self.peek();
+        match peek.value {
             TokenKind::Int => {
                 log::trace!("lit: {:?}", self.peek());
                 let value = self.text();
@@ -563,33 +563,38 @@ impl<'src> Parser<'src> {
                 Ok(Lit::Int(
                     value
                         .parse()
-                        .map_err(|_| SyntaxError::LitParseError.spanned(span))?,
+                        .map_err(|_| SyntaxError::InvalidIntLit(peek.clone()).spanned(peek.span))?,
                 )
                 .spanned(span))
             }
             TokenKind::Rational => {
                 log::trace!("lit: {:?}", self.peek());
                 let value = self.text();
-                let span = self.peek().span.clone();
                 self.next();
-                Ok(Lit::Rational(
-                    value
-                        .parse()
-                        .map_err(|_| SyntaxError::LitParseError.spanned(span))?,
-                )
-                .spanned(span))
+                Ok(Lit::Rational(value.parse().map_err(|_| {
+                    SyntaxError::InvalidRationalLit(peek.clone()).spanned(peek.span)
+                })?)
+                .spanned(peek.span))
             }
             TokenKind::Real => {
                 log::trace!("lit: {:?}", self.peek());
                 let value = self.text();
-                let span = self.peek().span.clone();
                 self.next();
                 Ok(Lit::Real(
-                    value
-                        .parse()
-                        .map_err(|_| SyntaxError::LitParseError.spanned(span))?,
+                    value.parse().map_err(|_| {
+                        SyntaxError::InvalidRealLit(peek.clone()).spanned(peek.span)
+                    })?,
                 )
-                .spanned(span))
+                .spanned(peek.span))
+            }
+            TokenKind::Complex => {
+                log::trace!("lit: {:?}", self.peek());
+                let value = self.text();
+                self.next();
+                Ok(Lit::Complex(value.parse().map_err(|_| {
+                    SyntaxError::InvalidComplexLit(peek.clone()).spanned(peek.span)
+                })?)
+                .spanned(peek.span))
             }
             _ => {
                 let tok = self.next();
@@ -605,6 +610,61 @@ mod tests {
     #[test]
     fn test_int() {
         let mut parser = Parser::new("123");
+        let expr = parser.expr().expect("parse error");
+        let fmt = Format {
+            indent: 0,
+            value: expr,
+        };
+        insta::assert_debug_snapshot!(fmt);
+    }
+
+    #[test]
+    fn test_binary() {
+        let mut parser = Parser::new("0b10101");
+        let expr = parser.expr().expect("parse error");
+        let fmt = Format {
+            indent: 0,
+            value: expr,
+        };
+        insta::assert_debug_snapshot!(fmt);
+    }
+
+    #[test]
+    fn test_rational() {
+        let mut parser = Parser::new("123/456");
+        let expr = parser.expr().expect("parse error");
+        let fmt = Format {
+            indent: 0,
+            value: expr,
+        };
+        insta::assert_debug_snapshot!(fmt);
+    }
+
+    #[test]
+    fn test_real() {
+        let mut parser = Parser::new("123.456");
+        let expr = parser.expr().expect("parse error");
+        let fmt = Format {
+            indent: 0,
+            value: expr,
+        };
+        insta::assert_debug_snapshot!(fmt);
+    }
+
+    #[test]
+    fn test_complex() {
+        let mut parser = Parser::new("123.456i");
+        let expr = parser.expr().expect("parse error");
+        let fmt = Format {
+            indent: 0,
+            value: expr,
+        };
+        insta::assert_debug_snapshot!(fmt);
+    }
+
+    #[test]
+    fn test_neg() {
+        let mut parser = Parser::new("-x");
         let expr = parser.expr().expect("parse error");
         let fmt = Format {
             indent: 0,

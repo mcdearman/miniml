@@ -1,12 +1,17 @@
-use crate::lex::TokenKind;
+use crate::{error::SyntaxError, lex::TokenKind};
+use cstree::Syntax;
 use itertools::join;
 use miniml_util::{
     intern::InternedString,
-    span::{Span, Spanned},
+    span::{Span, Spannable, Spanned},
 };
 use num_complex::Complex64;
 use num_rational::Rational64;
-use std::fmt::{Debug, Display};
+use std::{
+    fmt::{Debug, Display},
+    num::ParseIntError,
+    str::FromStr,
+};
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Root {
@@ -271,7 +276,7 @@ impl From<TokenKind> for InfixOp {
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Lit {
-    Int(i64),
+    Int(Int),
     Rational(Rational64),
     Real(f64),
     Complex(Complex64),
@@ -289,6 +294,31 @@ impl Display for Lit {
             Lit::Char(c) => write!(f, "'{}'", c),
             Lit::String(s) => write!(f, "{}", s),
         }
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct Int(pub i64);
+
+impl FromStr for Int {
+    type Err = ParseIntError;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        if s.starts_with("0x") {
+            i64::from_str_radix(&s[2..], 16).map(Int)
+        } else if s.starts_with("0o") {
+            i64::from_str_radix(&s[2..], 8).map(Int)
+        } else if s.starts_with("0b") {
+            i64::from_str_radix(&s[2..], 2).map(Int)
+        } else {
+            i64::from_str(s).map(Int)
+        }
+    }
+}
+
+impl Display for Int {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.0)
     }
 }
 
@@ -318,10 +348,11 @@ impl Debug for Format<Spanned<Expr>> {
         match self.value.clone().value {
             Expr::Ident(name) => write!(
                 f,
-                "{}Expr @ {:?}\n{}",
+                "{}Expr @ {:?}\n{}{}",
                 " ".repeat(self.indent),
                 self.value.span,
-                name
+                " ".repeat(self.indent + 2),
+                name.value
             ),
             Expr::Lit(l) => {
                 let lit = Format {
@@ -337,7 +368,23 @@ impl Debug for Format<Spanned<Expr>> {
                     lit
                 )
             }
-            Expr::Prefix { op, expr } => todo!(),
+            Expr::Prefix { op, expr } => {
+                let expr = Format {
+                    indent: self.indent + 4,
+                    value: *expr,
+                };
+                write!(
+                    f,
+                    "{}Expr @ {:?}\n{}Prefix @ {:?}\n{}{:?}\n{:?}",
+                    " ".repeat(self.indent),
+                    self.value.span,
+                    " ".repeat(self.indent + 2),
+                    self.value.span,
+                    " ".repeat(self.indent + 4),
+                    op,
+                    expr
+                )
+            }
             Expr::Infix { op, lhs, rhs } => {
                 let lhs = Format {
                     indent: self.indent + 4,
