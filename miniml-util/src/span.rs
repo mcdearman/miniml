@@ -3,7 +3,7 @@ use std::{
     ops::{Index, Range},
 };
 
-#[derive(Clone, Copy, Eq, PartialEq, Default, Hash)]
+#[derive(Debug, Clone, Copy, Eq, PartialEq, Default, Hash)]
 pub struct Span {
     pub start: u32,
     pub end: u32,
@@ -35,15 +35,15 @@ impl Span {
 
 impl Display for Span {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "<{}, {}>", self.start, self.end)
-    }
-}
-
-impl Debug for Span {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}..{}", self.start, self.end)
     }
 }
+
+// impl Debug for Span {
+//     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+//         write!(f, "{}..{}", self.start, self.end)
+//     }
+// }
 
 impl From<Span> for Range<usize> {
     fn from(span: Span) -> Self {
@@ -96,7 +96,7 @@ impl<T: Display> Display for Spanned<T> {
 
 impl<T: Debug> Debug for Spanned<T> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{:?} @ {:?}", self.value, self.span)
+        write!(f, "{:?} @ {}", self.value, self.span)
     }
 }
 

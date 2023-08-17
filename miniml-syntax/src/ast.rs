@@ -322,21 +322,6 @@ impl Display for Int {
     }
 }
 
-#[derive(Debug, Clone, PartialEq)]
-pub struct SpannedLit {
-    pub value: Lit,
-    pub span: Span,
-}
-
-impl From<Spanned<Lit>> for SpannedLit {
-    fn from(value: Spanned<Lit>) -> Self {
-        SpannedLit {
-            value: value.value,
-            span: value.span,
-        }
-    }
-}
-
 #[derive(Clone, PartialEq)]
 pub struct Format<T> {
     pub indent: usize,
@@ -345,7 +330,7 @@ pub struct Format<T> {
 
 impl Debug for Format<Spanned<Root>> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "Root @ {:?}", self.value.span)?;
+        write!(f, "Root @ {}", self.value.span)?;
         for decl in &self.value.value.decls {
             let decl = Format {
                 indent: self.indent + 2,
@@ -362,15 +347,17 @@ impl Debug for Format<Spanned<Decl>> {
         match self.value.clone().value {
             Decl::Const { name, expr } => {
                 let expr = Format {
-                    indent: self.indent + 2,
+                    indent: self.indent + 4,
                     value: *expr,
                 };
                 write!(
                     f,
-                    "{}Decl @ {:?}\n{}{} = {:?}",
+                    "{}Decl @ {}\n{}Const @ {}\n{}{:?}\n{:?}",
                     " ".repeat(self.indent),
                     self.value.span,
                     " ".repeat(self.indent + 2),
+                    name.span,
+                    " ".repeat(self.indent + 4),
                     name.value,
                     expr
                 )
@@ -382,7 +369,7 @@ impl Debug for Format<Spanned<Decl>> {
                 };
                 write!(
                     f,
-                    "{}Decl @ {:?}\n{}{} = {:?}",
+                    "{}Decl @ {}\n{}{} = {:?}",
                     " ".repeat(self.indent),
                     self.value.span,
                     " ".repeat(self.indent + 2),
@@ -401,7 +388,7 @@ impl Debug for Format<Spanned<Decl>> {
                 };
                 write!(
                     f,
-                    "{}Decl @ {:?}\n{}Fn @ {:?}\n{}Ident @ {:?}\n{}{}{:?}\n{:?}",
+                    "{}Decl @ {}\n{}Fn @ {}\n{}Ident @ {}\n{}{}{:?}\n{:?}",
                     " ".repeat(self.indent),
                     self.value.span,
                     " ".repeat(self.indent + 2),
@@ -426,7 +413,7 @@ impl Debug for Format<Vec<Spanned<InternedString>>> {
         for (i, param) in self.value.iter().enumerate() {
             write!(
                 f,
-                "{}Ident @ {:?}\n{}{}",
+                "{}Ident @ {}\n{}{}",
                 " ".repeat(self.indent),
                 param.span,
                 " ".repeat(self.indent + 2),
@@ -445,7 +432,7 @@ impl Debug for Format<Spanned<Expr>> {
         match self.value.clone().value {
             Expr::Ident(name) => write!(
                 f,
-                "{}Expr @ {:?}\n{}Ident @ {:?}\n{}{}",
+                "{}Expr @ {}\n{}Ident @ {}\n{}{}",
                 " ".repeat(self.indent),
                 self.value.span,
                 " ".repeat(self.indent + 2),
@@ -460,7 +447,7 @@ impl Debug for Format<Spanned<Expr>> {
                 };
                 write!(
                     f,
-                    "{}Expr @ {:?}\n{:?}",
+                    "{}Expr @ {}\n{:?}",
                     " ".repeat(self.indent),
                     self.value.span,
                     // " ".repeat(self.indent),
@@ -474,7 +461,7 @@ impl Debug for Format<Spanned<Expr>> {
                 };
                 write!(
                     f,
-                    "{}Expr @ {:?}\n{}Prefix @ {:?}\n{}{:?}\n{:?}",
+                    "{}Expr @ {}\n{}Prefix @ {}\n{}{:?}\n{:?}",
                     " ".repeat(self.indent),
                     self.value.span,
                     " ".repeat(self.indent + 2),
@@ -495,7 +482,7 @@ impl Debug for Format<Spanned<Expr>> {
                 };
                 write!(
                     f,
-                    "{}Expr @ {:?}\n{}Infix @ {:?}\n{:?}\n{}{:?}\n{:?}",
+                    "{}Expr @ {}\n{}Infix @ {}\n{:?}\n{}{:?}\n{:?}",
                     " ".repeat(self.indent),
                     self.value.span,
                     " ".repeat(self.indent + 2),
@@ -517,7 +504,7 @@ impl Debug for Format<Spanned<Expr>> {
                 };
                 write!(
                     f,
-                    "{}Expr @ {:?}\n{}Let @ {:?}\n{}Ident @ {:?}\n{}{}{:?}\n{:?}",
+                    "{}Expr @ {}\n{}Let @ {}\n{}Ident @ {}\n{}{}{:?}\n{:?}",
                     " ".repeat(self.indent),
                     self.value.span,
                     " ".repeat(self.indent + 2),
@@ -541,7 +528,7 @@ impl Debug for Format<Spanned<Expr>> {
                 };
                 write!(
                     f,
-                    "{}Expr @ {:?}\n{}Apply @ {:?}\n{:?}\n{:?}",
+                    "{}Expr @ {}\n{}Apply @ {}\n{:?}\n{:?}",
                     " ".repeat(self.indent),
                     self.value.span,
                     " ".repeat(self.indent + 2),
@@ -579,7 +566,7 @@ impl Debug for Format<Spanned<Expr>> {
                 if elifs.is_empty() {
                     write!(
                         f,
-                        "{}Expr @ {:?}\n{}If @ {:?}\n{}Cond\n{:?}\n{}Then\n{:?}\n{}Else\n{:?}",
+                        "{}Expr @ {}\n{}If @ {}\n{}Cond\n{:?}\n{}Then\n{:?}\n{}Else\n{:?}",
                         " ".repeat(self.indent),
                         self.value.span,
                         " ".repeat(self.indent + 2),
@@ -594,7 +581,7 @@ impl Debug for Format<Spanned<Expr>> {
                 } else {
                     write!(
                     f,
-                    "{}Expr @ {:?}\n{}If @ {:?}\n{}Cond\n{:?}\n{}Then\n{:?}\n{}Elifs\n{:?}\n{}Else\n{:?}",
+                    "{}Expr @ {}\n{}If @ {}\n{}Cond\n{:?}\n{}Then\n{:?}\n{}Elifs\n{:?}\n{}Else\n{:?}",
                     " ".repeat(self.indent),
                     self.value.span,
                     " ".repeat(self.indent + 2),
@@ -621,7 +608,7 @@ impl Debug for Format<Spanned<Expr>> {
                 };
                 write!(
                     f,
-                    "{}Expr @ {:?}\n{}Lambda @ {:?}\n{}Params\n{:?}\n{}Body\n{:?}",
+                    "{}Expr @ {}\n{}Lambda @ {}\n{}Params\n{:?}\n{}Body\n{:?}",
                     " ".repeat(self.indent),
                     self.value.span,
                     " ".repeat(self.indent + 2),
@@ -634,14 +621,14 @@ impl Debug for Format<Spanned<Expr>> {
             }
             Expr::Unit => write!(
                 f,
-                "{}Expr @ {:?}\n{}Unit",
+                "{}Expr @ {}\n{}Unit",
                 " ".repeat(self.indent),
                 self.value.span,
                 " ".repeat(self.indent + 2),
             ),
             Expr::Error => write!(
                 f,
-                "{}Expr @ {:?}\n{}Error",
+                "{}Expr @ {}\n{}Error",
                 " ".repeat(self.indent),
                 self.value.span,
                 " ".repeat(self.indent + 2)
@@ -666,7 +653,7 @@ impl Debug for Format<Vec<(Spanned<Expr>, Spanned<Expr>)>> {
             };
             write!(
                 f,
-                "{}Cond @ {:?}\n{:?}\n{}Then @ {:?}\n{:?}",
+                "{}Cond @ {}\n{:?}\n{}Then @ {}\n{:?}",
                 " ".repeat(self.indent),
                 cond.value.span,
                 cond,
@@ -694,7 +681,7 @@ impl Debug for Format<Vec<Spanned<Expr>>> {
             };
             write!(
                 f,
-                "{}Expr @ {:?}\n{:?}",
+                "{}Expr @ {}\n{:?}",
                 " ".repeat(self.indent),
                 expr.value.span,
                 expr
@@ -712,7 +699,7 @@ impl Debug for Format<Spanned<Lit>> {
         match self.value.value {
             Lit::Int(i) => write!(
                 f,
-                "{}Lit @ {:?}\n{}Int @ {:?}\n{}{}",
+                "{}Lit @ {}\n{}Int @ {}\n{}{}",
                 " ".repeat(self.indent),
                 self.value.span,
                 " ".repeat(self.indent + 2),
@@ -722,7 +709,7 @@ impl Debug for Format<Spanned<Lit>> {
             ),
             Lit::Rational(r) => write!(
                 f,
-                "{}Lit @ {:?}\n{}Rational @ {:?}\n{}{}",
+                "{}Lit @ {}\n{}Rational @ {}\n{}{}",
                 " ".repeat(self.indent),
                 self.value.span,
                 " ".repeat(self.indent + 2),
@@ -732,7 +719,7 @@ impl Debug for Format<Spanned<Lit>> {
             ),
             Lit::Real(r) => write!(
                 f,
-                "{}Lit @ {:?}\n{}Real @ {:?}\n{}{}",
+                "{}Lit @ {}\n{}Real @ {}\n{}{}",
                 " ".repeat(self.indent),
                 self.value.span,
                 " ".repeat(self.indent + 2),
@@ -742,7 +729,7 @@ impl Debug for Format<Spanned<Lit>> {
             ),
             Lit::Complex(c) => write!(
                 f,
-                "{}Lit @ {:?}\n{}Complex @ {:?}\n{}{}",
+                "{}Lit @ {}\n{}Complex @ {}\n{}{}",
                 " ".repeat(self.indent),
                 self.value.span,
                 " ".repeat(self.indent + 2),
@@ -752,7 +739,7 @@ impl Debug for Format<Spanned<Lit>> {
             ),
             Lit::Char(c) => write!(
                 f,
-                "{}Lit @ {:?}\n{}Char @ {:?}\n{}'{}'",
+                "{}Lit @ {}\n{}Char @ {}\n{}'{}'",
                 " ".repeat(self.indent),
                 self.value.span,
                 " ".repeat(self.indent + 2),
@@ -762,7 +749,7 @@ impl Debug for Format<Spanned<Lit>> {
             ),
             Lit::String(s) => write!(
                 f,
-                "{}Lit @ {:?}\n{}String @ {:?}\n{}{}",
+                "{}Lit @ {}\n{}String @ {}\n{}{}",
                 " ".repeat(self.indent),
                 self.value.span,
                 " ".repeat(self.indent + 2),

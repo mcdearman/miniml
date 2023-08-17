@@ -61,6 +61,7 @@ fn main() {
         value: root.clone(),
     }
     .spanned(root.span);
+    println!("root: {:#?}", root);
     println!("{:?}", ast);
     println!("errors: {:?}", errors);
 
