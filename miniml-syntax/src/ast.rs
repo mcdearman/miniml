@@ -100,6 +100,7 @@ pub enum Expr {
     If {
         cond: Box<Spanned<Self>>,
         then: Box<Spanned<Self>>,
+        elifs: Vec<(Box<Spanned<Self>>, Box<Spanned<Self>>)>,
         else_: Box<Spanned<Self>>,
     },
     Lambda {
@@ -158,7 +159,12 @@ impl Display for Expr {
                 }
                 write!(f, ")")
             }
-            Expr::If { cond, then, else_ } => {
+            Expr::If {
+                cond,
+                then,
+                elifs,
+                else_,
+            } => {
                 write!(
                     f,
                     "if {} then {} else {}",
@@ -395,7 +401,7 @@ impl Debug for Format<Spanned<Decl>> {
                 };
                 write!(
                     f,
-                    "{}Decl @ {:?}\n{}Fn @ {:?}\n{}Ident @ {:?}\n{}{}\n{:?}\n{:?}",
+                    "{}Decl @ {:?}\n{}Fn @ {:?}\n{}Ident @ {:?}\n{}{}{:?}\n{:?}",
                     " ".repeat(self.indent),
                     self.value.span,
                     " ".repeat(self.indent + 2),
@@ -414,6 +420,9 @@ impl Debug for Format<Spanned<Decl>> {
 
 impl Debug for Format<Vec<Spanned<InternedString>>> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        if !self.value.is_empty() {
+            write!(f, "\n")?;
+        }
         for (i, param) in self.value.iter().enumerate() {
             write!(
                 f,
@@ -497,43 +506,138 @@ impl Debug for Format<Spanned<Expr>> {
                     rhs
                 )
             }
-            Expr::Let { name, expr, body } => todo!(),
-            Expr::Apply { fun, args } => todo!(),
-            Expr::If { cond, then, else_ } => {
-                let cond = Format {
+            Expr::Let { name, expr, body } => {
+                let expr = Format {
                     indent: self.indent + 4,
-                    value: *cond,
+                    value: *expr,
                 };
-                let then = Format {
+                let body = Format {
                     indent: self.indent + 4,
-                    value: *then,
-                };
-                let else_ = Format {
-                    indent: self.indent + 4,
-                    value: *else_,
+                    value: *body,
                 };
                 write!(
                     f,
-                    "{}Expr @ {:?}\n{}If @ {:?}\n{}Cond\n{:?}\n{}Then\n{:?}\n{}Else\n{:?}",
+                    "{}Expr @ {:?}\n{}Let @ {:?}\n{}Ident @ {:?}\n{}{}{:?}\n{:?}",
                     " ".repeat(self.indent),
                     self.value.span,
                     " ".repeat(self.indent + 2),
                     self.value.span,
                     " ".repeat(self.indent + 4),
-                    cond,
-                    " ".repeat(self.indent + 4),
-                    then,
-                    " ".repeat(self.indent + 4),
-                    else_
+                    name.span,
+                    " ".repeat(self.indent + 6),
+                    name.value,
+                    expr,
+                    body
                 )
             }
-            Expr::Lambda { params, body } => todo!(),
+            Expr::Apply { fun, args } => {
+                let fun = Format {
+                    indent: self.indent + 4,
+                    value: *fun,
+                };
+                let args = Format {
+                    indent: self.indent + 4,
+                    value: args.clone(),
+                };
+                write!(
+                    f,
+                    "{}Expr @ {:?}\n{}Apply @ {:?}\n{:?}\n{:?}",
+                    " ".repeat(self.indent),
+                    self.value.span,
+                    " ".repeat(self.indent + 2),
+                    self.value.span,
+                    fun,
+                    args
+                )
+            }
+            Expr::If {
+                cond,
+                then,
+                elifs,
+                else_,
+            } => {
+                let cond_fmt = Format {
+                    indent: self.indent + 4,
+                    value: *cond,
+                };
+                let then_fmt = Format {
+                    indent: self.indent + 4,
+                    value: *then,
+                };
+                let elifs_fmt = Format {
+                    indent: self.indent + 4,
+                    value: elifs
+                        .clone()
+                        .into_iter()
+                        .map(|(c, e)| (*c, *e))
+                        .collect::<Vec<_>>(),
+                };
+                let else_fmt = Format {
+                    indent: self.indent + 4,
+                    value: *else_,
+                };
+                if elifs.is_empty() {
+                    write!(
+                        f,
+                        "{}Expr @ {:?}\n{}If @ {:?}\n{}Cond\n{:?}\n{}Then\n{:?}\n{}Else\n{:?}",
+                        " ".repeat(self.indent),
+                        self.value.span,
+                        " ".repeat(self.indent + 2),
+                        self.value.span,
+                        " ".repeat(self.indent + 4),
+                        cond_fmt,
+                        " ".repeat(self.indent + 4),
+                        then_fmt,
+                        " ".repeat(self.indent + 4),
+                        else_fmt
+                    )
+                } else {
+                    write!(
+                    f,
+                    "{}Expr @ {:?}\n{}If @ {:?}\n{}Cond\n{:?}\n{}Then\n{:?}\n{}Elifs\n{:?}\n{}Else\n{:?}",
+                    " ".repeat(self.indent),
+                    self.value.span,
+                    " ".repeat(self.indent + 2),
+                    self.value.span,
+                    " ".repeat(self.indent + 4),
+                    cond_fmt,
+                    " ".repeat(self.indent + 4),
+                    then_fmt,
+                    " ".repeat(self.indent + 4),
+                    elifs_fmt,
+                    " ".repeat(self.indent + 4),
+                    else_fmt
+                )
+                }
+            }
+            Expr::Lambda { params, body } => {
+                let params = Format {
+                    indent: self.indent + 4,
+                    value: params.clone(),
+                };
+                let body = Format {
+                    indent: self.indent + 4,
+                    value: *body,
+                };
+                write!(
+                    f,
+                    "{}Expr @ {:?}\n{}Lambda @ {:?}\n{}Params\n{:?}\n{}Body\n{:?}",
+                    " ".repeat(self.indent),
+                    self.value.span,
+                    " ".repeat(self.indent + 2),
+                    self.value.span,
+                    " ".repeat(self.indent + 4),
+                    params,
+                    " ".repeat(self.indent + 4),
+                    body
+                )
+            }
             Expr::Unit => write!(
                 f,
                 "{}Expr @ {:?}\n{}Unit",
                 " ".repeat(self.indent),
                 self.value.span,
-                " ".repeat(self.indent + 2)
+                " ".repeat(self.indent + 2),
             ),
             Expr::Error => write!(
                 f,
@@ -543,6 +647,63 @@ impl Debug for Format<Spanned<Expr>> {
                 " ".repeat(self.indent + 2)
             ),
         }
+    }
+}
+
+impl Debug for Format<Vec<(Spanned<Expr>, Spanned<Expr>)>> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        if self.value.is_empty() {
+            return Ok(());
+        }
+        for (i, (cond, body)) in self.value.iter().enumerate() {
+            let cond = Format {
+                indent: self.indent + 2,
+                value: cond.clone(),
+            };
+            let body = Format {
+                indent: self.indent + 2,
+                value: body.clone(),
+            };
+            write!(
+                f,
+                "{}Cond @ {:?}\n{:?}\n{}Then @ {:?}\n{:?}",
+                " ".repeat(self.indent),
+                cond.value.span,
+                cond,
+                " ".repeat(self.indent),
+                body.value.span,
+                body
+            )?;
+            if i != self.value.len() - 1 {
+                write!(f, "\n")?;
+            }
+        }
+        Ok(())
+    }
+}
+
+impl Debug for Format<Vec<Spanned<Expr>>> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        if self.value.is_empty() {
+            return Ok(());
+        }
+        for (i, expr) in self.value.iter().enumerate() {
+            let expr = Format {
+                indent: self.indent + 2,
+                value: expr.clone(),
+            };
+            write!(
+                f,
+                "{}Expr @ {:?}\n{:?}",
+                " ".repeat(self.indent),
+                expr.value.span,
+                expr
+            )?;
+            if i != self.value.len() - 1 {
+                write!(f, "\n")?;
+            }
+        }
+        Ok(())
     }
 }
 

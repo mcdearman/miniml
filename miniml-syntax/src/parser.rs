@@ -92,7 +92,7 @@ impl<'src> Parser<'src> {
         &self.src[self.lexer.span()]
     }
 
-    pub fn parse(mut self) -> (Spanned<Root>, Vec<ParserError>) {
+    pub fn parse(&mut self) -> (Spanned<Root>, Vec<ParserError>) {
         let start = self.peek().span;
         let mut decls = vec![];
         while self.peek().value != TokenKind::Eof {
@@ -102,7 +102,10 @@ impl<'src> Parser<'src> {
             }
         }
         let end = self.peek().span;
-        (Root { decls }.spanned(start.extend(end)), self.errors)
+        (
+            Root { decls }.spanned(start.extend(end)),
+            self.errors.clone(),
+        )
     }
 
     fn decl(&mut self) -> ParseResult<Spanned<Decl>> {
@@ -482,9 +485,11 @@ impl<'src> Parser<'src> {
         log::trace!("fun: {:?}", fun);
         log::trace!("apply: {:?}", self.peek());
         let mut args = vec![];
+        let mut span = self.peek().span.clone();
         if self.at_atom() {
             loop {
                 log::trace!("apply: {:?}", self.peek());
+                span = self.peek().span.clone();
                 args.push(self.atom()?);
                 if !self.at_atom() {
                     break;
@@ -494,7 +499,7 @@ impl<'src> Parser<'src> {
                 fun: Box::new(fun),
                 args,
             }
-            .spanned(start.extend(self.peek().span)))
+            .spanned(start.extend(span)))
         } else {
             log::trace!("apply ret: {:?}", self.peek());
             return Ok(fun);
@@ -509,7 +514,7 @@ impl<'src> Parser<'src> {
             TokenKind::Ident => {
                 log::trace!("atom: {:?}", self.peek());
                 let name = self.ident()?;
-                Ok(Expr::Ident(name).spanned(start.extend(self.peek().span)))
+                Ok(Expr::Ident(name).spanned(start))
             }
             TokenKind::Int
             | TokenKind::Rational
@@ -520,12 +525,16 @@ impl<'src> Parser<'src> {
                 let lit = self.lit()?;
                 Ok(Expr::Lit(lit.clone().into()).spanned(lit.span))
             }
+            TokenKind::Let => self.let_expr(),
+            TokenKind::If => self.if_(),
             TokenKind::LParen => {
                 log::trace!("atom: {:?}", self.peek());
                 self.eat(TokenKind::LParen)?;
                 if self.at(TokenKind::RParen) {
+                    let span = self.peek().span.clone();
                     self.eat(TokenKind::RParen)?;
-                    return Ok(Expr::Unit.spanned(start.extend(self.peek().span)));
+                    log::trace!("unit span: {:?}", span);
+                    return Ok(Expr::Unit.spanned(start.extend(span)));
                 }
                 let expr = self.expr()?;
                 self.eat(TokenKind::RParen)?;
@@ -538,14 +547,55 @@ impl<'src> Parser<'src> {
         }
     }
 
+    fn let_expr(&mut self) -> ParseResult<Spanned<Expr>> {
+        log::trace!("enter let: {:?}", self.peek());
+        let start = self.peek().span;
+        self.eat(TokenKind::Let)?;
+        let name = self.ident()?;
+        self.eat(TokenKind::Eq)?;
+        let expr = self.expr()?;
+        self.eat(TokenKind::In)?;
+        let body = self.expr()?;
+        Ok(Expr::Let {
+            name,
+            expr: Box::new(expr),
+            body: Box::new(body),
+        }
+        .spanned(start.extend(self.peek().span)))
+    }
+
+    fn if_(&mut self) -> ParseResult<Spanned<Expr>> {
+        log::trace!("enter if: {:?}", self.peek());
+        let start = self.peek().span;
+        self.eat(TokenKind::If)?;
+        let cond = self.expr()?;
+        self.eat(TokenKind::Then)?;
+        let then = self.expr()?;
+        let mut elifs = vec![];
+        while self.at(TokenKind::Elif) {
+            self.eat(TokenKind::Elif)?;
+            let cond = self.expr()?;
+            self.eat(TokenKind::Then)?;
+            let then = self.expr()?;
+            elifs.push((Box::new(cond), Box::new(then)));
+        }
+        self.eat(TokenKind::Else)?;
+        let else_ = self.expr()?;
+        Ok(Expr::If {
+            cond: Box::new(cond),
+            then: Box::new(then),
+            elifs,
+            else_: Box::new(else_),
+        }
+        .spanned(start.extend(self.peek().span)))
+    }
+
     fn ident(&mut self) -> ParseResult<Spanned<InternedString>> {
         let span = self.peek().span.clone();
         match self.peek().value {
             TokenKind::Ident => {
                 let name = self.text();
                 self.next();
-                println!("ident: {:?}", name);
-                println!("span: {:?}", span);
                 Ok(InternedString::from(name).spanned(span))
             }
             _ => {
@@ -667,6 +717,17 @@ mod tests {
     }
 
     #[test]
+    fn test_unit() {
+        let mut parser = Parser::new("()");
+        let expr = parser.expr().expect("parse error");
+        let fmt = Format {
+            indent: 0,
+            value: expr,
+        };
+        insta::assert_debug_snapshot!(fmt);
+    }
+
+    #[test]
     fn test_neg() {
         let mut parser = Parser::new("-x");
         let expr = parser.expr().expect("parse error");
@@ -695,6 +756,64 @@ mod tests {
         let fmt = Format {
             indent: 0,
             value: expr,
+        };
+        insta::assert_debug_snapshot!(fmt);
+    }
+
+    #[test]
+    fn test_if() {
+        let mut parser = Parser::new("if x then y else z");
+        let expr = parser.expr().expect("parse error");
+        let fmt = Format {
+            indent: 0,
+            value: expr,
+        };
+        insta::assert_debug_snapshot!(fmt);
+    }
+
+    #[test]
+    fn test_elif() {
+        let mut parser = Parser::new("if x then y elif a then b else z");
+        let expr = parser.expr().expect("parse error");
+        let fmt = Format {
+            indent: 0,
+            value: expr,
+        };
+        insta::assert_debug_snapshot!(fmt);
+    }
+
+    #[test]
+    fn test_if_atom() {
+        let mut parser = Parser::new("add 1 if x then y else z");
+        let expr = parser.expr().expect("parse error");
+        let fmt = Format {
+            indent: 0,
+            value: expr,
+        };
+        insta::assert_debug_snapshot!(fmt);
+    }
+
+    #[test]
+    fn test_let_expr() {
+        let mut parser = Parser::new("let x = 1 in x + 1");
+        let expr = parser.expr().expect("parse error");
+        let fmt = Format {
+            indent: 0,
+            value: expr,
+        };
+        insta::assert_debug_snapshot!(fmt);
+    }
+
+    #[test]
+    fn test_fn_add() {
+        let mut parser = Parser::new("fn add x y = x + y");
+        let (root, errors) = parser.parse();
+        if !errors.is_empty() {
+            panic!("parse error: {:?}", errors);
+        }
+        let fmt = Format {
+            indent: 0,
+            value: root,
         };
         insta::assert_debug_snapshot!(fmt);
     }

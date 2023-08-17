@@ -1,0 +1,27 @@
+---
+source: miniml-syntax/src/parser.rs
+expression: fmt
+---
+Expr @ 0..32
+  If @ 0..32
+    Cond
+    Expr @ 3..4
+      Ident @ 3..4
+        "x"
+    Then
+    Expr @ 10..11
+      Ident @ 10..11
+        "y"
+    Elifs
+    Cond @ 17..18
+      Expr @ 17..18
+        Ident @ 17..18
+          "a"
+    Then @ 24..25
+      Expr @ 24..25
+        Ident @ 24..25
+          "b"
+    Else
+    Expr @ 31..32
+      Ident @ 31..32
+        "z"

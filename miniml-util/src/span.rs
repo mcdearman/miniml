@@ -76,7 +76,7 @@ impl Index<Span> for String {
     }
 }
 
-#[derive(Clone, PartialEq)]
+#[derive(Clone, Copy, PartialEq)]
 pub struct Spanned<T> {
     pub value: T,
     pub span: Span,

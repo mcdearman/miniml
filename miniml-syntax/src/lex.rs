@@ -8,6 +8,7 @@ use num_rational::Rational64;
 use std::{
     fmt::{Debug, Display},
     iter::Peekable,
+    ops::RangeInclusive,
     vec::IntoIter,
 };
 

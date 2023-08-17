@@ -1,0 +1,22 @@
+---
+source: miniml-syntax/src/parser.rs
+assertion_line: 804
+expression: fmt
+---
+Expr @ 0..18
+  Let @ 0..18
+    Ident @ 4..5
+      "x"    Expr @ 8..9
+      Lit @ 8..9
+        Int @ 8..9
+          1
+    Expr @ 13..18
+      Infix @ 13..18
+        Expr @ 13..14
+          Ident @ 13..14
+            "x"
+        Add @ 15..16
+        Expr @ 17..18
+          Lit @ 17..18
+            Int @ 17..18
+              1

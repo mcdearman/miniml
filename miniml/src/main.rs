@@ -48,12 +48,12 @@ fn main() {
     // let src = "fn gcd a b = if b = 0 then a else gcd b (a % b)\nfn main = println gcd 85 51; ()";
     // let src = "fn main = -x + 2 + 2^-1/-2 * (4.5 - 2); ()";
 
-    // let src = "fn main = 1 + 2; ()";
-    let src = "fn add x y = x + y";
+    let src = "fn main = ()";
+    // let src = "fn add x y = x + y\nfn main = add 1 2; ()";
     let tokens = TokenKind::lexer(src).spanned().collect::<Vec<_>>();
     println!("tokens: {:?}", tokens);
     // let src = "fn main = foo 1 |> bar 2";
-    let parser = Parser::new(src);
+    let mut parser = Parser::new(src);
     let (root, errors) = parser.parse();
     // println!("root: {:#?}", root);
     let ast = Format {
