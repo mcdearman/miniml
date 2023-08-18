@@ -13,7 +13,7 @@ pub const TAG_INT_ARRAY = 11
 pub const TAG_LONG_ARRAY = 12
 
 pub struct Node {
-    pub name,
-    pub tag,
-    pub value,
+  pub name,
+  pub tag,
+  pub value,
 }

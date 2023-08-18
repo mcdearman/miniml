@@ -20,7 +20,7 @@ pub fn repl() {
                     println!("Parser Errors: {:?}", errors);
                     continue;
                 }
-                log::trace!("root: {:?}", Format::from(root.clone()));
+                // log::trace!("root: {:?}", Format::from(root.clone()));
                 match eval(env.clone(), &root.value) {
                     Ok(value) => println!("{}", value),
                     Err(error) => println!("Runtime Error: {}", error),

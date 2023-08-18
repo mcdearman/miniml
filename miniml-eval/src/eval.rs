@@ -87,6 +87,7 @@ pub fn eval_expr(env: Rc<RefCell<Env>>, expr: &Expr) -> EvalResult<Value> {
                 eval_expr(env.clone(), &rhs.value)?,
             ) {
                 (Value::Int(l), Value::Int(r)) => Ok(Value::Int(l + r)),
+                (Value::Rational(l), Value::Rational(r)) => Ok(Value::Rational(l + r)),
                 (Value::Real(l), Value::Real(r)) => Ok(Value::Real(l + r)),
                 _ => Err(RuntimeError::from("Invalid operand type")),
             },
@@ -139,12 +140,42 @@ pub fn eval_expr(env: Rc<RefCell<Env>>, expr: &Expr) -> EvalResult<Value> {
                 let r = eval_expr(env.clone(), &rhs.value)?;
                 Ok(Value::Bool(l != r))
             }
-            InfixOp::Lt => todo!(),
-            InfixOp::Gt => todo!(),
-            InfixOp::Leq => todo!(),
-            InfixOp::Geq => todo!(),
-            InfixOp::And => todo!(),
-            InfixOp::Or => todo!(),
+            InfixOp::Lt => {
+                let l = eval_expr(env.clone(), &lhs.value)?;
+                let r = eval_expr(env.clone(), &rhs.value)?;
+                Ok(Value::Bool(l < r))
+            }
+            InfixOp::Gt => {
+                let l = eval_expr(env.clone(), &lhs.value)?;
+                let r = eval_expr(env.clone(), &rhs.value)?;
+                Ok(Value::Bool(l > r))
+            }
+            InfixOp::Leq => {
+                let l = eval_expr(env.clone(), &lhs.value)?;
+                let r = eval_expr(env.clone(), &rhs.value)?;
+                Ok(Value::Bool(l <= r))
+            }
+            InfixOp::Geq => {
+                let l = eval_expr(env.clone(), &lhs.value)?;
+                let r = eval_expr(env.clone(), &rhs.value)?;
+                Ok(Value::Bool(l >= r))
+            }
+            InfixOp::And => {
+                let l = eval_expr(env.clone(), &lhs.value)?;
+                let r = eval_expr(env.clone(), &rhs.value)?;
+                match (l, r) {
+                    (Value::Bool(l), Value::Bool(r)) => Ok(Value::Bool(l && r)),
+                    _ => Err(RuntimeError::from("Cannot and non-bool values")),
+                }
+            }
+            InfixOp::Or => {
+                let l = eval_expr(env.clone(), &lhs.value)?;
+                let r = eval_expr(env.clone(), &rhs.value)?;
+                match (l, r) {
+                    (Value::Bool(l), Value::Bool(r)) => Ok(Value::Bool(l || r)),
+                    _ => Err(RuntimeError::from("Cannot or non-bool values")),
+                }
+            }
             InfixOp::Pipe => todo!(),
             InfixOp::Stmt => {
                 eval_expr(env.clone(), &lhs.value)?;
@@ -158,12 +189,15 @@ pub fn eval_expr(env: Rc<RefCell<Env>>, expr: &Expr) -> EvalResult<Value> {
             eval_expr(let_env.clone(), &body.value)
         }
         Expr::Apply { fun, args } => {
-            let fun = eval_expr(env.clone(), &fun.value)?;
+            let funv = eval_expr(env.clone(), &fun.value)?;
+            log::trace!("args: {:?}", args);
             let vargs = args
+                .clone()
                 .into_iter()
                 .map(|arg| eval_expr(env.clone(), &arg.value))
                 .collect::<Result<Vec<_>, _>>()?;
-            match fun {
+            log::trace!("vargs: {:?}", vargs);
+            match funv.clone() {
                 Value::Lambda {
                     env: lam_env,
                     params,
@@ -172,7 +206,10 @@ pub fn eval_expr(env: Rc<RefCell<Env>>, expr: &Expr) -> EvalResult<Value> {
                     for (param, arg) in params.into_iter().zip(vargs.into_iter()) {
                         lam_env.borrow_mut().define(param, arg);
                     }
-                    eval_expr(lam_env.clone(), &body)
+                    let a = eval_expr(lam_env.clone(), &body)?;
+                    // log::trace!("Apply: {:?} {:?} = {:?}", funv, args, a);
+                    log::trace!("val = {:?}", a);
+                    Ok(a)
                 }
                 _ => Err(RuntimeError::from("Cannot call non-function value")),
             }

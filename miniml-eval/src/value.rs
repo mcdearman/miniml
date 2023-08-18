@@ -83,3 +83,13 @@ impl PartialEq for Value {
         }
     }
 }
+
+impl PartialOrd for Value {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        match (self, other) {
+            (Self::Int(l0), Self::Int(r0)) => l0.partial_cmp(r0),
+            (Self::Real(l0), Self::Real(r0)) => l0.partial_cmp(r0),
+            _ => None,
+        }
+    }
+}
