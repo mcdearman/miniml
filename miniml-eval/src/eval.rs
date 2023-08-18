@@ -190,7 +190,7 @@ pub fn eval_expr(env: Rc<RefCell<Env>>, expr: &Expr) -> EvalResult<Value> {
         }
         Expr::Apply { fun, args } => {
             let funv = eval_expr(env.clone(), &fun.value)?;
-            log::trace!("args: {:?}", args);
+            log::trace!("args: {} {:?}", funv, args);
             let vargs = args
                 .clone()
                 .into_iter()
