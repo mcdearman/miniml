@@ -1,36 +1,34 @@
-use std::io;
+use std::io::{self, Write};
 
-// pub fn repl() {
-//     println!("Welcome to the MiniML REPL!");
-//     print!("> ");
-//     io::stdout().flush().expect("failed to flush stdout");
-//     let mut src = String::new();
-//     loop {
-//         io::stdin()
-//             .read_line(&mut src)
-//             .expect("failed to read from stdin");
-//         match &parse(&src) {
-//             (Some(item), _) => match Compiler::new().compile(item) {
-//                 Ok(chunk) => {
-//                     // println!("AST: {:?}", item);
-//                     // println!("{:?}", chunk);
-//                     match VM::new(chunk).run() {
-//                         Ok(val) => println!("{}", val),
-//                         Err(err) => eprintln!("Runtime Error: {}", err),
-//                     }
-//                 }
-//                 Err(err) => {
-//                     eprintln!("Compiler Error: {}", err);
-//                 }
-//             },
-//             (None, errs) => {
-//                 for err in errs {
-//                     eprintln!("Parser Error: {}", err);
-//                 }
-//             }
-//         }
-//         src.clear();
-//         print!("\n> ");
-//         io::stdout().flush().expect("failed to flush stdout");
-//     }
-// }
+use miniml_eval::{env::Env, eval::eval};
+use miniml_syntax::{ast::Format, parser::Parser};
+
+pub fn repl() {
+    println!("Welcome to the MiniML REPL!");
+    print!("> ");
+    io::stdout().flush().expect("failed to flush stdout");
+    let mut src = String::new();
+    let env = Env::new();
+    loop {
+        io::stdin()
+            .read_line(&mut src)
+            .expect("failed to read from stdin");
+        let mut parser = Parser::new(&src);
+        match parser.repl_parse() {
+            (root, errors) => {
+                if !errors.is_empty() {
+                    println!("Parser Errors: {:?}", errors);
+                    continue;
+                }
+                log::trace!("root: {:?}", Format::from(root.clone()));
+                match eval(env.clone(), &root.value) {
+                    Ok(value) => println!("{}", value),
+                    Err(error) => println!("Runtime Error: {}", error),
+                }
+            }
+        }
+        src.clear();
+        print!("\n> ");
+        io::stdout().flush().expect("failed to flush stdout");
+    }
+}

@@ -8,7 +8,7 @@ use crate::{
 use logos::{Lexer, Logos};
 use miniml_util::{
     intern::InternedString,
-    span::{Spannable, Spanned},
+    span::{Span, Spannable, Spanned},
 };
 
 #[derive(Debug)]
@@ -78,6 +78,13 @@ impl<'src> Parser<'src> {
         }
     }
 
+    fn at_decl(&mut self) -> bool {
+        match self.peek().value {
+            TokenKind::Const | TokenKind::Let | TokenKind::Fn => true,
+            _ => false,
+        }
+    }
+
     fn eat(&mut self, kind: TokenKind) -> ParseResult<()> {
         if self.at(kind) {
             self.next();
@@ -106,6 +113,33 @@ impl<'src> Parser<'src> {
             Root { decls }.spanned(start.extend(end)),
             self.errors.clone(),
         )
+    }
+
+    pub fn repl_parse(&mut self) -> (Spanned<Root>, Vec<ParserError>) {
+        if self.at_decl() {
+            self.parse()
+        } else {
+            let start = self.peek().span;
+            let expr = self.expr();
+            let end = self.peek().span;
+
+            let body = Box::new(expr.unwrap_or_else(|err| {
+                self.errors.push(err);
+                Expr::Error.spanned(start.extend(end))
+            }));
+            (
+                Root {
+                    decls: vec![Decl::Fn {
+                        name: InternedString::from("main").spanned(Span::new(0, 0)),
+                        params: vec![],
+                        body,
+                    }
+                    .spanned(start.extend(end))],
+                }
+                .spanned(start.extend(end)),
+                self.errors.clone(),
+            )
+        }
     }
 
     fn decl(&mut self) -> ParseResult<Spanned<Decl>> {
@@ -800,6 +834,34 @@ mod tests {
         let fmt = Format {
             indent: 0,
             value: expr,
+        };
+        insta::assert_debug_snapshot!(fmt);
+    }
+
+    #[test]
+    fn test_const() {
+        let mut parser = Parser::new("const x = 1");
+        let (root, errors) = parser.parse();
+        if !errors.is_empty() {
+            panic!("parse error: {:?}", errors);
+        }
+        let fmt = Format {
+            indent: 0,
+            value: root,
+        };
+        insta::assert_debug_snapshot!(fmt);
+    }
+
+    #[test]
+    fn test_let() {
+        let mut parser = Parser::new("let x = 1");
+        let (root, errors) = parser.parse();
+        if !errors.is_empty() {
+            panic!("parse error: {:?}", errors);
+        }
+        let fmt = Format {
+            indent: 0,
+            value: root,
         };
         insta::assert_debug_snapshot!(fmt);
     }

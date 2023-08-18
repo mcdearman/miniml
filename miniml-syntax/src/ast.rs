@@ -13,7 +13,7 @@ use std::{
     str::FromStr,
 };
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Clone, PartialEq)]
 pub struct Root {
     pub decls: Vec<Spanned<Decl>>,
 }
@@ -328,6 +328,15 @@ pub struct Format<T> {
     pub value: T,
 }
 
+impl From<Spanned<Root>> for Format<Spanned<Root>> {
+    fn from(root: Spanned<Root>) -> Self {
+        Format {
+            indent: 0,
+            value: root,
+        }
+    }
+}
+
 impl Debug for Format<Spanned<Root>> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "Root @ {}", self.value.span)?;
@@ -352,12 +361,14 @@ impl Debug for Format<Spanned<Decl>> {
                 };
                 write!(
                     f,
-                    "{}Decl @ {}\n{}Const @ {}\n{}{:?}\n{:?}",
+                    "{}Decl @ {}\n{}Const @ {}\n{}Ident @ {}\n{}{}\n{:?}",
                     " ".repeat(self.indent),
                     self.value.span,
                     " ".repeat(self.indent + 2),
                     name.span,
                     " ".repeat(self.indent + 4),
+                    name.span,
+                    " ".repeat(self.indent + 6),
                     name.value,
                     expr
                 )
@@ -369,10 +380,14 @@ impl Debug for Format<Spanned<Decl>> {
                 };
                 write!(
                     f,
-                    "{}Decl @ {}\n{}{} = {:?}",
+                    "{}Decl @ {}\n{}Let @ {}\n{}Ident @ {}\n{}{}\n{:?}",
                     " ".repeat(self.indent),
                     self.value.span,
                     " ".repeat(self.indent + 2),
+                    name.span,
+                    " ".repeat(self.indent + 4),
+                    name.span,
+                    " ".repeat(self.indent + 6),
                     name.value,
                     expr
                 )
@@ -504,7 +519,7 @@ impl Debug for Format<Spanned<Expr>> {
                 };
                 write!(
                     f,
-                    "{}Expr @ {}\n{}Let @ {}\n{}Ident @ {}\n{}{}{:?}\n{:?}",
+                    "{}Expr @ {}\n{}Let @ {}\n{}Ident @ {}\n{}{}\n{:?}\n{:?}",
                     " ".repeat(self.indent),
                     self.value.span,
                     " ".repeat(self.indent + 2),

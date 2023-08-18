@@ -1,12 +1,12 @@
 ---
 source: miniml-syntax/src/parser.rs
-assertion_line: 804
 expression: fmt
 ---
 Expr @ 0..18
   Let @ 0..18
     Ident @ 4..5
-      "x"    Expr @ 8..9
+      "x"
+    Expr @ 8..9
       Lit @ 8..9
         Int @ 8..9
           1

@@ -1,0 +1,13 @@
+---
+source: miniml-syntax/src/parser.rs
+expression: fmt
+---
+Root @ 0..11
+  Decl @ 0..11
+    Const @ 6..7
+      Ident @ 6..7
+        "x"
+      Expr @ 10..11
+        Lit @ 10..11
+          Int @ 10..11
+            1
