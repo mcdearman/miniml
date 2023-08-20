@@ -51,6 +51,16 @@ pub fn eval_decl(env: Rc<RefCell<Env>>, decl: &Decl) -> EvalResult<Value> {
                     body: Box::new(body.value),
                 },
             );
+            if &*name.value != "main" {
+                env.borrow_mut().define(
+                    InternedString::from("main"),
+                    Value::Lambda {
+                        env: Env::with_parent(env.clone()),
+                        params: vec![],
+                        body: Box::new(Expr::Unit),
+                    },
+                );
+            }
             Ok(Value::Unit)
         }
     }
@@ -190,25 +200,24 @@ pub fn eval_expr(env: Rc<RefCell<Env>>, expr: &Expr) -> EvalResult<Value> {
         }
         Expr::Apply { fun, args } => {
             let funv = eval_expr(env.clone(), &fun.value)?;
-            log::trace!("args: {} {:?}", funv, args);
             let vargs = args
                 .clone()
                 .into_iter()
                 .map(|arg| eval_expr(env.clone(), &arg.value))
                 .collect::<Result<Vec<_>, _>>()?;
-            log::trace!("vargs: {:?}", vargs);
+            // println!("call: {} {:?}", fun.value, vargs);
+
             match funv.clone() {
                 Value::Lambda {
                     env: lam_env,
                     params,
                     body,
                 } => {
+                    let arg_env = Env::with_parent(lam_env.clone());
                     for (param, arg) in params.into_iter().zip(vargs.into_iter()) {
-                        lam_env.borrow_mut().define(param, arg);
+                        arg_env.borrow_mut().define(param, arg);
                     }
-                    let a = eval_expr(lam_env.clone(), &body)?;
-                    // log::trace!("Apply: {:?} {:?} = {:?}", funv, args, a);
-                    log::trace!("val = {:?}", a);
+                    let a = eval_expr(arg_env.clone(), &body)?;
                     Ok(a)
                 }
                 _ => Err(RuntimeError::from("Cannot call non-function value")),
@@ -232,7 +241,7 @@ pub fn eval_expr(env: Rc<RefCell<Env>>, expr: &Expr) -> EvalResult<Value> {
             _ => Err(RuntimeError::from("Invalid operand type")),
         },
         Expr::Lambda { params, body } => Ok(Value::Lambda {
-            env: Env::with_parent(env.clone()),
+            env: env.clone(),
             params: params.into_iter().map(|p| p.value).collect(),
             body: Box::new(body.value),
         }),
