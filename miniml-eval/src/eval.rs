@@ -33,20 +33,20 @@ pub fn eval(env: Rc<RefCell<Env>>, root: &Root) -> EvalResult<Value> {
 pub fn eval_decl(env: Rc<RefCell<Env>>, decl: &Decl) -> EvalResult<Value> {
     match decl.clone() {
         Decl::Const { name, expr } => {
-            env.borrow_mut()
-                .define(name.value, eval_expr(env.clone(), &expr.value)?);
+            let value = eval_expr(env.clone(), &expr.value)?;
+            env.borrow_mut().define(name.value, value);
             Ok(Value::Unit)
         }
         Decl::Let { name, expr } => {
-            env.borrow_mut()
-                .define(name.value, eval_expr(env.clone(), &expr.value)?);
+            let value = eval_expr(env.clone(), &expr.value)?;
+            env.borrow_mut().define(name.value, value);
             Ok(Value::Unit)
         }
         Decl::Fn { name, params, body } => {
             env.borrow_mut().define(
                 name.value,
                 Value::Lambda {
-                    env: Env::with_parent(env.clone()),
+                    env: env.clone(),
                     params: params.into_iter().map(|p| p.value).collect(),
                     body: Box::new(body.value),
                 },
@@ -55,7 +55,7 @@ pub fn eval_decl(env: Rc<RefCell<Env>>, decl: &Decl) -> EvalResult<Value> {
                 env.borrow_mut().define(
                     InternedString::from("main"),
                     Value::Lambda {
-                        env: Env::with_parent(env.clone()),
+                        env: env.clone(),
                         params: vec![],
                         body: Box::new(Expr::Unit),
                     },
