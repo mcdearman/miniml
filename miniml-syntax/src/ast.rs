@@ -63,18 +63,6 @@ impl Display for Decl {
     }
 }
 
-// impl Debug for Decl {
-//     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-//         match self {
-//             Decl::Const { name, expr } => write!(f, "Const({:?} = {:?})", name, expr),
-//             Decl::Let { name, expr } => write!(f, "Let({:?} = {:?})", name, expr),
-//             Decl::Fn { name, params, body } => {
-//                 write!(f, "Fn({:?} {:?} = {:?})", name, join(params, " "), body)
-//             }
-//         }
-//     }
-// }
-
 #[derive(Debug, Clone, PartialEq)]
 pub enum Expr {
     Ident(Spanned<InternedString>),
@@ -110,37 +98,6 @@ pub enum Expr {
     Unit,
     Error,
 }
-
-// impl Expr {
-//     fn fmt(&self, f: &mut std::fmt::Formatter<'_>, indent: usize) -> std::fmt::Result {
-//         match self.clone() {
-//             Expr::Ident(i) => write!(
-//                 f,
-//                 "{}Expr\n{}Indent({})",
-//                 " ".repeat(indent),
-//                 " ".repeat(indent + 2),
-//                 i
-//             ),
-//             Expr::Lit(l) => write!(f, "{}", l.fmt(indent)),
-//             Expr::Prefix { op, expr } => {
-//                 write!(
-//                     f,
-//                     "{}Prefix{:?}{:?}",
-//                     " ".repeat(indent),
-//                     op.value,
-//                     expr.value
-//                 )?;
-//                 expr.value.fmt(f, indent + 2)?;
-//                 write!(f, "{}", " ".repeat(indent))
-//             }
-//             Expr::Infix { op, lhs, rhs } => {
-//                 write!(f, "Expr\n{:?} {:?} {:?}", lhs.value, op.value, rhs.value)
-//             }
-//             Expr::Unit => write!(f, "{}Unit", " ".repeat(indent)),
-//             _ => todo!(),
-//         }
-//     }
-// }
 
 impl Display for Expr {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
