@@ -561,6 +561,7 @@ impl<'src> Parser<'src> {
             }
             TokenKind::Let => self.let_expr(),
             TokenKind::If => self.if_(),
+            TokenKind::Backslash => self.lambda(),
             TokenKind::LParen => {
                 log::trace!("atom: {:?}", self.peek());
                 self.eat(TokenKind::LParen)?;
@@ -622,6 +623,25 @@ impl<'src> Parser<'src> {
             else_: Box::new(else_),
         }
         .spanned(start.extend(self.peek().span)))
+    }
+
+    fn lambda(&mut self) -> ParseResult<Spanned<Expr>> {
+        log::trace!("enter lambda: {:?}", self.peek());
+        let start = self.peek().span;
+        self.eat(TokenKind::Backslash)?;
+        let mut params = vec![];
+        let mut span = self.peek().span.clone();
+        while !self.at(TokenKind::Arrow) {
+            span = self.peek().span.clone();
+            params.push(self.ident()?);
+        }
+        self.eat(TokenKind::Arrow)?;
+        let body = self.expr()?;
+        Ok(Expr::Lambda {
+            params,
+            body: Box::new(body),
+        }
+        .spanned(start.extend(span)))
     }
 
     fn ident(&mut self) -> ParseResult<Spanned<InternedString>> {
@@ -819,6 +839,17 @@ mod tests {
     #[test]
     fn test_if_atom() {
         let mut parser = Parser::new("add 1 if x then y else z");
+        let expr = parser.expr().expect("parse error");
+        let fmt = Format {
+            indent: 0,
+            value: expr,
+        };
+        insta::assert_debug_snapshot!(fmt);
+    }
+
+    #[test]
+    fn test_lambda() {
+        let mut parser = Parser::new("\\x y -> x + y");
         let expr = parser.expr().expect("parse error");
         let fmt = Format {
             indent: 0,

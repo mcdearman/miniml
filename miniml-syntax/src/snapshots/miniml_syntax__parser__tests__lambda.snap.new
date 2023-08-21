@@ -1,0 +1,23 @@
+---
+source: miniml-syntax/src/parser.rs
+assertion_line: 858
+expression: fmt
+---
+Expr @ 0..4
+  Lambda @ 0..4
+    Params
+
+    Ident @ 1..2
+      "x"
+    Ident @ 3..4
+      "y"
+    Body
+    Expr @ 8..13
+      Infix @ 8..13
+        Expr @ 8..9
+          Ident @ 8..9
+            "x"
+        Add @ 10..11
+        Expr @ 12..13
+          Ident @ 12..13
+            "y"
