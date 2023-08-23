@@ -8,7 +8,7 @@ use miniml_util::{
     intern::InternedString,
     span::{Span, Spannable},
 };
-use std::{cell::RefCell, rc::Rc};
+use std::{cell::RefCell, rc::Rc, ops::Deref};
 
 pub fn eval(env: Rc<RefCell<Env>>, root: &Root) -> EvalResult<Value> {
     for decl in root.clone().decls {
@@ -37,9 +37,17 @@ pub fn eval_decl(env: Rc<RefCell<Env>>, decl: &Decl) -> EvalResult<Value> {
             env.borrow_mut().define(name.value, value);
             Ok(Value::Unit)
         }
-        Decl::Let { name, expr } => {
+        Decl::Let { name, expr, rec } => {
             let value = eval_expr(env.clone(), &expr.value)?;
             env.borrow_mut().define(name.value, value);
+            env.borrow_mut().define(
+                InternedString::from("main"),
+                Value::Lambda {
+                    env: env.clone(),
+                    params: vec![],
+                    body: Box::new(Expr::Unit),
+                },
+            );
             Ok(Value::Unit)
         }
         Decl::Fn { name, params, body } => {
@@ -192,7 +200,12 @@ pub fn eval_expr(env: Rc<RefCell<Env>>, expr: &Expr) -> EvalResult<Value> {
                 eval_expr(env.clone(), &rhs.value)
             }
         },
-        Expr::Let { name, expr, body } => {
+        Expr::Let {
+            name,
+            expr,
+            body,
+            rec,
+        } => {
             let value = eval_expr(env.clone(), &expr.value)?;
             let let_env = Env::with_parent(env.clone());
             let_env.borrow_mut().define(name.value, value);

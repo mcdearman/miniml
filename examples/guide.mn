@@ -1,6 +1,6 @@
 -- MiniML is a scripting language but there are no top level expressions.
 -- Every MiniML script must have a main function that serves as the entry point.
-fn main = 
+let main = 
   -- You can use `;` to chain expressions together.
   -- You can think of this as a binary op that always 
   -- discards the left hand side.
@@ -44,10 +44,10 @@ const true = :true
 const false = :false
 
 -- global function definition
-fn add x y = x + y
+let add x y = x + y
 
 -- recursion
-fn gcd a b =
+let gcd a b =
   if b = 0 then a 
   else gcd b (a % b)
 

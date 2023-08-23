@@ -161,13 +161,44 @@ impl<'src> Parser<'src> {
         let start = self.peek().span;
         self.eat(TokenKind::Let)?;
         let name = self.ident()?;
+        let mut params = vec![];
+        while self.at(TokenKind::Ident) {
+            params.push(self.ident()?);
+        }
         self.eat(TokenKind::Eq)?;
         let expr = self.expr()?;
-        Ok(Decl::Let {
-            name,
-            expr: Box::new(expr),
+
+        match &expr.value {
+            lam @ Expr::Lambda { params, body } => Ok(Decl::Let {
+                name,
+                expr: Box::new(lam.spanned(start.extend(self.peek().span))),
+                rec: true,
+            }
+            .spanned(start.extend(self.peek().span))),
+            _ => {
+                if params.is_empty() {
+                    Ok(Decl::Let {
+                        name,
+                        expr: Box::new(expr),
+                        rec: false,
+                    }
+                    .spanned(start.extend(self.peek().span)))
+                } else {
+                    Ok(Decl::Let {
+                        name,
+                        expr: Box::new(
+                            Expr::Lambda {
+                                params,
+                                body: Box::new(expr),
+                            }
+                            .spanned(start.extend(self.peek().span)),
+                        ),
+                        rec: true,
+                    }
+                    .spanned(start.extend(self.peek().span)))
+                }
+            }
         }
-        .spanned(start.extend(self.peek().span)))
     }
 
     // <fn> ::= <ident> (<ws>+ <ident>)* <ws>+ "=" <ws>+ <expr>
@@ -595,6 +626,7 @@ impl<'src> Parser<'src> {
             name,
             expr: Box::new(expr),
             body: Box::new(body),
+            rec: false,
         }
         .spanned(start.extend(self.peek().span)))
     }

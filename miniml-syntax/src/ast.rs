@@ -37,6 +37,7 @@ pub enum Decl {
     Let {
         name: Spanned<InternedString>,
         expr: Box<Spanned<Expr>>,
+        rec: bool,
     },
     Fn {
         name: Spanned<InternedString>,
@@ -49,7 +50,7 @@ impl Display for Decl {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Decl::Const { name, expr } => write!(f, "const {} = {}", name.value, expr.value),
-            Decl::Let { name, expr } => write!(f, "let {} = {}", name.value, expr.value),
+            Decl::Let { name, expr, rec } => write!(f, "let {} = {}", name.value, expr.value),
             Decl::Fn { name, params, body } => {
                 write!(
                     f,
@@ -80,6 +81,7 @@ pub enum Expr {
         name: Spanned<InternedString>,
         expr: Box<Spanned<Self>>,
         body: Box<Spanned<Self>>,
+        rec: bool,
     },
     Apply {
         fun: Box<Spanned<Self>>,
@@ -106,7 +108,12 @@ impl Display for Expr {
             Expr::Lit(l) => write!(f, "{}", l.value),
             Expr::Prefix { op, expr } => write!(f, "{}{}", op.value, expr.value),
             Expr::Infix { op, lhs, rhs } => write!(f, "{} {} {}", lhs.value, op.value, rhs.value),
-            Expr::Let { name, expr, body } => {
+            Expr::Let {
+                name,
+                expr,
+                body,
+                rec,
+            } => {
                 write!(f, "let {} = {} in {}", name.value, expr.value, body.value)
             }
             Expr::Apply { fun, args } => {
@@ -330,7 +337,7 @@ impl Debug for Format<Spanned<Decl>> {
                     expr
                 )
             }
-            Decl::Let { name, expr } => {
+            Decl::Let { name, expr, rec } => {
                 let expr = Format {
                     indent: self.indent + 2,
                     value: *expr,
@@ -465,7 +472,12 @@ impl Debug for Format<Spanned<Expr>> {
                     rhs
                 )
             }
-            Expr::Let { name, expr, body } => {
+            Expr::Let {
+                name,
+                expr,
+                body,
+                rec,
+            } => {
                 let expr = Format {
                     indent: self.indent + 4,
                     value: *expr,
