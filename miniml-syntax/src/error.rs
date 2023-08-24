@@ -1,4 +1,4 @@
-use crate::lex::{Token, TokenKind};
+use crate::token::{Token, TokenKind};
 use miniml_util::{intern::InternedString, span::Spanned};
 use std::fmt::Display;
 

@@ -1,4 +1,4 @@
-use crate::{error::SyntaxError, lex::TokenKind};
+use crate::{error::SyntaxError, token::TokenKind};
 use cstree::Syntax;
 use itertools::join;
 use miniml_util::{

@@ -1,16 +1,6 @@
 use logos::Logos;
-use miniml_util::{
-    intern::InternedString,
-    span::{Span, Spannable, Spanned},
-};
-use num_complex::Complex;
-use num_rational::Rational64;
-use std::{
-    fmt::{Debug, Display},
-    iter::Peekable,
-    ops::RangeInclusive,
-    vec::IntoIter,
-};
+use miniml_util::span::Spanned;
+use std::fmt::{Debug, Display};
 
 #[derive(Logos, Debug, Clone, PartialEq)]
 pub enum TokenKind {
@@ -22,12 +12,12 @@ pub enum TokenKind {
     #[regex(r##"([A-Za-z]|_)([A-Za-z]|_|\d)*"##)]
     Ident,
     #[regex(
-        r#"-?((0b[0-1]+)|(0o[0-7]+)|(0x[0-9a-fA-F]+)|([1-9]\d*|0))"#,
+        r#"((0b[0-1]+)|(0o[0-7]+)|(0x[0-9a-fA-F]+)|([1-9]\d*|0))"#,
         priority = 2
     )]
     Int,
     #[regex(
-        r#"-?((0b[0-1]+)|(0o[0-7]+)|(0x[0-9a-fA-F]+)|([1-9]\d*|0))/-?((0b[0-1]+)|(0o[0-7]+)|(0x[0-9a-fA-F]+)|([1-9]\d*|0))"#,
+        r#"((0b[0-1]+)|(0o[0-7]+)|(0x[0-9a-fA-F]+)|([1-9]\d*|0))/-?((0b[0-1]+)|(0o[0-7]+)|(0x[0-9a-fA-F]+)|([1-9]\d*|0))"#,
         priority = 1
     )]
     Rational,
@@ -202,3 +192,14 @@ impl Display for TokenKind {
 }
 
 pub type Token = Spanned<TokenKind>;
+
+mod tests {
+    use logos::Logos;
+
+    #[test]
+    fn test_lex_sub() {
+        let src = "1-1";
+        let tokens = super::TokenKind::lexer(src).spanned().collect::<Vec<_>>();
+        insta::assert_debug_snapshot!(tokens);
+    }
+}

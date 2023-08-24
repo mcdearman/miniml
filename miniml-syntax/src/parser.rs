@@ -3,7 +3,7 @@ use std::vec;
 use crate::{
     ast::{Decl, Expr, InfixOp, Lit, PrefixOp, Root},
     error::{ParseResult, ParserError, SyntaxError},
-    lex::{Token, TokenKind},
+    token::{Token, TokenKind},
 };
 use logos::{Lexer, Logos};
 use miniml_util::{
