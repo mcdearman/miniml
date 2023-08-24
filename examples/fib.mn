@@ -10,8 +10,13 @@ let fib_memo n m =
     r
 
 let memo f =
-  let m = Map.empty in
-  \n -> f n m
+  let table = Map.empty in
+  let g x =
+    if Map.contains x table then table[x]
+    else let r = f (g x) in
+      Map.insert x r table;
+      r
+  in g
 
 fib_memo 10 {0:0, 1:1}
 
