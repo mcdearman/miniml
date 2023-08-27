@@ -20,4 +20,4 @@ let memo f =
 
 fib_memo 10 {0:0, 1:1}
 
-fn fib n = if n <= 1 then n else fib (n - 1) + fib (n - 2)
+let fib n = if n <= 1 then n else fib (n - 1) + fib (n - 2)
