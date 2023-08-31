@@ -55,3 +55,15 @@ let gcd a b =
 let gcd = \a b ->
   if b = 0 then a 
   else gcd b (a % b)
+
+-- You can define functions by pattern matching
+let fib 0 = 0
+let fib 1 = 1
+let fib n = fib (n - 1) + fib (n - 2)
+
+-- or by using the `match` expression
+let fib n = match n with
+  | 0 -> 0
+  | 1 -> 1
+  | n -> fib (n - 1) + fib (n - 2)
+

@@ -37,6 +37,10 @@
 <if> ::= "if" <ws>+ <expr> <ws>+ "then" <ws>+ <expr> 
     ("elif" <ws>+ <expr> "then" <expr>)* <ws>+ "else" <ws>+ <expr>
 
+<pat> ::= <ident> | <lit> | <wildcard>
+
+<match> ::= <pat> (<ws>* "|" <ws>* <match>)?
+
 <lit> ::= <int> 
 | <rational>
 | <real> 
