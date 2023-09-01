@@ -67,3 +67,11 @@ let fib n = match n with
   | 1 -> 1
   | n -> fib (n - 1) + fib (n - 2)
 
+-- partial application with wildcard
+let add1 = add 1 _
+
+-- wildcard can be in any position
+let add1 = add _ 1
+
+-- partial application is really a lambda in disguise
+let add1 = \x -> add x 1
