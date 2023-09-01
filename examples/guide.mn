@@ -29,7 +29,7 @@ let main =
   -- lambda application
   (\a b -> a + b) 1 2;
 
-  -- symbols like Lisp
+  -- Symbols are identifiers whose value is their name.
   :foo;
 
   -- main function must return unit or int
