@@ -29,6 +29,30 @@ let main =
   -- lambda application
   (\a b -> a + b) 1 2;
 
+  -- lists
+  #[1 2 3];
+
+  -- tuples
+  (1 2 3);
+
+  -- maps
+  { x = 1, y = 2 };
+
+  -- struct literals
+  Point { x = 1, y = 2 };
+
+  -- struct access
+  Point { x = 1, y = 2 }.x;
+
+  -- sets
+  { 1 2 3 }; 
+
+  -- vectors
+  [1 2 3];
+
+  -- multidimensional vectors
+  [1 2, 3 4];
+
   -- Symbols are identifiers whose value is their name.
   :foo;
 
@@ -75,3 +99,22 @@ let add1 = add _ 1
 
 -- partial application is really a lambda in disguise
 let add1 = \x -> add x 1
+
+-- list pattern
+let [a b c] = [1 2 3]
+
+-- cons pattern
+let [x:xs] = [1 2 3]
+
+-- list cons pattern
+let [a x:xs] = [1 2 3]
+
+-- tuple pattern
+let (a b) = (1 2)
+
+-- struct pattern
+let Point { x, y } = Point { x = 1, y = 2 }
+
+-- map pattern
+let { x, y } = { x = 1, y = 2 }
+
