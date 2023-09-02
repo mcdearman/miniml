@@ -10,6 +10,7 @@ use num_rational::Rational64;
 use std::{
     fmt::{Debug, Display},
     num::ParseIntError,
+    ops::Add,
     str::FromStr,
 };
 
