@@ -129,10 +129,10 @@ impl<'src> Parser<'src> {
             }));
             (
                 Root {
-                    decls: vec![Decl::Fn {
+                    decls: vec![Decl::Let {
                         name: InternedString::from("main").spanned(Span::new(0, 0)),
-                        params: vec![],
-                        body,
+                        expr: body,
+                        rec: false,
                     }
                     .spanned(start.extend(end))],
                 }
@@ -213,10 +213,16 @@ impl<'src> Parser<'src> {
         }
         self.eat(TokenKind::Eq)?;
         let body = self.expr()?;
-        Ok(Decl::Fn {
+        Ok(Decl::Let {
             name,
-            params,
-            body: Box::new(body),
+            expr: Box::new(
+                Expr::Lambda {
+                    params,
+                    body: Box::new(body),
+                }
+                .spanned(start.extend(self.peek().span)),
+            ),
+            rec: true,
         }
         .spanned(start.extend(self.peek().span)))
     }
@@ -745,160 +751,104 @@ impl<'src> Parser<'src> {
 }
 
 mod tests {
-    use crate::{ast::Format, parser::Parser};
+    use crate::parser::Parser;
 
     #[test]
     fn test_int() {
         let mut parser = Parser::new("123");
         let expr = parser.expr().expect("parse error");
-        let fmt = Format {
-            indent: 0,
-            value: expr,
-        };
-        insta::assert_debug_snapshot!(fmt);
+        insta::assert_debug_snapshot!(expr);
     }
 
     #[test]
     fn test_binary() {
         let mut parser = Parser::new("0b10101");
         let expr = parser.expr().expect("parse error");
-        let fmt = Format {
-            indent: 0,
-            value: expr,
-        };
-        insta::assert_debug_snapshot!(fmt);
+        insta::assert_debug_snapshot!(expr);
     }
 
     #[test]
     fn test_rational() {
         let mut parser = Parser::new("123/456");
         let expr = parser.expr().expect("parse error");
-        let fmt = Format {
-            indent: 0,
-            value: expr,
-        };
-        insta::assert_debug_snapshot!(fmt);
+        insta::assert_debug_snapshot!(expr);
     }
 
     #[test]
     fn test_real() {
         let mut parser = Parser::new("123.456");
         let expr = parser.expr().expect("parse error");
-        let fmt = Format {
-            indent: 0,
-            value: expr,
-        };
-        insta::assert_debug_snapshot!(fmt);
+        insta::assert_debug_snapshot!(expr);
     }
 
     #[test]
     fn test_complex() {
         let mut parser = Parser::new("123.456i");
         let expr = parser.expr().expect("parse error");
-        let fmt = Format {
-            indent: 0,
-            value: expr,
-        };
-        insta::assert_debug_snapshot!(fmt);
+        insta::assert_debug_snapshot!(expr);
     }
 
     #[test]
     fn test_unit() {
         let mut parser = Parser::new("()");
         let expr = parser.expr().expect("parse error");
-        let fmt = Format {
-            indent: 0,
-            value: expr,
-        };
-        insta::assert_debug_snapshot!(fmt);
+        insta::assert_debug_snapshot!(expr);
     }
 
     #[test]
     fn test_neg() {
         let mut parser = Parser::new("-x");
         let expr = parser.expr().expect("parse error");
-        let fmt = Format {
-            indent: 0,
-            value: expr,
-        };
-        insta::assert_debug_snapshot!(fmt);
+        insta::assert_debug_snapshot!(expr);
     }
 
     #[test]
     fn test_add() {
         let mut parser = Parser::new("1 + 2");
         let expr = parser.expr().expect("parse error");
-        let fmt = Format {
-            indent: 0,
-            value: expr,
-        };
-        insta::assert_debug_snapshot!(fmt);
+        insta::assert_debug_snapshot!(expr);
     }
 
     #[test]
     fn test_infix() {
         let mut parser = Parser::new("1 + 2 * 3 / 4^1/2 - 2.5");
         let expr = parser.expr().expect("parse error");
-        let fmt = Format {
-            indent: 0,
-            value: expr,
-        };
-        insta::assert_debug_snapshot!(fmt);
+        insta::assert_debug_snapshot!(expr);
     }
 
     #[test]
     fn test_if() {
         let mut parser = Parser::new("if x then y else z");
         let expr = parser.expr().expect("parse error");
-        let fmt = Format {
-            indent: 0,
-            value: expr,
-        };
-        insta::assert_debug_snapshot!(fmt);
+        insta::assert_debug_snapshot!(expr);
     }
 
     #[test]
     fn test_elif() {
         let mut parser = Parser::new("if x then y elif a then b else z");
         let expr = parser.expr().expect("parse error");
-        let fmt = Format {
-            indent: 0,
-            value: expr,
-        };
-        insta::assert_debug_snapshot!(fmt);
+        insta::assert_debug_snapshot!(expr);
     }
 
     #[test]
     fn test_if_atom() {
         let mut parser = Parser::new("add 1 if x then y else z");
         let expr = parser.expr().expect("parse error");
-        let fmt = Format {
-            indent: 0,
-            value: expr,
-        };
-        insta::assert_debug_snapshot!(fmt);
+        insta::assert_debug_snapshot!(expr);
     }
 
     #[test]
     fn test_lambda() {
         let mut parser = Parser::new("\\x y -> x + y");
         let expr = parser.expr().expect("parse error");
-        let fmt = Format {
-            indent: 0,
-            value: expr,
-        };
-        insta::assert_debug_snapshot!(fmt);
+        insta::assert_debug_snapshot!(expr);
     }
 
     #[test]
     fn test_let_expr() {
         let mut parser = Parser::new("let x = 1 in x + 1");
         let expr = parser.expr().expect("parse error");
-        let fmt = Format {
-            indent: 0,
-            value: expr,
-        };
-        insta::assert_debug_snapshot!(fmt);
+        insta::assert_debug_snapshot!(expr);
     }
 
     #[test]
@@ -908,11 +858,7 @@ mod tests {
         if !errors.is_empty() {
             panic!("parse error: {:?}", errors);
         }
-        let fmt = Format {
-            indent: 0,
-            value: root,
-        };
-        insta::assert_debug_snapshot!(fmt);
+        insta::assert_debug_snapshot!(root);
     }
 
     #[test]
@@ -922,11 +868,7 @@ mod tests {
         if !errors.is_empty() {
             panic!("parse error: {:?}", errors);
         }
-        let fmt = Format {
-            indent: 0,
-            value: root,
-        };
-        insta::assert_debug_snapshot!(fmt);
+        insta::assert_debug_snapshot!(root);
     }
 
     #[test]
@@ -936,10 +878,6 @@ mod tests {
         if !errors.is_empty() {
             panic!("parse error: {:?}", errors);
         }
-        let fmt = Format {
-            indent: 0,
-            value: root,
-        };
-        insta::assert_debug_snapshot!(fmt);
+        insta::assert_debug_snapshot!(root);
     }
 }

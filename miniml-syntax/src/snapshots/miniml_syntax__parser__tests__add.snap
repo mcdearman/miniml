@@ -1,15 +1,57 @@
 ---
 source: miniml-syntax/src/parser.rs
-expression: fmt
+expression: expr
 ---
-Expr @ 0..5
-  Infix @ 0..5
-    Expr @ 0..1
-      Lit @ 0..1
-        Int @ 0..1
-          1
-    Add @ 2..3
-    Expr @ 4..5
-      Lit @ 4..5
-        Int @ 4..5
-          2
+Spanned {
+    value: Infix {
+        op: Spanned {
+            value: Add,
+            span: Span {
+                start: 2,
+                end: 3,
+            },
+        },
+        lhs: Spanned {
+            value: Lit(
+                Spanned {
+                    value: Int(
+                        Int(
+                            1,
+                        ),
+                    ),
+                    span: Span {
+                        start: 0,
+                        end: 1,
+                    },
+                },
+            ),
+            span: Span {
+                start: 0,
+                end: 1,
+            },
+        },
+        rhs: Spanned {
+            value: Lit(
+                Spanned {
+                    value: Int(
+                        Int(
+                            2,
+                        ),
+                    ),
+                    span: Span {
+                        start: 4,
+                        end: 5,
+                    },
+                },
+            ),
+            span: Span {
+                start: 4,
+                end: 5,
+            },
+        },
+    },
+    span: Span {
+        start: 0,
+        end: 5,
+    },
+}

@@ -1,7 +1,7 @@
 use std::io::{self, Write};
 
 use miniml_eval::{env::Env, eval::eval};
-use miniml_syntax::{ast::Format, parser::Parser};
+use miniml_syntax::parser::Parser;
 
 pub fn repl() {
     println!("Welcome to the MiniML REPL!");

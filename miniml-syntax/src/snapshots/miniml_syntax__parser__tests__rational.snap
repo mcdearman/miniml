@@ -1,8 +1,24 @@
 ---
 source: miniml-syntax/src/parser.rs
-expression: fmt
+expression: expr
 ---
-Expr @ 0..7
-  Lit @ 0..7
-    Rational @ 0..7
-      41/152
+Spanned {
+    value: Lit(
+        Spanned {
+            value: Rational(
+                Ratio {
+                    numer: 41,
+                    denom: 152,
+                },
+            ),
+            span: Span {
+                start: 0,
+                end: 7,
+            },
+        },
+    ),
+    span: Span {
+        start: 0,
+        end: 7,
+    },
+}

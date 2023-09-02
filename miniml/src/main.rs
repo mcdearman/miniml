@@ -1,7 +1,6 @@
 use clap::Parser;
 use miniml_eval::env::Env;
 use miniml_repl::tree_walk::repl;
-use miniml_syntax::ast::Format;
 
 #[derive(Parser)]
 #[command(author, version, about, long_about = None)]
@@ -25,7 +24,7 @@ fn main() {
                 if !errors.is_empty() {
                     println!("errors: {:?}", errors);
                 } else {
-                    println!("root: {:?}", Format::from(root));
+                    println!("root: {:?}", root);
                 }
             }
         }

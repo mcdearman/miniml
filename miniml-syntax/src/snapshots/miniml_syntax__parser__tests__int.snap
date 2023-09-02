@@ -1,8 +1,23 @@
 ---
 source: miniml-syntax/src/parser.rs
-expression: fmt
+expression: expr
 ---
-Expr @ 0..3
-  Lit @ 0..3
-    Int @ 0..3
-      123
+Spanned {
+    value: Lit(
+        Spanned {
+            value: Int(
+                Int(
+                    123,
+                ),
+            ),
+            span: Span {
+                start: 0,
+                end: 3,
+            },
+        },
+    ),
+    span: Span {
+        start: 0,
+        end: 3,
+    },
+}

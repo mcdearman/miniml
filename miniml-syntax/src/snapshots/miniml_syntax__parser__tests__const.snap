@@ -1,13 +1,48 @@
 ---
 source: miniml-syntax/src/parser.rs
-expression: fmt
+expression: root
 ---
-Root @ 0..11
-  Decl @ 0..11
-    Const @ 6..7
-      Ident @ 6..7
-        "x"
-      Expr @ 10..11
-        Lit @ 10..11
-          Int @ 10..11
-            1
+Spanned {
+    value: Root {
+        decls: [
+            Spanned {
+                value: Const {
+                    name: Spanned {
+                        value: InternedString(x),
+                        span: Span {
+                            start: 6,
+                            end: 7,
+                        },
+                    },
+                    expr: Spanned {
+                        value: Lit(
+                            Spanned {
+                                value: Int(
+                                    Int(
+                                        1,
+                                    ),
+                                ),
+                                span: Span {
+                                    start: 10,
+                                    end: 11,
+                                },
+                            },
+                        ),
+                        span: Span {
+                            start: 10,
+                            end: 11,
+                        },
+                    },
+                },
+                span: Span {
+                    start: 0,
+                    end: 11,
+                },
+            },
+        ],
+    },
+    span: Span {
+        start: 0,
+        end: 11,
+    },
+}

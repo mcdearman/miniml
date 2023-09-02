@@ -1,10 +1,34 @@
 ---
 source: miniml-syntax/src/parser.rs
-expression: fmt
+expression: expr
 ---
-Expr @ 0..2
-  Prefix @ 0..2
-    Neg @ 0..1
-    Expr @ 1..2
-      Ident @ 1..2
-        "x"
+Spanned {
+    value: Prefix {
+        op: Spanned {
+            value: Neg,
+            span: Span {
+                start: 0,
+                end: 1,
+            },
+        },
+        expr: Spanned {
+            value: Ident(
+                Spanned {
+                    value: InternedString(x),
+                    span: Span {
+                        start: 1,
+                        end: 2,
+                    },
+                },
+            ),
+            span: Span {
+                start: 1,
+                end: 2,
+            },
+        },
+    },
+    span: Span {
+        start: 0,
+        end: 2,
+    },
+}

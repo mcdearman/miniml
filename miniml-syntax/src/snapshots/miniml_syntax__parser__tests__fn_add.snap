@@ -1,22 +1,90 @@
 ---
 source: miniml-syntax/src/parser.rs
-expression: fmt
+expression: root
 ---
-Root @ 0..18
-  Decl @ 0..18
-    Fn @ 0..18
-      Ident @ 3..6
-        "add"
-      Ident @ 7..8
-        "x"
-      Ident @ 9..10
-        "y"
-      Expr @ 13..18
-        Infix @ 13..18
-          Expr @ 13..14
-            Ident @ 13..14
-              "x"
-          Add @ 15..16
-          Expr @ 17..18
-            Ident @ 17..18
-              "y"
+Spanned {
+    value: Root {
+        decls: [
+            Spanned {
+                value: Fn {
+                    name: Spanned {
+                        value: InternedString(add),
+                        span: Span {
+                            start: 3,
+                            end: 6,
+                        },
+                    },
+                    params: [
+                        Spanned {
+                            value: InternedString(x),
+                            span: Span {
+                                start: 7,
+                                end: 8,
+                            },
+                        },
+                        Spanned {
+                            value: InternedString(y),
+                            span: Span {
+                                start: 9,
+                                end: 10,
+                            },
+                        },
+                    ],
+                    body: Spanned {
+                        value: Infix {
+                            op: Spanned {
+                                value: Add,
+                                span: Span {
+                                    start: 15,
+                                    end: 16,
+                                },
+                            },
+                            lhs: Spanned {
+                                value: Ident(
+                                    Spanned {
+                                        value: InternedString(x),
+                                        span: Span {
+                                            start: 13,
+                                            end: 14,
+                                        },
+                                    },
+                                ),
+                                span: Span {
+                                    start: 13,
+                                    end: 14,
+                                },
+                            },
+                            rhs: Spanned {
+                                value: Ident(
+                                    Spanned {
+                                        value: InternedString(y),
+                                        span: Span {
+                                            start: 17,
+                                            end: 18,
+                                        },
+                                    },
+                                ),
+                                span: Span {
+                                    start: 17,
+                                    end: 18,
+                                },
+                            },
+                        },
+                        span: Span {
+                            start: 13,
+                            end: 18,
+                        },
+                    },
+                },
+                span: Span {
+                    start: 0,
+                    end: 18,
+                },
+            },
+        ],
+    },
+    span: Span {
+        start: 0,
+        end: 18,
+    },
+}

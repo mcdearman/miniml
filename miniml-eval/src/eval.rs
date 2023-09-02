@@ -50,27 +50,27 @@ pub fn eval_decl(env: Rc<RefCell<Env>>, decl: &Decl) -> EvalResult<Value> {
             );
             Ok(Value::Unit)
         }
-        Decl::Fn { name, params, body } => {
-            env.borrow_mut().define(
-                name.value,
-                Value::Lambda {
-                    env: env.clone(),
-                    params: params.into_iter().map(|p| p.value).collect(),
-                    body: Box::new(body.value),
-                },
-            );
-            if &*name.value != "main" {
-                env.borrow_mut().define(
-                    InternedString::from("main"),
-                    Value::Lambda {
-                        env: env.clone(),
-                        params: vec![],
-                        body: Box::new(Expr::Unit),
-                    },
-                );
-            }
-            Ok(Value::Unit)
-        }
+        // Decl::Fn { name, params, body } => {
+        //     env.borrow_mut().define(
+        //         name.value,
+        //         Value::Lambda {
+        //             env: env.clone(),
+        //             params: params.into_iter().map(|p| p.value).collect(),
+        //             body: Box::new(body.value),
+        //         },
+        //     );
+        //     if &*name.value != "main" {
+        //         env.borrow_mut().define(
+        //             InternedString::from("main"),
+        //             Value::Lambda {
+        //                 env: env.clone(),
+        //                 params: vec![],
+        //                 body: Box::new(Expr::Unit),
+        //             },
+        //         );
+        //     }
+        //     Ok(Value::Unit)
+        // }
     }
 }
 

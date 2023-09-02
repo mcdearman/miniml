@@ -1,29 +1,102 @@
 ---
 source: miniml-syntax/src/parser.rs
-expression: fmt
+expression: expr
 ---
-Expr @ 0..8
-  Apply @ 0..8
-    Expr @ 0..3
-      Ident @ 0..3
-        "add"
-    Expr @ 4..5
-      Expr @ 4..5
-        Lit @ 4..5
-          Int @ 4..5
-            1
-    Expr @ 6..24
-      Expr @ 6..24
-        If @ 6..24
-          Cond
-          Expr @ 9..10
-            Ident @ 9..10
-              "x"
-          Then
-          Expr @ 16..17
-            Ident @ 16..17
-              "y"
-          Else
-          Expr @ 23..24
-            Ident @ 23..24
-              "z"
+Spanned {
+    value: Apply {
+        fun: Spanned {
+            value: Ident(
+                Spanned {
+                    value: InternedString(add),
+                    span: Span {
+                        start: 0,
+                        end: 3,
+                    },
+                },
+            ),
+            span: Span {
+                start: 0,
+                end: 3,
+            },
+        },
+        args: [
+            Spanned {
+                value: Lit(
+                    Spanned {
+                        value: Int(
+                            Int(
+                                1,
+                            ),
+                        ),
+                        span: Span {
+                            start: 4,
+                            end: 5,
+                        },
+                    },
+                ),
+                span: Span {
+                    start: 4,
+                    end: 5,
+                },
+            },
+            Spanned {
+                value: If {
+                    cond: Spanned {
+                        value: Ident(
+                            Spanned {
+                                value: InternedString(x),
+                                span: Span {
+                                    start: 9,
+                                    end: 10,
+                                },
+                            },
+                        ),
+                        span: Span {
+                            start: 9,
+                            end: 10,
+                        },
+                    },
+                    then: Spanned {
+                        value: Ident(
+                            Spanned {
+                                value: InternedString(y),
+                                span: Span {
+                                    start: 16,
+                                    end: 17,
+                                },
+                            },
+                        ),
+                        span: Span {
+                            start: 16,
+                            end: 17,
+                        },
+                    },
+                    elifs: [],
+                    else_: Spanned {
+                        value: Ident(
+                            Spanned {
+                                value: InternedString(z),
+                                span: Span {
+                                    start: 23,
+                                    end: 24,
+                                },
+                            },
+                        ),
+                        span: Span {
+                            start: 23,
+                            end: 24,
+                        },
+                    },
+                },
+                span: Span {
+                    start: 6,
+                    end: 24,
+                },
+            },
+        ],
+    },
+    span: Span {
+        start: 0,
+        end: 8,
+    },
+}

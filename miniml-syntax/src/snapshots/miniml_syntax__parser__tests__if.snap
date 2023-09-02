@@ -1,18 +1,58 @@
 ---
 source: miniml-syntax/src/parser.rs
-expression: fmt
+expression: expr
 ---
-Expr @ 0..18
-  If @ 0..18
-    Cond
-    Expr @ 3..4
-      Ident @ 3..4
-        "x"
-    Then
-    Expr @ 10..11
-      Ident @ 10..11
-        "y"
-    Else
-    Expr @ 17..18
-      Ident @ 17..18
-        "z"
+Spanned {
+    value: If {
+        cond: Spanned {
+            value: Ident(
+                Spanned {
+                    value: InternedString(x),
+                    span: Span {
+                        start: 3,
+                        end: 4,
+                    },
+                },
+            ),
+            span: Span {
+                start: 3,
+                end: 4,
+            },
+        },
+        then: Spanned {
+            value: Ident(
+                Spanned {
+                    value: InternedString(y),
+                    span: Span {
+                        start: 10,
+                        end: 11,
+                    },
+                },
+            ),
+            span: Span {
+                start: 10,
+                end: 11,
+            },
+        },
+        elifs: [],
+        else_: Spanned {
+            value: Ident(
+                Spanned {
+                    value: InternedString(z),
+                    span: Span {
+                        start: 17,
+                        end: 18,
+                    },
+                },
+            ),
+            span: Span {
+                start: 17,
+                end: 18,
+            },
+        },
+    },
+    span: Span {
+        start: 0,
+        end: 18,
+    },
+}

@@ -1,6 +1,11 @@
 ---
 source: miniml-syntax/src/parser.rs
-expression: fmt
+expression: expr
 ---
-Expr @ 0..2
-  Unit
+Spanned {
+    value: Unit,
+    span: Span {
+        start: 0,
+        end: 2,
+    },
+}

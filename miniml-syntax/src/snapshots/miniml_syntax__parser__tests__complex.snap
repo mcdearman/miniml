@@ -1,8 +1,24 @@
 ---
 source: miniml-syntax/src/parser.rs
-expression: fmt
+expression: expr
 ---
-Expr @ 0..8
-  Lit @ 0..8
-    Complex @ 0..8
-      0+123.456i
+Spanned {
+    value: Lit(
+        Spanned {
+            value: Complex(
+                Complex {
+                    re: 0.0,
+                    im: 123.456,
+                },
+            ),
+            span: Span {
+                start: 0,
+                end: 8,
+            },
+        },
+    ),
+    span: Span {
+        start: 0,
+        end: 8,
+    },
+}
