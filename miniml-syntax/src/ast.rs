@@ -99,7 +99,7 @@ impl Display for Expr {
                 name,
                 expr,
                 body,
-                rec,
+                rec: _,
             } => {
                 write!(f, "let {} = {} in {}", name.value, expr.value, body.value)
             }
@@ -116,11 +116,11 @@ impl Display for Expr {
                 elifs,
                 else_,
             } => {
-                write!(
-                    f,
-                    "if {} then {} else {}",
-                    cond.value, then.value, else_.value
-                )
+                write!(f, "if {} then {} ", cond.value, then.value)?;
+                for (c, e) in elifs {
+                    write!(f, "elif {} then {} ", c.value, e.value)?;
+                }
+                write!(f, "else {}", else_.value)
             }
             Expr::Lambda { params, body } => write!(
                 f,
@@ -132,6 +132,14 @@ impl Display for Expr {
             Expr::Error => write!(f, "error"),
         }
     }
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum Pattern {
+    Ident(Spanned<InternedString>),
+    Lit(Spanned<Lit>),
+    Wildcard,
+    Unit,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
