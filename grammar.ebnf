@@ -57,7 +57,7 @@ list = "[" ws* expr? (ws* "," ws* expr)* ws* "]"
 
 tuple = "(" ws* expr (ws* "," ws* expr)* ws* ")"
 
-map = "{" ws* string ":" ws* expr (ws* "," ws* string ":" ws* expr)* ws* "}"
+map = "{" ws* ident ":" ws* expr (ws* "," ws* string ":" ws* expr)* ws* "}"
 
 # Nonterminals/Tokens
 
