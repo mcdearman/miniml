@@ -32,9 +32,6 @@ let main =
   -- lists
   #[1 2 3];
 
-  -- tuples
-  (1 2 3);
-
   -- maps
   { x = 1, y = 2 };
 
@@ -104,13 +101,10 @@ let add1 = \x -> add x 1
 let [a b c] = [1 2 3]
 
 -- cons pattern
-let [x:xs] = [1 2 3]
+let (x:xs) = [1 2 3]
 
 -- list cons pattern
-let [a x:xs] = [1 2 3]
-
--- tuple pattern
-let (a b) = (1 2)
+let (a x:xs) = [1 2 3]
 
 -- struct pattern
 let Point { x, y } = Point { x = 1, y = 2 }
