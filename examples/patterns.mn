@@ -12,11 +12,11 @@ type Point = { x : i32, y : i32 }
 let Point { x, y } = Point { x: 1, y: 2 }
 
 -- map pattern
-let { x, y } = { x: 1, y: 2 }
+let { x: x, y: x } = { x: 1, y: 2 }
 
 -- cons patterns
-let [car :: cdr] = [1, 2, 3]
-let [x, y :: cdr] = [1, 2, 3]
+let [x::xs] = [1, 2, 3]
+let [x, y :: xs] = [1, 2, 3]
 
 -- match
 let x = Point 1 2
