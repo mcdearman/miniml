@@ -39,9 +39,13 @@ if = "if" ws+ expr ws+ "then" ws+ expr
 
 match = pat (ws* "|" ws* match)?
 
-pat = ident | lit | consPat | wildcard | unit
+pat = ident | lit | listPat | consPat | applyPat | wildcard | unit
 
-consPat = "[" pat ws* (ws* "," ws* pat)* "::" ws* pat ws* "]"
+listPat = "[" pat (ws* "," ws* pat)* ws* "]"
+
+consPat = "[" (pat ws* (ws* "," ws* pat)*)? "::" ws* pat ws* "]"
+
+applyPat = ident ws+ pat
 
 lit = int 
 | rational
