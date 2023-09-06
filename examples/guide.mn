@@ -91,6 +91,9 @@ let fib n = match n with
   | 1 -> 1
   | n -> fib (n - 1) + fib (n - 2)
 
+let map f [] = []
+let map f (x:xs) = f x : map f xs
+
 -- partial application with wildcard
 let add1 = add 1 _
 
