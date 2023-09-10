@@ -5,7 +5,6 @@ use std::{
     fmt::{Debug, Display},
     ops::Deref,
 };
-
 use crate::span::{Span, Spanned};
 
 pub static mut INTERNER: Lazy<ThreadedRodeo> = Lazy::new(|| ThreadedRodeo::default());
