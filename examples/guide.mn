@@ -85,8 +85,13 @@ let fib 0 = 0
 let fib 1 = 1
 let fib n = fib (n - 1) + fib (n - 2)
 
+let fib 0 = 0
+  | fib 1 = 1
+  | fib n = fib (n - 1) + fib (n - 2)
+
 -- or by using the `match` expression
-let fib n = match n with
+let fib n = 
+  match n with
   | 0 -> 0
   | 1 -> 1
   | n -> fib (n - 1) + fib (n - 2)
