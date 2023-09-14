@@ -1,7 +1,3 @@
-
-
-
-
 // use crate::{
 //     ast::{Decl, Expr, InfixOp, Lit, PrefixOp, Root},
 //     error::{ParseResult, ParserError, SyntaxError},
@@ -32,40 +28,40 @@
 //         }
 //     }
 
-    fn fetch_token(&mut self) -> Token {
-        match self.lexer.next().map(|res| (res, self.lexer.span())) {
-            Some((res, s)) => match res {
-                Ok(t) => t.spanned(s.into()),
-                Err(_) => {
-                    self.errors.push(SyntaxError::LexerError.spanned(s.into()));
-                    self.fetch_token()
-                }
-            },
-            None => TokenKind::Eof.spanned(self.lexer.span().into()),
-        }
+fn fetch_token(&mut self) -> Token {
+    match self.lexer.next().map(|res| (res, self.lexer.span())) {
+        Some((res, s)) => match res {
+            Ok(t) => t.spanned(s.into()),
+            Err(_) => {
+                self.errors.push(SyntaxError::LexerError.spanned(s.into()));
+                self.fetch_token()
+            }
+        },
+        None => TokenKind::Eof.spanned(self.lexer.span().into()),
     }
+}
 
-    fn peek(&mut self) -> Token {
-        if let Some(token) = self.peek.clone() {
-            token
-        } else {
-            let token = self.fetch_token();
-            self.peek = Some(token.clone());
-            token
-        }
+fn peek(&mut self) -> Token {
+    if let Some(token) = self.peek.clone() {
+        token
+    } else {
+        let token = self.fetch_token();
+        self.peek = Some(token.clone());
+        token
     }
+}
 
-    fn next(&mut self) -> Token {
-        if let Some(token) = self.peek.take() {
-            token
-        } else {
-            self.fetch_token()
-        }
+fn next(&mut self) -> Token {
+    if let Some(token) = self.peek.take() {
+        token
+    } else {
+        self.fetch_token()
     }
+}
 
-    fn at(&mut self, kind: TokenKind) -> bool {
-        self.peek().value == kind
-    }
+fn at(&mut self, kind: TokenKind) -> bool {
+    self.peek().value == kind
+}
 
 //     fn at_atom(&mut self) -> bool {
 //         match self.peek().value {
@@ -884,4 +880,3 @@
 //         insta::assert_debug_snapshot!(root);
 //     }
 // }
-

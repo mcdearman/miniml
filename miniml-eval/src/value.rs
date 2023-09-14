@@ -60,13 +60,13 @@ impl Display for Value {
 impl PartialEq for Value {
     fn eq(&self, other: &Self) -> bool {
         match (self, other) {
-            (Self::Int(l0), Self::Int(r0)) => l0 == r0,
-            (Self::Bool(l0), Self::Bool(r0)) => l0 == r0,
-            (Self::Real(l0), Self::Real(r0)) => l0 == r0,
-            (Self::String(l0), Self::String(r0)) => l0 == r0,
-            (Self::List(l0), Self::List(r0)) => l0 == r0,
-            (Self::Tuple(l0), Self::Tuple(r0)) => l0 == r0,
-            (Self::Record(l0), Self::Record(r0)) => l0 == r0,
+            (Self::Int(l), Self::Int(r)) => l == r,
+            (Self::Bool(l), Self::Bool(r)) => l == r,
+            (Self::Real(l), Self::Real(r)) => l == r,
+            (Self::String(l), Self::String(r)) => l == r,
+            (Self::List(l), Self::List(r)) => l == r,
+            (Self::Tuple(l), Self::Tuple(r)) => l == r,
+            (Self::Record(l), Self::Record(r)) => l == r,
             (
                 Self::Lambda {
                     env: l_env,
@@ -87,8 +87,8 @@ impl PartialEq for Value {
 impl PartialOrd for Value {
     fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
         match (self, other) {
-            (Self::Int(l0), Self::Int(r0)) => l0.partial_cmp(r0),
-            (Self::Real(l0), Self::Real(r0)) => l0.partial_cmp(r0),
+            (Self::Int(l), Self::Int(r)) => l.partial_cmp(r),
+            (Self::Real(l), Self::Real(r)) => l.partial_cmp(r),
             _ => None,
         }
     }
