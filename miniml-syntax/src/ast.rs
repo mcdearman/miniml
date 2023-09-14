@@ -281,461 +281,461 @@ impl Display for Int {
     }
 }
 
-// #[derive(Clone, PartialEq)]
-// pub struct Format<T> {
-//     pub indent: usize,
-//     pub value: T,
-// }
+#[derive(Clone, PartialEq)]
+pub struct Format<T> {
+    pub indent: usize,
+    pub value: T,
+}
 
-// impl From<Spanned<Root>> for Format<Spanned<Root>> {
-//     fn from(root: Spanned<Root>) -> Self {
-//         Format {
-//             indent: 0,
-//             value: root,
-//         }
-//     }
-// }
+impl From<Spanned<Root>> for Format<Spanned<Root>> {
+    fn from(root: Spanned<Root>) -> Self {
+        Format {
+            indent: 0,
+            value: root,
+        }
+    }
+}
 
-// impl Debug for Format<Spanned<Root>> {
-//     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-//         write!(f, "Root @ {}", self.value.span)?;
-//         for decl in &self.value.value.decls {
-//             let decl = Format {
-//                 indent: self.indent + 2,
-//                 value: decl.clone(),
-//             };
-//             write!(f, "\n{:?}", decl)?;
-//         }
-//         Ok(())
-//     }
-// }
+impl Debug for Format<Spanned<Root>> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "Root @ {}", self.value.span)?;
+        for decl in &self.value.value.decls {
+            let decl = Format {
+                indent: self.indent + 2,
+                value: decl.clone(),
+            };
+            write!(f, "\n{:?}", decl)?;
+        }
+        Ok(())
+    }
+}
 
-// impl Debug for Format<Spanned<Decl>> {
-//     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-//         match self.value.clone().value {
-//             Decl::Const { name, expr } => {
-//                 let expr = Format {
-//                     indent: self.indent + 4,
-//                     value: *expr,
-//                 };
-//                 write!(
-//                     f,
-//                     "{}Decl @ {}\n{}Const @ {}\n{}Ident @ {}\n{}{}\n{:?}",
-//                     " ".repeat(self.indent),
-//                     self.value.span,
-//                     " ".repeat(self.indent + 2),
-//                     name.span,
-//                     " ".repeat(self.indent + 4),
-//                     name.span,
-//                     " ".repeat(self.indent + 6),
-//                     name.value,
-//                     expr
-//                 )
-//             }
-//             Decl::Let { name, expr, rec } => {
-//                 let expr = Format {
-//                     indent: self.indent + 2,
-//                     value: *expr,
-//                 };
-//                 write!(
-//                     f,
-//                     "{}Decl @ {}\n{}Let @ {}\n{}Ident @ {}\n{}{}\n{:?}",
-//                     " ".repeat(self.indent),
-//                     self.value.span,
-//                     " ".repeat(self.indent + 2),
-//                     name.span,
-//                     " ".repeat(self.indent + 4),
-//                     name.span,
-//                     " ".repeat(self.indent + 6),
-//                     name.value,
-//                     expr
-//                 )
-//             }
-//             Decl::Fn { name, params, body } => {
-//                 let params = Format {
-//                     indent: self.indent + 4,
-//                     value: params.clone(),
-//                 };
-//                 let body = Format {
-//                     indent: self.indent + 4,
-//                     value: *body,
-//                 };
-//                 write!(
-//                     f,
-//                     "{}Decl @ {}\n{}Fn @ {}\n{}Ident @ {}\n{}{}{:?}\n{:?}",
-//                     " ".repeat(self.indent),
-//                     self.value.span,
-//                     " ".repeat(self.indent + 2),
-//                     self.value.span,
-//                     " ".repeat(self.indent + 4),
-//                     name.span,
-//                     " ".repeat(self.indent + 6),
-//                     name.value,
-//                     params,
-//                     body
-//                 )
-//             }
-//         }
-//     }
-// }
+impl Debug for Format<Spanned<Decl>> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self.value.clone().value {
+            Decl::Const { name, expr } => {
+                let expr = Format {
+                    indent: self.indent + 4,
+                    value: *expr,
+                };
+                write!(
+                    f,
+                    "{}Decl @ {}\n{}Const @ {}\n{}Ident @ {}\n{}{}\n{:?}",
+                    " ".repeat(self.indent),
+                    self.value.span,
+                    " ".repeat(self.indent + 2),
+                    name.span,
+                    " ".repeat(self.indent + 4),
+                    name.span,
+                    " ".repeat(self.indent + 6),
+                    name.value,
+                    expr
+                )
+            }
+            Decl::Let { name, expr, rec } => {
+                let expr = Format {
+                    indent: self.indent + 2,
+                    value: *expr,
+                };
+                write!(
+                    f,
+                    "{}Decl @ {}\n{}Let @ {}\n{}Ident @ {}\n{}{}\n{:?}",
+                    " ".repeat(self.indent),
+                    self.value.span,
+                    " ".repeat(self.indent + 2),
+                    name.span,
+                    " ".repeat(self.indent + 4),
+                    name.span,
+                    " ".repeat(self.indent + 6),
+                    name.value,
+                    expr
+                )
+            }
+            Decl::Fn { name, params, body } => {
+                let params = Format {
+                    indent: self.indent + 4,
+                    value: params.clone(),
+                };
+                let body = Format {
+                    indent: self.indent + 4,
+                    value: *body,
+                };
+                write!(
+                    f,
+                    "{}Decl @ {}\n{}Fn @ {}\n{}Ident @ {}\n{}{}{:?}\n{:?}",
+                    " ".repeat(self.indent),
+                    self.value.span,
+                    " ".repeat(self.indent + 2),
+                    self.value.span,
+                    " ".repeat(self.indent + 4),
+                    name.span,
+                    " ".repeat(self.indent + 6),
+                    name.value,
+                    params,
+                    body
+                )
+            }
+        }
+    }
+}
 
-// impl Debug for Format<Vec<Spanned<InternedString>>> {
-//     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-//         if !self.value.is_empty() {
-//             write!(f, "\n")?;
-//         }
-//         for (i, param) in self.value.iter().enumerate() {
-//             write!(
-//                 f,
-//                 "{}Ident @ {}\n{}{}",
-//                 " ".repeat(self.indent),
-//                 param.span,
-//                 " ".repeat(self.indent + 2),
-//                 param.value
-//             )?;
-//             if i != self.value.len() - 1 {
-//                 write!(f, "\n")?;
-//             }
-//         }
-//         Ok(())
-//     }
-// }
+impl Debug for Format<Vec<Spanned<InternedString>>> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        if !self.value.is_empty() {
+            write!(f, "\n")?;
+        }
+        for (i, param) in self.value.iter().enumerate() {
+            write!(
+                f,
+                "{}Ident @ {}\n{}{}",
+                " ".repeat(self.indent),
+                param.span,
+                " ".repeat(self.indent + 2),
+                param.value
+            )?;
+            if i != self.value.len() - 1 {
+                write!(f, "\n")?;
+            }
+        }
+        Ok(())
+    }
+}
 
-// impl Debug for Format<Spanned<Expr>> {
-//     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-//         match self.value.clone().value {
-//             Expr::Ident(name) => write!(
-//                 f,
-//                 "{}Expr @ {}\n{}Ident @ {}\n{}{}",
-//                 " ".repeat(self.indent),
-//                 self.value.span,
-//                 " ".repeat(self.indent + 2),
-//                 self.value.span,
-//                 " ".repeat(self.indent + 4),
-//                 name.value
-//             ),
-//             Expr::Lit(l) => {
-//                 let lit = Format {
-//                     indent: self.indent + 2,
-//                     value: l,
-//                 };
-//                 write!(
-//                     f,
-//                     "{}Expr @ {}\n{:?}",
-//                     " ".repeat(self.indent),
-//                     self.value.span,
-//                     // " ".repeat(self.indent),
-//                     lit
-//                 )
-//             }
-//             Expr::Prefix { op, expr } => {
-//                 let expr = Format {
-//                     indent: self.indent + 4,
-//                     value: *expr,
-//                 };
-//                 write!(
-//                     f,
-//                     "{}Expr @ {}\n{}Prefix @ {}\n{}{:?}\n{:?}",
-//                     " ".repeat(self.indent),
-//                     self.value.span,
-//                     " ".repeat(self.indent + 2),
-//                     self.value.span,
-//                     " ".repeat(self.indent + 4),
-//                     op,
-//                     expr
-//                 )
-//             }
-//             Expr::Infix { op, lhs, rhs } => {
-//                 let lhs = Format {
-//                     indent: self.indent + 4,
-//                     value: *lhs,
-//                 };
-//                 let rhs = Format {
-//                     indent: self.indent + 4,
-//                     value: *rhs,
-//                 };
-//                 write!(
-//                     f,
-//                     "{}Expr @ {}\n{}Infix @ {}\n{:?}\n{}{:?}\n{:?}",
-//                     " ".repeat(self.indent),
-//                     self.value.span,
-//                     " ".repeat(self.indent + 2),
-//                     self.value.span,
-//                     lhs,
-//                     " ".repeat(self.indent + 4),
-//                     op,
-//                     rhs
-//                 )
-//             }
-//             Expr::Let {
-//                 name,
-//                 expr,
-//                 body,
-//                 rec,
-//             } => {
-//                 let expr = Format {
-//                     indent: self.indent + 4,
-//                     value: *expr,
-//                 };
-//                 let body = Format {
-//                     indent: self.indent + 4,
-//                     value: *body,
-//                 };
-//                 write!(
-//                     f,
-//                     "{}Expr @ {}\n{}Let @ {}\n{}Ident @ {}\n{}{}\n{:?}\n{:?}",
-//                     " ".repeat(self.indent),
-//                     self.value.span,
-//                     " ".repeat(self.indent + 2),
-//                     self.value.span,
-//                     " ".repeat(self.indent + 4),
-//                     name.span,
-//                     " ".repeat(self.indent + 6),
-//                     name.value,
-//                     expr,
-//                     body
-//                 )
-//             }
-//             Expr::Apply { fun, args } => {
-//                 let fun = Format {
-//                     indent: self.indent + 4,
-//                     value: *fun,
-//                 };
-//                 let args = Format {
-//                     indent: self.indent + 4,
-//                     value: args.clone(),
-//                 };
-//                 write!(
-//                     f,
-//                     "{}Expr @ {}\n{}Apply @ {}\n{:?}\n{:?}",
-//                     " ".repeat(self.indent),
-//                     self.value.span,
-//                     " ".repeat(self.indent + 2),
-//                     self.value.span,
-//                     fun,
-//                     args
-//                 )
-//             }
-//             Expr::If {
-//                 cond,
-//                 then,
-//                 elifs,
-//                 else_,
-//             } => {
-//                 let cond_fmt = Format {
-//                     indent: self.indent + 4,
-//                     value: *cond,
-//                 };
-//                 let then_fmt = Format {
-//                     indent: self.indent + 4,
-//                     value: *then,
-//                 };
-//                 let elifs_fmt = Format {
-//                     indent: self.indent + 4,
-//                     value: elifs
-//                         .clone()
-//                         .into_iter()
-//                         .map(|(c, e)| (*c, *e))
-//                         .collect::<Vec<_>>(),
-//                 };
-//                 let else_fmt = Format {
-//                     indent: self.indent + 4,
-//                     value: *else_,
-//                 };
-//                 if elifs.is_empty() {
-//                     write!(
-//                         f,
-//                         "{}Expr @ {}\n{}If @ {}\n{}Cond\n{:?}\n{}Then\n{:?}\n{}Else\n{:?}",
-//                         " ".repeat(self.indent),
-//                         self.value.span,
-//                         " ".repeat(self.indent + 2),
-//                         self.value.span,
-//                         " ".repeat(self.indent + 4),
-//                         cond_fmt,
-//                         " ".repeat(self.indent + 4),
-//                         then_fmt,
-//                         " ".repeat(self.indent + 4),
-//                         else_fmt
-//                     )
-//                 } else {
-//                     write!(
-//                     f,
-//                     "{}Expr @ {}\n{}If @ {}\n{}Cond\n{:?}\n{}Then\n{:?}\n{}Elifs\n{:?}\n{}Else\n{:?}",
-//                     " ".repeat(self.indent),
-//                     self.value.span,
-//                     " ".repeat(self.indent + 2),
-//                     self.value.span,
-//                     " ".repeat(self.indent + 4),
-//                     cond_fmt,
-//                     " ".repeat(self.indent + 4),
-//                     then_fmt,
-//                     " ".repeat(self.indent + 4),
-//                     elifs_fmt,
-//                     " ".repeat(self.indent + 4),
-//                     else_fmt
-//                 )
-//                 }
-//             }
-//             Expr::Lambda { params, body } => {
-//                 let params = Format {
-//                     indent: self.indent + 4,
-//                     value: params.clone(),
-//                 };
-//                 let body = Format {
-//                     indent: self.indent + 4,
-//                     value: *body,
-//                 };
-//                 write!(
-//                     f,
-//                     "{}Expr @ {}\n{}Lambda @ {}\n{}Params\n{:?}\n{}Body\n{:?}",
-//                     " ".repeat(self.indent),
-//                     self.value.span,
-//                     " ".repeat(self.indent + 2),
-//                     self.value.span,
-//                     " ".repeat(self.indent + 4),
-//                     params,
-//                     " ".repeat(self.indent + 4),
-//                     body
-//                 )
-//             }
-//             Expr::Unit => write!(
-//                 f,
-//                 "{}Expr @ {}\n{}Unit",
-//                 " ".repeat(self.indent),
-//                 self.value.span,
-//                 " ".repeat(self.indent + 2),
-//             ),
-//             Expr::Error => write!(
-//                 f,
-//                 "{}Expr @ {}\n{}Error",
-//                 " ".repeat(self.indent),
-//                 self.value.span,
-//                 " ".repeat(self.indent + 2)
-//             ),
-//         }
-//     }
-// }
+impl Debug for Format<Spanned<Expr>> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self.value.clone().value {
+            Expr::Ident(name) => write!(
+                f,
+                "{}Expr @ {}\n{}Ident @ {}\n{}{}",
+                " ".repeat(self.indent),
+                self.value.span,
+                " ".repeat(self.indent + 2),
+                self.value.span,
+                " ".repeat(self.indent + 4),
+                name.value
+            ),
+            Expr::Lit(l) => {
+                let lit = Format {
+                    indent: self.indent + 2,
+                    value: l,
+                };
+                write!(
+                    f,
+                    "{}Expr @ {}\n{:?}",
+                    " ".repeat(self.indent),
+                    self.value.span,
+                    // " ".repeat(self.indent),
+                    lit
+                )
+            }
+            Expr::Prefix { op, expr } => {
+                let expr = Format {
+                    indent: self.indent + 4,
+                    value: *expr,
+                };
+                write!(
+                    f,
+                    "{}Expr @ {}\n{}Prefix @ {}\n{}{:?}\n{:?}",
+                    " ".repeat(self.indent),
+                    self.value.span,
+                    " ".repeat(self.indent + 2),
+                    self.value.span,
+                    " ".repeat(self.indent + 4),
+                    op,
+                    expr
+                )
+            }
+            Expr::Infix { op, lhs, rhs } => {
+                let lhs = Format {
+                    indent: self.indent + 4,
+                    value: *lhs,
+                };
+                let rhs = Format {
+                    indent: self.indent + 4,
+                    value: *rhs,
+                };
+                write!(
+                    f,
+                    "{}Expr @ {}\n{}Infix @ {}\n{:?}\n{}{:?}\n{:?}",
+                    " ".repeat(self.indent),
+                    self.value.span,
+                    " ".repeat(self.indent + 2),
+                    self.value.span,
+                    lhs,
+                    " ".repeat(self.indent + 4),
+                    op,
+                    rhs
+                )
+            }
+            Expr::Let {
+                name,
+                expr,
+                body,
+                rec,
+            } => {
+                let expr = Format {
+                    indent: self.indent + 4,
+                    value: *expr,
+                };
+                let body = Format {
+                    indent: self.indent + 4,
+                    value: *body,
+                };
+                write!(
+                    f,
+                    "{}Expr @ {}\n{}Let @ {}\n{}Ident @ {}\n{}{}\n{:?}\n{:?}",
+                    " ".repeat(self.indent),
+                    self.value.span,
+                    " ".repeat(self.indent + 2),
+                    self.value.span,
+                    " ".repeat(self.indent + 4),
+                    name.span,
+                    " ".repeat(self.indent + 6),
+                    name.value,
+                    expr,
+                    body
+                )
+            }
+            Expr::Apply { fun, args } => {
+                let fun = Format {
+                    indent: self.indent + 4,
+                    value: *fun,
+                };
+                let args = Format {
+                    indent: self.indent + 4,
+                    value: args.clone(),
+                };
+                write!(
+                    f,
+                    "{}Expr @ {}\n{}Apply @ {}\n{:?}\n{:?}",
+                    " ".repeat(self.indent),
+                    self.value.span,
+                    " ".repeat(self.indent + 2),
+                    self.value.span,
+                    fun,
+                    args
+                )
+            }
+            Expr::If {
+                cond,
+                then,
+                elifs,
+                else_,
+            } => {
+                let cond_fmt = Format {
+                    indent: self.indent + 4,
+                    value: *cond,
+                };
+                let then_fmt = Format {
+                    indent: self.indent + 4,
+                    value: *then,
+                };
+                let elifs_fmt = Format {
+                    indent: self.indent + 4,
+                    value: elifs
+                        .clone()
+                        .into_iter()
+                        .map(|(c, e)| (*c, *e))
+                        .collect::<Vec<_>>(),
+                };
+                let else_fmt = Format {
+                    indent: self.indent + 4,
+                    value: *else_,
+                };
+                if elifs.is_empty() {
+                    write!(
+                        f,
+                        "{}Expr @ {}\n{}If @ {}\n{}Cond\n{:?}\n{}Then\n{:?}\n{}Else\n{:?}",
+                        " ".repeat(self.indent),
+                        self.value.span,
+                        " ".repeat(self.indent + 2),
+                        self.value.span,
+                        " ".repeat(self.indent + 4),
+                        cond_fmt,
+                        " ".repeat(self.indent + 4),
+                        then_fmt,
+                        " ".repeat(self.indent + 4),
+                        else_fmt
+                    )
+                } else {
+                    write!(
+                    f,
+                    "{}Expr @ {}\n{}If @ {}\n{}Cond\n{:?}\n{}Then\n{:?}\n{}Elifs\n{:?}\n{}Else\n{:?}",
+                    " ".repeat(self.indent),
+                    self.value.span,
+                    " ".repeat(self.indent + 2),
+                    self.value.span,
+                    " ".repeat(self.indent + 4),
+                    cond_fmt,
+                    " ".repeat(self.indent + 4),
+                    then_fmt,
+                    " ".repeat(self.indent + 4),
+                    elifs_fmt,
+                    " ".repeat(self.indent + 4),
+                    else_fmt
+                )
+                }
+            }
+            Expr::Lambda { params, body } => {
+                let params = Format {
+                    indent: self.indent + 4,
+                    value: params.clone(),
+                };
+                let body = Format {
+                    indent: self.indent + 4,
+                    value: *body,
+                };
+                write!(
+                    f,
+                    "{}Expr @ {}\n{}Lambda @ {}\n{}Params\n{:?}\n{}Body\n{:?}",
+                    " ".repeat(self.indent),
+                    self.value.span,
+                    " ".repeat(self.indent + 2),
+                    self.value.span,
+                    " ".repeat(self.indent + 4),
+                    params,
+                    " ".repeat(self.indent + 4),
+                    body
+                )
+            }
+            Expr::Unit => write!(
+                f,
+                "{}Expr @ {}\n{}Unit",
+                " ".repeat(self.indent),
+                self.value.span,
+                " ".repeat(self.indent + 2),
+            ),
+            Expr::Error => write!(
+                f,
+                "{}Expr @ {}\n{}Error",
+                " ".repeat(self.indent),
+                self.value.span,
+                " ".repeat(self.indent + 2)
+            ),
+        }
+    }
+}
 
-// impl Debug for Format<Vec<(Spanned<Expr>, Spanned<Expr>)>> {
-//     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-//         if self.value.is_empty() {
-//             return Ok(());
-//         }
-//         for (i, (cond, body)) in self.value.iter().enumerate() {
-//             let cond = Format {
-//                 indent: self.indent + 2,
-//                 value: cond.clone(),
-//             };
-//             let body = Format {
-//                 indent: self.indent + 2,
-//                 value: body.clone(),
-//             };
-//             write!(
-//                 f,
-//                 "{}Cond @ {}\n{:?}\n{}Then @ {}\n{:?}",
-//                 " ".repeat(self.indent),
-//                 cond.value.span,
-//                 cond,
-//                 " ".repeat(self.indent),
-//                 body.value.span,
-//                 body
-//             )?;
-//             if i != self.value.len() - 1 {
-//                 write!(f, "\n")?;
-//             }
-//         }
-//         Ok(())
-//     }
-// }
+impl Debug for Format<Vec<(Spanned<Expr>, Spanned<Expr>)>> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        if self.value.is_empty() {
+            return Ok(());
+        }
+        for (i, (cond, body)) in self.value.iter().enumerate() {
+            let cond = Format {
+                indent: self.indent + 2,
+                value: cond.clone(),
+            };
+            let body = Format {
+                indent: self.indent + 2,
+                value: body.clone(),
+            };
+            write!(
+                f,
+                "{}Cond @ {}\n{:?}\n{}Then @ {}\n{:?}",
+                " ".repeat(self.indent),
+                cond.value.span,
+                cond,
+                " ".repeat(self.indent),
+                body.value.span,
+                body
+            )?;
+            if i != self.value.len() - 1 {
+                write!(f, "\n")?;
+            }
+        }
+        Ok(())
+    }
+}
 
-// impl Debug for Format<Vec<Spanned<Expr>>> {
-//     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-//         if self.value.is_empty() {
-//             return Ok(());
-//         }
-//         for (i, expr) in self.value.iter().enumerate() {
-//             let expr = Format {
-//                 indent: self.indent + 2,
-//                 value: expr.clone(),
-//             };
-//             write!(
-//                 f,
-//                 "{}Expr @ {}\n{:?}",
-//                 " ".repeat(self.indent),
-//                 expr.value.span,
-//                 expr
-//             )?;
-//             if i != self.value.len() - 1 {
-//                 write!(f, "\n")?;
-//             }
-//         }
-//         Ok(())
-//     }
-// }
+impl Debug for Format<Vec<Spanned<Expr>>> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        if self.value.is_empty() {
+            return Ok(());
+        }
+        for (i, expr) in self.value.iter().enumerate() {
+            let expr = Format {
+                indent: self.indent + 2,
+                value: expr.clone(),
+            };
+            write!(
+                f,
+                "{}Expr @ {}\n{:?}",
+                " ".repeat(self.indent),
+                expr.value.span,
+                expr
+            )?;
+            if i != self.value.len() - 1 {
+                write!(f, "\n")?;
+            }
+        }
+        Ok(())
+    }
+}
 
-// impl Debug for Format<Spanned<Lit>> {
-//     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-//         match self.value.value {
-//             Lit::Int(i) => write!(
-//                 f,
-//                 "{}Lit @ {}\n{}Int @ {}\n{}{}",
-//                 " ".repeat(self.indent),
-//                 self.value.span,
-//                 " ".repeat(self.indent + 2),
-//                 self.value.span,
-//                 " ".repeat(self.indent + 4),
-//                 i
-//             ),
-//             Lit::Rational(r) => write!(
-//                 f,
-//                 "{}Lit @ {}\n{}Rational @ {}\n{}{}",
-//                 " ".repeat(self.indent),
-//                 self.value.span,
-//                 " ".repeat(self.indent + 2),
-//                 self.value.span,
-//                 " ".repeat(self.indent + 4),
-//                 r
-//             ),
-//             Lit::Real(r) => write!(
-//                 f,
-//                 "{}Lit @ {}\n{}Real @ {}\n{}{}",
-//                 " ".repeat(self.indent),
-//                 self.value.span,
-//                 " ".repeat(self.indent + 2),
-//                 self.value.span,
-//                 " ".repeat(self.indent + 4),
-//                 r
-//             ),
-//             Lit::Complex(c) => write!(
-//                 f,
-//                 "{}Lit @ {}\n{}Complex @ {}\n{}{}",
-//                 " ".repeat(self.indent),
-//                 self.value.span,
-//                 " ".repeat(self.indent + 2),
-//                 self.value.span,
-//                 " ".repeat(self.indent + 4),
-//                 c
-//             ),
-//             Lit::Char(c) => write!(
-//                 f,
-//                 "{}Lit @ {}\n{}Char @ {}\n{}'{}'",
-//                 " ".repeat(self.indent),
-//                 self.value.span,
-//                 " ".repeat(self.indent + 2),
-//                 self.value.span,
-//                 " ".repeat(self.indent + 4),
-//                 c
-//             ),
-//             Lit::String(s) => write!(
-//                 f,
-//                 "{}Lit @ {}\n{}String @ {}\n{}{}",
-//                 " ".repeat(self.indent),
-//                 self.value.span,
-//                 " ".repeat(self.indent + 2),
-//                 self.value.span,
-//                 " ".repeat(self.indent + 4),
-//                 s
-//             ),
-//         }
-//     }
-// }
+impl Debug for Format<Spanned<Lit>> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self.value.value {
+            Lit::Int(i) => write!(
+                f,
+                "{}Lit @ {}\n{}Int @ {}\n{}{}",
+                " ".repeat(self.indent),
+                self.value.span,
+                " ".repeat(self.indent + 2),
+                self.value.span,
+                " ".repeat(self.indent + 4),
+                i
+            ),
+            Lit::Rational(r) => write!(
+                f,
+                "{}Lit @ {}\n{}Rational @ {}\n{}{}",
+                " ".repeat(self.indent),
+                self.value.span,
+                " ".repeat(self.indent + 2),
+                self.value.span,
+                " ".repeat(self.indent + 4),
+                r
+            ),
+            Lit::Real(r) => write!(
+                f,
+                "{}Lit @ {}\n{}Real @ {}\n{}{}",
+                " ".repeat(self.indent),
+                self.value.span,
+                " ".repeat(self.indent + 2),
+                self.value.span,
+                " ".repeat(self.indent + 4),
+                r
+            ),
+            Lit::Complex(c) => write!(
+                f,
+                "{}Lit @ {}\n{}Complex @ {}\n{}{}",
+                " ".repeat(self.indent),
+                self.value.span,
+                " ".repeat(self.indent + 2),
+                self.value.span,
+                " ".repeat(self.indent + 4),
+                c
+            ),
+            Lit::Char(c) => write!(
+                f,
+                "{}Lit @ {}\n{}Char @ {}\n{}'{}'",
+                " ".repeat(self.indent),
+                self.value.span,
+                " ".repeat(self.indent + 2),
+                self.value.span,
+                " ".repeat(self.indent + 4),
+                c
+            ),
+            Lit::String(s) => write!(
+                f,
+                "{}Lit @ {}\n{}String @ {}\n{}{}",
+                " ".repeat(self.indent),
+                self.value.span,
+                " ".repeat(self.indent + 2),
+                self.value.span,
+                " ".repeat(self.indent + 4),
+                s
+            ),
+        }
+    }
+}

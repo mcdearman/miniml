@@ -8,7 +8,7 @@ use miniml_util::{
     intern::InternedString,
     span::{Span, Spannable},
 };
-use std::{cell::RefCell, rc::Rc, ops::Deref};
+use std::{cell::RefCell, ops::Deref, rc::Rc};
 
 pub fn eval(env: Rc<RefCell<Env>>, root: &Root) -> EvalResult<Value> {
     for decl in root.clone().decls {
@@ -49,28 +49,27 @@ pub fn eval_decl(env: Rc<RefCell<Env>>, decl: &Decl) -> EvalResult<Value> {
                 },
             );
             Ok(Value::Unit)
-        }
-        // Decl::Fn { name, params, body } => {
-        //     env.borrow_mut().define(
-        //         name.value,
-        //         Value::Lambda {
-        //             env: env.clone(),
-        //             params: params.into_iter().map(|p| p.value).collect(),
-        //             body: Box::new(body.value),
-        //         },
-        //     );
-        //     if &*name.value != "main" {
-        //         env.borrow_mut().define(
-        //             InternedString::from("main"),
-        //             Value::Lambda {
-        //                 env: env.clone(),
-        //                 params: vec![],
-        //                 body: Box::new(Expr::Unit),
-        //             },
-        //         );
-        //     }
-        //     Ok(Value::Unit)
-        // }
+        } // Decl::Fn { name, params, body } => {
+          //     env.borrow_mut().define(
+          //         name.value,
+          //         Value::Lambda {
+          //             env: env.clone(),
+          //             params: params.into_iter().map(|p| p.value).collect(),
+          //             body: Box::new(body.value),
+          //         },
+          //     );
+          //     if &*name.value != "main" {
+          //         env.borrow_mut().define(
+          //             InternedString::from("main"),
+          //             Value::Lambda {
+          //                 env: env.clone(),
+          //                 params: vec![],
+          //                 body: Box::new(Expr::Unit),
+          //             },
+          //         );
+          //     }
+          //     Ok(Value::Unit)
+          // }
     }
 }
 
@@ -219,7 +218,7 @@ pub fn eval_expr(env: Rc<RefCell<Env>>, expr: &Expr) -> EvalResult<Value> {
                 .map(|arg| eval_expr(env.clone(), &arg.value))
                 .collect::<Result<Vec<_>, _>>()?;
             // println!("call: {} {:?}", fun.value, vargs);
-
+            
             match funv.clone() {
                 Value::Lambda {
                     env: lam_env,

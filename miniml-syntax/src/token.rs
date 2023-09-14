@@ -5,19 +5,19 @@ use std::fmt::{Debug, Display};
 use crate::ast::Int;
 
 #[derive(Logos, Debug, Clone, PartialEq)]
-pub enum Token {
+pub enum TokenKind {
     Eof,
     #[regex("[ \n\t\r]+", logos::skip)]
     Whitespace,
     #[regex(r#"--[^\n]*|/\*([^*]|\**[^*/])*\*+/"#, logos::skip)]
     Comment,
-    #[regex(r##"([A-Za-z]|_)([A-Za-z]|_|\d)*"##, callback = |lex| InternedString::from(lex.slice()))]
-    Ident(InternedString),
+    #[regex(r##"([A-Za-z]|_)([A-Za-z]|_|\d)*"##)]
+    Ident,
     #[regex(
         r#"((0b[0-1]+)|(0o[0-7]+)|(0x[0-9a-fA-F]+)|([1-9]\d*|0))"#,
         priority = 2
     )]
-    Int(Int),
+    Int,
     #[regex(
         r#"((0b[0-1]+)|(0o[0-7]+)|(0x[0-9a-fA-F]+)|([1-9]\d*|0))/-?((0b[0-1]+)|(0o[0-7]+)|(0x[0-9a-fA-F]+)|([1-9]\d*|0))"#,
         priority = 1
@@ -125,72 +125,72 @@ pub enum Token {
     In,
 }
 
-impl Display for Token {
+impl Display for TokenKind {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(
             f,
             "{}",
             match self {
-                Token::Eof => "<EOF>",
-                Token::Whitespace => "<WS>",
-                Token::Comment => "Comment",
-                Token::Ident => "Ident",
-                Token::Int => "Int",
-                Token::Rational => "Rational",
-                Token::Real => "Real",
-                Token::Complex => "Complex",
-                Token::Char => "Char",
-                Token::String => "String",
-                Token::Plus => "+",
-                Token::Minus => "-",
-                Token::Star => "*",
-                Token::Slash => "/",
-                Token::Percent => "%",
-                Token::Caret => "^",
-                Token::Backslash => "\\",
-                Token::Arrow => "->",
-                Token::FatArrow => "=>",
-                Token::Pipe => "|",
-                Token::PipeArrow => "|>",
-                Token::Eq => "=",
-                Token::Lt => "<",
-                Token::Gt => ">",
-                Token::Neq => "!=",
-                Token::Leq => "<=",
-                Token::Geq => ">=",
-                Token::LParen => "(",
-                Token::RParen => ")",
-                Token::LBrack => "[",
-                Token::RBrack => "]",
-                Token::LBrace => "{",
-                Token::RBrace => "}",
-                Token::Comma => ",",
-                Token::Period => ".",
-                Token::Semicolon => ";",
-                Token::Colon => ":",
-                Token::Pub => "pub",
-                Token::Module => "mod",
-                Token::End => "end",
-                Token::Use => "use",
-                Token::Const => "const",
-                Token::Let => "let",
-                Token::Struct => "struct",
-                Token::Match => "match",
-                Token::With => "with",
-                Token::And => "and",
-                Token::Or => "or",
-                Token::Not => "not",
-                Token::If => "if",
-                Token::Then => "then",
-                Token::Elif => "elif",
-                Token::Else => "else",
-                Token::In => "in",
+                TokenKind::Eof => "<EOF>",
+                TokenKind::Whitespace => "<WS>",
+                TokenKind::Comment => "Comment",
+                TokenKind::Ident => "Ident",
+                TokenKind::Int => "Int",
+                TokenKind::Rational => "Rational",
+                TokenKind::Real => "Real",
+                TokenKind::Complex => "Complex",
+                TokenKind::Char => "Char",
+                TokenKind::String => "String",
+                TokenKind::Plus => "+",
+                TokenKind::Minus => "-",
+                TokenKind::Star => "*",
+                TokenKind::Slash => "/",
+                TokenKind::Percent => "%",
+                TokenKind::Caret => "^",
+                TokenKind::Backslash => "\\",
+                TokenKind::Arrow => "->",
+                TokenKind::FatArrow => "=>",
+                TokenKind::Pipe => "|",
+                TokenKind::PipeArrow => "|>",
+                TokenKind::Eq => "=",
+                TokenKind::Lt => "<",
+                TokenKind::Gt => ">",
+                TokenKind::Neq => "!=",
+                TokenKind::Leq => "<=",
+                TokenKind::Geq => ">=",
+                TokenKind::LParen => "(",
+                TokenKind::RParen => ")",
+                TokenKind::LBrack => "[",
+                TokenKind::RBrack => "]",
+                TokenKind::LBrace => "{",
+                TokenKind::RBrace => "}",
+                TokenKind::Comma => ",",
+                TokenKind::Period => ".",
+                TokenKind::Semicolon => ";",
+                TokenKind::Colon => ":",
+                TokenKind::Pub => "pub",
+                TokenKind::Module => "mod",
+                TokenKind::End => "end",
+                TokenKind::Use => "use",
+                TokenKind::Const => "const",
+                TokenKind::Let => "let",
+                TokenKind::Struct => "struct",
+                TokenKind::Match => "match",
+                TokenKind::With => "with",
+                TokenKind::And => "and",
+                TokenKind::Or => "or",
+                TokenKind::Not => "not",
+                TokenKind::If => "if",
+                TokenKind::Then => "then",
+                TokenKind::Elif => "elif",
+                TokenKind::Else => "else",
+                TokenKind::In => "in",
             }
         )
     }
 }
 
-// pub type Token = Spanned<Token>;
+pub type Token = Spanned<TokenKind>;
 
 mod tests {
     use logos::Logos;
@@ -198,7 +198,7 @@ mod tests {
     #[test]
     fn test_lex_sub() {
         let src = "1-1";
-        let tokens = super::Token::lexer(src).spanned().collect::<Vec<_>>();
+        let tokens = super::TokenKind::lexer(src).spanned().collect::<Vec<_>>();
         insta::assert_debug_snapshot!(tokens);
     }
 }
