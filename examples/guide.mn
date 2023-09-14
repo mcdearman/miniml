@@ -81,10 +81,8 @@ let gcd = \a b ->
   else gcd b (a % b)
 
 -- You can define functions by pattern matching
-let fib 0 = 0
-let fib 1 = 1
-let fib n = fib (n - 1) + fib (n - 2)
 
+-- convenience syntax for defining functions by pattern matching
 let fib 0 = 0
   | fib 1 = 1
   | fib n = fib (n - 1) + fib (n - 2)
@@ -96,8 +94,9 @@ let fib n =
   | 1 -> 1
   | n -> fib (n - 1) + fib (n - 2)
 
+
 let map f [] = []
-let map f (x:xs) = f x : map f xs
+  | map f (x:xs) = f x : map f xs
 
 -- partial application with wildcard
 let add1 = add 1 _
