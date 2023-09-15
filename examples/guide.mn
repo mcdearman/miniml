@@ -32,9 +32,6 @@ let main =
   -- lambda application
   (\a b -> a + b) 1 2;
 
-  -- lists
-  #[1 2 3];
-
   -- maps
   { x = 1, y = 2 };
 
@@ -44,13 +41,13 @@ let main =
   -- struct access
   Point { x = 1, y = 2 }.x;
 
+  -- lists
+  [1 2 3];
+
   -- sets
   { 1 2 3 }; 
 
-  -- vectors
-  [1 2 3];
-
-  -- multidimensional vectors
+  -- multidimensional lists
   [1 2, 3 4];
 
   -- Symbols are identifiers whose value is their name.

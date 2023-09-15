@@ -1,51 +1,47 @@
-root = (decl ws+)+
+root = (decl )+
 
 decl = const | let | fn
 
-const = "const" ws+ ident ws* "=" ws* expr
+const = "const" ident "=" expr
 
-let = "let" ws+ ident ws* "=" ws* expr
-
-fn = ident (ws+ ident)* ws+ "=" ws+ expr
+let = "let" (pat | ident pat+) "=" expr
 
 expr = pipe
 
-pipe = stmt (ws* "|" ws* pipe)?
+pipe = stmt ("|" pipe)?
 
-stmt = or (ws* ";" ws* stmt)?
+stmt = or (";" stmt)?
 
-or = and (ws* "or" ws* or)?
+or = and ("or" or)?
 
-and = cmp (ws* "and" ws* and)?
+and = cmp ("and" and)?
 
-cmp = term (ws* ("<" | ">" | "<=" | ">=" | "=" | "!=") ws* cmp)?
+cmp = term (("<" | ">" | "<=" | ">=" | "=" | "!=")  cmp)?
 
-term = factor (ws* ("+" | "-") ws* term)?
+term = factor (("+" | "-")  term)?
 
-factor = power (ws* ("*" | "/" | "%") ws* factor)?
+factor = power (("*" | "/" | "%")  factor)?
 
-power = unary (ws* "^" ws* power)?
+power = unary ("^"  power)?
 
 unary = apply | ("-" | "not") unary
 
-apply = atom (ws+ atom)*
+apply = atom atom*
 
-atom = ident | lit | letExpr | lambda | list | tuple | map | "(" ws* expr ws* ")"
+atom = ident | lit | letExpr | lambda | map | list | "("  expr  ")"
 
-letExpr = "let" ws+ ident ws* "=" ws* expr "in" ws+ expr
+letExpr = "let" (pat | ident pat*) "=" expr "in" expr
 
-if = "if" ws+ expr ws+ "then" ws+ expr 
-    ("elif" ws+ expr "then" expr)* ws+ "else" ws+ expr
+if = "if" expr "then" expr 
+    ("elif" expr "then" expr)* "else" expr
 
-match = pat (ws* "|" ws* match)?
+match = pat ("|" match)?
 
-pat = ident | lit | listPat | consPat | applyPat | wildcard | unit
+pat = ident | lit | listPat | consPat | wildcard | unit
 
-listPat = "[" pat (ws* "," ws* pat)* ws* "]"
+listPat = "[" pat ("," pat)* "]"
 
-consPat = "[" (pat ws* (ws* "," ws* pat)*)? "::" ws* pat ws* "]"
-
-applyPat = ident ws+ pat
+consPat = "(" (pat  (","  pat)*)? ":"  pat ")"
 
 lit = int 
 | rational
@@ -55,13 +51,11 @@ lit = int
 | char 
 | bool 
 
-lambda = "\\" ws+ ident+ ws+ "-" ws+ expr
+lambda = "\\" pat+ "-" expr
 
-list = "[" ws* expr? (ws* "," ws* expr)* ws* "]"
+map = "{" ident ":" expr ("," ident ":" expr)* "}"
 
-tuple = "(" ws* expr (ws* "," ws* expr)* ws* ")"
-
-map = "{" ws* ident ":" ws* expr (ws* "," ws* string ":" ws* expr)* ws* "}"
+list = "[" expr? ("," expr)* "]"
 
 # Nonterminals/Tokens
 
