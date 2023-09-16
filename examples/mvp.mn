@@ -1,2 +1,25 @@
+-- This is a comment
+
+-- `main` is a procedure that takes no
+-- arguments and returns unit implicitly.
+-- It is the entry point of the program.
 let main = 
-  
+    println "Hello World"
+
+-- let binding
+let x = 1
+
+-- function definition
+let add x y = x + y
+
+-- if expression
+let abs x = if x < 0 then -x else x
+
+-- let expression
+let abs x = let y = x * x in sqrt y
+
+
+
+
+
+
