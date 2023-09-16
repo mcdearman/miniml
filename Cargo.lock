@@ -655,6 +655,10 @@ dependencies = [
 ]
 
 [[package]]
+name = "miniml-core"
+version = "0.1.0"
+
+[[package]]
 name = "miniml-eval"
 version = "0.1.0"
 dependencies = [
