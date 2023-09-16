@@ -4,7 +4,7 @@ use miniml_syntax::ast::Expr;
 use miniml_util::{intern::InternedString, list::List};
 use num_complex::Complex;
 use num_rational::Rational64;
-use std::{cell::RefCell, collections::HashMap, fmt::Display, rc::Rc};
+use std::{cell::RefCell, collections::HashMap, fmt::Display, ops::Add, rc::Rc};
 
 #[derive(Debug, Clone)]
 pub enum Value {
@@ -93,3 +93,4 @@ impl PartialOrd for Value {
         }
     }
 }
+

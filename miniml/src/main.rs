@@ -1,5 +1,6 @@
 use clap::Parser;
 use miniml_eval::env::Env;
+use miniml_repl::tree_walk::repl;
 
 #[derive(Parser)]
 #[command(author, version, about, long_about = None)]
@@ -31,7 +32,6 @@ fn main() {
         repl();
     }
 }
-
 
 // use logos::Logos;
 // use miniml_syntax::{

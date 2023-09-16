@@ -351,30 +351,6 @@ impl Debug for Format<Spanned<Decl>> {
                     expr
                 )
             }
-            Decl::Fn { name, params, body } => {
-                let params = Format {
-                    indent: self.indent + 4,
-                    value: params.clone(),
-                };
-                let body = Format {
-                    indent: self.indent + 4,
-                    value: *body,
-                };
-                write!(
-                    f,
-                    "{}Decl @ {}\n{}Fn @ {}\n{}Ident @ {}\n{}{}{:?}\n{:?}",
-                    " ".repeat(self.indent),
-                    self.value.span,
-                    " ".repeat(self.indent + 2),
-                    self.value.span,
-                    " ".repeat(self.indent + 4),
-                    name.span,
-                    " ".repeat(self.indent + 6),
-                    name.value,
-                    params,
-                    body
-                )
-            }
         }
     }
 }

@@ -8,7 +8,7 @@ use miniml_util::{
     intern::InternedString,
     span::{Span, Spannable},
 };
-use std::{cell::RefCell, ops::Deref, rc::Rc};
+use std::{cell::RefCell, rc::Rc};
 
 pub fn eval(env: Rc<RefCell<Env>>, root: &Root) -> EvalResult<Value> {
     for decl in root.clone().decls {
@@ -218,7 +218,7 @@ pub fn eval_expr(env: Rc<RefCell<Env>>, expr: &Expr) -> EvalResult<Value> {
                 .map(|arg| eval_expr(env.clone(), &arg.value))
                 .collect::<Result<Vec<_>, _>>()?;
             // println!("call: {} {:?}", fun.value, vargs);
-            
+
             match funv.clone() {
                 Value::Lambda {
                     env: lam_env,
