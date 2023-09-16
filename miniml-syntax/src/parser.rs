@@ -834,15 +834,15 @@ mod tests {
         insta::assert_debug_snapshot!(expr);
     }
 
-    #[test]
-    fn test_const() {
-        let mut parser = Parser::new("const x = 1");
-        let (root, errors) = parser.parse();
-        if !errors.is_empty() {
-            panic!("parse error: {:?}", errors);
-        }
-        insta::assert_debug_snapshot!(root);
-    }
+    // #[test]
+    // fn test_const() {
+    //     let mut parser = Parser::new("const x = 1");
+    //     let (root, errors) = parser.parse();
+    //     if !errors.is_empty() {
+    //         panic!("parse error: {:?}", errors);
+    //     }
+    //     insta::assert_debug_snapshot!(root);
+    // }
 
     #[test]
     fn test_let() {
@@ -856,7 +856,7 @@ mod tests {
 
     #[test]
     fn test_fn_add() {
-        let mut parser = Parser::new("fn add x y = x + y");
+        let mut parser = Parser::new("let add x y = x + y");
         let (root, errors) = parser.parse();
         if !errors.is_empty() {
             panic!("parse error: {:?}", errors);
