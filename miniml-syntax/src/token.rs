@@ -5,32 +5,33 @@ use std::fmt::{Debug, Display};
 use crate::ast::Int;
 
 #[derive(Logos, Debug, Clone, PartialEq)]
-pub enum TokenKind {
+pub enum Token {
     Eof,
     #[regex("[ \n\t\r]+", logos::skip)]
     Whitespace,
     #[regex(r#"--[^\n]*|/\*([^*]|\**[^*/])*\*+/"#, logos::skip)]
     Comment,
-    #[regex(r##"([A-Za-z]|_)([A-Za-z]|_|\d)*"##)]
-    Ident,
+    #[regex(r##"([A-Za-z]|_)([A-Za-z]|_|\d)*"##, callback = |lex| InternedString::from(lex.slice()))]
+    Ident(InternedString),
     #[regex(
         r#"((0b[0-1]+)|(0o[0-7]+)|(0x[0-9a-fA-F]+)|([1-9]\d*|0))"#,
-        priority = 2
+        priority = 2,
+        callback = |lex| lex.slice().parse::<Int>().ok()
     )]
-    Int,
+    Int(Int),
     #[regex(
         r#"((0b[0-1]+)|(0o[0-7]+)|(0x[0-9a-fA-F]+)|([1-9]\d*|0))/-?((0b[0-1]+)|(0o[0-7]+)|(0x[0-9a-fA-F]+)|([1-9]\d*|0))"#,
         priority = 1
     )]
-    Rational,
-    #[regex(r#"((\d+(\.\d+))|(\.\d+))([Ee](\+|-)?\d+)?"#, priority = 1)]
-    Real,
-    #[regex(r#"((\d+(\.\d+)?)|(\.\d+))([Ee](\+|-)?\d+)?i"#, priority = 0)]
-    Complex,
-    #[regex(r#"'\w'"#)]
-    Char,
-    #[regex(r#""((\\"|\\\\)|[^\\"])*""#)]
-    String,
+    // Rational,
+    // #[regex(r#"((\d+(\.\d+))|(\.\d+))([Ee](\+|-)?\d+)?"#, priority = 1)]
+    // Real,
+    // #[regex(r#"((\d+(\.\d+)?)|(\.\d+))([Ee](\+|-)?\d+)?i"#, priority = 0)]
+    // Complex,
+    // #[regex(r#"'\w'"#)]
+    // Char,
+    // #[regex(r#""((\\"|\\\\)|[^\\"])*""#)]
+    // String,
     #[token("+")]
     Plus,
     #[token("-")]
@@ -39,22 +40,20 @@ pub enum TokenKind {
     Star,
     #[token("/")]
     Slash,
-    #[token("%")]
-    Percent,
-    #[token("^")]
-    Caret,
-
+    // #[token("%")]
+    // Percent,
+    // #[token("^")]
+    // Caret,
     #[token("\\")]
     Backslash,
     #[token("->")]
     Arrow,
-    #[token("=>")]
-    FatArrow,
-    #[token("|")]
-    Pipe,
-    #[token("|>")]
-    PipeArrow,
-
+    // #[token("=>")]
+    // FatArrow,
+    // #[token("|")]
+    // Pipe,
+    // #[token("|>")]
+    // PipeArrow,
     #[token("=")]
     Eq,
     #[token("<")]
@@ -89,24 +88,24 @@ pub enum TokenKind {
     #[token(":")]
     Colon,
 
-    #[token("pub")]
-    Pub,
-    #[token("mod")]
-    Module,
-    #[token("end")]
-    End,
-    #[token("use")]
-    Use,
-    #[token("const")]
-    Const,
+    // #[token("pub")]
+    // Pub,
+    // #[token("mod")]
+    // Module,
+    // #[token("end")]
+    // End,
+    // #[token("use")]
+    // Use,
+    // #[token("const")]
+    // Const,
     #[token("let")]
     Let,
-    #[token("struct")]
-    Struct,
-    #[token("match")]
-    Match,
-    #[token("with")]
-    With,
+    // #[token("struct")]
+    // Struct,
+    // #[token("match")]
+    // Match,
+    // #[token("with")]
+    // With,
     #[token("and")]
     And,
     #[token("or")]
@@ -125,72 +124,66 @@ pub enum TokenKind {
     In,
 }
 
-impl Display for TokenKind {
+impl Display for Token {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(
-            f,
-            "{}",
-            match self {
-                TokenKind::Eof => "<EOF>",
-                TokenKind::Whitespace => "<WS>",
-                TokenKind::Comment => "Comment",
-                TokenKind::Ident => "Ident",
-                TokenKind::Int => "Int",
-                TokenKind::Rational => "Rational",
-                TokenKind::Real => "Real",
-                TokenKind::Complex => "Complex",
-                TokenKind::Char => "Char",
-                TokenKind::String => "String",
-                TokenKind::Plus => "+",
-                TokenKind::Minus => "-",
-                TokenKind::Star => "*",
-                TokenKind::Slash => "/",
-                TokenKind::Percent => "%",
-                TokenKind::Caret => "^",
-                TokenKind::Backslash => "\\",
-                TokenKind::Arrow => "->",
-                TokenKind::FatArrow => "=>",
-                TokenKind::Pipe => "|",
-                TokenKind::PipeArrow => "|>",
-                TokenKind::Eq => "=",
-                TokenKind::Lt => "<",
-                TokenKind::Gt => ">",
-                TokenKind::Neq => "!=",
-                TokenKind::Leq => "<=",
-                TokenKind::Geq => ">=",
-                TokenKind::LParen => "(",
-                TokenKind::RParen => ")",
-                TokenKind::LBrack => "[",
-                TokenKind::RBrack => "]",
-                TokenKind::LBrace => "{",
-                TokenKind::RBrace => "}",
-                TokenKind::Comma => ",",
-                TokenKind::Period => ".",
-                TokenKind::Semicolon => ";",
-                TokenKind::Colon => ":",
-                TokenKind::Pub => "pub",
-                TokenKind::Module => "mod",
-                TokenKind::End => "end",
-                TokenKind::Use => "use",
-                TokenKind::Const => "const",
-                TokenKind::Let => "let",
-                TokenKind::Struct => "struct",
-                TokenKind::Match => "match",
-                TokenKind::With => "with",
-                TokenKind::And => "and",
-                TokenKind::Or => "or",
-                TokenKind::Not => "not",
-                TokenKind::If => "if",
-                TokenKind::Then => "then",
-                TokenKind::Elif => "elif",
-                TokenKind::Else => "else",
-                TokenKind::In => "in",
-            }
-        )
+        match self {
+            Token::Eof => f.write_str("<EOF>"),
+            Token::Whitespace => f.write_str("<WS>"),
+            Token::Comment => f.write_str("Comment"),
+            Token::Ident(name) => write!(f, "Ident({})", name),
+            Token::Int(i) => write!(f, "Int({})", i),
+            // Token::Rational => "Rational",
+            // Token::Real => "Real",
+            // Token::Complex => "Complex",
+            // Token::Char => "Char",
+            // Token::String => "String",
+            Token::Plus => f.write_str("+"),
+            Token::Minus => f.write_str("-"),
+            Token::Star => f.write_str("*"),
+            Token::Slash => f.write_str("/"),
+            // Token::Percent => "%",
+            // Token::Caret => "^",
+            Token::Backslash => f.write_str("\\"),
+            Token::Arrow => f.write_str("->"),
+            // Token::FatArrow => "=>",
+            // Token::Pipe => "|",
+            // Token::PipeArrow => "|>",
+            Token::Eq => f.write_str("="),
+            Token::Lt => f.write_str("<"),
+            Token::Gt => f.write_str(">"),
+            Token::Neq => f.write_str("!="),
+            Token::Leq => f.write_str("<="),
+            Token::Geq => f.write_str(">="),
+            Token::LParen => f.write_str("("),
+            Token::RParen => f.write_str(")"),
+            Token::LBrack => f.write_str("["),
+            Token::RBrack => f.write_str("]"),
+            Token::LBrace => f.write_str("{"),
+            Token::RBrace => f.write_str("}"),
+            Token::Comma => f.write_str(","),
+            Token::Period => f.write_str("."),
+            Token::Semicolon => f.write_str(";"),
+            Token::Colon => f.write_str(":"),
+            // Token::Pub => "pub",
+            // Token::Module => "mod",
+            // Token::End => "end",
+            // Token::Use => "use",
+            // Token::Const => "const",
+            Token::Let => f.write_str("let"),
+            // Token::Struct => "struct",
+            // Token::Match => "match",
+            // Token::With => "with",
+            Token::And => f.write_str("and"),
+            Token::Or => f.write_str("or"),
+            Token::Not => f.write_str("not"),
+            Token::If => f.write_str("if"),
+            Token::Then => f.write_str("then"),
+            Token::Elif => f.write_str("elif"),
+            Token::Else => f.write_str("else"),
+            Token::In => f.write_str("in"),
+        }
     }
 }
-
-pub type Token = Spanned<TokenKind>;
 
 mod tests {
     use logos::Logos;
@@ -198,7 +191,7 @@ mod tests {
     #[test]
     fn test_lex_sub() {
         let src = "1-1";
-        let tokens = super::TokenKind::lexer(src).spanned().collect::<Vec<_>>();
+        let tokens = super::Token::lexer(src).spanned().collect::<Vec<_>>();
         insta::assert_debug_snapshot!(tokens);
     }
 }

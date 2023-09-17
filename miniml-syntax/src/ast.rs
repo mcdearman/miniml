@@ -1,4 +1,3 @@
-use crate::token::TokenKind;
 use cstree::Syntax;
 use itertools::join;
 use miniml_util::{
@@ -13,6 +12,8 @@ use std::{
     ops::Add,
     str::FromStr,
 };
+
+use crate::token::Token;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Root {
@@ -157,11 +158,11 @@ impl Display for PrefixOp {
     }
 }
 
-impl From<TokenKind> for PrefixOp {
-    fn from(kind: TokenKind) -> Self {
+impl From<Token> for PrefixOp {
+    fn from(kind: Token) -> Self {
         match kind {
-            TokenKind::Minus => PrefixOp::Neg,
-            TokenKind::Not => PrefixOp::Not,
+            Token::Minus => PrefixOp::Neg,
+            Token::Not => PrefixOp::Not,
             _ => panic!("Not a prefix operator: {:?}", kind),
         }
     }
@@ -210,24 +211,24 @@ impl Display for InfixOp {
     }
 }
 
-impl From<TokenKind> for InfixOp {
-    fn from(kind: TokenKind) -> Self {
+impl From<Token> for InfixOp {
+    fn from(kind: Token) -> Self {
         match kind {
-            TokenKind::Plus => InfixOp::Add,
-            TokenKind::Minus => InfixOp::Sub,
-            TokenKind::Star => InfixOp::Mul,
-            TokenKind::Slash => InfixOp::Div,
-            TokenKind::Percent => InfixOp::Rem,
-            TokenKind::Caret => InfixOp::Pow,
-            TokenKind::Eq => InfixOp::Eq,
-            TokenKind::Neq => InfixOp::Neq,
-            TokenKind::Lt => InfixOp::Lt,
-            TokenKind::Gt => InfixOp::Gt,
-            TokenKind::Leq => InfixOp::Leq,
-            TokenKind::Geq => InfixOp::Geq,
-            TokenKind::And => InfixOp::And,
-            TokenKind::Or => InfixOp::Or,
-            TokenKind::Pipe => InfixOp::Pipe,
+            Token::Plus => InfixOp::Add,
+            Token::Minus => InfixOp::Sub,
+            Token::Star => InfixOp::Mul,
+            Token::Slash => InfixOp::Div,
+            // Token::Percent => InfixOp::Rem,
+            // Token::Caret => InfixOp::Pow,
+            Token::Eq => InfixOp::Eq,
+            Token::Neq => InfixOp::Neq,
+            Token::Lt => InfixOp::Lt,
+            Token::Gt => InfixOp::Gt,
+            Token::Leq => InfixOp::Leq,
+            Token::Geq => InfixOp::Geq,
+            Token::And => InfixOp::And,
+            Token::Or => InfixOp::Or,
+            // Token::Pipe => InfixOp::Pipe,
             _ => panic!("Not an infix operator: {:?}", kind),
         }
     }

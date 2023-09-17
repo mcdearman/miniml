@@ -1,6 +1,6 @@
 use clap::Parser;
 use miniml_eval::env::Env;
-use miniml_repl::tree_walk::repl;
+// use miniml_repl::tree_walk::repl;
 
 #[derive(Parser)]
 #[command(author, version, about, long_about = None)]
@@ -13,24 +13,24 @@ struct Cli {
 
 fn main() {
     env_logger::init();
-    let args = Cli::parse();
-    let env = Env::new();
+    // let args = Cli::parse();
+    // let env = Env::new();
 
-    if let Some(filepath) = args.filepath {
-        let src = std::fs::read_to_string(filepath).expect("failed to read file");
-        let mut parser = miniml_syntax::parser::Parser::new(&src);
-        match parser.repl_parse() {
-            (root, errors) => {
-                if !errors.is_empty() {
-                    println!("errors: {:?}", errors);
-                } else {
-                    println!("root: {:?}", root);
-                }
-            }
-        }
-    } else {
-        repl();
-    }
+    // if let Some(filepath) = args.filepath {
+    //     let src = std::fs::read_to_string(filepath).expect("failed to read file");
+    //     let mut parser = miniml_syntax::parser::Parser::new(&src);
+    //     match parser.repl_parse() {
+    //         (root, errors) => {
+    //             if !errors.is_empty() {
+    //                 println!("errors: {:?}", errors);
+    //             } else {
+    //                 println!("root: {:?}", root);
+    //             }
+    //         }
+    //     }
+    // } else {
+    //     repl();
+    // }
 }
 
 // use logos::Logos;
