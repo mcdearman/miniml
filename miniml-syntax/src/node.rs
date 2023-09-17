@@ -1,4 +1,4 @@
-use miniml_util::span::Span;
+use chumsky::span::SimpleSpan;
 use std::{
     cmp::Ordering,
     fmt,
@@ -98,10 +98,10 @@ impl<T: fmt::Debug, M: fmt::Debug> fmt::Debug for Node<T, M> {
     }
 }
 
-pub type SrcNode<T> = Node<T, Span>;
+pub type SrcNode<T> = Node<T, SimpleSpan>;
 
 impl<T> SrcNode<T> {
-    pub fn span(&self) -> Span {
+    pub fn span(&self) -> SimpleSpan {
         self.meta
     }
 }

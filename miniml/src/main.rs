@@ -1,18 +1,35 @@
-use clap::Parser;
-use miniml_eval::env::Env;
+use std::f32::consts::E;
+
+use chumsky::{input::Stream, prelude::Input, span::SimpleSpan, Parser};
+use logos::Logos;
+use miniml_syntax::{parse::parser, token::Token};
+// use miniml_eval::env::Env;
 // use miniml_repl::tree_walk::repl;
 
-#[derive(Parser)]
-#[command(author, version, about, long_about = None)]
-struct Cli {
-    filepath: Option<String>,
+// #[derive(Parser)]
+// #[command(author, version, about, long_about = None)]
+// struct Cli {
+//     filepath: Option<String>,
 
-    #[arg(short, long, action = clap::ArgAction::Count)]
-    debug: u8,
-}
+//     #[arg(short, long, action = clap::ArgAction::Count)]
+//     debug: u8,
+// }
 
 fn main() {
     env_logger::init();
+    let src = "let x = x + 1";
+    let tokens = Token::lexer(&src).spanned().map(|(tok, span)| match tok {
+        Ok(tok) => (tok, SimpleSpan::from(span)),
+        Err(err) => panic!("lex error: {:?}", err),
+    });
+    let tok_stream = Stream::from_iter(tokens).spanned(SimpleSpan::from(src.len()..src.len()));
+    match parser().parse(tok_stream).into_result() {
+        Ok(root) => {
+            println!("{:?}", root);
+        }
+        Err(errors) => println!("error: {:?}", errors),
+    }
+
     // let args = Cli::parse();
     // let env = Env::new();
 

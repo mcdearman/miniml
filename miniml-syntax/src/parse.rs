@@ -1,8 +1,12 @@
-use crate::{ast::Expr, token::Token};
+use crate::{
+    ast::{Decl, Expr, InfixOp, Lit, Root},
+    node::{Node, SrcNode},
+    token::Token,
+};
 use chumsky::{
     extra,
     input::ValueInput,
-    prelude::Rich,
+    prelude::{Rich, Simple},
     primitive::{choice, just},
     recursive::recursive,
     select,
@@ -11,93 +15,137 @@ use chumsky::{
 };
 use miniml_util::intern::InternedString;
 
-pub fn parser<'a, I: ValueInput<'a, Token = Token, Span = SimpleSpan>>(
+fn ident_parser<'a, I: ValueInput<'a, Token = Token, Span = SimpleSpan>>(
+) -> impl Parser<'a, I, InternedString, extra::Err<Rich<'a, Token>>> {
+    select! {
+        Token::Ident(name) => InternedString::from(name),
+    }
+}
+
+fn lit_parser<'a, I: ValueInput<'a, Token = Token, Span = SimpleSpan>>(
+) -> impl Parser<'a, I, Lit, extra::Err<Rich<'a, Token>>> {
+    select! {
+        Token::Nat(n) => Lit::Nat(n),
+        Token::Int(n) => Lit::Int(n),
+        Token::Rational(r) => Lit::Rational(r),
+        Token::Real(r) => Lit::Real(r),
+        Token::Complex(c) => Lit::Complex(c),
+        Token::Char(c) => Lit::Char(c),
+        Token::String(s) => Lit::String(s),
+    }
+}
+
+fn expr_parser<'a, I: ValueInput<'a, Token = Token, Span = SimpleSpan>>(
 ) -> impl Parser<'a, I, Expr, extra::Err<Rich<'a, Token>>> {
-    let ident = select! { Token::Ident(name) => name };
+    recursive(|expr| {
+        // parse let
+        // let let_ = just(Token::Let)
+        //     .ignore_then(ident_parser().map_with_span(SrcNode::new))
+        //     .then_ignore(just(Token::Eq))
+        //     .then(inline_expr.clone())
+        //     .then_ignore(just(Token::In))
+        //     .then(expr.clone())
+        //     .map(|((name, expr), body)| Expr::Let {
+        //         name,
+        //         expr,
+        //         body,
+        //         rec: false,
+        //     })
+        //     .boxed();
 
-    let expr = recursive(|expr| {
-        let inline_expr = recursive(|inline_expr| {
-            let val = select! {
-                Token::Int(n) => Expr::Int(n),
-            }
+        // // parse curry lambda
+        // let lambda = just(Token::Backslash)
+        //     .ignore_then(ident_parser().map_with_span(SrcNode::new).repeated().foldr(
+        //         just(Token::Arrow).ignore_then(expr.clone()),
+        //         |param, body| Expr::Lambda { param, body },
+        //     ))
+        //     // .map_with_span(SrcNode::new)
+        //     .boxed();
+
+        let atom = choice((
+            lit_parser().map_with_span(SrcNode::new).map(Expr::Lit),
+            // let_,
+            // lambda,
+            // ident_parser().map_with_span(SrcNode::new).map(Expr::Ident),
+            expr.clone()
+                .delimited_by(just(Token::LParen), just(Token::RParen)),
+        ))
+        .boxed();
+
+        // // parse function application
+        // let apply = atom
+        //     .clone()
+        //     .foldl(atom.clone().repeated(), |fun, arg| Expr::Apply { fun, arg })
+        //     .boxed();
+
+        // // parse arithmetic
+        // let op = just(Token::Star)
+        //     .map(InfixOp::from)
+        //     .map_with_span(SrcNode::new)
+        //     .or(just(Token::Slash)
+        //         .map(InfixOp::from)
+        //         .map_with_span(SrcNode::new))
+        //     .boxed();
+
+        // let product = apply
+        //     .clone()
+        //     .map_with_span(SrcNode::new)
+        //     .foldl(
+        //         op.clone().then(apply.clone()).repeated(),
+        //         |lhs, (op, rhs)| Expr::Infix { op, lhs, rhs },
+        //     )
+        //     .boxed();
+
+        let op = just(Token::Plus)
+            .map(InfixOp::from)
+            .map_with_span(SrcNode::new)
+            .or(just(Token::Minus)
+                .map(InfixOp::from)
+                .map_with_span(SrcNode::new))
             .boxed();
 
-            // parse let
-            let let_ = just(Token::Let)
-                .ignore_then(ident)
-                .then_ignore(just(Token::Eq))
-                .then(inline_expr.clone())
-                .then_ignore(just(Token::In))
-                .then(expr.clone())
-                .map(|((name, val), body)| {
-                    Expr::Let(InternedString::from(name), Box::new(val), Box::new(body))
-                })
-                .boxed();
-
-            // parse curry lambda
-            let lambda = just(Token::Backslash)
-                .ignore_then(
-                    ident
-                        .repeated()
-                        .foldr(just(Token::Arrow).ignore_then(expr.clone()), |arg, body| {
-                            Expr::Lambda(InternedString::from(arg), Box::new(body))
-                        }),
-                )
-                .boxed();
-
-            let atom = choice((
-                val,
-                let_,
-                lambda,
-                ident.map(Expr::Var),
-                expr.clone()
-                    .delimited_by(just(Token::LParen), just(Token::RParen)),
-            ))
+        let term = atom
+            .clone()
+            .map_with_span(SrcNode::new)
+            .foldl(
+                op.clone()
+                    .then(expr.clone().map_with_span(SrcNode::new))
+                    .repeated(),
+                |lhs: Node<Expr, SimpleSpan>, (op, rhs)| {
+                    SrcNode::new(
+                        Expr::Infix {
+                            op,
+                            lhs: lhs.clone(),
+                            rhs: rhs.clone(),
+                        },
+                        SimpleSpan::new(lhs.span().start, rhs.span().end),
+                    )
+                },
+            )
             .boxed();
 
-            // parse function application
-            let apply = atom
-                .clone()
-                .foldl(atom.clone().repeated(), |f, arg| {
-                    Expr::Apply(Box::new(f), Box::new(arg))
-                })
-                .boxed();
+        term.map(|expr| expr.inner().clone())
+    })
+}
 
-            // parse arithmetic
-            let op = just(Token::Mul).or(just(Token::Div)).boxed();
+fn decl_parser<'a, I: ValueInput<'a, Token = Token, Span = SimpleSpan>>(
+) -> impl Parser<'a, I, Decl, extra::Err<Rich<'a, Token>>> {
+    just(Token::Let)
+        .ignore_then(ident_parser().map_with_span(SrcNode::new))
+        .then_ignore(just(Token::Eq))
+        .then(expr_parser().map_with_span(SrcNode::new))
+        .map(|(name, expr)| Decl::Let { name, expr })
+        .boxed()
+}
 
-            let product = apply
-                .clone()
-                .foldl(
-                    op.clone().then(apply.clone()).repeated(),
-                    |l, (op, r)| match op {
-                        Token::Mul => Expr::Mul(Box::new(l), Box::new(r)),
-                        Token::Div => Expr::Div(Box::new(l), Box::new(r)),
-                        _ => unreachable!(),
-                    },
-                )
-                .boxed();
-
-            let op = just(Token::Add).or(just(Token::Sub)).boxed();
-            let sum = product
-                .clone()
-                .foldl(
-                    op.clone().then(product.clone()).repeated(),
-                    |l, (op, r)| match op {
-                        Token::Add => Expr::Add(Box::new(l), Box::new(r)),
-                        Token::Sub => Expr::Sub(Box::new(l), Box::new(r)),
-                        _ => unreachable!(),
-                    },
-                )
-                .boxed();
-
-            sum
-        });
-
-        inline_expr
-    });
-
-    expr
+pub fn parser<'a, I: ValueInput<'a, Token = Token, Span = SimpleSpan>>(
+) -> impl Parser<'a, I, Root, extra::Err<Rich<'a, Token>>> {
+    decl_parser()
+        .map_with_span(SrcNode::new)
+        .repeated()
+        .at_least(1)
+        .collect()
+        .map(|decls| Root { decls })
 }
 
 mod tests {

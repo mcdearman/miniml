@@ -16,3 +16,4 @@ logos = "0.13.0"
 log = "0.4.18"
 cstree = { version = "0.12.0", features = ["derive"] }
 chumsky = "1.0.0-alpha.4"
+ariadne = "0.3.0"
