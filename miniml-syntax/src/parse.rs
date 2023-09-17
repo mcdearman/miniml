@@ -53,49 +53,84 @@ fn expr_parser<'a, I: ValueInput<'a, Token = Token, Span = SimpleSpan>>(
         //     })
         //     .boxed();
 
-        // // parse curry lambda
-        // let lambda = just(Token::Backslash)
-        //     .ignore_then(ident_parser().map_with_span(SrcNode::new).repeated().foldr(
-        //         just(Token::Arrow).ignore_then(expr.clone()),
-        //         |param, body| Expr::Lambda { param, body },
-        //     ))
-        //     // .map_with_span(SrcNode::new)
-        //     .boxed();
+        // parse curry lambda
+        let lambda = just(Token::Backslash)
+            .ignore_then(
+                ident_parser()
+                    .map_with_span(SrcNode::new)
+                    .repeated()
+                    .at_least(1)
+                    .foldr(
+                        just(Token::Arrow).ignore_then(expr.clone().map_with_span(SrcNode::new)),
+                        |param: SrcNode<InternedString>, body: SrcNode<Expr>| {
+                            SrcNode::new(
+                                Expr::Lambda {
+                                    param: param.clone(),
+                                    body: body.clone(),
+                                },
+                                SimpleSpan::new(param.span().start, body.span().end),
+                            )
+                        },
+                    ),
+            )
+            .boxed();
 
-        let atom = choice((
-            ident_parser().map_with_span(SrcNode::new).map(Expr::Ident),
-            lit_parser().map_with_span(SrcNode::new).map(Expr::Lit),
-            // let_,
-            // lambda,
-            // ident_parser().map_with_span(SrcNode::new).map(Expr::Ident),
-            expr.clone()
-                .delimited_by(just(Token::LParen), just(Token::RParen)),
-        ))
-        .boxed();
+        let atom = ident_parser()
+            .map_with_span(SrcNode::new)
+            .map(Expr::Ident)
+            .or(lit_parser().map_with_span(SrcNode::new).map(Expr::Lit))
+            .or(
+                // let_,
+                lambda.map(|expr| expr.inner().clone()),
+            )
+            .or(expr
+                .clone()
+                .delimited_by(just(Token::LParen), just(Token::RParen)))
+            .map_with_span(SrcNode::new)
+            .boxed();
 
-        // // parse function application
-        // let apply = atom
-        //     .clone()
-        //     .foldl(atom.clone().repeated(), |fun, arg| Expr::Apply { fun, arg })
-        //     .boxed();
+        // parse function application
+        let apply = atom
+            .clone()
+            .foldl(atom.clone().repeated(), |fun, arg| {
+                SrcNode::new(
+                    Expr::Apply {
+                        fun: fun.clone(),
+                        arg: arg.clone(),
+                    },
+                    SimpleSpan::new(fun.span().start, arg.span().end),
+                )
+            })
+            .map(|expr| expr.inner().clone())
+            .boxed();
 
-        // // parse arithmetic
-        // let op = just(Token::Star)
-        //     .map(InfixOp::from)
-        //     .map_with_span(SrcNode::new)
-        //     .or(just(Token::Slash)
-        //         .map(InfixOp::from)
-        //         .map_with_span(SrcNode::new))
-        //     .boxed();
+        let op = just(Token::Star)
+            .map(InfixOp::from)
+            .map_with_span(SrcNode::new)
+            .or(just(Token::Slash)
+                .map(InfixOp::from)
+                .map_with_span(SrcNode::new))
+            .boxed();
 
-        // let product = apply
-        //     .clone()
-        //     .map_with_span(SrcNode::new)
-        //     .foldl(
-        //         op.clone().then(apply.clone()).repeated(),
-        //         |lhs, (op, rhs)| Expr::Infix { op, lhs, rhs },
-        //     )
-        //     .boxed();
+        let factor = apply
+            .clone()
+            .map_with_span(SrcNode::new)
+            .foldl(
+                op.clone()
+                    .then(apply.clone().map_with_span(SrcNode::new))
+                    .repeated(),
+                |lhs: SrcNode<Expr>, (op, rhs)| {
+                    SrcNode::new(
+                        Expr::Infix {
+                            op,
+                            lhs: lhs.clone(),
+                            rhs: rhs.clone(),
+                        },
+                        SimpleSpan::new(lhs.span().start, rhs.span().end),
+                    )
+                },
+            )
+            .boxed();
 
         let op = just(Token::Plus)
             .map(InfixOp::from)
@@ -105,14 +140,11 @@ fn expr_parser<'a, I: ValueInput<'a, Token = Token, Span = SimpleSpan>>(
                 .map_with_span(SrcNode::new))
             .boxed();
 
-        let term = atom
+        let term = factor
             .clone()
-            .map_with_span(SrcNode::new)
             .foldl(
-                op.clone()
-                    .then(expr.clone().map_with_span(SrcNode::new))
-                    .repeated(),
-                |lhs: Node<Expr, SimpleSpan>, (op, rhs)| {
+                op.clone().then(factor.clone()).repeated(),
+                |lhs: SrcNode<Expr>, (op, rhs): (_, SrcNode<Expr>)| {
                     SrcNode::new(
                         Expr::Infix {
                             op,
@@ -147,4 +179,5 @@ pub fn parser<'a, I: ValueInput<'a, Token = Token, Span = SimpleSpan>>(
         .at_least(1)
         .collect()
         .map(|decls| Root { decls })
+        .boxed()
 }

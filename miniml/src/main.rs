@@ -17,7 +17,7 @@ use miniml_syntax::{parse::parser, token::Token};
 
 fn main() {
     env_logger::init();
-    let src = "let x = 1";
+    let src = "let x = \\f x -> f x";
     let tokens = Token::lexer(&src).spanned().map(|(tok, span)| match tok {
         Ok(tok) => (tok, SimpleSpan::from(span)),
         Err(err) => panic!("lex error: {:?}", err),
