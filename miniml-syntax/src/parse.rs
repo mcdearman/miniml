@@ -53,6 +53,21 @@ fn expr_parser<'a, I: ValueInput<'a, Token = Token, Span = SimpleSpan>>(
         //     })
         //     .boxed();
 
+        // parse if
+        let if_ = just(Token::If)
+            .ignore_then(expr.clone().map_with_span(SrcNode::new))
+            .then_ignore(just(Token::Then))
+            .then(expr.clone().map_with_span(SrcNode::new))
+            .then_ignore(just(Token::Else))
+            .then(expr.clone().map_with_span(SrcNode::new))
+            .map(|((cond, then), else_)| Expr::If {
+                cond,
+                then,
+                elifs: vec![],
+                else_,
+            })
+            .boxed();
+
         // parse curry lambda
         let lambda = just(Token::Backslash)
             .ignore_then(
@@ -79,6 +94,7 @@ fn expr_parser<'a, I: ValueInput<'a, Token = Token, Span = SimpleSpan>>(
             .map_with_span(SrcNode::new)
             .map(Expr::Ident)
             .or(lit_parser().map_with_span(SrcNode::new).map(Expr::Lit))
+            .or(if_)
             .or(
                 // let_,
                 lambda.map(|expr| expr.inner().clone()),
@@ -108,6 +124,9 @@ fn expr_parser<'a, I: ValueInput<'a, Token = Token, Span = SimpleSpan>>(
             .map(InfixOp::from)
             .map_with_span(SrcNode::new)
             .or(just(Token::Slash)
+                .map(InfixOp::from)
+                .map_with_span(SrcNode::new))
+            .or(just(Token::Percent)
                 .map(InfixOp::from)
                 .map_with_span(SrcNode::new))
             .boxed();
@@ -157,16 +176,81 @@ fn expr_parser<'a, I: ValueInput<'a, Token = Token, Span = SimpleSpan>>(
             )
             .boxed();
 
-        term.map(|expr| expr.inner().clone())
+        // cmp = term (("<" | ">" | "<=" | ">=" | "=" | "!=")  cmp)?
+        let op = choice((
+            just(Token::Lt)
+                .map(InfixOp::from)
+                .map_with_span(SrcNode::new),
+            just(Token::Gt)
+                .map(InfixOp::from)
+                .map_with_span(SrcNode::new),
+            just(Token::Leq)
+                .map(InfixOp::from)
+                .map_with_span(SrcNode::new),
+            just(Token::Geq)
+                .map(InfixOp::from)
+                .map_with_span(SrcNode::new),
+            just(Token::Eq)
+                .map(InfixOp::from)
+                .map_with_span(SrcNode::new),
+            just(Token::Neq)
+                .map(InfixOp::from)
+                .map_with_span(SrcNode::new),
+        ))
+        .boxed();
+
+        // cmp = term (("<" | ">" | "<=" | ">=" | "=" | "!=")  term)*
+        let cmp = term
+            .clone()
+            .foldl(
+                op.clone().then(term.clone()).repeated(),
+                |lhs: SrcNode<Expr>, (op, rhs): (_, SrcNode<Expr>)| {
+                    SrcNode::new(
+                        Expr::Infix {
+                            op,
+                            lhs: lhs.clone(),
+                            rhs: rhs.clone(),
+                        },
+                        SimpleSpan::new(lhs.span().start, rhs.span().end),
+                    )
+                },
+            )
+            .boxed();
+
+        cmp.map(|expr| expr.inner().clone())
     })
 }
 
 fn decl_parser<'a, I: ValueInput<'a, Token = Token, Span = SimpleSpan>>(
 ) -> impl Parser<'a, I, Decl, extra::Err<Rich<'a, Token>>> {
     just(Token::Let)
-        .ignore_then(ident_parser().map_with_span(SrcNode::new))
+        .ignore_then(
+            ident_parser()
+                .map_with_span(SrcNode::new)
+                .repeated()
+                .at_least(1)
+                .collect::<Vec<_>>(),
+        )
         .then_ignore(just(Token::Eq))
         .then(expr_parser().map_with_span(SrcNode::new))
+        .map(|(names, expr)| {
+            if names.len() == 1 {
+                (names.first().unwrap().clone(), expr.clone())
+            } else {
+                (
+                    names.first().unwrap().clone(),
+                    names.into_iter().skip(1).rev().fold(expr, |expr, name| {
+                        SrcNode::new(
+                            Expr::Lambda {
+                                param: name.clone(),
+                                body: expr.clone(),
+                            },
+                            SimpleSpan::new(name.span().start, expr.span().end),
+                        )
+                    }),
+                )
+            }
+        })
         .map(|(name, expr)| Decl::Let { name, expr })
         .boxed()
 }
