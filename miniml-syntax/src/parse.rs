@@ -39,10 +39,10 @@ fn expr_parser<'a, I: ValueInput<'a, Token = Token, Span = SimpleSpan>>(
 ) -> impl Parser<'a, I, Expr, extra::Err<Rich<'a, Token>>> {
     recursive(|expr| {
         // parse let expr
-        // let let_ = let_parser()
-        //     .then_ignore(just(Token::In))
-        //     .then(expr.clone().map_with_span(SrcNode::new))
-        //     .map(|((name, expr), body)| Expr::Let { name, expr, body });
+        let let_ = let_parser(expr.clone())
+            .then_ignore(just(Token::In))
+            .then(expr.clone().map_with_span(SrcNode::new))
+            .map(|((name, expr), body)| Expr::Let { name, expr, body });
 
         // parse if
         let if_ = just(Token::If)
@@ -86,7 +86,7 @@ fn expr_parser<'a, I: ValueInput<'a, Token = Token, Span = SimpleSpan>>(
             .map(Expr::Ident)
             .or(lit_parser().map_with_span(SrcNode::new).map(Expr::Lit))
             .or(if_)
-            // .or(let_)
+            .or(let_)
             .or(lambda.map(|expr| expr.inner().clone()))
             .or(expr
                 .clone()
@@ -212,6 +212,7 @@ fn expr_parser<'a, I: ValueInput<'a, Token = Token, Span = SimpleSpan>>(
 
 // Helper to reduce boilerplate. Used in both let expressions and let declarations.
 fn let_parser<'a, I: ValueInput<'a, Token = Token, Span = SimpleSpan>>(
+    expr_parser: impl Parser<'a, I, Expr, extra::Err<Rich<'a, Token>>> + 'a,
 ) -> impl Parser<'a, I, (SrcNode<InternedString>, SrcNode<Expr>), extra::Err<Rich<'a, Token>>> {
     just(Token::Let)
         .ignore_then(ident_parser().map_with_span(SrcNode::new))
@@ -222,7 +223,7 @@ fn let_parser<'a, I: ValueInput<'a, Token = Token, Span = SimpleSpan>>(
                 .collect::<Vec<_>>(),
         )
         .then_ignore(just(Token::Eq))
-        .then(expr_parser().map_with_span(SrcNode::new))
+        .then(expr_parser.map_with_span(SrcNode::new))
         .map(|((name, params), mut body)| {
             for param in params.into_iter().rev() {
                 let span = SimpleSpan::new(param.span().start, body.span().end);
@@ -235,7 +236,7 @@ fn let_parser<'a, I: ValueInput<'a, Token = Token, Span = SimpleSpan>>(
 
 fn decl_parser<'a, I: ValueInput<'a, Token = Token, Span = SimpleSpan>>(
 ) -> impl Parser<'a, I, Decl, extra::Err<Rich<'a, Token>>> {
-    let_parser()
+    let_parser(expr_parser())
         .map(|(name, expr)| Decl::Let { name, expr })
         .boxed()
 }
