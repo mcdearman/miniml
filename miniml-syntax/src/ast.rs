@@ -38,7 +38,6 @@ pub enum Expr {
         name: SrcNode<InternedString>,
         expr: SrcNode<Self>,
         body: SrcNode<Self>,
-        rec: bool,
     },
     Apply {
         fun: SrcNode<Self>,

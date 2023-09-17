@@ -38,20 +38,11 @@ fn lit_parser<'a, I: ValueInput<'a, Token = Token, Span = SimpleSpan>>(
 fn expr_parser<'a, I: ValueInput<'a, Token = Token, Span = SimpleSpan>>(
 ) -> impl Parser<'a, I, Expr, extra::Err<Rich<'a, Token>>> {
     recursive(|expr| {
-        // parse let
-        // let let_ = just(Token::Let)
-        //     .ignore_then(ident_parser().map_with_span(SrcNode::new))
-        //     .then_ignore(just(Token::Eq))
-        //     .then(inline_expr.clone())
+        // parse let expr
+        // let let_ = let_parser()
         //     .then_ignore(just(Token::In))
-        //     .then(expr.clone())
-        //     .map(|((name, expr), body)| Expr::Let {
-        //         name,
-        //         expr,
-        //         body,
-        //         rec: false,
-        //     })
-        //     .boxed();
+        //     .then(expr.clone().map_with_span(SrcNode::new))
+        //     .map(|((name, expr), body)| Expr::Let { name, expr, body });
 
         // parse if
         let if_ = just(Token::If)
@@ -95,10 +86,8 @@ fn expr_parser<'a, I: ValueInput<'a, Token = Token, Span = SimpleSpan>>(
             .map(Expr::Ident)
             .or(lit_parser().map_with_span(SrcNode::new).map(Expr::Lit))
             .or(if_)
-            .or(
-                // let_,
-                lambda.map(|expr| expr.inner().clone()),
-            )
+            // .or(let_)
+            .or(lambda.map(|expr| expr.inner().clone()))
             .or(expr
                 .clone()
                 .delimited_by(just(Token::LParen), just(Token::RParen)))
@@ -221,36 +210,32 @@ fn expr_parser<'a, I: ValueInput<'a, Token = Token, Span = SimpleSpan>>(
     })
 }
 
-fn decl_parser<'a, I: ValueInput<'a, Token = Token, Span = SimpleSpan>>(
-) -> impl Parser<'a, I, Decl, extra::Err<Rich<'a, Token>>> {
+// Helper to reduce boilerplate. Used in both let expressions and let declarations.
+fn let_parser<'a, I: ValueInput<'a, Token = Token, Span = SimpleSpan>>(
+) -> impl Parser<'a, I, (SrcNode<InternedString>, SrcNode<Expr>), extra::Err<Rich<'a, Token>>> {
     just(Token::Let)
-        .ignore_then(
+        .ignore_then(ident_parser().map_with_span(SrcNode::new))
+        .then(
             ident_parser()
                 .map_with_span(SrcNode::new)
                 .repeated()
-                .at_least(1)
                 .collect::<Vec<_>>(),
         )
         .then_ignore(just(Token::Eq))
         .then(expr_parser().map_with_span(SrcNode::new))
-        .map(|(names, expr)| {
-            if names.len() == 1 {
-                (names.first().unwrap().clone(), expr.clone())
-            } else {
-                (
-                    names.first().unwrap().clone(),
-                    names.into_iter().skip(1).rev().fold(expr, |expr, name| {
-                        SrcNode::new(
-                            Expr::Lambda {
-                                param: name.clone(),
-                                body: expr.clone(),
-                            },
-                            SimpleSpan::new(name.span().start, expr.span().end),
-                        )
-                    }),
-                )
+        .map(|((name, params), mut body)| {
+            for param in params.into_iter().rev() {
+                let span = SimpleSpan::new(param.span().start, body.span().end);
+                body = SrcNode::new(Expr::Lambda { param, body }, span);
             }
+            (name, body)
         })
+        .boxed()
+}
+
+fn decl_parser<'a, I: ValueInput<'a, Token = Token, Span = SimpleSpan>>(
+) -> impl Parser<'a, I, Decl, extra::Err<Rich<'a, Token>>> {
+    let_parser()
         .map(|(name, expr)| Decl::Let { name, expr })
         .boxed()
 }
