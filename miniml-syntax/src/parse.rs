@@ -111,7 +111,7 @@ fn expr_parser<'a, I: ValueInput<'a, Token = Token, Span = SimpleSpan>>(
             .boxed();
 
         // parse curry lambda
-        let lambda = just(Token::Backslash)
+        let lambda = just(Token::Fn)
             .ignore_then(
                 ident_parser()
                     .map_with_span(SrcNode::new)

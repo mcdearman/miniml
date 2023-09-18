@@ -110,6 +110,8 @@ pub enum Token {
     Use,
     #[token("let")]
     Let,
+    #[token("fn")]
+    Fn,
     #[token("struct")]
     Struct,
     #[token("match")]
@@ -180,6 +182,7 @@ impl Display for Token {
             Token::End => f.write_str("end"),
             Token::Use => f.write_str("use"),
             Token::Let => f.write_str("let"),
+            Token::Fn => f.write_str("fn"),
             Token::Struct => f.write_str("struct"),
             Token::Match => f.write_str("match"),
             Token::With => f.write_str("with"),

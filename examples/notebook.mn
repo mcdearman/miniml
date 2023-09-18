@@ -1,2 +1,2 @@
-let x = println x; 10
-let y = 2
+let x = match y with | f -> 2 \ g -> 1
+-- let x = match y with \ f -> 1

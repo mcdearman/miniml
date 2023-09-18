@@ -27,10 +27,10 @@ let main =
   then 2 else 3;
 
   -- lambda expression
-  \a b -> a + b;
+  fn a b -> a + b;
 
   -- lambda application
-  (\a b -> a + b) 1 2;
+  (fn a b -> a + b) 1 2;
 
   -- maps
   { x = 1, y = 2 };
@@ -73,7 +73,7 @@ let gcd a b =
   else gcd b (a % b)
 
 -- lambdas can be assigned to variables
-let gcd = \a b ->
+let gcd = fn a b ->
   if b = 0 then a 
   else gcd b (a % b)
 
@@ -99,7 +99,7 @@ let add1 = add 1 _
 let add1 = add _ 1
 
 -- partial application is really a lambda in disguise
-let add1 = \x -> add x 1
+let add1 = fn x -> add x 1
 
 -- list pattern
 let [a b c] = [1 2 3]

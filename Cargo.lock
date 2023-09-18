@@ -648,6 +648,7 @@ dependencies = [
  "miniml-syntax",
  "miniml-util",
  "miniml-vm",
+ "notify",
  "rustyline",
 ]
 

@@ -1,6 +1,9 @@
+use std::{path::Path, sync::mpsc::channel};
+
 use clap::Parser;
 use miniml_repl::tree_walk::repl;
 use miniml_syntax::parse;
+use notify::{event, Event, Watcher};
 
 #[derive(Parser)]
 #[command(author, version, about, long_about = None)]
@@ -16,17 +19,40 @@ fn main() {
     let args = Cli::parse();
 
     if let Some(filepath) = args.filepath {
-        let src = std::fs::read_to_string(filepath).expect("failed to read file");
-        match parse(&*src, false) {
-            (Some(root), errors) => {
-                if !errors.is_empty() {
-                    println!("errors: {:?}", errors);
-                } else {
-                    println!("root: {:?}", root);
-                }
-            }
-            (None, errors) => {
-                println!("errors: {:?}", errors);
+        let (tx, rx) = channel::<Event>();
+        let fp = filepath.clone();
+        let mut watcher = notify::recommended_watcher(
+            move |res: Result<notify::Event, notify::Error>| match res {
+                Ok(event) => match event.kind {
+                    event::EventKind::Modify(_) => {
+                        let src =
+                            std::fs::read_to_string(filepath.clone()).expect("failed to read file");
+                        match parse(&*src, false) {
+                            (Some(root), errors) => {
+                                if !errors.is_empty() {
+                                    println!("errors: {:?}", errors);
+                                } else {
+                                    println!("root: {:?}", root);
+                                }
+                            }
+                            (None, errors) => {
+                                println!("errors: {:?}", errors);
+                            }
+                        }
+                    }
+                    _ => println!("other: {:?}", event.kind),
+                },
+                Err(e) => println!("watch error: {:?}", e),
+            },
+        )
+        .unwrap();
+        watcher
+            .watch(Path::new(&*fp.clone()), notify::RecursiveMode::NonRecursive)
+            .unwrap();
+        loop {
+            match rx.recv() {
+                Ok(event) => println!("event: {:?}", event),
+                Err(e) => println!("watch error: {:?}", e),
             }
         }
     } else {
