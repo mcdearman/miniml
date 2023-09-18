@@ -1,6 +1,7 @@
 let x = 
-  match y with 
+  let a = match y with 
   | f -> 2 
   \ g -> match z with 
          | h -> 3 
          \ i -> 4
+  in a
