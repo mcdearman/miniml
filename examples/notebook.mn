@@ -1,2 +1,6 @@
-let x = match y with | f -> 2 \ g -> 1
--- let x = match y with \ f -> 1
+let x = 
+  match y with 
+  | f -> 2 
+  \ g -> match z with 
+         | h -> 3 
+         \ i -> 4

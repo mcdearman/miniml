@@ -19,26 +19,14 @@ fn main() {
     let args = Cli::parse();
 
     if let Some(filepath) = args.filepath {
+        parse_file(&*filepath);
         let (tx, rx) = channel::<Event>();
         let fp = filepath.clone();
         let mut watcher = notify::recommended_watcher(
             move |res: Result<notify::Event, notify::Error>| match res {
                 Ok(event) => match event.kind {
                     event::EventKind::Modify(_) => {
-                        let src =
-                            std::fs::read_to_string(filepath.clone()).expect("failed to read file");
-                        match parse(&*src, false) {
-                            (Some(root), errors) => {
-                                if !errors.is_empty() {
-                                    println!("errors: {:?}", errors);
-                                } else {
-                                    println!("root: {:?}", root);
-                                }
-                            }
-                            (None, errors) => {
-                                println!("errors: {:?}", errors);
-                            }
-                        }
+                        tx.send(event).unwrap();
                     }
                     _ => println!("other: {:?}", event.kind),
                 },
@@ -51,12 +39,28 @@ fn main() {
             .unwrap();
         loop {
             match rx.recv() {
-                Ok(event) => println!("event: {:?}", event),
+                Ok(_) => parse_file(&*fp),
                 Err(e) => println!("watch error: {:?}", e),
             }
         }
     } else {
         repl();
+    }
+}
+
+fn parse_file(filepath: &str) {
+    let src = std::fs::read_to_string(filepath.clone()).expect("failed to read file");
+    match parse(&*src, false) {
+        (Some(root), errors) => {
+            if !errors.is_empty() {
+                println!("errors: {:?}", errors);
+            } else {
+                println!("root: {:?}", root);
+            }
+        }
+        (None, errors) => {
+            println!("errors: {:?}", errors);
+        }
     }
 }
 
