@@ -49,14 +49,35 @@ fn expr_parser<'a, I: ValueInput<'a, Token = Token, Span = SimpleSpan>>(
             .ignore_then(expr.clone().map_with_span(SrcNode::new))
             .then_ignore(just(Token::Then))
             .then(expr.clone().map_with_span(SrcNode::new))
-            .then_ignore(just(Token::Else))
-            .then(expr.clone().map_with_span(SrcNode::new))
-            .map(|((cond, then), else_)| Expr::If {
-                cond,
-                then,
-                elifs: vec![],
-                else_,
-            })
+            .then(
+                just(Token::Elif)
+                    .ignore_then(expr.clone().map_with_span(SrcNode::new))
+                    .then_ignore(just(Token::Then))
+                    .then(expr.clone().map_with_span(SrcNode::new))
+                    .repeated()
+                    .foldl(
+                        just(Token::Else).ignore_then(expr.clone().map_with_span(SrcNode::new)),
+                        |else_, (cond, then)| {
+                            SrcNode::new(
+                                Expr::If {
+                                    cond,
+                                    then,
+                                    elifs: vec![],
+                                    else_: else_.clone(),
+                                },
+                                SimpleSpan::new(cond.span().start, else_.span().end),
+                            )
+                        },
+                    ),
+            )
+            // .then_ignore(just(Token::Else))
+            // .then(expr.clone().map_with_span(SrcNode::new))
+            // .map(|s| Expr::If {
+            //     cond,
+            //     then,
+            //     elifs: vec![],
+            //     else_,
+            // })
             .boxed();
 
         // parse curry lambda

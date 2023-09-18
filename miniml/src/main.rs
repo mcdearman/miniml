@@ -1,54 +1,37 @@
-use std::f32::consts::E;
+use clap::Parser;
+use miniml_repl::tree_walk::repl;
+use miniml_syntax::parse;
 
-use chumsky::{input::Stream, prelude::Input, span::SimpleSpan, Parser};
-use logos::Logos;
-use miniml_syntax::{parse::parser, token::Token};
-// use miniml_eval::env::Env;
-// use miniml_repl::tree_walk::repl;
+#[derive(Parser)]
+#[command(author, version, about, long_about = None)]
+struct Cli {
+    filepath: Option<String>,
 
-// #[derive(Parser)]
-// #[command(author, version, about, long_about = None)]
-// struct Cli {
-//     filepath: Option<String>,
-
-//     #[arg(short, long, action = clap::ArgAction::Count)]
-//     debug: u8,
-// }
+    #[arg(short, long, action = clap::ArgAction::Count)]
+    debug: u8,
+}
 
 fn main() {
     env_logger::init();
-    // let src = "let gcd a b = if b = 0 then a else gcd b (a % b)";
-    let src = "let x = let y = 1 in x + y";
-    let tokens = Token::lexer(&src).spanned().map(|(tok, span)| match tok {
-        Ok(tok) => (tok, SimpleSpan::from(span)),
-        Err(err) => panic!("lex error: {:?}", err),
-    });
-    let tok_stream = Stream::from_iter(tokens).spanned(SimpleSpan::from(src.len()..src.len()));
-    match parser().parse(tok_stream).into_result() {
-        Ok(root) => {
-            println!("{:?}", root);
+    let args = Cli::parse();
+
+    if let Some(filepath) = args.filepath {
+        let src = std::fs::read_to_string(filepath).expect("failed to read file");
+        match parse(&*src) {
+            (Some(root), errors) => {
+                if !errors.is_empty() {
+                    println!("errors: {:?}", errors);
+                } else {
+                    println!("root: {:?}", root);
+                }
+            }
+            (None, errors) => {
+                println!("errors: {:?}", errors);
+            }
         }
-        Err(errors) => panic!("error: {:?}", errors),
+    } else {
+        repl();
     }
-
-    // let args = Cli::parse();
-    // let env = Env::new();
-
-    // if let Some(filepath) = args.filepath {
-    //     let src = std::fs::read_to_string(filepath).expect("failed to read file");
-    //     let mut parser = miniml_syntax::parser::Parser::new(&src);
-    //     match parser.repl_parse() {
-    //         (root, errors) => {
-    //             if !errors.is_empty() {
-    //                 println!("errors: {:?}", errors);
-    //             } else {
-    //                 println!("root: {:?}", root);
-    //             }
-    //         }
-    //     }
-    // } else {
-    //     repl();
-    // }
 }
 
 // use logos::Logos;
