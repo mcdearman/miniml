@@ -55,29 +55,16 @@ fn expr_parser<'a, I: ValueInput<'a, Token = Token, Span = SimpleSpan>>(
                     .then_ignore(just(Token::Then))
                     .then(expr.clone().map_with_span(SrcNode::new))
                     .repeated()
-                    .foldl(
-                        just(Token::Else).ignore_then(expr.clone().map_with_span(SrcNode::new)),
-                        |else_, (cond, then)| {
-                            SrcNode::new(
-                                Expr::If {
-                                    cond,
-                                    then,
-                                    elifs: vec![],
-                                    else_: else_.clone(),
-                                },
-                                SimpleSpan::new(cond.span().start, else_.span().end),
-                            )
-                        },
-                    ),
+                    .collect::<Vec<_>>(),
             )
-            // .then_ignore(just(Token::Else))
-            // .then(expr.clone().map_with_span(SrcNode::new))
-            // .map(|s| Expr::If {
-            //     cond,
-            //     then,
-            //     elifs: vec![],
-            //     else_,
-            // })
+            .then_ignore(just(Token::Else))
+            .then(expr.clone().map_with_span(SrcNode::new))
+            .map(|(((cond, then), elifs), else_)| Expr::If {
+                cond,
+                then,
+                elifs,
+                else_,
+            })
             .boxed();
 
         // parse curry lambda
