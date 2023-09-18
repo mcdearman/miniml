@@ -10,7 +10,7 @@ let = "let" (pat | ident pat+) "=" expr
 
 expr = pipe
 
-pipe = stmt ("|" pipe)?
+pipe = stmt ("|>" pipe)?
 
 stmt = or (";" stmt)?
 

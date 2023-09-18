@@ -1,12 +1,12 @@
 use crate::{
     ast::{Decl, Expr, InfixOp, Lit, Root},
-    node::{Node, SrcNode},
+    node::SrcNode,
     token::Token,
 };
 use chumsky::{
     extra,
     input::ValueInput,
-    prelude::{Rich, Simple},
+    prelude::Rich,
     primitive::{choice, just},
     recursive::recursive,
     select,
@@ -214,7 +214,79 @@ fn expr_parser<'a, I: ValueInput<'a, Token = Token, Span = SimpleSpan>>(
             )
             .boxed();
 
-        cmp.map(|expr| expr.inner().clone())
+        // and = cmp ("and" cmp)*
+        let and = cmp
+            .clone()
+            .foldl(
+                just(Token::And).ignore_then(cmp.clone()).repeated(),
+                |lhs: SrcNode<Expr>, rhs: SrcNode<Expr>| {
+                    SrcNode::new(
+                        Expr::Infix {
+                            op: SrcNode::new(InfixOp::And, SimpleSpan::new(0, 0)),
+                            lhs: lhs.clone(),
+                            rhs: rhs.clone(),
+                        },
+                        SimpleSpan::new(lhs.span().start, rhs.span().end),
+                    )
+                },
+            )
+            .boxed();
+
+        // or = and ("or" and)*
+        let or = and
+            .clone()
+            .foldl(
+                just(Token::Or).ignore_then(and.clone()).repeated(),
+                |lhs: SrcNode<Expr>, rhs: SrcNode<Expr>| {
+                    SrcNode::new(
+                        Expr::Infix {
+                            op: SrcNode::new(InfixOp::Or, SimpleSpan::new(0, 0)),
+                            lhs: lhs.clone(),
+                            rhs: rhs.clone(),
+                        },
+                        SimpleSpan::new(lhs.span().start, rhs.span().end),
+                    )
+                },
+            )
+            .boxed();
+
+        // stmt = or (";" or)*
+        let stmt = or
+            .clone()
+            .foldl(
+                just(Token::Semicolon).ignore_then(or.clone()).repeated(),
+                |lhs: SrcNode<Expr>, rhs: SrcNode<Expr>| {
+                    SrcNode::new(
+                        Expr::Infix {
+                            op: SrcNode::new(InfixOp::Stmt, SimpleSpan::new(0, 0)),
+                            lhs: lhs.clone(),
+                            rhs: rhs.clone(),
+                        },
+                        SimpleSpan::new(lhs.span().start, rhs.span().end),
+                    )
+                },
+            )
+            .boxed();
+
+        // pipe = stmt ("|>" stmt)*
+        let pipe = stmt
+            .clone()
+            .foldl(
+                just(Token::PipeArrow).ignore_then(stmt.clone()).repeated(),
+                |lhs: SrcNode<Expr>, rhs: SrcNode<Expr>| {
+                    SrcNode::new(
+                        Expr::Infix {
+                            op: SrcNode::new(InfixOp::Pipe, SimpleSpan::new(0, 0)),
+                            lhs: lhs.clone(),
+                            rhs: rhs.clone(),
+                        },
+                        SimpleSpan::new(lhs.span().start, rhs.span().end),
+                    )
+                },
+            )
+            .boxed();
+
+        pipe.map(|expr| expr.inner().clone())
     })
 }
 
