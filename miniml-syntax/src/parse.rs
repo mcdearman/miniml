@@ -1,5 +1,5 @@
 use crate::{
-    ast::{Decl, Expr, InfixOp, Lit, PrefixOp, Root},
+    ast::{Decl, Expr, InfixOp, Lit, MatchCase, Pattern, PrefixOp, Root},
     node::SrcNode,
     token::Token,
 };
@@ -35,9 +35,52 @@ fn lit_parser<'a, I: ValueInput<'a, Token = Token, Span = SimpleSpan>>(
     }
 }
 
+fn pattern_parser<'a, I: ValueInput<'a, Token = Token, Span = SimpleSpan>>(
+) -> impl Parser<'a, I, Pattern, extra::Err<Rich<'a, Token>>> {
+    ident_parser()
+        .map_with_span(SrcNode::new)
+        .map(Pattern::Ident)
+        .boxed()
+}
+
 fn expr_parser<'a, I: ValueInput<'a, Token = Token, Span = SimpleSpan>>(
 ) -> impl Parser<'a, I, Expr, extra::Err<Rich<'a, Token>>> {
     recursive(|expr| {
+        // case = pat "->" expr
+        let case = pattern_parser()
+            .map_with_span(SrcNode::new)
+            .then_ignore(just(Token::Arrow))
+            .then(expr.clone().map_with_span(SrcNode::new))
+            .map(|(pattern, body): (SrcNode<Pattern>, SrcNode<Expr>)| {
+                SrcNode::new(
+                    MatchCase {
+                        pattern: pattern.clone(),
+                        body: body.clone(),
+                    },
+                    SimpleSpan::new(pattern.span().start, body.span().end),
+                )
+            })
+            .boxed();
+
+        // match = "match" expr "with" ("|" case)* "\\" case
+        let match_ = just(Token::Match)
+            .ignore_then(expr.clone().map_with_span(SrcNode::new))
+            .then_ignore(just(Token::With))
+            .then(
+                just(Token::Pipe)
+                    .ignore_then(case.clone())
+                    .repeated()
+                    .collect::<Vec<_>>(),
+            )
+            .then_ignore(just(Token::Backslash))
+            .then(case.clone())
+            .map(
+                |((expr, mut cases), end): ((_, Vec<SrcNode<MatchCase>>), SrcNode<MatchCase>)| {
+                    cases.push(end);
+                    Expr::Match { expr, cases }
+                },
+            );
+
         // parse let expr
         let let_ = let_parser(expr.clone())
             .then_ignore(just(Token::In))
@@ -94,6 +137,7 @@ fn expr_parser<'a, I: ValueInput<'a, Token = Token, Span = SimpleSpan>>(
             .map(Expr::Ident)
             .or(lit_parser().map_with_span(SrcNode::new).map(Expr::Lit))
             .or(if_)
+            .or(match_)
             .or(let_)
             .or(lambda.map(|expr| expr.inner().clone()))
             .or(expr

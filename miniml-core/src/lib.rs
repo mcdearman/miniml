@@ -17,14 +17,14 @@ pub enum Expr {
     },
     Match {
         expr: Box<Self>,
-        cases: Vec<MatchArm>,
+        cases: Vec<MatchCase>,
     },
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct MatchArm {
+pub struct MatchCase {
     pub pattern: Pattern,
-    pub expr: Expr,
+    pub body: Expr,
 }
 
 #[derive(Debug, Clone, PartialEq)]

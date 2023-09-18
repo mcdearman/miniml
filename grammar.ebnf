@@ -30,14 +30,16 @@ unary = ("-" | "not")* apply
 
 apply = atom atom*
 
-atom = ident | lit | letExpr | lambda | map | list | "("  expr  ")"
+atom = ident | lit | letExpr | if | match | lambda | map | list | "("  expr  ")"
 
 letExpr = "let" (pat | ident pat*) "=" expr "in" expr
 
 if = "if" expr "then" expr 
     ("elif" expr "then" expr)* "else" expr
 
-match = pat ("|" match)?
+match = "match" expr "with" ("|" case)* "\\" case
+
+case = pat "->" expr
 
 pat = ident | lit | listPat | consPat | wildcard | unit
 

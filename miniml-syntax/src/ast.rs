@@ -49,6 +49,10 @@ pub enum Expr {
         elifs: Vec<(SrcNode<Self>, SrcNode<Self>)>,
         else_: SrcNode<Self>,
     },
+    Match {
+        expr: SrcNode<Self>,
+        cases: Vec<SrcNode<MatchCase>>,
+    },
     Lambda {
         param: SrcNode<InternedString>,
         body: SrcNode<Self>,
@@ -57,9 +61,22 @@ pub enum Expr {
 }
 
 #[derive(Debug, Clone, PartialEq)]
+pub struct MatchCase {
+    pub pattern: SrcNode<Pattern>,
+    pub body: SrcNode<Expr>,
+}
+
+#[derive(Debug, Clone, PartialEq)]
 pub enum Pattern {
     Ident(SrcNode<InternedString>),
     Lit(SrcNode<Lit>),
+    List {
+        items: Vec<SrcNode<Self>>,
+    },
+    Cons {
+        head: SrcNode<Self>,
+        tail: SrcNode<Self>,
+    },
     Wildcard,
     Unit,
 }
