@@ -12,7 +12,7 @@ pub fn repl() {
         io::stdin()
             .read_line(&mut src)
             .expect("failed to read from stdin");
-        match parse(&*src) {
+        match parse(&*src, true) {
             (Some(root), errors) => {
                 if !errors.is_empty() {
                     println!("errors: {:?}", errors);

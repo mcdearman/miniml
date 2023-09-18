@@ -26,7 +26,7 @@ factor = power (("*" | "/" | "%")  factor)?
 
 power = unary ("^"  power)?
 
-unary = apply | ("-" | "not") unary
+unary = ("-" | "not")* apply
 
 apply = atom atom*
 

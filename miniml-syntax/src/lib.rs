@@ -6,7 +6,7 @@ use chumsky::{
     Parser,
 };
 use logos::Logos;
-use parse::parser;
+use parse::{parser, repl_parser};
 use token::Token;
 
 pub mod ast;
@@ -17,12 +17,15 @@ pub mod token;
 
 pub type ParseError<'a> = Rich<'a, token::Token, SimpleSpan, &'a str>;
 
-pub fn parse<'src>(src: &'src str) -> (Option<Root>, Vec<ParseError<'src>>) {
+pub fn parse<'src>(src: &'src str, repl: bool) -> (Option<Root>, Vec<ParseError<'src>>) {
     let tokens = Token::lexer(&src).spanned().map(|(tok, span)| match tok {
         Ok(tok) => (tok, SimpleSpan::from(span)),
         Err(err) => panic!("lex error: {:?}", err),
     });
     let tok_stream = Stream::from_iter(tokens).spanned(SimpleSpan::from(src.len()..src.len()));
-    let parser = parser();
-    parser.parse(tok_stream).into_output_errors()
+    if repl {
+        repl_parser().parse(tok_stream).into_output_errors()
+    } else {
+        parser().parse(tok_stream).into_output_errors()
+    }
 }

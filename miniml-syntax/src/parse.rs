@@ -1,5 +1,5 @@
 use crate::{
-    ast::{Decl, Expr, InfixOp, Lit, Root},
+    ast::{Decl, Expr, InfixOp, Lit, PrefixOp, Root},
     node::SrcNode,
     token::Token,
 };
@@ -114,7 +114,34 @@ fn expr_parser<'a, I: ValueInput<'a, Token = Token, Span = SimpleSpan>>(
                     SimpleSpan::new(fun.span().start, arg.span().end),
                 )
             })
-            .map(|expr| expr.inner().clone())
+            // .map(|expr| expr.inner().clone())
+            .boxed();
+
+        let op = just(Token::Minus)
+            .map(PrefixOp::from)
+            .map_with_span(SrcNode::new)
+            .or(just(Token::Not)
+                .map(PrefixOp::from)
+                .map_with_span(SrcNode::new))
+            .boxed();
+
+        // unary = ("-" | "not")* apply
+        let unary = op
+            .clone()
+            .repeated()
+            .foldr(
+                apply.clone(),
+                |op: SrcNode<PrefixOp>, expr: SrcNode<Expr>| {
+                    SrcNode::new(
+                        Expr::Prefix {
+                            op: op.clone(),
+                            expr: expr.clone(),
+                        },
+                        SimpleSpan::new(op.span().start, expr.span().end),
+                    )
+                },
+            )
+            // .map_with_span(SrcNode::new)
             .boxed();
 
         let op = just(Token::Star)
@@ -128,14 +155,11 @@ fn expr_parser<'a, I: ValueInput<'a, Token = Token, Span = SimpleSpan>>(
                 .map_with_span(SrcNode::new))
             .boxed();
 
-        let factor = apply
+        let factor = unary
             .clone()
-            .map_with_span(SrcNode::new)
             .foldl(
-                op.clone()
-                    .then(apply.clone().map_with_span(SrcNode::new))
-                    .repeated(),
-                |lhs: SrcNode<Expr>, (op, rhs)| {
+                op.clone().then(unary.clone()).repeated(),
+                |lhs: SrcNode<Expr>, (op, rhs): (SrcNode<InfixOp>, SrcNode<Expr>)| {
                     SrcNode::new(
                         Expr::Infix {
                             op,
@@ -324,6 +348,23 @@ fn decl_parser<'a, I: ValueInput<'a, Token = Token, Span = SimpleSpan>>(
 pub fn parser<'a, I: ValueInput<'a, Token = Token, Span = SimpleSpan>>(
 ) -> impl Parser<'a, I, Root, extra::Err<Rich<'a, Token>>> {
     decl_parser()
+        .map_with_span(SrcNode::new)
+        .repeated()
+        .at_least(1)
+        .collect()
+        .map(|decls| Root { decls })
+        .boxed()
+}
+
+pub fn repl_parser<'a, I: ValueInput<'a, Token = Token, Span = SimpleSpan>>(
+) -> impl Parser<'a, I, Root, extra::Err<Rich<'a, Token>>> {
+    decl_parser()
+        .or(expr_parser()
+            .map_with_span(SrcNode::new)
+            .map(|expr| Decl::Let {
+                name: SrcNode::new(InternedString::from("main"), expr.span()),
+                expr,
+            }))
         .map_with_span(SrcNode::new)
         .repeated()
         .at_least(1)

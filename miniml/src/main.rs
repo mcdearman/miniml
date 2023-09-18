@@ -17,7 +17,7 @@ fn main() {
 
     if let Some(filepath) = args.filepath {
         let src = std::fs::read_to_string(filepath).expect("failed to read file");
-        match parse(&*src) {
+        match parse(&*src, false) {
             (Some(root), errors) => {
                 if !errors.is_empty() {
                     println!("errors: {:?}", errors);
