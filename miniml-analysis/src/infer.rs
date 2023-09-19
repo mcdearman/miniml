@@ -7,17 +7,41 @@ use std::{
 use miniml_syntax::ast::{Expr, InfixOp};
 use miniml_util::intern::InternedString;
 
-#[rustfmt::skip]
-const ALLOWED_TYPES: &[(&[Type], Type)] = &[
-    (&[Type::Int, Type::Int], Type::Int),
-    (&[Type::Int, Type::Bool], Type::Int),
-    (&[Type::Bool, Type::Int], Type::Int),
-    (&[Type::Bool, Type::Bool], Type::Int),
+const ARITHMETIC_TYPES: &[&[Type]] = &[
+    &[Type::Nat, Type::Nat, Type::Nat],
+    &[Type::Int, Type::Int, Type::Int],
+    &[Type::Rational, Type::Rational, Type::Rational],
+    &[Type::Real, Type::Real, Type::Real],
+    &[Type::Complex, Type::Complex, Type::Complex],
+];
+
+const ALLOWED_TYPES: &[&[&[Type]]] = &[
+    // +, -, *, /
+    ARITHMETIC_TYPES,
+    ARITHMETIC_TYPES,
+    ARITHMETIC_TYPES,
+    ARITHMETIC_TYPES,
+    // rem
+    &[&[Type::Nat, Type::Nat, Type::Nat]],
+    // pow
+    &[
+        &[Type::Nat, Type::Nat, Type::Nat],
+        &[Type::Int, Type::Nat, Type::Int],
+        &[Type::Rational, Type::Nat, Type::Rational],
+        &[Type::Real, Type::Nat, Type::Real],
+        &[Type::Complex, Type::Nat, Type::Complex],
+    ],
 ];
 
 #[derive(Clone, PartialEq)]
 pub enum Type {
+    Nat,
     Int,
+    Rational,
+    Real,
+    Complex,
+    String,
+    Char,
     Bool,
     Var(TyVar),
     Lambda(Box<Self>, Box<Self>),
@@ -314,6 +338,7 @@ fn infer(ctx: Context, expr: Expr) -> Result<(Substitution, Type), String> {
         Expr::Infix { op, lhs, rhs } => match op.inner() {
             InfixOp::Add => {
                 // use table `allowed_types` of allowed type combinations
+                todo!()
             }
             _ => todo!(),
         },
