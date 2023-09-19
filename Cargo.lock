@@ -653,6 +653,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "miniml-analysis"
+version = "0.1.0"
+dependencies = [
+ "miniml-syntax",
+ "miniml-util",
+]
+
+[[package]]
 name = "miniml-compile"
 version = "0.1.0"
 dependencies = [

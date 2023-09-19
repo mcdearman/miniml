@@ -9,4 +9,5 @@ members = [
     "miniml-eval",
     "miniml-notebook",
     "miniml-core",
+    "miniml-analysis",
 ]

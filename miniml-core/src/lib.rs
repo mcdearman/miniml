@@ -19,6 +19,10 @@ pub enum Expr {
         expr: Box<Self>,
         cases: Vec<MatchCase>,
     },
+    Apply {
+        fun: Box<Self>,
+        arg: Box<Self>,
+    },
 }
 
 #[derive(Debug, Clone, PartialEq)]
