@@ -9,10 +9,10 @@ pub enum Decl {
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Expr {
-    Ident(InternedString),
+    Ident(i64),
     Lit(Lit),
     Lambda {
-        param: Box<Self>,
+        param: Pattern,
         body: Box<Self>,
     },
     Match {
@@ -33,7 +33,8 @@ pub struct MatchCase {
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Pattern {
-    Ident(InternedString),
+    Ident(i64),
+    Lit(Lit),
 }
 
 #[derive(Debug, Clone, PartialEq)]

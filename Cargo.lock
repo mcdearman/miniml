@@ -702,6 +702,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "miniml-lower"
+version = "0.1.0"
+dependencies = [
+ "miniml-core",
+ "miniml-syntax",
+ "miniml-util",
+]
+
+[[package]]
 name = "miniml-notebook"
 version = "0.1.0"
 dependencies = [

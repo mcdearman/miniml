@@ -1,7 +1,4 @@
-let x = 
-  let a = match y with 
-  | f -> 2 
-  \ g -> match z with 
-         | h -> 3 
-         \ i -> 4
-  in a
+let gcd a b =
+  match b with
+  | 0 -> a
+  \ _ -> gcd b (a % b)

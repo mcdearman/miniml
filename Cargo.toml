@@ -10,4 +10,5 @@ members = [
     "miniml-notebook",
     "miniml-core",
     "miniml-analysis",
+    "miniml-lower",
 ]

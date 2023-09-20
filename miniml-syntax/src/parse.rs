@@ -40,6 +40,7 @@ fn pattern_parser<'a, I: ValueInput<'a, Token = Token, Span = SimpleSpan>>(
     ident_parser()
         .map_with_span(SrcNode::new)
         .map(Pattern::Ident)
+        .or(lit_parser().map_with_span(SrcNode::new).map(Pattern::Lit))
         .boxed()
 }
 
@@ -394,7 +395,7 @@ pub fn parser<'a, I: ValueInput<'a, Token = Token, Span = SimpleSpan>>(
     decl_parser()
         .map_with_span(SrcNode::new)
         .repeated()
-        .at_least(1)
+        // .at_least(1)
         .collect()
         .map(|decls| Root { decls })
         .boxed()
