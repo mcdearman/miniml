@@ -23,7 +23,7 @@ fn main() {
         let (tx, rx) = channel::<Event>();
         let fp = filepath.clone();
         let mut watcher = notify::recommended_watcher(
-            move |res: Result<notify::Event, notify::Error>| match res {
+            move |res: Result<Event, notify::Error>| match res {
                 Ok(event) => match event.kind {
                     event::EventKind::Modify(_) => {
                         tx.send(event).unwrap();
