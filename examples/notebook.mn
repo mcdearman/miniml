@@ -1,13 +1,3 @@
-let gcd a b =
-  match b with
-  | 0 -> a
-  \ _ -> gcd b (a % b)
+let add x y = x + y
 
--- nested match
-let gcd a b =
-  match a with
-  | 0 -> b
-  \ _ -> match b with
-         | 0 -> a
-         \ _ -> gcd b (a % b)
 

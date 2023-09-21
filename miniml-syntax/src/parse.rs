@@ -1,3 +1,5 @@
+use std::vec;
+
 use crate::{
     ast::{Decl, Expr, InfixOp, Lit, MatchCase, Pattern, PrefixOp, Root},
     node::SrcNode,
@@ -111,26 +113,17 @@ fn expr_parser<'a, I: ValueInput<'a, Token = Token, Span = SimpleSpan>>(
             })
             .boxed();
 
-        // parse curry lambda
         let lambda = just(Token::Fn)
             .ignore_then(
                 ident_parser()
                     .map_with_span(SrcNode::new)
                     .repeated()
                     .at_least(1)
-                    .foldr(
-                        just(Token::Arrow).ignore_then(expr.clone().map_with_span(SrcNode::new)),
-                        |param: SrcNode<InternedString>, body: SrcNode<Expr>| {
-                            SrcNode::new(
-                                Expr::Lambda {
-                                    param: param.clone(),
-                                    body: body.clone(),
-                                },
-                                SimpleSpan::new(param.span().start, body.span().end),
-                            )
-                        },
-                    ),
+                    .collect(),
             )
+            .then(just(Token::Arrow).ignore_then(expr.clone().map_with_span(SrcNode::new)))
+            .map(|(params, body)| Expr::Lambda { params, body })
+            .map_with_span(SrcNode::new)
             .boxed();
 
         let atom = ident_parser()
@@ -150,16 +143,16 @@ fn expr_parser<'a, I: ValueInput<'a, Token = Token, Span = SimpleSpan>>(
         // parse function application
         let apply = atom
             .clone()
-            .foldl(atom.clone().repeated(), |fun, arg| {
+            .foldl(atom.clone().repeated(), |f, arg| {
+                let args = vec![arg];
                 SrcNode::new(
                     Expr::Apply {
-                        fun: fun.clone(),
-                        arg: arg.clone(),
+                        fun: f.clone(),
+                        args: args.clone(),
                     },
-                    SimpleSpan::new(fun.span().start, arg.span().end),
+                    SimpleSpan::new(f.span().start, args.last().unwrap().span().end),
                 )
             })
-            // .map(|expr| expr.inner().clone())
             .boxed();
 
         let op = just(Token::Minus)
@@ -186,7 +179,6 @@ fn expr_parser<'a, I: ValueInput<'a, Token = Token, Span = SimpleSpan>>(
                     )
                 },
             )
-            // .map_with_span(SrcNode::new)
             .boxed();
 
         let op = just(Token::Star)
@@ -373,12 +365,17 @@ fn let_parser<'a, I: ValueInput<'a, Token = Token, Span = SimpleSpan>>(
         )
         .then_ignore(just(Token::Eq))
         .then(expr_parser.map_with_span(SrcNode::new))
-        .map(|((name, params), mut body)| {
-            for param in params.into_iter().rev() {
-                let span = SimpleSpan::new(param.span().start, body.span().end);
-                body = SrcNode::new(Expr::Lambda { param, body }, span);
-            }
-            (name, body)
+        .map(|((name, params), body)| {
+            (
+                name,
+                SrcNode::new(
+                    Expr::Lambda {
+                        params,
+                        body: body.clone(),
+                    },
+                    body.span(),
+                ),
+            )
         })
         .boxed()
 }

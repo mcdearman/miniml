@@ -41,7 +41,7 @@ pub enum Expr {
     },
     Apply {
         fun: SrcNode<Self>,
-        arg: SrcNode<Self>,
+        args: Vec<SrcNode<Self>>,
     },
     If {
         cond: SrcNode<Self>,
@@ -54,7 +54,7 @@ pub enum Expr {
         cases: Vec<SrcNode<MatchCase>>,
     },
     Lambda {
-        param: SrcNode<InternedString>,
+        params: Vec<SrcNode<InternedString>>,
         body: SrcNode<Self>,
     },
     Unit,
