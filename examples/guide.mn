@@ -92,6 +92,10 @@ let fib n =
 let map f [] = []
   \ map f (x:xs) = f x : map f xs
 
+let map f [] = []
+  | map f (x:xs) = f x : map f xs
+end
+
 -- partial application with wildcard
 let add1 = add 1 _
 
