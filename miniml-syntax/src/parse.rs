@@ -143,16 +143,11 @@ fn expr_parser<'a, I: ValueInput<'a, Token = Token, Span = SimpleSpan>>(
         // parse function application
         let apply = atom
             .clone()
-            .repeated()
-            .at_least(1)
-            .collect::<Vec<_>>()
-            .map(|args| {
-                if args.len() == 1 {
-                    args[0].clone()
+            .then(atom.clone().repeated().collect::<Vec<_>>())
+            .map(|(fun, args)| {
+                if args.is_empty() {
+                    fun.clone()
                 } else {
-                    let mut iter = args.into_iter();
-                    let fun = iter.next().unwrap();
-                    let args = iter.collect::<Vec<_>>();
                     SrcNode::new(
                         Expr::Apply {
                             fun: fun.clone(),
