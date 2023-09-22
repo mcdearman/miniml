@@ -1,3 +1,5 @@
+let map f xs = map f xs
+
 let add x y = x + y
 
 
