@@ -1,5 +1,6 @@
 use std::io::{self, Write};
 
+use miniml_analysis::infer::default_ctx;
 use miniml_syntax::parse;
 
 pub fn repl() {
@@ -18,6 +19,7 @@ pub fn repl() {
                     println!("errors: {:?}", errors);
                 } else {
                     println!("root: {:?}", root);
+                    let ctx = default_ctx();
                 }
             }
             (None, errors) => {

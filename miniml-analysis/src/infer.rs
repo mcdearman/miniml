@@ -43,7 +43,7 @@ pub enum Type {
     Char,
     Bool,
     Var(TyVar),
-    Lambda(Box<Self>, Box<Self>),
+    Lambda { params: Vec<Self>, body: Box<Self> },
 }
 
 impl Type {
@@ -58,9 +58,13 @@ impl Type {
                     Self::Var(TyVar(n))
                 }
             }
-            Self::Lambda(param, body) => {
-                Self::Lambda(Box::new(param.lower(vars)), Box::new(body.lower(vars)))
-            }
+            Self::Lambda { params, body } => Self::Lambda {
+                params: params.into_iter().fold(vec![], |mut acc, param| {
+                    acc.push(param.lower(vars));
+                    acc
+                }),
+                body: Box::new(body.lower(vars)),
+            },
             t => t,
         }
     }
@@ -78,10 +82,17 @@ impl Debug for Type {
             Self::Char => write!(f, "Char"),
             Self::Bool => write!(f, "Bool"),
             Self::Var(n) => write!(f, "{:?}", n),
-            Self::Lambda(param, body) => match param.as_ref() {
-                Self::Lambda(_, _) => write!(f, "({:?}) -> {:?}", param, body),
-                _ => write!(f, "{:?} -> {:?}", param, body),
-            },
+            Self::Lambda { params, body } => {
+                let mut params = params
+                    .into_iter()
+                    .map(|param| format!("{:?}", param))
+                    .collect::<Vec<_>>()
+                    .join(", ");
+                if params.len() > 1 {
+                    params = format!("({})", params);
+                }
+                write!(f, "{} -> {:?}", params, body)
+            }
         }
     }
 }
@@ -98,10 +109,17 @@ impl Display for Type {
             Self::Char => write!(f, "Char"),
             Self::Bool => write!(f, "Bool"),
             Self::Var(n) => write!(f, "{}", n),
-            Self::Lambda(param, body) => match param.as_ref() {
-                Self::Lambda(_, _) => write!(f, "({}) -> {}", param, body),
-                _ => write!(f, "{} -> {}", param, body),
-            },
+            Self::Lambda { params, body } => {
+                let mut params = params
+                    .into_iter()
+                    .map(|param| format!("{}", param))
+                    .collect::<Vec<_>>()
+                    .join(", ");
+                if params.len() > 1 {
+                    params = format!("({})", params);
+                }
+                write!(f, "{} -> {}", params, body)
+            }
         }
     }
 }
@@ -163,10 +181,13 @@ impl Display for TyVar {
 fn apply_subst(subst: Substitution, ty: Type) -> Type {
     match ty {
         Type::Var(n) => subst.get(&n).cloned().unwrap_or(ty.clone()),
-        Type::Lambda(param, body) => Type::Lambda(
-            Box::new(apply_subst(subst.clone(), *param)),
-            Box::new(apply_subst(subst.clone(), *body)),
-        ),
+        Type::Lambda { params, body } => Type::Lambda {
+            params: params
+                .into_iter()
+                .map(|param| apply_subst(subst.clone(), param))
+                .collect(),
+            body: Box::new(apply_subst(subst.clone(), *body)),
+        },
         t => t.clone(),
     }
 }
@@ -198,10 +219,12 @@ fn compose_subst(s1: Substitution, s2: Substitution) -> Substitution {
 fn free_vars(ty: Type) -> BTreeSet<TyVar> {
     match ty {
         Type::Var(n) => vec![n.clone()].into_iter().collect(),
-        Type::Lambda(param, body) => free_vars(*param.clone())
-            .union(&free_vars(*body.clone()))
-            .cloned()
-            .collect(),
+        Type::Lambda { params, body } => params
+            .into_iter()
+            .map(|param| free_vars(param))
+            .fold(free_vars(*body), |acc, set| {
+                acc.union(&set).cloned().collect()
+            }),
         _ => BTreeSet::new(),
     }
 }
@@ -229,8 +252,25 @@ pub fn unify(t1: Type, t2: Type) -> Result<Substitution, String> {
     match (t1.clone(), t2.clone()) {
         (Type::Int, Type::Int) => Ok(HashMap::new()),
         (Type::Bool, Type::Bool) => Ok(HashMap::new()),
-        (Type::Lambda(p1, b1), Type::Lambda(p2, b2)) => {
-            let s1 = unify(*p1.clone(), *p2.clone())?;
+        (
+            Type::Lambda {
+                params: p1,
+                body: b1,
+            },
+            Type::Lambda {
+                params: p2,
+                body: b2,
+            },
+        ) => {
+            let s1 = p1
+                .iter()
+                .zip(p2.iter())
+                .try_fold(HashMap::new(), |acc, (ty1, ty2)| {
+                    match unify(apply_subst(acc.clone(), ty1.clone()), ty2.clone()) {
+                        Ok(s) => Ok(compose_subst(s, acc)),
+                        Err(e) => Err(e),
+                    }
+                })?;
             let s2 = unify(
                 apply_subst(s1.clone(), *b1.clone()),
                 apply_subst(s1.clone(), *b2.clone()),
@@ -334,9 +374,14 @@ fn infer(ctx: Context, expr: Expr) -> Result<(Substitution, Type), String> {
                 ty_args.push(ty_arg);
             }
 
-            let ty_fun_expected = ty_args.iter().fold(ty_ret.clone(), |acc, ty_arg| {
-                Type::Lambda(Box::new(ty_arg.clone()), Box::new(acc))
-            });
+            // let ty_fun_expected = ty_args.iter().fold(ty_ret.clone(), |acc, ty_arg| {
+            //     // Type::Lambda(Box::new(ty_arg.clone()), Box::new(acc))
+            //     Type::Lambda { params: , body: () }
+            // });
+            let ty_fun_expected = Type::Lambda {
+                params: ty_args,
+                body: Box::new(ty_ret.clone()),
+            };
 
             let s3 = unify(apply_subst(s.clone(), ty_fun.clone()), ty_fun_expected)?;
             let sf = compose_subst(s3.clone(), s);
@@ -427,10 +472,10 @@ pub fn default_ctx() -> Context {
         let a = TyVar::fresh();
         Scheme::new(
             vec![a.clone()],
-            Type::Lambda(
-                Box::new(Type::Var(a.clone())),
-                Box::new(Type::Var(a.clone())),
-            ),
+            Type::Lambda {
+                params: vec![Type::Var(a.clone())],
+                body: Box::new(Type::Var(a.clone())),
+            },
         )
     });
     ctx.vars.insert(InternedString::from("const"), {
@@ -438,13 +483,10 @@ pub fn default_ctx() -> Context {
         let b = TyVar::fresh();
         Scheme::new(
             vec![a.clone(), b.clone()],
-            Type::Lambda(
-                Box::new(Type::Var(a.clone())),
-                Box::new(Type::Lambda(
-                    Box::new(Type::Var(b.clone())),
-                    Box::new(Type::Var(a.clone())),
-                )),
-            ),
+            Type::Lambda {
+                params: vec![Type::Var(a.clone()), Type::Var(b.clone())],
+                body: Box::new(Type::Var(a.clone())),
+            },
         )
     });
     ctx

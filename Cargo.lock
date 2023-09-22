@@ -725,6 +725,7 @@ dependencies = [
  "clap",
  "insta",
  "log",
+ "miniml-analysis",
  "miniml-eval",
  "miniml-syntax",
  "rustyline",

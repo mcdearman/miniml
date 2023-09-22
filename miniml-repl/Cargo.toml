@@ -8,6 +8,7 @@ edition = "2021"
 [dependencies]
 miniml-syntax = { path = "../miniml-syntax" }
 miniml-eval = { path = "../miniml-eval" }
+miniml-analysis = { path = "../miniml-analysis" }
 insta = { version = "1.28.0", features = ["yaml"] }
 clap = { version = "4.3.0", features = ["cargo", "derive"] }
 rustyline = "11.0.0"
