@@ -8,7 +8,7 @@ members = [
     "miniml-vm",
     "miniml-eval",
     "miniml-notebook",
-    "miniml-core",
+    "miniml-hir",
     "miniml-analysis",
     "miniml-lower",
 ]

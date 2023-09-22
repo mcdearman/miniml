@@ -3,6 +3,11 @@ use num_complex::Complex64;
 use num_rational::Rational64;
 
 #[derive(Debug, Clone, PartialEq)]
+pub struct Root {
+    pub decls: Vec<Decl>,
+}
+
+#[derive(Debug, Clone, PartialEq)]
 pub enum Decl {
     Let { name: InternedString, expr: Expr },
 }

@@ -1,10 +1,14 @@
-use miniml_syntax::ast::{Expr, InfixOp};
+use miniml_syntax::ast::{Expr, InfixOp, Root};
 use miniml_util::intern::InternedString;
 use std::{
     collections::{BTreeSet, HashMap},
     fmt::{Debug, Display},
     sync::atomic::{AtomicUsize, Ordering},
 };
+
+pub struct Error {
+    pub msg: String,
+}
 
 const ARITHMETIC_TYPES: &[&[Type]] = &[
     &[Type::Nat, Type::Nat, Type::Nat],
@@ -459,9 +463,9 @@ fn infer(ctx: Context, expr: Expr) -> Result<(Substitution, Type), String> {
     }
 }
 
-pub fn type_inference(ctx: Context, expr: Expr) -> Result<Type, String> {
-    let (subst, ty) = infer(ctx, expr)?;
-    Ok(apply_subst(subst, ty).lower(&mut HashMap::new()))
+pub fn type_inference(ctx: Context, root: &Root) -> () {
+    // let (subst, ty) = infer(ctx, expr)?;
+    // Ok(apply_subst(subst, ty).lower(&mut HashMap::new()))
 }
 
 pub fn default_ctx() -> Context {
