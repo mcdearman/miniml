@@ -104,7 +104,12 @@ fn resolve_expr(names: &mut Names, expr: &ast::Expr) -> Expr {
         ast::Expr::Infix { op, lhs, rhs } => todo!(),
         ast::Expr::Let { name, expr, body } => todo!(),
         ast::Expr::Apply { fun, args } => todo!(),
-        ast::Expr::If { cond, then, elifs, else_ } => todo!(),
+        ast::Expr::If {
+            cond,
+            then,
+            elifs,
+            else_,
+        } => todo!(),
         ast::Expr::Match { expr, cases } => todo!(),
         ast::Expr::Lambda { params, body } => todo!(),
         ast::Expr::Unit => todo!(),
