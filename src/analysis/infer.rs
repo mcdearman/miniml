@@ -286,7 +286,7 @@ pub fn unify(t1: Type, t2: Type) -> Result<Substitution, String> {
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Context {
-    vars: HashMap<InternedString, Scheme>,
+    vars: HashMap<UniqueId, Scheme>,
 }
 
 fn apply_subst_ctx(subst: Substitution, ctx: Context) -> Context {
@@ -467,7 +467,8 @@ pub fn default_ctx() -> Context {
     let mut ctx = Context {
         vars: HashMap::new(),
     };
-    ctx.vars.insert(InternedString::from("id"), {
+    // id
+    ctx.vars.insert(UniqueId::gen(), {
         let a = TyVar::gen();
         Scheme::new(
             vec![a.clone()],
@@ -477,7 +478,8 @@ pub fn default_ctx() -> Context {
             },
         )
     });
-    ctx.vars.insert(InternedString::from("const"), {
+    // const
+    ctx.vars.insert(UniqueId::gen(), {
         let a = TyVar::gen();
         let b = TyVar::gen();
         Scheme::new(
