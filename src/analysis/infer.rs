@@ -4,9 +4,15 @@ use std::{
     sync::atomic::{AtomicUsize, Ordering},
 };
 
-use crate::{util::intern::InternedString, syntax::ast};
+use crate::{
+    syntax::ast,
+    util::{intern::InternedString, unique_id::UniqueId},
+};
 
-use super::{res::{Expr, InfixOp}, hir};
+use super::{
+    hir,
+    res::{self, Expr, InfixOp},
+};
 
 pub struct Error {
     pub msg: String,
@@ -59,9 +65,9 @@ impl Type {
                 if let Some(n) = vars.get(&name) {
                     Self::Var(*n)
                 } else {
-                    let n = vars.len();
-                    vars.insert(name, TyVar(n));
-                    Self::Var(TyVar(n))
+                    let n = UniqueId(vars.len());
+                    vars.insert(name, n);
+                    Self::Var(n)
                 }
             }
             Self::Lambda { params, body } => Self::Lambda {
@@ -143,22 +149,8 @@ impl Scheme {
     }
 }
 
-#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub struct TyVar(pub usize);
-
-static COUNTER: AtomicUsize = AtomicUsize::new(0);
-
-impl TyVar {
-    fn fresh() -> Self {
-        Self(COUNTER.fetch_add(1, Ordering::SeqCst))
-    }
-}
-
-impl Debug for TyVar {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "TyVar({})", self)
-    }
-}
+// #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub type TyVar = UniqueId;
 
 #[rustfmt::skip]
 const ALPHABET: &[char] = &[
@@ -329,7 +321,7 @@ fn generalize(ctx: Context, ty: Type) -> Scheme {
 fn instantiate(scheme: Scheme) -> Type {
     let mut subst = HashMap::new();
     for var in &scheme.vars {
-        subst.insert(*var, Type::Var(TyVar::fresh()));
+        subst.insert(*var, Type::Var(TyVar::gen()));
     }
     apply_subst(subst, scheme.ty)
 }
@@ -362,7 +354,7 @@ fn infer(ctx: Context, expr: Expr) -> Result<(Substitution, Type), String> {
         //     ))
         // }
         Expr::Apply { fun, args } => {
-            let ty_ret = Type::Var(TyVar::fresh());
+            let ty_ret = Type::Var(TyVar::gen());
             let (s1, ty_fun) = infer(ctx.clone(), fun.inner().clone())?;
 
             // let (s2, ty_arg) = infer(
@@ -465,7 +457,7 @@ fn infer(ctx: Context, expr: Expr) -> Result<(Substitution, Type), String> {
     }
 }
 
-pub fn type_inference(ctx: Context, root: &ast::Root) -> (hir::Root, Vec<Error>) {
+pub fn type_inference(ctx: Context, root: &res::Root) -> (hir::Root, Vec<Error>) {
     todo!()
     // let (subst, ty) = infer(ctx, expr)?;
     // Ok(apply_subst(subst, ty).lower(&mut HashMap::new()))
@@ -476,7 +468,7 @@ pub fn default_ctx() -> Context {
         vars: HashMap::new(),
     };
     ctx.vars.insert(InternedString::from("id"), {
-        let a = TyVar::fresh();
+        let a = TyVar::gen();
         Scheme::new(
             vec![a.clone()],
             Type::Lambda {
@@ -486,8 +478,8 @@ pub fn default_ctx() -> Context {
         )
     });
     ctx.vars.insert(InternedString::from("const"), {
-        let a = TyVar::fresh();
-        let b = TyVar::fresh();
+        let a = TyVar::gen();
+        let b = TyVar::gen();
         Scheme::new(
             vec![a.clone(), b.clone()],
             Type::Lambda {
