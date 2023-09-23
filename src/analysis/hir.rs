@@ -1,6 +1,6 @@
+use crate::util::{intern::InternedString, unique_id::UniqueId};
 use num_complex::Complex64;
 use num_rational::Rational64;
-use crate::util::intern::InternedString;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Root {
@@ -38,7 +38,7 @@ pub struct MatchCase {
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Pattern {
-    Ident(i64),
+    Ident(UniqueId),
     Lit(Lit),
 }
 
