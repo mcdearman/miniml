@@ -1,1 +1,13 @@
-let x = 1
+let add x y = x + y
+Root 
+  Decl
+    Let
+      name: add
+      body: 
+        Lambda
+          args: x y
+          body: 
+            BinOp
+              op: +
+              left: x
+              right: y

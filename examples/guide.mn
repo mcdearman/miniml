@@ -57,12 +57,23 @@ let main =
   ()
   
 -- The only declarations that can appear outside of functions 
--- are struct definitions and global variables.
-struct Point = { x, y }
+-- are type definitions and global variables.
 
--- True and false are just symbols.
-const true = :true
-const false = :false
+-- Data constructors for a type `'a` are just functions of the
+-- same name that take arguments and return a value of type `'a`.
+data Point = Point Num Num
+
+-- You can define records with `data`.
+data Point = Point { x: Num, y: Num }
+
+-- You can also define sum types with `data`.
+data Node = Leaf | Node Node Node 
+
+-- You can define recursive types.
+data List 'a = Nil | Cons 'a (List 'a)
+
+-- Booleans are just sum types.
+data Bool = True | False
 
 -- global function definition
 let add x y = x + y
@@ -92,10 +103,6 @@ let fib n =
 let map f [] = []
   \ map f (x:xs) = f x : map f xs
 
-let map f [] = []
-  | map f (x:xs) = f x : map f xs
-end
-
 -- partial application with wildcard
 let add1 = add 1 _
 
@@ -114,7 +121,7 @@ let (x:xs) = [1 2 3]
 -- list cons pattern
 let (a x:xs) = [1 2 3]
 
--- struct pattern
+-- record pattern
 let Point { x, y } = Point { x = 1, y = 2 }
 
 -- map pattern

@@ -14,7 +14,7 @@ pub enum Decl {
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Expr {
-    Ident(i64),
+    Ident(UniqueId),
     Lit(Lit),
     Lambda {
         param: Pattern,
