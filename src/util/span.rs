@@ -3,8 +3,6 @@ use std::{
     ops::{Index, Range},
 };
 
-use chumsky::span::SimpleSpan;
-
 #[derive(Debug, Clone, Copy, Eq, PartialEq, Default, Hash)]
 pub struct Span {
     pub start: u32,
@@ -62,12 +60,28 @@ impl From<Range<usize>> for Span {
     }
 }
 
-impl From<SimpleSpan> for Span {
-    fn from(span: SimpleSpan) -> Self {
+impl chumsky::span::Span for Span {
+    type Context = ();
+
+    type Offset = u32;
+
+    fn new(context: Self::Context, range: Range<Self::Offset>) -> Self {
         Self {
-            start: span.start as u32,
-            end: span.end as u32,
+            start: range.start,
+            end: range.end,
         }
+    }
+
+    fn context(&self) -> Self::Context {
+        ()
+    }
+
+    fn start(&self) -> Self::Offset {
+        self.start
+    }
+
+    fn end(&self) -> Self::Offset {
+        self.end
     }
 }
 

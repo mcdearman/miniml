@@ -1,18 +1,17 @@
-use crate::{
-    compile::error,
-    syntax::{ast, node::SrcNode},
-    util::{intern::InternedString, span::Span, unique_id::UniqueId},
-};
-use chumsky::{extra::Err, span::SimpleSpan};
-use num_complex::Complex64;
-use num_rational::Rational64;
-use std::{collections::HashMap, hash::Hash};
-
 /*
  * This module resolves names in the AST and produces an IR similar
  * to the AST but with all names resolved to their unique IDs. Names
  * that shadow names from an outer scope are given a new unique ID.
  */
+
+use crate::{
+    syntax::{ast, node::SrcNode},
+    util::{intern::InternedString, span::Span, unique_id::UniqueId},
+};
+use chumsky::span::SimpleSpan;
+use num_complex::Complex64;
+use num_rational::Rational64;
+use std::{collections::HashMap, hash::Hash};
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct ResError {
