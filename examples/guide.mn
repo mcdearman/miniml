@@ -101,7 +101,7 @@ let fib n =
   \ n -> fib (n - 1) + fib (n - 2)
 
 let map f [] = []
-  \ map f (x:xs) = f x : map f xs
+  \ map f [x:xs] = f x : map f xs
 
 -- partial application with wildcard
 let add1 = add 1 _
@@ -109,17 +109,18 @@ let add1 = add 1 _
 -- wildcard can be in any position
 let add1 = add _ 1
 
--- partial application is really a lambda in disguise
+-- Partial application is just an operator that returns
+-- a lambda. The line above is equivalent to:
 let add1 = fn x -> add x 1
 
 -- list pattern
-let [a b c] = [1 2 3]
+let [a, b, c] = [1 2 3]
 
 -- cons pattern
-let (x:xs) = [1 2 3]
+let [head:tail] = [1 2 3]
 
 -- list cons pattern
-let (a x:xs) = [1 2 3]
+let [first, head:tail] = [1 2 3]
 
 -- record pattern
 let Point { x, y } = Point { x = 1, y = 2 }
