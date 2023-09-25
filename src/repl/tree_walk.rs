@@ -1,6 +1,9 @@
 use std::io::{self, Write};
 
-use crate::{analysis::infer::default_ctx, syntax::parse};
+use crate::{
+    analysis::{infer::default_ctx, res::resolve},
+    syntax::parse,
+};
 
 pub fn repl() {
     println!("Welcome to the MiniML REPL!");
@@ -18,7 +21,8 @@ pub fn repl() {
                     println!("errors: {:?}", errors);
                 } else {
                     println!("root: {:?}", root);
-                    let ctx = default_ctx();
+                    println!("res: {:?}", resolve(&root));
+                    // let ctx = default_ctx();
                 }
             }
             (None, errors) => {

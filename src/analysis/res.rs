@@ -21,24 +21,24 @@ pub struct ResError {
 pub type ResResult<T> = Result<T, ResError>;
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct Names {
-    parent: Option<Box<Names>>,
+pub struct Env {
+    parent: Option<Box<Env>>,
     data: HashMap<InternedString, UniqueId>,
 }
 
-impl Names {
-    pub fn new() -> Self {
-        Self {
+impl Env {
+    pub fn new() -> Box<Self> {
+        Box::new(Self {
             parent: None,
             data: HashMap::new(),
-        }
+        })
     }
 
-    pub fn new_with_parent(parent: Self) -> Self {
-        Self {
-            parent: Some(Box::new(parent)),
+    pub fn new_with_parent(parent: Box<Self>) -> Box<Self> {
+        Box::new(Self {
+            parent: Some(parent),
             data: HashMap::new(),
-        }
+        })
     }
 
     pub fn find(&self, name: &InternedString) -> Option<UniqueId> {
@@ -108,6 +108,12 @@ pub enum Expr {
     },
     Let {
         name: SrcNode<UniqueId>,
+        expr: SrcNode<Self>,
+        body: SrcNode<Self>,
+    },
+    Fn {
+        name: SrcNode<UniqueId>,
+        params: Vec<SrcNode<UniqueId>>,
         expr: SrcNode<Self>,
         body: SrcNode<Self>,
     },
@@ -237,41 +243,68 @@ impl From<ast::Lit> for Lit {
 }
 
 pub fn resolve(root: &ast::Root) -> (Option<Root>, Vec<ResError>) {
-    let mut names = Names::new();
-    // let errors = vec![];
-    todo!()
-    // let decls = root
-    //     .decls
-    //     .iter()
-    //     .map(|decl| resolve_decl(&mut names, decl))
-    //     .collect();
-    // Root { decls }
+    let env = Env::new();
+    let mut errors = vec![];
+    let mut decls = vec![];
+    for decl in &root.decls {
+        match resolve_decl(Env::new_with_parent(env.clone()), decl) {
+            Ok(decl) => decls.push(decl),
+            Err(err) => errors.push(err),
+        }
+    }
+    if decls.is_empty() {
+        (None, errors)
+    } else {
+        (Some(Root { decls }), errors)
+    }
 }
 
-fn resolve_decl(mut names: Box<Names>, decl: &SrcNode<ast::Decl>) -> ResResult<SrcNode<Decl>> {
+fn resolve_decl(mut env: Box<Env>, decl: &SrcNode<ast::Decl>) -> ResResult<SrcNode<Decl>> {
     match decl.inner() {
         ast::Decl::Let { name, expr } => {
-            if names.find(name.inner()).is_some() {
+            if env.find(name.inner()).is_some() {
                 Err(ResError {
                     msg: format!("name '{}' is already defined", name.inner()).into(),
                     span: name.span(),
                 })
             } else {
-                let name = SrcNode::new(names.define(name.inner().clone()), name.span());
-                let expr = resolve_expr(names, expr);
+                let name = SrcNode::new(env.define(name.inner().clone()), name.span());
+                let expr = resolve_expr(Env::new_with_parent(env.clone()), expr)?;
                 Ok(SrcNode::new(Decl::Let { name, expr }, decl.span()))
             }
         }
+        ast::Decl::Fn { name, params, expr } => todo!(),
     }
 }
 
-fn resolve_expr(mut names: Box<Names>, expr: &SrcNode<ast::Expr>) -> SrcNode<Expr> {
+fn resolve_expr(mut env: Box<Env>, expr: &SrcNode<ast::Expr>) -> ResResult<SrcNode<Expr>> {
     match expr.inner() {
-        ast::Expr::Ident(_) => todo!(),
-        ast::Expr::Lit(_) => todo!(),
+        ast::Expr::Ident(ident) => {
+            if let Some(name) = env.find_in_scope(ident.inner()) {
+                Ok(SrcNode::new(
+                    Expr::Ident(SrcNode::new(name, ident.span())),
+                    expr.span(),
+                ))
+            } else {
+                Err(ResError {
+                    msg: format!("name '{}' is not defined", ident.inner()).into(),
+                    span: ident.span(),
+                })
+            }
+        }
+        ast::Expr::Lit(l) => Ok(SrcNode::new(
+            Expr::Lit(SrcNode::new(l.inner().clone().into(), l.span())),
+            expr.span(),
+        )),
         ast::Expr::Prefix { op, expr } => todo!(),
         ast::Expr::Infix { op, lhs, rhs } => todo!(),
         ast::Expr::Let { name, expr, body } => todo!(),
+        ast::Expr::Fn {
+            name,
+            params,
+            expr,
+            body,
+        } => todo!(),
         ast::Expr::Apply { fun, args } => todo!(),
         ast::Expr::If {
             cond,
@@ -280,15 +313,31 @@ fn resolve_expr(mut names: Box<Names>, expr: &SrcNode<ast::Expr>) -> SrcNode<Exp
             else_,
         } => todo!(),
         ast::Expr::Match { expr, cases } => todo!(),
-        ast::Expr::Lambda { params, body } => todo!(),
-        ast::Expr::Unit => todo!(),
+        ast::Expr::Lambda { params, body } => {
+            let mut params = params.clone();
+            let mut param_names = vec![];
+            let mut lambda_env = Env::new_with_parent(env.clone());
+            for param in &mut params {
+                let name = lambda_env.define(param.inner().clone());
+                param_names.push(SrcNode::new(name, param.span()));
+            }
+            let body = resolve_expr(env, body)?;
+            Ok(SrcNode::new(
+                Expr::Lambda {
+                    params: param_names,
+                    body,
+                },
+                expr.span(),
+            ))
+        }
+        ast::Expr::Unit => Ok(SrcNode::new(Expr::Unit, expr.span())),
     }
 }
 
-fn resolve_pattern(mut names: Box<Names>, pat: &SrcNode<ast::Pattern>) -> Pattern {
+fn resolve_pattern(mut env: Box<Env>, pat: &SrcNode<ast::Pattern>) -> Pattern {
     match pat.inner() {
         ast::Pattern::Ident(id) => Pattern::Ident(SrcNode::new(
-            names.define_if_absent(id.inner().clone()),
+            env.define_if_absent(id.inner().clone()),
             id.span(),
         )),
         ast::Pattern::Lit(lit) => {

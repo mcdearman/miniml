@@ -19,6 +19,19 @@ pub enum Decl {
         name: SrcNode<InternedString>,
         expr: SrcNode<Expr>,
     },
+    Fn {
+        name: SrcNode<InternedString>,
+        params: Vec<SrcNode<InternedString>>,
+        expr: SrcNode<Expr>,
+    },
+}
+
+// A temporary type for the parser to use
+#[derive(Debug, Clone, PartialEq)]
+pub struct Fn {
+    pub name: SrcNode<InternedString>,
+    pub params: Vec<SrcNode<InternedString>>,
+    pub expr: SrcNode<Expr>,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -38,6 +51,12 @@ pub enum Expr {
         name: SrcNode<InternedString>,
         expr: SrcNode<Self>,
         body: SrcNode<Self>,
+    },
+    Fn {
+        name: SrcNode<InternedString>,
+        params: Vec<SrcNode<InternedString>>,
+        expr: SrcNode<Self>,
+        body: SrcNode<Expr>,
     },
     Apply {
         fun: SrcNode<Self>,

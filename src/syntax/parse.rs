@@ -83,7 +83,18 @@ fn expr_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
         let let_ = let_parser(expr.clone())
             .then_ignore(just(Token::In))
             .then(expr.clone().map_with_span(SrcNode::new))
-            .map(|((name, expr), body)| Expr::Let { name, expr, body });
+            .map(|((name, params, expr), body)| {
+                if params.is_empty() {
+                    Expr::Let { name, expr, body }
+                } else {
+                    Expr::Fn {
+                        name,
+                        params,
+                        expr,
+                        body,
+                    }
+                }
+            });
 
         // parse if
         let if_ = just(Token::If)
@@ -353,7 +364,16 @@ fn expr_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
 // Helper to reduce boilerplate. Used in both let expressions and let declarations.
 fn let_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
     expr_parser: impl Parser<'a, I, Expr, extra::Err<Rich<'a, Token, Span>>> + 'a,
-) -> impl Parser<'a, I, (SrcNode<InternedString>, SrcNode<Expr>), extra::Err<Rich<'a, Token, Span>>> {
+) -> impl Parser<
+    'a,
+    I,
+    (
+        SrcNode<InternedString>,
+        Vec<SrcNode<InternedString>>,
+        SrcNode<Expr>,
+    ),
+    extra::Err<Rich<'a, Token, Span>>,
+> {
     just(Token::Let)
         .ignore_then(ident_parser().map_with_span(SrcNode::new))
         .then(
@@ -364,25 +384,20 @@ fn let_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
         )
         .then_ignore(just(Token::Eq))
         .then(expr_parser.map_with_span(SrcNode::new))
-        .map(|((name, params), body)| {
-            (
-                name,
-                SrcNode::new(
-                    Expr::Lambda {
-                        params,
-                        body: body.clone(),
-                    },
-                    body.span(),
-                ),
-            )
-        })
+        .map(|((name, params), body)| (name, params, body))
         .boxed()
 }
 
 fn decl_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
 ) -> impl Parser<'a, I, Decl, extra::Err<Rich<'a, Token, Span>>> {
     let_parser(expr_parser())
-        .map(|(name, expr)| Decl::Let { name, expr })
+        .map(|(name, params, expr)| {
+            if params.is_empty() {
+                Decl::Let { name, expr }
+            } else {
+                Decl::Fn { name, params, expr }
+            }
+        })
         .boxed()
 }
 
