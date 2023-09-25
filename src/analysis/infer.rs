@@ -29,20 +29,20 @@ pub struct Root {
 #[derive(Debug, Clone, PartialEq)]
 pub enum Decl {
     Let {
-        name: SrcNode<UniqueId>,
+        name: Typed<UniqueId>,
         expr: Typed<Expr>,
     },
     Fn {
-        name: SrcNode<UniqueId>,
-        params: Vec<SrcNode<UniqueId>>,
+        name: Typed<UniqueId>,
+        params: Vec<Typed<UniqueId>>,
         expr: Typed<Expr>,
     },
 }
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Expr {
-    Ident(SrcNode<UniqueId>),
-    Lit(SrcNode<Lit>),
+    Ident(Typed<UniqueId>),
+    Lit(Typed<Lit>),
     Prefix {
         op: SrcNode<PrefixOp>,
         expr: Typed<Self>,
@@ -53,13 +53,13 @@ pub enum Expr {
         rhs: Typed<Self>,
     },
     Let {
-        name: SrcNode<UniqueId>,
+        name: Typed<UniqueId>,
         expr: Typed<Self>,
         body: Typed<Self>,
     },
     Fn {
-        name: SrcNode<UniqueId>,
-        params: Vec<SrcNode<UniqueId>>,
+        name: Typed<UniqueId>,
+        params: Vec<Typed<UniqueId>>,
         expr: Typed<Self>,
         body: Typed<Self>,
     },
@@ -78,7 +78,7 @@ pub enum Expr {
         cases: Vec<SrcNode<MatchCase>>,
     },
     Lambda {
-        params: Vec<SrcNode<UniqueId>>,
+        params: Vec<Typed<UniqueId>>,
         body: Typed<Self>,
     },
     Unit,
