@@ -1,4 +1,3 @@
-use super::span::{Span, Spanned};
 use lasso::{Spur, ThreadedRodeo};
 use once_cell::sync::Lazy;
 use std::{
@@ -12,15 +11,6 @@ pub static mut INTERNER: Lazy<ThreadedRodeo> = Lazy::new(|| ThreadedRodeo::defau
 #[derive(Clone, Copy, PartialEq, Eq, Hash)]
 pub struct InternedString {
     pub key: Spur,
-}
-
-impl InternedString {
-    pub fn spanned(&self, span: Span) -> Spanned<Self> {
-        Spanned {
-            value: self.clone(),
-            span,
-        }
-    }
 }
 
 impl From<Spur> for InternedString {
