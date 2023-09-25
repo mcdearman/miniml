@@ -5,10 +5,9 @@
  */
 
 use crate::{
-    syntax::{ast, node::SrcNode},
-    util::{intern::InternedString, span::Span, unique_id::UniqueId},
+    syntax::ast,
+    util::{intern::InternedString, node::SrcNode, span::Span, unique_id::UniqueId},
 };
-use chumsky::span::SimpleSpan;
 use num_complex::Complex64;
 use num_rational::Rational64;
 use std::{collections::HashMap, hash::Hash};
@@ -16,7 +15,7 @@ use std::{collections::HashMap, hash::Hash};
 #[derive(Debug, Clone, PartialEq)]
 pub struct ResError {
     pub msg: InternedString,
-    pub span: SimpleSpan,
+    pub span: Span,
 }
 
 pub type ResResult<T> = Result<T, ResError>;
