@@ -17,7 +17,7 @@ pub enum Expr {
     Ident(UniqueId),
     Lit(Lit),
     Lambda {
-        param: Pattern,
+        params: Vec<Pattern>,
         body: Box<Self>,
     },
     Match {

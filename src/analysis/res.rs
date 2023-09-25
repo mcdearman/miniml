@@ -69,6 +69,10 @@ impl Env {
         id
     }
 
+    pub fn insert(&mut self, name: InternedString, id: UniqueId) {
+        self.data.insert(name, id);
+    }
+
     pub fn define_if_absent(&mut self, name: InternedString) -> UniqueId {
         if let Some(id) = self.data.get(&name) {
             *id
@@ -89,6 +93,11 @@ pub struct Root {
 pub enum Decl {
     Let {
         name: SrcNode<UniqueId>,
+        expr: SrcNode<Expr>,
+    },
+    Fn {
+        name: SrcNode<UniqueId>,
+        params: Vec<SrcNode<UniqueId>>,
         expr: SrcNode<Expr>,
     },
 }
@@ -273,7 +282,26 @@ fn resolve_decl(mut env: Box<Env>, decl: &SrcNode<ast::Decl>) -> ResResult<SrcNo
                 Ok(SrcNode::new(Decl::Let { name, expr }, decl.span()))
             }
         }
-        ast::Decl::Fn { name, params, expr } => todo!(),
+        ast::Decl::Fn { name, params, expr } => {
+            let mut param_names = vec![];
+            let mut fn_env = Env::new_with_parent(env.clone());
+            for param in params {
+                let name = fn_env.define(param.inner().clone());
+                param_names.push(SrcNode::new(name, param.span()));
+            }
+            let name_id = env.define(name.inner().clone());
+            fn_env.insert(name.inner().clone(), name_id);
+            let name = SrcNode::new(name_id, name.span());
+            let expr = resolve_expr(fn_env.clone(), expr)?;
+            Ok(SrcNode::new(
+                Decl::Fn {
+                    name,
+                    params: param_names,
+                    expr,
+                },
+                decl.span(),
+            ))
+        }
     }
 }
 
@@ -296,23 +324,135 @@ fn resolve_expr(mut env: Box<Env>, expr: &SrcNode<ast::Expr>) -> ResResult<SrcNo
             Expr::Lit(SrcNode::new(l.inner().clone().into(), l.span())),
             expr.span(),
         )),
-        ast::Expr::Prefix { op, expr } => todo!(),
-        ast::Expr::Infix { op, lhs, rhs } => todo!(),
-        ast::Expr::Let { name, expr, body } => todo!(),
+        ast::Expr::Prefix { op, expr } => {
+            let op = SrcNode::new(op.inner().clone().into(), op.span());
+            let expr = resolve_expr(env, expr)?;
+            Ok(SrcNode::new(
+                Expr::Prefix {
+                    op,
+                    expr: expr.clone(),
+                },
+                expr.span(),
+            ))
+        }
+        ast::Expr::Infix { op, lhs, rhs } => {
+            let op = SrcNode::new(op.inner().clone().into(), op.span());
+            let lhs = resolve_expr(env.clone(), lhs)?;
+            let rhs = resolve_expr(env, rhs)?;
+            Ok(SrcNode::new(
+                Expr::Infix {
+                    op,
+                    lhs: lhs.clone(),
+                    rhs: rhs.clone(),
+                },
+                expr.span(),
+            ))
+        }
+        ast::Expr::Let { name, expr, body } => {
+            let name = SrcNode::new(env.define(name.inner().clone()), name.span());
+            let expr = resolve_expr(Env::new_with_parent(env.clone()), expr)?;
+            let body = resolve_expr(env, body)?;
+            Ok(SrcNode::new(
+                Expr::Let {
+                    name,
+                    expr: expr.clone(),
+                    body: body.clone(),
+                },
+                expr.span(),
+            ))
+        }
         ast::Expr::Fn {
             name,
             params,
             expr,
             body,
-        } => todo!(),
-        ast::Expr::Apply { fun, args } => todo!(),
+        } => {
+            let mut param_names = vec![];
+            let mut fn_env = Env::new_with_parent(env.clone());
+            for param in params {
+                let name = fn_env.define(param.inner().clone());
+                param_names.push(SrcNode::new(name, param.span()));
+            }
+            let name_id = env.define(name.inner().clone());
+            fn_env.insert(name.inner().clone(), name_id);
+            let name = SrcNode::new(name_id, name.span());
+            let expr = resolve_expr(fn_env.clone(), expr)?;
+            let body = resolve_expr(fn_env, body)?;
+            Ok(SrcNode::new(
+                Expr::Fn {
+                    name,
+                    params: param_names,
+                    expr: expr.clone(),
+                    body: body.clone(),
+                },
+                expr.span(),
+            ))
+        }
+        ast::Expr::Apply { fun, args } => {
+            let fun = resolve_expr(env.clone(), fun)?;
+            let args = args
+                .iter()
+                .map(|arg| resolve_expr(env.clone(), arg))
+                .collect::<ResResult<Vec<_>>>()?;
+            Ok(SrcNode::new(
+                Expr::Apply {
+                    fun: fun.clone(),
+                    args,
+                },
+                expr.span(),
+            ))
+        }
         ast::Expr::If {
             cond,
             then,
             elifs,
             else_,
-        } => todo!(),
-        ast::Expr::Match { expr, cases } => todo!(),
+        } => {
+            let cond = resolve_expr(env.clone(), cond)?;
+            let then = resolve_expr(env.clone(), then)?;
+            let elifs = elifs
+                .iter()
+                .map(|(cond, body)| {
+                    let cond = resolve_expr(env.clone(), cond)?;
+                    let body = resolve_expr(env.clone(), body)?;
+                    Ok((cond, body))
+                })
+                .collect::<ResResult<Vec<_>>>()?;
+            let else_ = resolve_expr(env, else_)?;
+            Ok(SrcNode::new(
+                Expr::If {
+                    cond: cond.clone(),
+                    then: then.clone(),
+                    elifs,
+                    else_: else_.clone(),
+                },
+                expr.span(),
+            ))
+        }
+        ast::Expr::Match { expr, cases } => {
+            let expr = resolve_expr(env.clone(), expr)?;
+            let cases = cases
+                .iter()
+                .map(|case| {
+                    let pattern = resolve_pattern(env.clone(), &case.pattern)?;
+                    let body = resolve_expr(env.clone(), &case.body)?;
+                    Ok(SrcNode::new(
+                        MatchCase {
+                            pattern,
+                            body: body.clone(),
+                        },
+                        case.span(),
+                    ))
+                })
+                .collect::<ResResult<Vec<_>>>()?;
+            Ok(SrcNode::new(
+                Expr::Match {
+                    expr: expr.clone(),
+                    cases,
+                },
+                expr.span(),
+            ))
+        }
         ast::Expr::Lambda { params, body } => {
             let mut params = params.clone();
             let mut param_names = vec![];
@@ -334,15 +474,19 @@ fn resolve_expr(mut env: Box<Env>, expr: &SrcNode<ast::Expr>) -> ResResult<SrcNo
     }
 }
 
-fn resolve_pattern(mut env: Box<Env>, pat: &SrcNode<ast::Pattern>) -> Pattern {
+fn resolve_pattern(mut env: Box<Env>, pat: &SrcNode<ast::Pattern>) -> ResResult<SrcNode<Pattern>> {
     match pat.inner() {
-        ast::Pattern::Ident(id) => Pattern::Ident(SrcNode::new(
-            env.define_if_absent(id.inner().clone()),
-            id.span(),
+        ast::Pattern::Ident(id) => Ok(SrcNode::new(
+            Pattern::Ident(SrcNode::new(
+                env.define_if_absent(id.inner().clone()),
+                id.span(),
+            )),
+            pat.span(),
         )),
-        ast::Pattern::Lit(lit) => {
-            Pattern::Lit(SrcNode::new(lit.inner().clone().into(), lit.span()))
-        }
+        ast::Pattern::Lit(lit) => Ok(SrcNode::new(
+            Pattern::Lit(SrcNode::new(lit.inner().clone().into(), lit.span())),
+            pat.span(),
+        )),
         // ast::Pattern::List(items) => Self::List {
         //     items: items.into_iter().map(Self::from).collect(),
         // },
@@ -350,8 +494,8 @@ fn resolve_pattern(mut env: Box<Env>, pat: &SrcNode<ast::Pattern>) -> Pattern {
         //     head: Box::new(Self::from(*head)),
         //     tail: Box::new(Self::from(*tail)),
         // },
-        ast::Pattern::Wildcard => Pattern::Wildcard,
-        ast::Pattern::Unit => Pattern::Unit,
+        ast::Pattern::Wildcard => Ok(SrcNode::new(Pattern::Wildcard, pat.span())),
+        ast::Pattern::Unit => Ok(SrcNode::new(Pattern::Unit, pat.span())),
         _ => todo!(),
     }
 }

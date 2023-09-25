@@ -1,21 +1,191 @@
+use num_complex::Complex64;
+use num_rational::Rational64;
+
+use crate::{
+    syntax::ast,
+    util::{intern::InternedString, node::SrcNode, unique_id::UniqueId},
+};
 use std::{
     collections::{BTreeSet, HashMap},
     fmt::{Debug, Display},
     sync::atomic::{AtomicUsize, Ordering},
 };
 
-use crate::{
-    syntax::ast,
-    util::{intern::InternedString, unique_id::UniqueId},
-};
+use super::res;
 
-use super::{
-    hir,
-    res::{self, Expr, InfixOp},
-};
-
-pub struct Error {
+pub struct TypeError {
     pub msg: String,
+}
+
+pub type TypeResult<T> = std::result::Result<T, TypeError>;
+
+pub type Typed<T> = (SrcNode<T>, Type);
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct Root {
+    pub decls: Vec<Typed<Decl>>,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum Decl {
+    Let {
+        name: SrcNode<UniqueId>,
+        expr: Typed<Expr>,
+    },
+    Fn {
+        name: SrcNode<UniqueId>,
+        params: Vec<SrcNode<UniqueId>>,
+        expr: Typed<Expr>,
+    },
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum Expr {
+    Ident(SrcNode<UniqueId>),
+    Lit(SrcNode<Lit>),
+    Prefix {
+        op: SrcNode<PrefixOp>,
+        expr: Typed<Self>,
+    },
+    Infix {
+        op: SrcNode<InfixOp>,
+        lhs: Typed<Self>,
+        rhs: Typed<Self>,
+    },
+    Let {
+        name: SrcNode<UniqueId>,
+        expr: Typed<Self>,
+        body: Typed<Self>,
+    },
+    Fn {
+        name: SrcNode<UniqueId>,
+        params: Vec<SrcNode<UniqueId>>,
+        expr: Typed<Self>,
+        body: Typed<Self>,
+    },
+    Apply {
+        fun: Typed<Self>,
+        args: Vec<Typed<Self>>,
+    },
+    If {
+        cond: Typed<Self>,
+        then: Typed<Self>,
+        elifs: Vec<(Typed<Self>, Typed<Self>)>,
+        else_: Typed<Self>,
+    },
+    Match {
+        expr: Typed<Self>,
+        cases: Vec<SrcNode<MatchCase>>,
+    },
+    Lambda {
+        params: Vec<SrcNode<UniqueId>>,
+        body: Typed<Self>,
+    },
+    Unit,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct MatchCase {
+    pub pattern: SrcNode<Pattern>,
+    pub body: Typed<Expr>,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum Pattern {
+    Ident(SrcNode<UniqueId>),
+    Lit(SrcNode<Lit>),
+    List {
+        items: Vec<SrcNode<Self>>,
+    },
+    Cons {
+        head: SrcNode<Self>,
+        tail: SrcNode<Self>,
+    },
+    Wildcard,
+    Unit,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum PrefixOp {
+    Neg,
+    Not,
+}
+
+impl From<res::PrefixOp> for PrefixOp {
+    fn from(op: res::PrefixOp) -> Self {
+        match op {
+            res::PrefixOp::Neg => Self::Neg,
+            res::PrefixOp::Not => Self::Not,
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum InfixOp {
+    Add,
+    Sub,
+    Mul,
+    Div,
+    Rem,
+    Pow,
+    Eq,
+    Neq,
+    Lt,
+    Gt,
+    Leq,
+    Geq,
+    And,
+    Or,
+    Pipe,
+    Stmt,
+}
+
+impl From<res::InfixOp> for InfixOp {
+    fn from(op: res::InfixOp) -> Self {
+        match op {
+            res::InfixOp::Add => Self::Add,
+            res::InfixOp::Sub => Self::Sub,
+            res::InfixOp::Mul => Self::Mul,
+            res::InfixOp::Div => Self::Div,
+            res::InfixOp::Rem => Self::Rem,
+            res::InfixOp::Pow => Self::Pow,
+            res::InfixOp::Eq => Self::Eq,
+            res::InfixOp::Neq => Self::Neq,
+            res::InfixOp::Lt => Self::Lt,
+            res::InfixOp::Gt => Self::Gt,
+            res::InfixOp::Leq => Self::Leq,
+            res::InfixOp::Geq => Self::Geq,
+            res::InfixOp::And => Self::And,
+            res::InfixOp::Or => Self::Or,
+            res::InfixOp::Pipe => Self::Pipe,
+            res::InfixOp::Stmt => Self::Stmt,
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum Lit {
+    Nat(u64),
+    Int(i64),
+    Rational(Rational64),
+    Real(f64),
+    Complex(Complex64),
+    Char(char),
+    String(InternedString),
+}
+
+impl From<res::Lit> for Lit {
+    fn from(lit: res::Lit) -> Self {
+        match lit {
+            res::Lit::Nat(n) => Self::Nat(n),
+            res::Lit::Int(n) => Self::Int(n),
+            res::Lit::Rational(n) => Self::Rational(n),
+            res::Lit::Real(n) => Self::Real(n),
+            res::Lit::Complex(n) => Self::Complex(n),
+            res::Lit::Char(n) => Self::Char(n),
+            res::Lit::String(n) => Self::String(n),
+        }
+    }
 }
 
 const ARITHMETIC_TYPES: &[&[Type]] = &[
@@ -326,11 +496,11 @@ fn instantiate(scheme: Scheme) -> Type {
     apply_subst(subst, scheme.ty)
 }
 
-fn infer(ctx: Context, expr: Expr) -> Result<(Substitution, Type), String> {
+fn infer(ctx: Context, expr: res::Expr) -> Result<(Substitution, Type), String> {
     match expr.clone() {
         // Expr::Int(_) => Ok((HashMap::new(), Type::Int)),
         // Expr::Bool(_) => Ok((HashMap::new(), Type::Bool)),
-        Expr::Ident(name) => match ctx.clone().vars.get(name.inner()) {
+        res::Expr::Ident(name) => match ctx.clone().vars.get(name.inner()) {
             Some(scheme) => Ok((HashMap::new(), instantiate(scheme.clone()))),
             None => Err(format!("unbound variable: {:?}", expr)),
         },
@@ -353,7 +523,7 @@ fn infer(ctx: Context, expr: Expr) -> Result<(Substitution, Type), String> {
         //         ),
         //     ))
         // }
-        Expr::Apply { fun, args } => {
+        res::Expr::Apply { fun, args } => {
             let ty_ret = Type::Var(TyVar::gen());
             let (s1, ty_fun) = infer(ctx.clone(), fun.inner().clone())?;
 
@@ -408,8 +578,8 @@ fn infer(ctx: Context, expr: Expr) -> Result<(Substitution, Type), String> {
         //     let (s2, t2) = infer(apply_subst_ctx(s1.clone(), tmp_ctx), *body.clone())?;
         //     Ok((compose_subst(s2.clone(), s1.clone()), t2.clone()))
         // }
-        Expr::Infix { op, lhs, rhs } => match op.inner() {
-            InfixOp::Add => {
+        res::Expr::Infix { op, lhs, rhs } => match op.inner() {
+            res::InfixOp::Add => {
                 // use table `allowed_types` of allowed type combinations
                 todo!()
             }
@@ -457,7 +627,7 @@ fn infer(ctx: Context, expr: Expr) -> Result<(Substitution, Type), String> {
     }
 }
 
-pub fn type_inference(ctx: Context, root: &res::Root) -> (hir::Root, Vec<Error>) {
+pub fn type_inference(ctx: Context, root: &res::Root) -> (Root, Vec<TypeError>) {
     todo!()
     // let (subst, ty) = infer(ctx, expr)?;
     // Ok(apply_subst(subst, ty).lower(&mut HashMap::new()))
