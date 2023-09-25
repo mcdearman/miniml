@@ -1,29 +1,26 @@
 use super::{
     ast::{Decl, Expr, InfixOp, Lit, MatchCase, Pattern, PrefixOp, Root},
-    node::SrcNode,
     token::Token,
 };
-use crate::util::intern::InternedString;
+use crate::util::{intern::InternedString, node::SrcNode, span::Span};
 use chumsky::{
     extra,
     input::ValueInput,
     prelude::Rich,
     primitive::{choice, just},
     recursive::recursive,
-    select,
-    span::SimpleSpan,
-    IterParser, Parser,
+    select, IterParser, Parser,
 };
 
-fn ident_parser<'a, I: ValueInput<'a, Token = Token, Span = SimpleSpan>>(
-) -> impl Parser<'a, I, InternedString, extra::Err<Rich<'a, Token>>> {
+fn ident_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
+) -> impl Parser<'a, I, InternedString, extra::Err<Rich<'a, Token, Span>>> {
     select! {
         Token::Ident(name) => InternedString::from(name),
     }
 }
 
-fn lit_parser<'a, I: ValueInput<'a, Token = Token, Span = SimpleSpan>>(
-) -> impl Parser<'a, I, Lit, extra::Err<Rich<'a, Token>>> {
+fn lit_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
+) -> impl Parser<'a, I, Lit, extra::Err<Rich<'a, Token, Span>>> {
     select! {
         Token::Nat(n) => Lit::Nat(n),
         Token::Int(n) => Lit::Int(n),
@@ -35,8 +32,8 @@ fn lit_parser<'a, I: ValueInput<'a, Token = Token, Span = SimpleSpan>>(
     }
 }
 
-fn pattern_parser<'a, I: ValueInput<'a, Token = Token, Span = SimpleSpan>>(
-) -> impl Parser<'a, I, Pattern, extra::Err<Rich<'a, Token>>> {
+fn pattern_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
+) -> impl Parser<'a, I, Pattern, extra::Err<Rich<'a, Token, Span>>> {
     ident_parser()
         .map_with_span(SrcNode::new)
         .map(Pattern::Ident)
@@ -44,8 +41,8 @@ fn pattern_parser<'a, I: ValueInput<'a, Token = Token, Span = SimpleSpan>>(
         .boxed()
 }
 
-fn expr_parser<'a, I: ValueInput<'a, Token = Token, Span = SimpleSpan>>(
-) -> impl Parser<'a, I, Expr, extra::Err<Rich<'a, Token>>> {
+fn expr_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
+) -> impl Parser<'a, I, Expr, extra::Err<Rich<'a, Token, Span>>> {
     recursive(|expr| {
         // case = pat "->" expr
         let case = pattern_parser()
@@ -58,7 +55,7 @@ fn expr_parser<'a, I: ValueInput<'a, Token = Token, Span = SimpleSpan>>(
                         pattern: pattern.clone(),
                         body: body.clone(),
                     },
-                    SimpleSpan::new(pattern.span().start, body.span().end),
+                    Span::new(pattern.span().start, body.span().end),
                 )
             })
             .boxed();
@@ -151,7 +148,7 @@ fn expr_parser<'a, I: ValueInput<'a, Token = Token, Span = SimpleSpan>>(
                             fun: fun.clone(),
                             args: args.clone(),
                         },
-                        SimpleSpan::new(fun.span().start, args.last().unwrap().span().end),
+                        Span::new(fun.span().start, args.last().unwrap().span().end),
                     )
                 }
             })
@@ -177,7 +174,7 @@ fn expr_parser<'a, I: ValueInput<'a, Token = Token, Span = SimpleSpan>>(
                             op: op.clone(),
                             expr: expr.clone(),
                         },
-                        SimpleSpan::new(op.span().start, expr.span().end),
+                        Span::new(op.span().start, expr.span().end),
                     )
                 },
             )
@@ -205,7 +202,7 @@ fn expr_parser<'a, I: ValueInput<'a, Token = Token, Span = SimpleSpan>>(
                             lhs: lhs.clone(),
                             rhs: rhs.clone(),
                         },
-                        SimpleSpan::new(lhs.span().start, rhs.span().end),
+                        Span::new(lhs.span().start, rhs.span().end),
                     )
                 },
             )
@@ -230,7 +227,7 @@ fn expr_parser<'a, I: ValueInput<'a, Token = Token, Span = SimpleSpan>>(
                             lhs: lhs.clone(),
                             rhs: rhs.clone(),
                         },
-                        SimpleSpan::new(lhs.span().start, rhs.span().end),
+                        Span::new(lhs.span().start, rhs.span().end),
                     )
                 },
             )
@@ -271,7 +268,7 @@ fn expr_parser<'a, I: ValueInput<'a, Token = Token, Span = SimpleSpan>>(
                             lhs: lhs.clone(),
                             rhs: rhs.clone(),
                         },
-                        SimpleSpan::new(lhs.span().start, rhs.span().end),
+                        Span::new(lhs.span().start, rhs.span().end),
                     )
                 },
             )
@@ -285,11 +282,11 @@ fn expr_parser<'a, I: ValueInput<'a, Token = Token, Span = SimpleSpan>>(
                 |lhs: SrcNode<Expr>, rhs: SrcNode<Expr>| {
                     SrcNode::new(
                         Expr::Infix {
-                            op: SrcNode::new(InfixOp::And, SimpleSpan::new(0, 0)),
+                            op: SrcNode::new(InfixOp::And, Span::new(0, 0)),
                             lhs: lhs.clone(),
                             rhs: rhs.clone(),
                         },
-                        SimpleSpan::new(lhs.span().start, rhs.span().end),
+                        Span::new(lhs.span().start, rhs.span().end),
                     )
                 },
             )
@@ -303,11 +300,11 @@ fn expr_parser<'a, I: ValueInput<'a, Token = Token, Span = SimpleSpan>>(
                 |lhs: SrcNode<Expr>, rhs: SrcNode<Expr>| {
                     SrcNode::new(
                         Expr::Infix {
-                            op: SrcNode::new(InfixOp::Or, SimpleSpan::new(0, 0)),
+                            op: SrcNode::new(InfixOp::Or, Span::new(0, 0)),
                             lhs: lhs.clone(),
                             rhs: rhs.clone(),
                         },
-                        SimpleSpan::new(lhs.span().start, rhs.span().end),
+                        Span::new(lhs.span().start, rhs.span().end),
                     )
                 },
             )
@@ -321,11 +318,11 @@ fn expr_parser<'a, I: ValueInput<'a, Token = Token, Span = SimpleSpan>>(
                 |lhs: SrcNode<Expr>, rhs: SrcNode<Expr>| {
                     SrcNode::new(
                         Expr::Infix {
-                            op: SrcNode::new(InfixOp::Stmt, SimpleSpan::new(0, 0)),
+                            op: SrcNode::new(InfixOp::Stmt, Span::new(0, 0)),
                             lhs: lhs.clone(),
                             rhs: rhs.clone(),
                         },
-                        SimpleSpan::new(lhs.span().start, rhs.span().end),
+                        Span::new(lhs.span().start, rhs.span().end),
                     )
                 },
             )
@@ -339,11 +336,11 @@ fn expr_parser<'a, I: ValueInput<'a, Token = Token, Span = SimpleSpan>>(
                 |lhs: SrcNode<Expr>, rhs: SrcNode<Expr>| {
                     SrcNode::new(
                         Expr::Infix {
-                            op: SrcNode::new(InfixOp::Pipe, SimpleSpan::new(0, 0)),
+                            op: SrcNode::new(InfixOp::Pipe, Span::new(0, 0)),
                             lhs: lhs.clone(),
                             rhs: rhs.clone(),
                         },
-                        SimpleSpan::new(lhs.span().start, rhs.span().end),
+                        Span::new(lhs.span().start, rhs.span().end),
                     )
                 },
             )
@@ -354,9 +351,9 @@ fn expr_parser<'a, I: ValueInput<'a, Token = Token, Span = SimpleSpan>>(
 }
 
 // Helper to reduce boilerplate. Used in both let expressions and let declarations.
-fn let_parser<'a, I: ValueInput<'a, Token = Token, Span = SimpleSpan>>(
-    expr_parser: impl Parser<'a, I, Expr, extra::Err<Rich<'a, Token>>> + 'a,
-) -> impl Parser<'a, I, (SrcNode<InternedString>, SrcNode<Expr>), extra::Err<Rich<'a, Token>>> {
+fn let_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
+    expr_parser: impl Parser<'a, I, Expr, extra::Err<Rich<'a, Token, Span>>> + 'a,
+) -> impl Parser<'a, I, (SrcNode<InternedString>, SrcNode<Expr>), extra::Err<Rich<'a, Token, Span>>> {
     just(Token::Let)
         .ignore_then(ident_parser().map_with_span(SrcNode::new))
         .then(
@@ -382,15 +379,15 @@ fn let_parser<'a, I: ValueInput<'a, Token = Token, Span = SimpleSpan>>(
         .boxed()
 }
 
-fn decl_parser<'a, I: ValueInput<'a, Token = Token, Span = SimpleSpan>>(
-) -> impl Parser<'a, I, Decl, extra::Err<Rich<'a, Token>>> {
+fn decl_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
+) -> impl Parser<'a, I, Decl, extra::Err<Rich<'a, Token, Span>>> {
     let_parser(expr_parser())
         .map(|(name, expr)| Decl::Let { name, expr })
         .boxed()
 }
 
-pub fn parser<'a, I: ValueInput<'a, Token = Token, Span = SimpleSpan>>(
-) -> impl Parser<'a, I, Root, extra::Err<Rich<'a, Token>>> {
+pub fn parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
+) -> impl Parser<'a, I, Root, extra::Err<Rich<'a, Token, Span>>> {
     decl_parser()
         .map_with_span(SrcNode::new)
         .repeated()
@@ -400,8 +397,8 @@ pub fn parser<'a, I: ValueInput<'a, Token = Token, Span = SimpleSpan>>(
         .boxed()
 }
 
-pub fn repl_parser<'a, I: ValueInput<'a, Token = Token, Span = SimpleSpan>>(
-) -> impl Parser<'a, I, Root, extra::Err<Rich<'a, Token>>> {
+pub fn repl_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
+) -> impl Parser<'a, I, Root, extra::Err<Rich<'a, Token, Span>>> {
     decl_parser()
         .or(expr_parser()
             .map_with_span(SrcNode::new)

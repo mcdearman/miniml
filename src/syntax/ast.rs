@@ -1,3 +1,5 @@
+use super::token::Token;
+use crate::util::{intern::InternedString, node::SrcNode};
 use num_complex::Complex64;
 use num_rational::Rational64;
 use std::{
@@ -5,10 +7,6 @@ use std::{
     num::ParseIntError,
     str::FromStr,
 };
-
-use crate::util::intern::InternedString;
-
-use super::{node::SrcNode, token::Token};
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Root {

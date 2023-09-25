@@ -5,6 +5,8 @@ use std::{
     ops::{Deref, DerefMut},
 };
 
+use super::span::Span;
+
 #[derive(Clone)]
 pub struct Node<T, M = ()> {
     inner: Box<T>, // TODO: Replace with smallbox or similar optimisation?
@@ -98,10 +100,10 @@ impl<T: fmt::Debug, M: fmt::Debug> fmt::Debug for Node<T, M> {
     }
 }
 
-pub type SrcNode<T> = Node<T, SimpleSpan>;
+pub type SrcNode<T> = Node<T, Span>;
 
 impl<T> SrcNode<T> {
-    pub fn span(&self) -> SimpleSpan {
+    pub fn span(&self) -> Span {
         self.meta
     }
 }
