@@ -66,12 +66,6 @@ data Point = Point Num Num
 -- You can define records with `data`.
 data Point = Point { x: Num, y: Num }
 
--- You can also define sum types with `data`.
-data Node = Leaf | Node Node Node 
-
--- You can define recursive types.
-data List 'a = Nil | Cons 'a (List 'a)
-
 -- Booleans are just sum types.
 data Bool = True | False
 
@@ -101,7 +95,7 @@ let fib n =
   \ n -> fib (n - 1) + fib (n - 2)
 
 let map f [] = []
-  \ map f [x:xs] = f x : map f xs
+  \ map f [x::xs] = f x :: map f xs
 
 -- partial application with wildcard
 let add1 = add 1 _
@@ -129,20 +123,14 @@ let Point { x, y } = Point { x = 1, y = 2 }
 let { x, y } = { x = 1, y = 2 }
 
 -- Classes
-class Ord = 
-  -- Static fields
-  let zero = 0
-  
-  -- Methods
-  let compare a b = 
-    if a < b then -1
-    elif a > b then 1
-    else 0
+class Ord <: Eq + PartialOrd = 
+  let cmp self other = raise :NotImplementedError
+end
 
-  -- Static methods
-  let min a b = 
-    if a < b then a
-    else b
+class List (I = Nat) V <: Map I V =
+  let Nil = Nil
+  let Cons (x: Nat) (xs: Nat) = Cons x xs
 
-
-  
+  let map f Nil = Nil
+    \ map f (Cons x xs) = Cons (f x) (map f xs)
+end 
