@@ -128,3 +128,21 @@ let Point { x, y } = Point { x = 1, y = 2 }
 -- map pattern
 let { x, y } = { x = 1, y = 2 }
 
+-- Classes
+class Ord = 
+  -- Static fields
+  let zero = 0
+  
+  -- Methods
+  let compare a b = 
+    if a < b then -1
+    elif a > b then 1
+    else 0
+
+  -- Static methods
+  let min a b = 
+    if a < b then a
+    else b
+
+
+  

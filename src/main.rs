@@ -1,7 +1,6 @@
 pub mod analysis;
 pub mod compile;
 pub mod eval;
-pub mod lower;
 pub mod notebook;
 pub mod repl;
 pub mod syntax;

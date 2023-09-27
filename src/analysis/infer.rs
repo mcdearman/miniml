@@ -188,6 +188,49 @@ impl From<res::Lit> for Lit {
     }
 }
 
+#[derive(Debug, Clone, PartialEq)]
+struct InfixCombinations<'a> {
+    combinations: &'a [&'a [&'a [Type]]],
+}
+
+impl<'a> InfixCombinations<'a> {
+    pub const fn new(combinations: &'a [&'a [&'a [Type]]]) -> Self {
+        Self { combinations }
+    }
+
+    pub fn get_lhs(&self, col: usize, row: usize) -> &Type {
+        &self.combinations[col][row][0]
+    }
+
+    pub fn get_rhs(&self, col: usize, row: usize) -> &Type {
+        &self.combinations[col][row][1]
+    }
+
+    pub fn get_ret(&self, col: usize, row: usize) -> &Type {
+        &self.combinations[col][row][2]
+    }
+
+    pub fn get_all_lhs(&self) -> Vec<Type> {
+        let mut lhs = vec![];
+        for col in self.combinations {
+            for row in col.into_iter() {
+                lhs.push(row[0].clone());
+            }
+        }
+        lhs
+    }
+
+    pub fn get_all_rhs(&self) -> Vec<Type> {
+        let mut rhs = vec![];
+        for col in self.combinations {
+            for row in col.into_iter() {
+                rhs.push(row[0].clone());
+            }
+        }
+        rhs
+    }
+}
+
 const ARITHMETIC_TYPES: &[&[Type]] = &[
     &[Type::Nat, Type::Nat, Type::Nat],
     &[Type::Int, Type::Int, Type::Int],
@@ -196,7 +239,7 @@ const ARITHMETIC_TYPES: &[&[Type]] = &[
     &[Type::Complex, Type::Complex, Type::Complex],
 ];
 
-const ALLOWED_TYPES: &[&[&[Type]]] = &[
+const ALLOWED_INFIX_TYPES: InfixCombinations = InfixCombinations::new(&[
     // +, -, *, /
     ARITHMETIC_TYPES,
     ARITHMETIC_TYPES,
@@ -212,7 +255,7 @@ const ALLOWED_TYPES: &[&[&[Type]]] = &[
         &[Type::Real, Type::Nat, Type::Real],
         &[Type::Complex, Type::Nat, Type::Complex],
     ],
-];
+]);
 
 #[derive(Clone, PartialEq)]
 pub enum Type {
@@ -418,8 +461,14 @@ fn var_bind(var: TyVar, ty: Type) -> Result<Substitution, String> {
 
 pub fn unify(t1: Type, t2: Type) -> Result<Substitution, String> {
     match (t1.clone(), t2.clone()) {
+        (Type::Nat, Type::Nat) => Ok(HashMap::new()),
         (Type::Int, Type::Int) => Ok(HashMap::new()),
+        (Type::Rational, Type::Rational) => Ok(HashMap::new()),
+        (Type::Real, Type::Real) => Ok(HashMap::new()),
+        (Type::Complex, Type::Complex) => Ok(HashMap::new()),
         (Type::Bool, Type::Bool) => Ok(HashMap::new()),
+        (Type::String, Type::String) => Ok(HashMap::new()),
+        (Type::Char, Type::Char) => Ok(HashMap::new()),
         (
             Type::Lambda {
                 params: p1,
@@ -452,6 +501,25 @@ pub fn unify(t1: Type, t2: Type) -> Result<Substitution, String> {
             t2.lower(&mut HashMap::new())
         )),
     }
+}
+
+pub fn unify_multi(
+    ty1: Type,
+    tys: impl Iterator<Item = Type> + Clone,
+) -> Result<Substitution, String> {
+    // Try to unify ty1 with each type in tys until one succeeds
+    let mut errors = vec![];
+    for ty2 in tys.clone() {
+        match unify(ty1.clone(), ty2.clone()) {
+            Ok(s) => return Ok(s),
+            Err(e) => errors.push(e),
+        }
+    }
+    Err(format!(
+        "cannot unify {:?} with any of {:?}",
+        ty1,
+        tys.collect::<Vec<_>>()
+    ))
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -581,6 +649,15 @@ fn infer(ctx: Context, expr: res::Expr) -> Result<(Substitution, Type), String> 
         res::Expr::Infix { op, lhs, rhs } => match op.inner() {
             res::InfixOp::Add => {
                 // use table `allowed_types` of allowed type combinations
+                let (s1, t1) = infer(ctx.clone(), lhs.inner().clone())?;
+                let (s2, t2) = infer(
+                    apply_subst_ctx(s1.clone(), ctx.clone()),
+                    rhs.inner().clone(),
+                )?;
+                let s3 = unify_multi(t1, ALLOWED_INFIX_TYPES.get_all_lhs().into_iter())?;
+                let s4 = unify_multi(t2, ALLOWED_INFIX_TYPES.get_all_rhs().into_iter())?;
+                let sf = compose_subst(compose_subst(s4.clone(), s3.clone()), s2.clone());
+
                 todo!()
             }
             _ => todo!(),
