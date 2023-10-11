@@ -110,7 +110,7 @@ let add1 = fn x -> add x 1
 -- list pattern
 let [a, b, c] = [1, 2, 3]
 
--- cons pattern
+-- pair pattern
 let [head:tail] = [1, 2, 3]
 
 -- list cons pattern
@@ -129,8 +129,8 @@ end
 
 class List (I = Nat) V <: Map I V =
   let Nil = Nil
-  let Cons (x: Nat) (xs: Nat) = Cons x xs
+  let Pair (x: Nat) (xs: Nat) = Pair x xs
 
   let map f Nil = Nil
-    \ map f (Cons x xs) = Cons (f x) (map f xs)
+    \ map f (Pair x xs) = Pair (f x) (map f xs)
 end 
