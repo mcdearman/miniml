@@ -111,10 +111,10 @@ let add1 = fn x -> add x 1
 let [a, b, c] = [1, 2, 3]
 
 -- pair pattern
-let [head:tail] = [1, 2, 3]
+let [head::tail] = [1, 2, 3]
 
--- list cons pattern
-let [first, head:tail] = [1, 2, 3]
+-- list pair pattern
+let [first, head::tail] = [1, 2, 3]
 
 -- record pattern
 let Point { x, y } = Point { x = 1, y = 2 }
