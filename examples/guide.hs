@@ -122,6 +122,14 @@ let Point { x, y } = Point { x = 1, y = 2 }
 -- map pattern
 let { x, y } = { x = 1, y = 2 }
 
+-- You can use `begin` to group items together.
+-- The value of a `begin` expression is the value of the last expression.
+let x = begin
+  let y = 1
+  let z = 2
+  y + z
+end
+
 -- Classes
 class Ord <: Eq + PartialOrd = 
   let cmp self other = raise :NotImplementedError
@@ -139,18 +147,19 @@ end
 -- You can use the `quote` function to get the AST of an expression.
 -- Quoting can also be done with the `:` operator. Symbols are just quoted
 -- identifiers.
-
 let ast = quote (1 + 1)
 let ast = :(1 + 1)
 
 -- You can use the `unquote` function to splice an AST into an expression.
 -- Unquoting can also be done with the `$` operator.
-let ast = quote (1 + unquote (quote 1))
-let ast = :(1 + $(:(1)))
+quote (1 + unquote (quote 1))
+-- miniml> :(1 + 1)
+:(1 + $(:(1)))
+-- miniml> :(1 + 1)
 
 -- You can use the `eval` function to evaluate an AST.
-let val = eval :(1 + 1)
--- miniml> val = 2
+eval :(1 + 1)
+-- miniml> 2
 
 -- You can use the `compile` function to compile an AST to a function.
 let add = compile :(fn a b -> a + b)
@@ -159,16 +168,28 @@ let add = compile :(fn a b -> a + b)
 let ast = parse "1 + 1"
 
 -- You can use the `show_sexpr` function to display an AST as an s-expression.
-let str = show_sexpr :(1 + 1)
--- miniml> str = "(:+ 1 1)"
+show_sexpr :(1 + 1)
+-- miniml> '(+ 1 1)
+
+show_sexpr :(let x = 1 in x + 1)
+-- miniml> '(let ((x 1)) (+ x 1))
+
+show_sexpr :(let fib 0 = 0 
+               | fib 1 = 1 
+               | fib n = fib (n - 1) + fib (n - 2))
+-- miniml> '(let 
+
 
 -- Macros
 -- You can define macros with the `macro` keyword.
-macro when cond body =
+macro when cond body... =
   :(if $(cond) then $(body) else ())
 
 macro unless cond body =
   :(if $(cond) then () else $(body))
+
+macro begin body... =
+  :(let _ = $(body) in ())
 
 -- (macro (while condition . body)
 --   `(let loop ()
@@ -176,7 +197,7 @@ macro unless cond body =
 -- 	    (begin . ,body)
 -- 	    (loop)))))
 
-macro while cond body =
+macro while cond body... =
   :(let loop () = 
       (if $(cond) then (begin $(body); loop) else ()))
 
