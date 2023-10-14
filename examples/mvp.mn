@@ -1,11 +1,5 @@
 -- This is a comment
 
--- `main` is a procedure that takes no
--- arguments and returns unit implicitly.
--- It is the entry point of the program.
-let main = 
-    println "Hello World"
-
 -- let binding
 let x = 1
 

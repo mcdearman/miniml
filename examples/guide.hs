@@ -85,17 +85,17 @@ let gcd = fn a b ->
 -- You can define functions by pattern matching
 let fib 0 = 0
   | fib 1 = 1
-  \ fib n = fib (n - 1) + fib (n - 2)
+  | fib n = fib (n - 1) + fib (n - 2)
 
 -- or by using the `match` expression
 let fib n = 
   match n with
   | 0 -> 0
   | 1 -> 1
-  \ n -> fib (n - 1) + fib (n - 2)
+  | n -> fib (n - 1) + fib (n - 2)
 
 let map f [] = []
-  \ map f [x::xs] = f x :: map f xs
+  | map f [x::xs] = f x :: map f xs
 
 -- partial application with wildcard
 let add1 = add 1 _
@@ -108,13 +108,13 @@ let add1 = add _ 1
 let add1 = fn x -> add x 1
 
 -- list pattern
-let [a, b, c] = [1, 2, 3]
+let [a b c] = [1 2 3]
 
 -- pair pattern
-let [head::tail] = [1, 2, 3]
+let [head::tail] = [1 2 3]
 
 -- list pair pattern
-let [first, head::tail] = [1, 2, 3]
+let [first, head::tail] = [1 2 3]
 
 -- record pattern
 let Point { x, y } = Point { x = 1, y = 2 }
@@ -124,24 +124,24 @@ let { x, y } = { x = 1, y = 2 }
 
 -- You can use `begin` to group items together.
 -- The value of a `begin` expression is the value of the last expression.
-let x = begin
+begin
   let y = 1
   let z = 2
   y + z
-end
+-- miniml> 3
 
 -- Classes
 class Ord <: Eq + PartialOrd = 
   let cmp self other = raise :NotImplementedError
-end
 
 class List (I = Nat) V <: Map I V =
   let Nil = Nil
   let Pair (x: Nat) (xs: Nat) = Pair x xs
 
   let map f Nil = Nil
-    \ map f (Pair x xs) = Pair (f x) (map f xs)
-end 
+    | map f (Pair x xs) = Pair (f x) (map f xs)
+
+data List (I = Nat) V = Nil | Pair I (List I V)
 
 -- Metaprogramming
 -- You can use the `quote` function to get the AST of an expression.
