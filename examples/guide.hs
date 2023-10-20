@@ -152,13 +152,14 @@ let ast = :(1 + 1)
 
 -- You can use the `unquote` function to splice an AST into an expression.
 -- Unquoting can also be done with the `$` operator.
-quote (1 + unquote (quote 1))
+let a = 1
+quasiquote (1 + unquote 1)
 -- miniml> :(1 + 1)
-:(1 + $(:(1)))
+`(1 + $(a))
 -- miniml> :(1 + 1)
 
 -- You can use the `eval` function to evaluate an AST.
-eval :(1 + 1)
+eval :(1 + a)
 -- miniml> 2
 
 -- You can use the `compile` function to compile an AST to a function.
@@ -174,9 +175,10 @@ show_sexpr :(1 + 1)
 show_sexpr :(let x = 1 in x + 1)
 -- miniml> '(let ((x 1)) (+ x 1))
 
-show_sexpr :(let fib 0 = 0 
-               | fib 1 = 1 
-               | fib n = fib (n - 1) + fib (n - 2))
+show_sexpr 
+  :(let fib 0 = 0 
+    | fib 1 = 1 
+    | fib n = fib (n - 1) + fib (n - 2))
 -- miniml> '(let 
 
 

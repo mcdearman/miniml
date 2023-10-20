@@ -36,3 +36,5 @@ data TokenType
   | Period
   | Colon
   | Semicolon
+
+let lex 
