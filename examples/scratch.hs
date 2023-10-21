@@ -21,31 +21,16 @@ then 2 else 3
 (\a b -> a + b) 1 2
 
 -- maps
-{ x = 1, y = 2 }
-
--- struct literals
-Point { x = 1, y = 2 }
-
--- struct access
-Point { x = 1, y = 2 }.x
+{ x: 1, y: 2 }
 
 -- lists
-[1 2 3]
+[1, 2, 3]
 
 -- sets
-{ 1 2 3 }
-
--- multidimensional lists
-[1 2, 3 4]
+{1, 2, 3}
 
 -- Symbols are identifiers whose value is their name.
 :foo
-
--- main function must return unit or int
-()
-
--- The only declarations that can appear outside of functions 
--- are type definitions and global variables.
 
 -- definition
 x = 1
@@ -84,19 +69,24 @@ add1 = add 1 _
 -- wildcard can be in any position
 add1 = add _ 1
 
+-- struct literals
+Point { x = 1, y = 2 }
+
+-- struct access
+Point { x = 1, y = 2 }.x
 
 -- Partial application is just an operator that returns
 -- a lambda. The line above is equivalent to:
 add1 = fn x -> add x 1
 
 -- list pattern
-[a b c] = [1 2 3]
+[a, b, c] = [1, 2, 3]
 
 -- pair pattern
-let [head::tail] = [1 2 3]
+let [head::tail] = [1, 2, 3]
 
 -- list pair pattern
-let [first, head::tail] = [1 2 3]
+let [first, head::tail] = [1, 2, 3]
 
 -- record pattern
 let Point { x, y } = Point { x = 1, y = 2 }
