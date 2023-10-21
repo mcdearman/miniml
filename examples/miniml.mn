@@ -37,4 +37,4 @@ data TokenType
   | Colon
   | Semicolon
 
-let lex 
+lex 
