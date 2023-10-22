@@ -9,10 +9,12 @@ println "Hello World!"
 5 % 2
 6^2
 
--- elif
-if x = y then 1 
-elif x = z 
-then 2 else 3
+-- if-elif-else
+if x == y 
+  1
+elif x == z 
+  2
+else 3
 
 -- lambda expression
 \a b -> a + b
