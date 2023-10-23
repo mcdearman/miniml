@@ -47,7 +47,7 @@ fn expr_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
     recursive(|expr| {
         // case = pat "->" expr
         let case = pattern_parser()
-            .map_with(SrcNode::new)
+            .map_with_span(SrcNode::new)
             .then_ignore(just(Token::Arrow))
             .then(expr.clone().map_with_span(SrcNode::new))
             .map(|(pattern, body): (SrcNode<Pattern>, SrcNode<Expr>)| {
