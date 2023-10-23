@@ -5,17 +5,18 @@ use super::{
 use crate::util::{intern::InternedString, node::SrcNode, span::Span};
 use chumsky::{
     extra,
-    input::ValueInput,
-    prelude::Rich,
+    input::{Stream, ValueInput},
+    prelude::{Input, Rich},
     primitive::{choice, just},
     recursive::recursive,
     select, IterParser, Parser,
 };
+use logos::Logos;
 
 fn ident_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
 ) -> impl Parser<'a, I, InternedString, extra::Err<Rich<'a, Token, Span>>> {
     select! {
-        Token::Ident(name) => InternedString::from(name),
+        Token::Ident(name) => name,
     }
 }
 
@@ -46,7 +47,7 @@ fn expr_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
     recursive(|expr| {
         // case = pat "->" expr
         let case = pattern_parser()
-            .map_with_span(SrcNode::new)
+            .map_with(SrcNode::new)
             .then_ignore(just(Token::Arrow))
             .then(expr.clone().map_with_span(SrcNode::new))
             .map(|(pattern, body): (SrcNode<Pattern>, SrcNode<Expr>)| {
@@ -427,4 +428,19 @@ pub fn repl_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
         .collect()
         .map(|decls| Root { decls })
         .boxed()
+}
+
+pub type ParseError<'a> = Rich<'a, Token, Span, &'a str>;
+
+pub fn parse<'src>(src: &'src str, repl: bool) -> (Option<Root>, Vec<ParseError<'src>>) {
+    let tokens = Token::lexer(&src).spanned().map(|(tok, span)| match tok {
+        Ok(tok) => (tok, Span::from(span)),
+        Err(err) => panic!("lex error: {:?}", err),
+    });
+    let tok_stream = Stream::from_iter(tokens).spanned(Span::from(src.len()..src.len()));
+    if repl {
+        repl_parser().parse(tok_stream).into_output_errors()
+    } else {
+        parser().parse(tok_stream).into_output_errors()
+    }
 }

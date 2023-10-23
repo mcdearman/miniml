@@ -2,9 +2,7 @@ use logos::Logos;
 use num_complex::Complex64;
 use num_rational::Rational64;
 use std::fmt::{Debug, Display};
-
 use crate::util::intern::InternedString;
-
 use super::ast::{Nat, Int};
 
 #[derive(Logos, Debug, Clone, PartialEq)]
@@ -25,7 +23,7 @@ pub enum Token {
     )]
     Int(Int),
     #[regex(
-        r#"((0b[0-1]+)|(0o[0-7]+)|(0x[0-9a-fA-F]+)|([1-9]\d*|0))/-?((0b[0-1]+)|(0o[0-7]+)|(0x[0-9a-fA-F]+)|([1-9]\d*|0))"#,
+        r#"-?((0b[0-1]+)|(0o[0-7]+)|(0x[0-9a-fA-F]+)|([1-9]\d*|0))/-?((0b[0-1]+)|(0o[0-7]+)|(0x[0-9a-fA-F]+)|([1-9]\d*|0))"#,
         priority = 1,
         callback = |lex| lex.slice().parse::<Rational64>().ok()
     )]

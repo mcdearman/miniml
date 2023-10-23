@@ -79,7 +79,7 @@ Point { x = 1, y = 2 }.x
 
 -- Partial application is just an operator that returns
 -- a lambda. The line above is equivalent to:
-add1 = fn x -> add x 1
+add1 = \x -> add x 1
 
 -- list pattern
 [a, b, c] = [1, 2, 3]
@@ -121,17 +121,17 @@ begin
 
 -- Classes
 class Ord <: Eq + PartialOrd = 
-  cmp self other = raise :NotImplementedError
+  cmp :: self -> self -> Ordering
 
--- class List (I = Nat) V <: Map I V =
---   let Pair (x: Nat) (xs: Nat) = Pair x xs
-
---   let map f Nil = Nil
---     | map f (Pair x xs) = Pair (f x) (map f xs)
+class Map K V = 
+  empty :: Map K V
+  find :: K -> V
+  insert :: K -> V -> Map K V
+  delete :: K -> Map K V
 
 data List (I = Nat) V <: Map I V 
   = Empty 
-  | Pair I (List I V)
+  | Pair I V (List I V)
 
 -- Metaprogramming
 -- You can use the `quote` function to get the AST of an expression.
@@ -143,20 +143,25 @@ ast = :(1 + 1)
 -- You can use the `unquote` function to splice an AST into an expression.
 -- Unquoting can also be done with the `$` operator.
 a = 1
-quasiquote (1 + unquote 1)
+quote (1 + unquote 1)
 -- miniml> :(1 + 1)
-`(1 + $(a))
+:(1 + $(a))
 -- miniml> :(1 + 1)
+
+-- Sometimes you might want to quote the unquote operator without
+-- interpolating. You can do this with the `~` operator.
+quote (1 + ~1)
+-- miniml> :(1 + $(1))
 
 -- You can use the `eval` function to evaluate an AST.
 eval :(1 + a)
 -- miniml> 2
 
 -- You can use the `compile` function to compile an AST to a function.
-let add = compile :(fn a b -> a + b)
+add = compile :(\a b -> a + b)
 
 -- You can use the `parse` function to parse a string into an AST.
-let ast = parse "1 + 1"
+ast = parse "1 + 1"
 
 -- You can use the `show_sexpr` function to display an AST as an s-expression.
 show_sexpr :(1 + 1)
@@ -170,7 +175,6 @@ show_sexpr
     | fib 1 = 1 
     | fib n = fib (n - 1) + fib (n - 2))
 -- miniml> '(let 
-
 
 -- Macros
 -- You can define macros with the `macro` keyword.
@@ -196,3 +200,5 @@ macro while cond body... =
 macro while cond body =
   :(if $(cond) then $(body); while $(cond) $(body) else ())
 
+macro match expr with... = 
+  

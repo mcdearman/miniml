@@ -1,11 +1,9 @@
-use chumsky::span::SimpleSpan;
+use super::span::Span;
 use std::{
     cmp::Ordering,
     fmt,
     ops::{Deref, DerefMut},
 };
-
-use super::span::Span;
 
 #[derive(Clone)]
 pub struct Node<T, M = ()> {

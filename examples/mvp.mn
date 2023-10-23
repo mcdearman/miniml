@@ -1,16 +1,16 @@
 -- This is a comment
 
--- let binding
-let x = 1
+-- value definition
+x = 1
 
 -- function definition
-let add x y = x + y
+add x y = x + y
 
 -- if expression
-let abs x = if x < 0 then -x else x
+if x < 0 then -x else x
 
--- let expression
-let abs x = let y = x * x in sqrt y
+-- let-in expression
+let y = x * x in sqrt y
 
 
 

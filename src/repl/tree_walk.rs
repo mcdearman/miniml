@@ -2,7 +2,7 @@ use std::io::{self, Write};
 
 use crate::{
     analysis::{infer::default_ctx, res::resolve},
-    syntax::parse,
+    syntax::parse::parse,
 };
 
 pub fn repl() {

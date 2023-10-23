@@ -11,7 +11,7 @@ use clap::Parser;
 use notify::{event, Event, Watcher};
 use repl::tree_walk::repl;
 use std::{path::Path, sync::mpsc::channel};
-use syntax::parse;
+use syntax::parse::parse;
 
 #[derive(Parser)]
 #[command(author, version, about, long_about = None)]
