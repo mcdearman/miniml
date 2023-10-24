@@ -1,5 +1,5 @@
 /*
- * High-level Intermediate Representation (HIR) lowering
+ * High-level Intermediate Representation (HIR)
  */
 
 use super::{hir, res};
