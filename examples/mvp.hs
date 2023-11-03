@@ -31,10 +31,6 @@ let x = 1 in x + 1
 -- let expression function definition
 let f x = x + 1 in f 1
 
--- let expression with multiple definitions
-let x = 1
-    y = 2
-in x + y
 
 
 
