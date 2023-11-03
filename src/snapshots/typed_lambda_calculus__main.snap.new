@@ -1,0 +1,8 @@
+---
+source: src/main.rs
+assertion_line: 23
+expression: types
+---
+[
+    [TyVar('a)] -> TyVar('b),
+]

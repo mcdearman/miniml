@@ -1,96 +1,85 @@
-/*
- * High-level Intermediate Representation (HIR)
- */
-
-use super::{hir, res};
-use crate::util::{intern::InternedString, node::SrcNode, span::Span, unique_id::UniqueId};
-use num_complex::Complex64;
+use super::infer::Type;
+use crate::util::{node::SrcNode, unique_id::UniqueId};
 use num_rational::Rational64;
+use std::collections::HashMap;
 
-#[derive(Debug, Clone, Copy, PartialEq)]
-pub struct HirError {
-    pub msg: InternedString,
-    pub span: Span,
+#[derive(Debug, Clone, PartialEq)]
+pub struct Env {
+    parent: Option<Box<Env>>,
+    bindings: HashMap<UniqueId, Expr>,
 }
 
-pub type HirResult<T> = Result<T, HirError>;
+impl Env {
+    pub fn new() -> Self {
+        Self {
+            parent: None,
+            bindings: HashMap::new(),
+        }
+    }
+
+    pub fn new_with_parent(parent: Env) -> Self {
+        Self {
+            parent: Some(Box::new(parent)),
+            bindings: HashMap::new(),
+        }
+    }
+
+    pub fn insert(&mut self, id: UniqueId, expr: Expr) {
+        self.bindings.insert(id, expr);
+    }
+
+    pub fn get(&self, id: &UniqueId) -> Option<&Expr> {
+        self.bindings
+            .get(id)
+            .or(self.parent.as_ref().and_then(|parent| parent.get(id)))
+    }
+}
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Root {
-    pub decls: Vec<SrcNode<Decl>>,
+    pub items: Vec<SrcNode<Item>>,
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub enum Decl {
-    Let {
+pub enum Item {
+    Expr(Expr),
+    Def {
         name: SrcNode<UniqueId>,
-        expr: SrcNode<Expr>,
+        body: SrcNode<Expr>,
     },
 }
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Expr {
-    Ident(UniqueId),
-    Lit(Lit),
+    Lit {
+        lit: Lit,
+        ty: Type,
+    },
+    Ident {
+        name: SrcNode<UniqueId>,
+        ty: Type,
+    },
     Lambda {
-        params: Vec<SrcNode<Pattern>>,
-        body: Box<SrcNode<Self>>,
+        env: Box<Env>,
+        params: Vec<SrcNode<UniqueId>>,
+        body: Box<SrcNode<Expr>>,
+        ty: Type,
     },
-    Match {
-        expr: Box<SrcNode<Self>>,
-        cases: Vec<SrcNode<MatchCase>>,
-    },
+    // Closure {
+    //     fun: Box<SrcNode<Expr>>,
+    //     captured: HashMap<SrcNode<UniqueId>, SrcNode<Expr>>,
+    //     ty: Type,
+    // },
     Apply {
-        fun: Box<SrcNode<Self>>,
-        arg: Box<SrcNode<Self>>,
+        fun: Box<SrcNode<Expr>>,
+        args: Vec<SrcNode<Expr>>,
+        ty: Type,
     },
-}
-
-#[derive(Debug, Clone, PartialEq)]
-pub struct MatchCase {
-    pub pattern: SrcNode<Pattern>,
-    pub body: SrcNode<Expr>,
-}
-
-#[derive(Debug, Clone, PartialEq)]
-pub enum Pattern {
-    Ident(UniqueId),
-    Lit(Lit),
+    Unit,
 }
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Lit {
-    Nat(u64),
-    Int(i64),
-    Rational(Rational64),
-    Real(f64),
-    Complex(Complex64),
-    String(InternedString),
-}
-
-pub fn lower(root: &SrcNode<res::Root>) -> HirResult<SrcNode<hir::Root>> {
-    let mut decls = Vec::new();
-    let mut errors = vec![];
-    for decl in &root.decls {
-        match lower_decl(decl) {
-            Ok(decl) => decls.push(decl),
-            Err(err) => errors.push(err),
-        }
-    }
-    Ok(SrcNode::new(hir::Root { decls }, root.span()))
-}
-
-fn lower_decl(decl: &SrcNode<res::Decl>) -> HirResult<SrcNode<hir::Decl>> {
-    // match decl {
-    //     res::Decl::Let { name, expr } => hir::Decl::Let {
-    //         name: name.clone(),
-    //         expr: lower_expr(expr),
-    //     },
-    //     res::Decl::Fn { name, params, expr } => todo!(),
-    // }
-    todo!()
-}
-
-fn lower_expr(expr: &SrcNode<res::Expr>) -> HirResult<SrcNode<hir::Expr>> {
-    todo!()
+    Num(Rational64),
+    Bool(bool),
 }

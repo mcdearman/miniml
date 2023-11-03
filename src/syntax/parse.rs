@@ -1,5 +1,5 @@
 use super::{
-    ast::{Decl, Expr, InfixOp, Lit, MatchCase, Pattern, PrefixOp, Root},
+    ast::{Expr, InfixOp, Item, Lit, PrefixOp, Root},
     token::Token,
 };
 use crate::util::{intern::InternedString, node::SrcNode, span::Span};
@@ -7,11 +7,13 @@ use chumsky::{
     extra,
     input::{Stream, ValueInput},
     prelude::{Input, Rich},
-    primitive::{choice, just},
+    primitive::just,
     recursive::recursive,
     select, IterParser, Parser,
 };
 use logos::Logos;
+
+pub type ParseError<'a> = Rich<'a, Token, Span, &'a str>;
 
 fn ident_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
 ) -> impl Parser<'a, I, InternedString, extra::Err<Rich<'a, Token, Span>>> {
@@ -23,131 +25,81 @@ fn ident_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
 fn lit_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
 ) -> impl Parser<'a, I, Lit, extra::Err<Rich<'a, Token, Span>>> {
     select! {
-        Token::Nat(n) => Lit::Nat(n),
-        Token::Int(n) => Lit::Int(n),
-        Token::Rational(r) => Lit::Rational(r),
-        Token::Real(r) => Lit::Real(r),
-        Token::Complex(c) => Lit::Complex(c),
-        Token::Char(c) => Lit::Char(c),
-        Token::String(s) => Lit::String(s),
+        Token::Num(n) => Lit::Num(n),
+        Token::Bool(b) => Lit::Bool(b),
     }
-}
-
-fn pattern_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
-) -> impl Parser<'a, I, Pattern, extra::Err<Rich<'a, Token, Span>>> {
-    ident_parser()
-        .map_with_span(SrcNode::new)
-        .map(Pattern::Ident)
-        .or(lit_parser().map_with_span(SrcNode::new).map(Pattern::Lit))
-        .boxed()
 }
 
 fn expr_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
 ) -> impl Parser<'a, I, Expr, extra::Err<Rich<'a, Token, Span>>> {
     recursive(|expr| {
-        // case = pat "->" expr
-        let case = pattern_parser()
-            .map_with_span(SrcNode::new)
-            .then_ignore(just(Token::Arrow))
-            .then(expr.clone().map_with_span(SrcNode::new))
-            .map(|(pattern, body): (SrcNode<Pattern>, SrcNode<Expr>)| {
-                SrcNode::new(
-                    MatchCase {
-                        pattern: pattern.clone(),
-                        body: body.clone(),
-                    },
-                    Span::new(pattern.span().start, body.span().end),
-                )
-            })
-            .boxed();
+        let unit = just(Token::LParen)
+            .ignore_then(just(Token::RParen))
+            .map(|_| Expr::Unit);
 
-        // match = "match" expr "with" ("|" case)* "\\" case
-        let match_ = just(Token::Match)
-            .ignore_then(expr.clone().map_with_span(SrcNode::new))
-            .then_ignore(just(Token::With))
-            .then(
-                just(Token::Pipe)
-                    .ignore_then(case.clone())
+        let lit = lit_parser().map(Expr::Lit);
+
+        let let_ = just(Token::Let)
+            .ignore_then(
+                ident_parser()
+                    .map_with_span(SrcNode::new)
                     .repeated()
+                    .at_least(1)
                     .collect::<Vec<_>>(),
             )
-            .then_ignore(just(Token::Backslash))
-            .then(case.clone())
-            .map(
-                |((expr, mut cases), end): ((_, Vec<SrcNode<MatchCase>>), SrcNode<MatchCase>)| {
-                    cases.push(end);
-                    Expr::Match { expr, cases }
-                },
-            );
-
-        // parse let expr
-        let let_ = let_parser(expr.clone())
+            .then_ignore(just(Token::Eq))
+            .then(expr.clone().map_with_span(SrcNode::new))
             .then_ignore(just(Token::In))
             .then(expr.clone().map_with_span(SrcNode::new))
-            .map(|((name, params, expr), body)| {
-                if params.is_empty() {
-                    Expr::Let { name, expr, body }
+            .map(|((names, expr), body)| {
+                if names.len() == 1 {
+                    Expr::Let {
+                        name: names[0].clone(),
+                        expr,
+                        body,
+                    }
                 } else {
-                    Expr::Fn {
-                        name,
-                        params,
+                    let expr = SrcNode::new(
+                        Expr::Lambda {
+                            params: names[1..].to_vec(),
+                            body: expr.clone(),
+                        },
+                        Span::new(names[0].span().start, expr.span().end),
+                    );
+                    Expr::Let {
+                        name: names[0].clone(),
                         expr,
                         body,
                     }
                 }
             });
 
-        // parse if
-        let if_ = just(Token::If)
-            .ignore_then(expr.clone().map_with_span(SrcNode::new))
-            .then_ignore(just(Token::Then))
-            .then(expr.clone().map_with_span(SrcNode::new))
-            .then(
-                just(Token::Elif)
-                    .ignore_then(expr.clone().map_with_span(SrcNode::new))
-                    .then_ignore(just(Token::Then))
-                    .then(expr.clone().map_with_span(SrcNode::new))
-                    .repeated()
-                    .collect::<Vec<_>>(),
-            )
-            .then_ignore(just(Token::Else))
-            .then(expr.clone().map_with_span(SrcNode::new))
-            .map(|(((cond, then), elifs), else_)| Expr::If {
-                cond,
-                then,
-                elifs,
-                else_,
-            })
-            .boxed();
-
-        let lambda = just(Token::Fn)
+        let lambda = just(Token::Lambda)
             .ignore_then(
                 ident_parser()
                     .map_with_span(SrcNode::new)
                     .repeated()
                     .at_least(1)
-                    .collect(),
+                    .collect::<Vec<_>>(),
             )
-            .then(just(Token::Arrow).ignore_then(expr.clone().map_with_span(SrcNode::new)))
-            .map(|(params, body)| Expr::Lambda { params, body })
-            .map_with_span(SrcNode::new)
-            .boxed();
+            .then_ignore(just(Token::Arrow))
+            .then(expr.clone().map_with_span(SrcNode::new))
+            .map(|(params, body)| Expr::Lambda { params, body });
 
+        // atom = ident | number | bool | '(' expr ')'
         let atom = ident_parser()
-            .map_with_span(SrcNode::new)
             .map(Expr::Ident)
-            .or(lit_parser().map_with_span(SrcNode::new).map(Expr::Lit))
-            .or(if_)
-            .or(match_)
+            .or(unit)
+            .or(lit)
             .or(let_)
-            .or(lambda.map(|expr| expr.inner().clone()))
+            .or(lambda)
             .or(expr
                 .clone()
                 .delimited_by(just(Token::LParen), just(Token::RParen)))
             .map_with_span(SrcNode::new)
             .boxed();
 
-        // parse function application
+        // apply = atom+
         let apply = atom
             .clone()
             .then(atom.clone().repeated().collect::<Vec<_>>())
@@ -169,7 +121,7 @@ fn expr_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
         let op = just(Token::Minus)
             .map(PrefixOp::from)
             .map_with_span(SrcNode::new)
-            .or(just(Token::Not)
+            .or(just(Token::Bang)
                 .map(PrefixOp::from)
                 .map_with_span(SrcNode::new))
             .boxed();
@@ -196,9 +148,6 @@ fn expr_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
             .map(InfixOp::from)
             .map_with_span(SrcNode::new)
             .or(just(Token::Slash)
-                .map(InfixOp::from)
-                .map_with_span(SrcNode::new))
-            .or(just(Token::Percent)
                 .map(InfixOp::from)
                 .map_with_span(SrcNode::new))
             .boxed();
@@ -245,202 +194,196 @@ fn expr_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
             )
             .boxed();
 
-        // cmp = term (("<" | ">" | "<=" | ">=" | "=" | "!=")  cmp)?
-        let op = choice((
-            just(Token::Lt)
-                .map(InfixOp::from)
-                .map_with_span(SrcNode::new),
-            just(Token::Gt)
-                .map(InfixOp::from)
-                .map_with_span(SrcNode::new),
-            just(Token::Leq)
-                .map(InfixOp::from)
-                .map_with_span(SrcNode::new),
-            just(Token::Geq)
-                .map(InfixOp::from)
-                .map_with_span(SrcNode::new),
-            just(Token::Eq)
-                .map(InfixOp::from)
-                .map_with_span(SrcNode::new),
-            just(Token::Neq)
-                .map(InfixOp::from)
-                .map_with_span(SrcNode::new),
-        ))
-        .boxed();
-
-        // cmp = term (("<" | ">" | "<=" | ">=" | "=" | "!=")  term)*
-        let cmp = term
-            .clone()
-            .foldl(
-                op.clone().then(term.clone()).repeated(),
-                |lhs: SrcNode<Expr>, (op, rhs): (_, SrcNode<Expr>)| {
-                    SrcNode::new(
-                        Expr::Infix {
-                            op,
-                            lhs: lhs.clone(),
-                            rhs: rhs.clone(),
-                        },
-                        Span::new(lhs.span().start, rhs.span().end),
-                    )
-                },
-            )
-            .boxed();
-
-        // and = cmp ("and" cmp)*
-        let and = cmp
-            .clone()
-            .foldl(
-                just(Token::And).ignore_then(cmp.clone()).repeated(),
-                |lhs: SrcNode<Expr>, rhs: SrcNode<Expr>| {
-                    SrcNode::new(
-                        Expr::Infix {
-                            op: SrcNode::new(InfixOp::And, Span::new(0, 0)),
-                            lhs: lhs.clone(),
-                            rhs: rhs.clone(),
-                        },
-                        Span::new(lhs.span().start, rhs.span().end),
-                    )
-                },
-            )
-            .boxed();
-
-        // or = and ("or" and)*
-        let or = and
-            .clone()
-            .foldl(
-                just(Token::Or).ignore_then(and.clone()).repeated(),
-                |lhs: SrcNode<Expr>, rhs: SrcNode<Expr>| {
-                    SrcNode::new(
-                        Expr::Infix {
-                            op: SrcNode::new(InfixOp::Or, Span::new(0, 0)),
-                            lhs: lhs.clone(),
-                            rhs: rhs.clone(),
-                        },
-                        Span::new(lhs.span().start, rhs.span().end),
-                    )
-                },
-            )
-            .boxed();
-
-        // stmt = or (";" or)*
-        let stmt = or
-            .clone()
-            .foldl(
-                just(Token::Semicolon).ignore_then(or.clone()).repeated(),
-                |lhs: SrcNode<Expr>, rhs: SrcNode<Expr>| {
-                    SrcNode::new(
-                        Expr::Infix {
-                            op: SrcNode::new(InfixOp::Stmt, Span::new(0, 0)),
-                            lhs: lhs.clone(),
-                            rhs: rhs.clone(),
-                        },
-                        Span::new(lhs.span().start, rhs.span().end),
-                    )
-                },
-            )
-            .boxed();
-
-        // pipe = stmt ("|>" stmt)*
-        let pipe = stmt
-            .clone()
-            .foldl(
-                just(Token::PipeArrow).ignore_then(stmt.clone()).repeated(),
-                |lhs: SrcNode<Expr>, rhs: SrcNode<Expr>| {
-                    SrcNode::new(
-                        Expr::Infix {
-                            op: SrcNode::new(InfixOp::Pipe, Span::new(0, 0)),
-                            lhs: lhs.clone(),
-                            rhs: rhs.clone(),
-                        },
-                        Span::new(lhs.span().start, rhs.span().end),
-                    )
-                },
-            )
-            .boxed();
-
-        pipe.map(|expr| expr.inner().clone())
+        term.map(|expr| expr.inner().clone())
+        // atom.clone()
     })
 }
 
-// Helper to reduce boilerplate. Used in both let expressions and let declarations.
-fn let_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
-    expr_parser: impl Parser<'a, I, Expr, extra::Err<Rich<'a, Token, Span>>> + 'a,
-) -> impl Parser<
-    'a,
-    I,
-    (
-        SrcNode<InternedString>,
-        Vec<SrcNode<InternedString>>,
-        SrcNode<Expr>,
-    ),
-    extra::Err<Rich<'a, Token, Span>>,
-> {
-    just(Token::Let)
-        .ignore_then(ident_parser().map_with_span(SrcNode::new))
-        .then(
-            ident_parser()
-                .map_with_span(SrcNode::new)
-                .repeated()
-                .collect::<Vec<_>>(),
-        )
-        .then_ignore(just(Token::Eq))
-        .then(expr_parser.map_with_span(SrcNode::new))
-        .map(|((name, params), body)| (name, params, body))
-        .boxed()
-}
-
-fn decl_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
-) -> impl Parser<'a, I, Decl, extra::Err<Rich<'a, Token, Span>>> {
-    let_parser(expr_parser())
-        .map(|(name, params, expr)| {
-            if params.is_empty() {
-                Decl::Let { name, expr }
-            } else {
-                Decl::Fn { name, params, expr }
-            }
-        })
-        .boxed()
-}
-
-pub fn parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
-) -> impl Parser<'a, I, Root, extra::Err<Rich<'a, Token, Span>>> {
-    decl_parser()
-        .map_with_span(SrcNode::new)
-        .repeated()
-        // .at_least(1)
-        .collect()
-        .map(|decls| Root { decls })
-        .boxed()
-}
-
-pub fn repl_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
-) -> impl Parser<'a, I, Root, extra::Err<Rich<'a, Token, Span>>> {
-    decl_parser()
-        .or(expr_parser()
-            .map_with_span(SrcNode::new)
-            .map(|expr| Decl::Let {
-                name: SrcNode::new(InternedString::from("main"), expr.span()),
-                expr,
-            }))
+fn def_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
+) -> impl Parser<'a, I, SrcNode<Item>, extra::Err<Rich<'a, Token, Span>>> {
+    ident_parser()
         .map_with_span(SrcNode::new)
         .repeated()
         .at_least(1)
-        .collect()
-        .map(|decls| Root { decls })
+        .collect::<Vec<_>>()
+        .then_ignore(just(Token::Eq))
+        .then(expr_parser().map_with_span(SrcNode::new))
+        .map(|(names, expr)| {
+            if names.len() == 1 {
+                Item::Def {
+                    name: names[0].clone(),
+                    expr,
+                }
+            } else {
+                let expr = SrcNode::new(
+                    Expr::Lambda {
+                        params: names[1..].to_vec(),
+                        body: expr.clone(),
+                    },
+                    Span::new(names[0].span().start, expr.span().end),
+                );
+                Item::Def {
+                    name: names[0].clone(),
+                    expr,
+                }
+            }
+        })
+        .map_with_span(SrcNode::new)
         .boxed()
 }
 
-pub type ParseError<'a> = Rich<'a, Token, Span, &'a str>;
+fn item_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
+) -> impl Parser<'a, I, SrcNode<Item>, extra::Err<Rich<'a, Token, Span>>> {
+    def_parser()
+        .or(expr_parser().map(Item::Expr).map_with_span(SrcNode::new))
+        .boxed()
+}
 
-pub fn parse<'src>(src: &'src str, repl: bool) -> (Option<Root>, Vec<ParseError<'src>>) {
+fn parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
+) -> impl Parser<'a, I, SrcNode<Root>, extra::Err<Rich<'a, Token, Span>>> {
+    item_parser()
+        .repeated()
+        .collect()
+        .map(|items| Root { items })
+        .map_with_span(SrcNode::new)
+        .boxed()
+}
+
+pub fn parse<'src>(src: &'src str) -> (Option<SrcNode<Root>>, Vec<ParseError<'src>>) {
     let tokens = Token::lexer(&src).spanned().map(|(tok, span)| match tok {
         Ok(tok) => (tok, Span::from(span)),
         Err(err) => panic!("lex error: {:?}", err),
     });
     let tok_stream = Stream::from_iter(tokens).spanned(Span::from(src.len()..src.len()));
-    if repl {
-        repl_parser().parse(tok_stream).into_output_errors()
-    } else {
-        parser().parse(tok_stream).into_output_errors()
+    parser().parse(tok_stream).into_output_errors()
+}
+
+mod tests {
+    use crate::syntax::parse::parse;
+
+    #[test]
+    fn parse_unit() {
+        let (root, errs) = parse("()");
+        if !errs.is_empty() {
+            panic!("parse error: {:?}", errs);
+        }
+        insta::assert_debug_snapshot!(root.unwrap());
+    }
+
+    #[test]
+    fn parse_num() {
+        let (root, errs) = parse("1");
+        if !errs.is_empty() {
+            panic!("parse error: {:?}", errs);
+        }
+        insta::assert_debug_snapshot!(root.unwrap());
+    }
+
+    #[test]
+    fn parse_bool() {
+        let (root, errs) = parse("true");
+        if !errs.is_empty() {
+            panic!("parse error: {:?}", errs);
+        }
+        insta::assert_debug_snapshot!(root.unwrap());
+    }
+
+    #[test]
+    fn parse_ident() {
+        let (root, errs) = parse("x");
+        if !errs.is_empty() {
+            panic!("parse error: {:?}", errs);
+        }
+        insta::assert_debug_snapshot!(root.unwrap());
+    }
+
+    #[test]
+    fn parse_let() {
+        let (root, errs) = parse("let x = 1 in x");
+        if !errs.is_empty() {
+            panic!("parse error: {:?}", errs);
+        }
+        insta::assert_debug_snapshot!(root.unwrap());
+    }
+
+    #[test]
+    fn parse_let_fn() {
+        let (root, errs) = parse("let add x y = x + y in add 1 2");
+        if !errs.is_empty() {
+            panic!("parse error: {:?}", errs);
+        }
+        insta::assert_debug_snapshot!(root.unwrap());
+    }
+
+    #[test]
+    fn parse_apply() {
+        let (root, errs) = parse("f x y");
+        if !errs.is_empty() {
+            panic!("parse error: {:?}", errs);
+        }
+        insta::assert_debug_snapshot!(root.unwrap());
+    }
+
+    #[test]
+    fn parse_prefix() {
+        let (root, errs) = parse("-x");
+        if !errs.is_empty() {
+            panic!("parse error: {:?}", errs);
+        }
+        insta::assert_debug_snapshot!(root.unwrap());
+    }
+
+    #[test]
+    fn parse_infix() {
+        let (root, errs) = parse("x + y * z");
+        if !errs.is_empty() {
+            panic!("parse error: {:?}", errs);
+        }
+        insta::assert_debug_snapshot!(root.unwrap());
+    }
+
+    #[test]
+    fn parse_paren() {
+        let (root, errs) = parse("(x + y) * z");
+        if !errs.is_empty() {
+            panic!("parse error: {:?}", errs);
+        }
+        insta::assert_debug_snapshot!(root.unwrap());
+    }
+
+    #[test]
+    fn parse_lambda() {
+        let (root, errs) = parse("\\a b -> a + b");
+        if !errs.is_empty() {
+            panic!("parse error: {:?}", errs);
+        }
+        insta::assert_debug_snapshot!(root.unwrap());
+    }
+
+    #[test]
+    fn parse_lambda_apply() {
+        let (root, errs) = parse("(\\a b -> a + b) 1 2");
+        if !errs.is_empty() {
+            panic!("parse error: {:?}", errs);
+        }
+        insta::assert_debug_snapshot!(root.unwrap());
+    }
+
+    #[test]
+    fn parse_def() {
+        let (root, errs) = parse("x = 1");
+        if !errs.is_empty() {
+            panic!("parse error: {:?}", errs);
+        }
+        insta::assert_debug_snapshot!(root.unwrap());
+    }
+
+    #[test]
+    fn parse_fn_def() {
+        let (root, errs) = parse("add x y = x + y");
+        if !errs.is_empty() {
+            panic!("parse error: {:?}", errs);
+        }
+        insta::assert_debug_snapshot!(root.unwrap());
     }
 }

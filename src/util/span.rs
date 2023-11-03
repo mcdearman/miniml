@@ -89,35 +89,3 @@ impl Index<Span> for String {
         &self[Range::from(index)]
     }
 }
-
-// #[derive(Clone, Copy, PartialEq)]
-// pub struct Spanned<T> {
-//     pub value: T,
-//     pub span: Span,
-// }
-
-// impl<T> Spanned<T> {
-//     pub fn new(value: T, span: Span) -> Self {
-//         Self { value, span }
-//     }
-// }
-
-// impl<T: Display> Display for Spanned<T> {
-//     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-//         write!(f, "{} @ {}", self.value, self.span)
-//     }
-// }
-
-// impl<T: Debug> Debug for Spanned<T> {
-//     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-//         write!(f, "{:?} @ {}", self.value, self.span)
-//     }
-// }
-
-// pub trait Spannable: Sized + Clone {
-//     fn spanned(&self, span: Span) -> Spanned<Self> {
-//         Spanned::new(self.clone(), span)
-//     }
-// }
-
-// impl<T: Clone> Spannable for T {}

@@ -1,0 +1,26 @@
+---
+source: src/syntax/parse.rs
+expression: root.unwrap()
+---
+Root {
+    items: [
+        Def {
+            name: Ident(add) @ 0..3,
+            expr: Lambda {
+                params: [
+                    Ident(x) @ 4..5,
+                    Ident(y) @ 6..7,
+                ],
+                body: Infix {
+                    op: Add @ 12..13,
+                    lhs: Ident(
+                        Ident(x),
+                    ) @ 10..11,
+                    rhs: Ident(
+                        Ident(y),
+                    ) @ 14..15,
+                } @ 10..15,
+            } @ 0..15,
+        } @ 0..15,
+    ],
+} @ 0..15

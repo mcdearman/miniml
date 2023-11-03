@@ -65,6 +65,14 @@ fib n =
 map f [] = []
 map f [x::xs] = f x :: map f xs
 
+data Node = Node Int (Maybe Node)
+
+binaryListToDecimal :: Node -> Int
+binaryListToDecimal (Node _ Nothing) = 0
+binaryListToDecimal (Node dataValue (Just rest)) = binaryListToDecimal rest * 2 + dataValue
+
+let y = 2 in (\x -> x + y) 1
+
 -- partial application with wildcard
 add1 = add 1 _
 

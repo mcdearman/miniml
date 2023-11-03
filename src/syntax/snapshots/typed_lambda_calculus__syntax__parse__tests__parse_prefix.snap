@@ -1,0 +1,16 @@
+---
+source: src/syntax/parse.rs
+expression: root.unwrap()
+---
+Root {
+    items: [
+        Expr(
+            Prefix {
+                op: Neg @ 0..1,
+                expr: Ident(
+                    Ident(x),
+                ) @ 1..2,
+            },
+        ) @ 0..2,
+    ],
+} @ 0..2

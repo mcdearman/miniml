@@ -1,0 +1,8 @@
+---
+source: src/analysis/infer.rs
+assertion_line: 799
+expression: types
+---
+[
+    [TyVar('a23)] -> TyVar('a22),
+]
