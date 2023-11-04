@@ -8,7 +8,7 @@ use crate::{
     util::{intern::InternedString, node::SrcNode, span::Span, unique_id::UniqueId},
 };
 use num_rational::Rational64;
-use std::{collections::HashMap, hash::Hash};
+use std::{cell::RefCell, collections::HashMap, hash::Hash, rc::Rc};
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct ResError {
@@ -20,30 +20,30 @@ pub type ResResult<T> = Result<T, ResError>;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Env {
-    parent: Option<Box<Env>>,
+    parent: Option<Rc<RefCell<Env>>>,
     data: HashMap<InternedString, UniqueId>,
 }
 
 impl Env {
-    pub fn new() -> Box<Self> {
-        Box::new(Self {
+    pub fn new() -> Rc<RefCell<Self>> {
+        Rc::new(RefCell::new(Self {
             parent: None,
             data: HashMap::new(),
-        })
+        }))
     }
 
-    pub fn new_with_parent(parent: Box<Self>) -> Box<Self> {
-        Box::new(Self {
+    pub fn new_with_parent(parent: Rc<RefCell<Self>>) -> Rc<RefCell<Self>> {
+        Rc::new(RefCell::new(Self {
             parent: Some(parent),
             data: HashMap::new(),
-        })
+        }))
     }
 
     pub fn find(&self, name: &InternedString) -> Option<UniqueId> {
         if let Some(id) = self.data.get(name) {
             Some(*id)
         } else if let Some(parent) = &self.parent {
-            parent.find(name)
+            parent.borrow().find(name)
         } else {
             None
         }
@@ -55,7 +55,7 @@ impl Env {
 
     pub fn find_in_parent(&self, name: &InternedString) -> Option<UniqueId> {
         if let Some(parent) = &self.parent {
-            parent.find(name)
+            parent.borrow().find(name)
         } else {
             None
         }
@@ -198,8 +198,10 @@ impl From<ast::Lit> for Lit {
     }
 }
 
-pub fn resolve(root: &SrcNode<ast::Root>) -> (Option<SrcNode<Root>>, Vec<ResError>) {
-    let env = Env::new();
+pub fn resolve(
+    env: Rc<RefCell<Env>>,
+    root: &SrcNode<ast::Root>,
+) -> (Option<SrcNode<Root>>, Vec<ResError>) {
     let mut errors = vec![];
     let mut items = vec![];
     for item in root.inner().clone().items {
@@ -215,10 +217,10 @@ pub fn resolve(root: &SrcNode<ast::Root>) -> (Option<SrcNode<Root>>, Vec<ResErro
     }
 }
 
-fn resolve_item(mut env: Box<Env>, item: &SrcNode<ast::Item>) -> ResResult<SrcNode<Item>> {
+fn resolve_item(env: Rc<RefCell<Env>>, item: &SrcNode<ast::Item>) -> ResResult<SrcNode<Item>> {
     match item.inner() {
         ast::Item::Def { name, expr } => {
-            let name = SrcNode::new(env.define(name.inner().clone()), name.span());
+            let name = SrcNode::new(env.borrow_mut().define(name.inner().clone()), name.span());
             let expr = resolve_expr(Env::new_with_parent(env), expr, false)?;
             Ok(SrcNode::new(
                 Item::Def {
@@ -229,16 +231,16 @@ fn resolve_item(mut env: Box<Env>, item: &SrcNode<ast::Item>) -> ResResult<SrcNo
             ))
         }
         ast::Item::Expr(expr) => {
-            let expr = resolve_expr(env, &SrcNode::new(expr.clone(), item.span()), false)?;
+            let expr = resolve_expr(env.clone(), &SrcNode::new(expr.clone(), item.span()), false)?;
             Ok(SrcNode::new(Item::Expr(expr.inner().clone()), item.span()))
         }
     }
 }
 
-fn resolve_def(mut env: Box<Env>, def: &SrcNode<ast::Item>) -> ResResult<SrcNode<Item>> {
+fn resolve_def(env: Rc<RefCell<Env>>, def: &SrcNode<ast::Item>) -> ResResult<SrcNode<Item>> {
     match def.inner() {
         ast::Item::Def { name, expr } => {
-            let name = SrcNode::new(env.define(name.inner().clone()), name.span());
+            let name = SrcNode::new(env.borrow_mut().define(name.inner().clone()), name.span());
             let expr = resolve_expr(Env::new_with_parent(env), expr, false)?;
             Ok(SrcNode::new(
                 Item::Def {
@@ -256,14 +258,14 @@ fn resolve_def(mut env: Box<Env>, def: &SrcNode<ast::Item>) -> ResResult<SrcNode
 }
 
 fn resolve_expr(
-    mut env: Box<Env>,
+    env: Rc<RefCell<Env>>,
     expr: &SrcNode<ast::Expr>,
     rec: bool,
 ) -> ResResult<SrcNode<Expr>> {
     match expr.inner() {
         ast::Expr::Ident(ident) => {
             if rec {
-                if let Some(name) = env.find(ident) {
+                if let Some(name) = env.borrow().find(ident) {
                     Ok(SrcNode::new(
                         Expr::Ident(SrcNode::new(name, expr.span())),
                         expr.span(),
@@ -278,7 +280,7 @@ fn resolve_expr(
                     })
                 }
             } else {
-                if let Some(name) = env.find_in_scope(ident) {
+                if let Some(name) = env.borrow().find_in_scope(ident) {
                     Ok(SrcNode::new(
                         Expr::Ident(SrcNode::new(name, expr.span())),
                         expr.span(),
@@ -323,7 +325,7 @@ fn resolve_expr(
             ))
         }
         ast::Expr::Let { name, expr, body } => {
-            let name = SrcNode::new(env.define(name.inner().clone()), name.span());
+            let name = SrcNode::new(env.borrow_mut().define(name.inner().clone()), name.span());
             let expr = resolve_expr(Env::new_with_parent(env.clone()), expr, rec)?;
             let body = resolve_expr(env, body, rec)?;
             Ok(SrcNode::new(
@@ -352,9 +354,9 @@ fn resolve_expr(
         ast::Expr::Lambda { params, body } => {
             let mut params = params.clone();
             let mut param_names = vec![];
-            let mut lambda_env = Env::new_with_parent(env.clone());
+            let lambda_env = Env::new_with_parent(env.clone());
             for param in &mut params {
-                let name = lambda_env.define(param.inner().clone());
+                let name = lambda_env.borrow_mut().define(param.inner().clone());
                 param_names.push(SrcNode::new(name, param.span()));
             }
             let body = resolve_expr(lambda_env, body, true)?;

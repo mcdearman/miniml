@@ -1,70 +1,50 @@
-// use std::{
-//     cell::RefCell,
-//     io::{self, Write},
-// };
+use crate::{
+    analysis::{
+        infer::{type_inference, Context},
+        res::{self, resolve},
+    },
+    runtime::tree_walk::{self, eval, Env},
+    syntax::parse::parse,
+};
+use std::io::{self, Write};
 
-// use chumsky::span::SimpleSpan;
-
-// use crate::parser::Token;
-
-// pub fn repl() {
-//     println!("Welcome to the Lust REPL!");
-//     print!("> ");
-//     io::stdout().flush().expect("failed to flush stdout");
-//     let mut src = String::new();
-//     let mut carry = String::new();
-//     let env = Rc::new(RefCell::new(default_env()));
-//     'outer: loop {
-//         std::io::stdin()
-//             .read_line(&mut src)
-//             .expect("failed to read line");
-//         for expr_str in src.trim_end().split_inclusive(";;") {
-//             if expr_str.ends_with(";;") {
-//                 let expr_str = carry.clone() + expr_str.trim_end_matches(";;");
-//                 let lex = Token::lexer(&expr_str)
-//                     .spanned()
-//                     .map(|(tok, span)| (tok, SimpleSpan::from(span)));
-//                 let tok_stream =
-//                     Stream::from_iter(lex).spanned(SimpleSpan::from(src.len()..src.len()));
-//                 match parser().parse(tok_stream).into_result() {
-//                     Ok(expr) => {
-//                         let ty = match type_inference(default_ctx(), expr.clone()) {
-//                             Ok(ty) => ty,
-//                             Err(e) => {
-//                                 // println!("ast: {:?}", expr);
-//                                 eprintln!("Error: {}", e);
-//                                 carry.clear();
-//                                 continue 'outer;
-//                             }
-//                         };
-//                         match eval(env.clone(), &expr) {
-//                             Ok(v) => {
-//                                 // println!("ast: {:?}", expr);
-//                                 println!("val: {} = {}", ty, v);
-//                             }
-//                             Err(e) => {
-//                                 // println!("ast: {:?}", expr);
-//                                 eprintln!("Error: {}", e);
-//                             }
-//                         }
-//                     }
-//                     Err(e) => {
-//                         println!("Error: {:?}", e);
-//                         carry.clear();
-//                         continue 'outer;
-//                     }
-//                 }
-//                 carry.clear();
-//             } else {
-//                 carry.push_str(expr_str);
-//                 src.clear();
-//                 print!("- ");
-//                 io::stdout().flush().expect("failed to flush stdout");
-//                 continue 'outer;
-//             }
-//         }
-//         src.clear();
-//         print!("\n> ");
-//         io::stdout().flush().expect("failed to flush stdout");
-//     }
-// }
+pub fn repl() {
+    println!("Welcome to the MiniML REPL!");
+    print!("> ");
+    io::stdout().flush().expect("failed to flush stdout");
+    let mut src = String::new();
+    let res_env = res::Env::new();
+    let eval_env = tree_walk::Env::new();
+    loop {
+        io::stdin()
+            .read_line(&mut src)
+            .expect("failed to read from stdin");
+        let (ast, errors) = parse(&src);
+        if !errors.is_empty() {
+            println!("parse errors: {:?}", errors);
+            src.clear();
+            print!("\n> ");
+            io::stdout().flush().expect("failed to flush stdout");
+            continue;
+        }
+        let (res, errors) = resolve(res_env.clone(), &ast.unwrap());
+        if !errors.is_empty() {
+            println!("resolve errors: {:?}", errors);
+            src.clear();
+            print!("\n> ");
+            io::stdout().flush().expect("failed to flush stdout");
+            continue;
+        }
+        let ctx = Context::new();
+        match type_inference(ctx, res.unwrap()) {
+            Ok(root) => match eval(&src, eval_env.clone(), &root) {
+                Ok(val) => println!("{}", val),
+                Err(errors) => println!("evaluation errors: {:?}", errors),
+            },
+            Err(errors) => println!("inference errors: {:?}", errors),
+        }
+        src.clear();
+        print!("\n> ");
+        io::stdout().flush().expect("failed to flush stdout");
+    }
+}
