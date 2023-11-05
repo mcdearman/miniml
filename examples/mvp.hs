@@ -41,6 +41,9 @@ let f x = x + 1 in f 1
 -- if expression
 if x then y else z
 
+-- nice example
+fib n = if n < 2 then 1 else fib (n - 1) + fib (n - 2)
+
 
 
 
