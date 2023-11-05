@@ -221,7 +221,7 @@ fn resolve_item(env: Rc<RefCell<Env>>, item: &SrcNode<ast::Item>) -> ResResult<S
     match item.inner() {
         ast::Item::Def { name, expr } => {
             let name = SrcNode::new(env.borrow_mut().define(name.inner().clone()), name.span());
-            let expr = resolve_expr(Env::new_with_parent(env), expr, false)?;
+            let expr = resolve_expr(env.clone(), expr, false)?;
             Ok(SrcNode::new(
                 Item::Def {
                     name,

@@ -9,8 +9,7 @@ use crate::{
 use std::io::{self, Write};
 
 pub fn repl() {
-    println!("Welcome to the MiniML REPL!");
-    print!("> ");
+    print!("miniml> ");
     io::stdout().flush().expect("failed to flush stdout");
     let mut src = String::new();
     let res_env = res::Env::new();
