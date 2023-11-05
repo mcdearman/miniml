@@ -312,7 +312,6 @@ fn eval_expr<'src>(
                     }
                 }
             },
-
             Expr::Prefix { op, expr, .. } => match op.inner() {
                 infer::PrefixOp::Neg => {
                     let val = eval_expr(src, env, expr)?;
