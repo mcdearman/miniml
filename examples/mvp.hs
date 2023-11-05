@@ -3,6 +3,13 @@
 1 - 2
 1 * 2
 1 / 2
+1 % 2
+
+-- comparison operators
+1 == 2
+1 != 2
+1 < 2
+1 <= 2
 
 -- lambda
 \a b -> a + b

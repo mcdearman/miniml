@@ -134,6 +134,13 @@ pub enum InfixOp {
     Sub,
     Mul,
     Div,
+    Mod,
+    Eq,
+    Neq,
+    Lt,
+    Gt,
+    Leq,
+    Geq,
 }
 
 impl ToString for InfixOp {
@@ -143,6 +150,13 @@ impl ToString for InfixOp {
             Self::Sub => "-",
             Self::Mul => "*",
             Self::Div => "/",
+            Self::Mod => "%",
+            Self::Eq => "==",
+            Self::Neq => "!=",
+            Self::Lt => "<",
+            Self::Gt => ">",
+            Self::Leq => "<=",
+            Self::Geq => ">=",
         }
         .to_string()
     }
@@ -155,6 +169,13 @@ impl From<res::InfixOp> for InfixOp {
             res::InfixOp::Sub => Self::Sub,
             res::InfixOp::Mul => Self::Mul,
             res::InfixOp::Div => Self::Div,
+            res::InfixOp::Mod => Self::Mod,
+            res::InfixOp::Eq => Self::Eq,
+            res::InfixOp::Neq => Self::Neq,
+            res::InfixOp::Lt => Self::Lt,
+            res::InfixOp::Gt => Self::Gt,
+            res::InfixOp::Leq => Self::Leq,
+            res::InfixOp::Geq => Self::Geq,
         }
     }
 }
@@ -707,7 +728,11 @@ fn infer_expr(
             ))
         }
         res::Expr::Infix { op, lhs, rhs } => match *op {
-            res::InfixOp::Add | res::InfixOp::Sub | res::InfixOp::Mul | res::InfixOp::Div => {
+            res::InfixOp::Add
+            | res::InfixOp::Sub
+            | res::InfixOp::Mul
+            | res::InfixOp::Div
+            | res::InfixOp::Mod => {
                 let (s1, t1, e1) = infer_expr(&mut ctx.clone(), lhs.clone())?;
                 let (s2, t2, e2) = infer_expr(&mut ctx.apply_subst(s1.clone()), rhs.clone())?;
                 let s3 = unify(t1, Type::Num)?;
@@ -722,6 +747,45 @@ fn infer_expr(
                             lhs: e1,
                             rhs: e2,
                             ty: Type::Num,
+                        },
+                        expr.span(),
+                    ),
+                ))
+            }
+            res::InfixOp::Eq | res::InfixOp::Neq => {
+                let (s1, t1, e1) = infer_expr(&mut ctx.clone(), lhs.clone())?;
+                let (s2, t2, e2) = infer_expr(&mut ctx.apply_subst(s1.clone()), rhs.clone())?;
+                let s3 = unify(t1, t2)?;
+                let sf = s3.compose(s2.compose(s1.clone()));
+                Ok((
+                    sf,
+                    Type::Bool,
+                    SrcNode::new(
+                        Expr::Infix {
+                            op: SrcNode::new(InfixOp::from(op.inner().clone()), op.span()),
+                            lhs: e1,
+                            rhs: e2,
+                            ty: Type::Bool,
+                        },
+                        expr.span(),
+                    ),
+                ))
+            }
+            res::InfixOp::Lt | res::InfixOp::Gt | res::InfixOp::Leq | res::InfixOp::Geq => {
+                let (s1, t1, e1) = infer_expr(&mut ctx.clone(), lhs.clone())?;
+                let (s2, t2, e2) = infer_expr(&mut ctx.apply_subst(s1.clone()), rhs.clone())?;
+                let s3 = unify(t1, Type::Num)?;
+                let s4 = unify(t2, Type::Num)?;
+                let sf = s4.compose(s3.compose(s2.clone()));
+                Ok((
+                    sf,
+                    Type::Bool,
+                    SrcNode::new(
+                        Expr::Infix {
+                            op: SrcNode::new(InfixOp::from(op.inner().clone()), op.span()),
+                            lhs: e1,
+                            rhs: e2,
+                            ty: Type::Bool,
                         },
                         expr.span(),
                     ),

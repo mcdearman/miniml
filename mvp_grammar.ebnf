@@ -4,11 +4,15 @@ item = def | expr
 
 def = ident+ '=' expr
 
-expr = term
+expr = eq
+
+eq = cmp (('==' | '!=') cmp)?
+
+cmp = term (('<' | '>' | '<=' | '>=') term)?
 
 term = factor (('+' | '-') term)?
 
-factor = unary (('*' | '/') factor)?
+factor = unary (('*' | '/' | '%') factor)?
 
 unary = ('-' | '!')* apply
 

@@ -20,6 +20,7 @@ pub fn repl() {
             .read_line(&mut src)
             .expect("failed to read from stdin");
         let (ast, errors) = parse(&src);
+        // println!("ast: {:?}", ast);
         if !errors.is_empty() {
             println!("parse errors: {:?}", errors);
             src.clear();
@@ -36,13 +37,17 @@ pub fn repl() {
             continue;
         }
         match type_inference(&mut ctx, res.unwrap()) {
-            Ok((root, new_ctx)) => match eval(&src, eval_env.clone(), &root) {
-                Ok(val) => {
-                    ctx = new_ctx;
-                    println!("{}", val)
+            Ok((root, new_ctx)) => {
+                // println!("root: {:?}", root);
+                match eval(&src, eval_env.clone(), &root) {
+                    Ok(val) => {
+                        ctx = new_ctx;
+                        println!("{}", val)
+                    }
+                    Err(errors) => println!("evaluation errors: {:?}", errors),
                 }
-                Err(errors) => println!("evaluation errors: {:?}", errors),
-            },
+            }
+
             Err(errors) => println!("inference errors: {:?}", errors),
         }
         src.clear();

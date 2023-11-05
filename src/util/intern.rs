@@ -36,7 +36,9 @@ impl From<String> for InternedString {
 
 impl Debug for InternedString {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "Ident({})", unsafe { INTERNER.resolve(&self.key) })
+        write!(f, "InternedString({})", unsafe {
+            INTERNER.resolve(&self.key)
+        })
     }
 }
 

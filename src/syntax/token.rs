@@ -24,7 +24,7 @@ pub enum Token {
     #[token("->")]
     Arrow,
     #[token("=")]
-    Eq,
+    Assign,
     #[token("+")]
     Plus,
     #[token("-")]
@@ -33,6 +33,20 @@ pub enum Token {
     Star,
     #[token("/")]
     Slash,
+    #[token("%")]
+    Percent,
+    #[token("==")]
+    Eq,
+    #[token("!=")]
+    Neq,
+    #[token("<")]
+    Lt,
+    #[token(">")]
+    Gt,
+    #[token("<=")]
+    Leq,
+    #[token(">=")]
+    Geq,
     #[token("!")]
     Bang,
     #[token("(")]
@@ -63,11 +77,18 @@ impl Display for Token {
             Self::Ident(name) => write!(f, "{}", name),
             Self::Lambda => write!(f, "\\"),
             Self::Arrow => write!(f, "->"),
-            Self::Eq => write!(f, "="),
+            Self::Assign => write!(f, "="),
             Self::Plus => write!(f, "+"),
             Self::Minus => write!(f, "-"),
             Self::Star => write!(f, "*"),
             Self::Slash => write!(f, "/"),
+            Self::Percent => write!(f, "%"),
+            Self::Eq => write!(f, "=="),
+            Self::Neq => write!(f, "!="),
+            Self::Lt => write!(f, "<"),
+            Self::Gt => write!(f, ">"),
+            Self::Leq => write!(f, "<="),
+            Self::Geq => write!(f, ">="),
             Self::Bang => write!(f, "!"),
             Self::LParen => write!(f, "("),
             Self::RParen => write!(f, ")"),

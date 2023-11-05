@@ -47,7 +47,7 @@ fn expr_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
                     .at_least(1)
                     .collect::<Vec<_>>(),
             )
-            .then_ignore(just(Token::Eq))
+            .then_ignore(just(Token::Assign))
             .then(expr.clone().map_with_span(SrcNode::new))
             .then_ignore(just(Token::In))
             .then(expr.clone().map_with_span(SrcNode::new))
@@ -159,6 +159,9 @@ fn expr_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
             .or(just(Token::Slash)
                 .map(InfixOp::from)
                 .map_with_span(SrcNode::new))
+            .or(just(Token::Percent)
+                .map(InfixOp::from)
+                .map_with_span(SrcNode::new))
             .boxed();
 
         let factor = unary
@@ -203,7 +206,65 @@ fn expr_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
             )
             .boxed();
 
-        term.map(|expr| expr.inner().clone())
+        // cmp = term (('<' | '>' | '<=' | '>=') term)?
+        let cmp = term
+            .clone()
+            .then(
+                just(Token::Lt)
+                    .map(InfixOp::from)
+                    .map_with_span(SrcNode::new)
+                    .or(just(Token::Gt)
+                        .map(InfixOp::from)
+                        .map_with_span(SrcNode::new))
+                    .or(just(Token::Leq)
+                        .map(InfixOp::from)
+                        .map_with_span(SrcNode::new))
+                    .or(just(Token::Geq)
+                        .map(InfixOp::from)
+                        .map_with_span(SrcNode::new))
+                    .then(term.clone())
+                    .or_not(),
+            )
+            .map(|(lhs, rhs)| match rhs {
+                Some((op, rhs)) => SrcNode::new(
+                    Expr::Infix {
+                        op,
+                        lhs: lhs.clone(),
+                        rhs: rhs.clone(),
+                    },
+                    Span::new(lhs.span().start, rhs.span().end),
+                ),
+                None => lhs.clone(),
+            })
+            .boxed();
+
+        // eq = cmp (('==' | '!=') cmp)?
+        let eq = cmp
+            .clone()
+            .then(
+                just(Token::Eq)
+                    .map(InfixOp::from)
+                    .map_with_span(SrcNode::new)
+                    .or(just(Token::Neq)
+                        .map(InfixOp::from)
+                        .map_with_span(SrcNode::new))
+                    .then(cmp.clone())
+                    .or_not(),
+            )
+            .map(|(lhs, rhs)| match rhs {
+                Some((op, rhs)) => SrcNode::new(
+                    Expr::Infix {
+                        op,
+                        lhs: lhs.clone(),
+                        rhs: rhs.clone(),
+                    },
+                    Span::new(lhs.span().start, rhs.span().end),
+                ),
+                None => lhs.clone(),
+            })
+            .boxed();
+
+        eq.map(|expr| expr.inner().clone())
         // atom.clone()
     })
 }
@@ -215,7 +276,7 @@ fn def_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
         .repeated()
         .at_least(1)
         .collect::<Vec<_>>()
-        .then_ignore(just(Token::Eq))
+        .then_ignore(just(Token::Assign))
         .then(expr_parser().map_with_span(SrcNode::new))
         .map(|(names, expr)| {
             if names.len() == 1 {
