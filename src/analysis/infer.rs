@@ -67,6 +67,12 @@ pub enum Expr {
         body: SrcNode<Expr>,
         ty: Type,
     },
+    If {
+        cond: SrcNode<Expr>,
+        then: SrcNode<Expr>,
+        else_: SrcNode<Expr>,
+        ty: Type,
+    },
     Infix {
         op: SrcNode<InfixOp>,
         lhs: SrcNode<Expr>,
@@ -89,6 +95,7 @@ impl Expr {
             Self::Lambda { ty, .. } => ty.clone(),
             Self::Apply { ty, .. } => ty.clone(),
             Self::Let { ty, .. } => ty.clone(),
+            Self::If { ty, .. } => ty.clone(),
             Self::Infix { ty, .. } => ty.clone(),
             Self::Prefix { ty, .. } => ty.clone(),
             Self::Unit => Type::Unit,
@@ -443,17 +450,39 @@ impl Context {
     fn extend(&mut self, id: UniqueId, scheme: Scheme) {
         self.vars.insert(id, scheme);
     }
-}
 
-fn apply_subst_ctx(subst: Substitution, ctx: Context) -> Context {
-    Context {
-        vars: ctx
-            .vars
-            .into_iter()
-            .map(|(name, scheme)| (name, apply_subst_scheme(subst.clone(), scheme)))
-            .collect(),
+    fn union(&self, other: Self) -> Self {
+        Self {
+            vars: self
+                .vars
+                .clone()
+                .into_iter()
+                .chain(other.vars.clone().into_iter())
+                .collect(),
+        }
+    }
+
+    fn apply_subst(&self, subst: Substitution) -> Self {
+        Self {
+            vars: self
+                .vars
+                .clone()
+                .into_iter()
+                .map(|(id, scheme)| (id, apply_subst_scheme(subst.clone(), scheme)))
+                .collect(),
+        }
     }
 }
+
+// fn apply_subst_ctx(subst: Substitution, ctx: Context) -> Context {
+//     Context {
+//         vars: ctx
+//             .vars
+//             .into_iter()
+//             .map(|(name, scheme)| (name, apply_subst_scheme(subst.clone(), scheme)))
+//             .collect(),
+//     }
+// }
 
 fn free_vars_ctx(ctx: Context) -> BTreeSet<TyVar> {
     ctx.vars
@@ -483,15 +512,16 @@ fn instantiate(scheme: Scheme) -> Type {
 }
 
 fn infer_item(
-    ctx: Context,
+    ctx: &mut Context,
     item: SrcNode<res::Item>,
-) -> InferResult<(Substitution, Type, SrcNode<Item>)> {
+) -> InferResult<(Substitution, Type, Context, SrcNode<Item>)> {
     match item.inner().clone() {
         res::Item::Expr(expr) => {
             let (s, t, e) = infer_expr(ctx, SrcNode::new(expr, item.span()))?;
             Ok((
                 s,
                 t,
+                ctx.clone(),
                 SrcNode::new(Item::Expr(e.inner().clone()), item.span()),
             ))
         }
@@ -502,7 +532,7 @@ fn infer_item(
             let f_var = Type::Var(TyVar::fresh());
             e_ctx.extend(*name, Scheme::new(vec![], f_var.clone()));
             // println!("e_ctx: {:?}", e_ctx);
-            let (s1, t1, expr) = infer_expr(e_ctx.clone(), expr)?;
+            let (s1, t1, expr) = infer_expr(&mut e_ctx, expr)?;
             let s2 = unify(f_var, t1.clone())?;
             // println!("s1: {:?}", s1);
             // println!("s2: {:?}", s2);
@@ -514,6 +544,7 @@ fn infer_item(
             Ok((
                 s1.compose(s2),
                 t1,
+                ctx.union(tmp_ctx).union(e_ctx),
                 SrcNode::new(Item::Def { name, expr }, item.span()),
             ))
         }
@@ -521,7 +552,7 @@ fn infer_item(
 }
 
 fn infer_expr(
-    ctx: Context,
+    ctx: &mut Context,
     expr: SrcNode<res::Expr>,
 ) -> InferResult<(Substitution, Type, SrcNode<Expr>)> {
     match expr.inner().clone() {
@@ -577,7 +608,7 @@ fn infer_expr(
             }
             // println!("lam tmp_ctx: {:?}", tmp_ctx);
             // println!("lam ty_binders: {:?}", ty_binders);
-            let (s1, t1, e1) = infer_expr(tmp_ctx, body)?;
+            let (s1, t1, e1) = infer_expr(&mut tmp_ctx, body)?;
             let ty = Type::Lambda(
                 apply_subst_vec(s1.clone(), ty_binders.clone()),
                 Box::new(t1),
@@ -597,13 +628,12 @@ fn infer_expr(
         }
         res::Expr::Apply { fun, args } => {
             let ty_ret = Type::Var(TyVar::fresh());
-            let (s1, ty_fun, e1) = infer_expr(ctx.clone(), fun.clone())?;
+            let (s1, ty_fun, e1) = infer_expr(&mut ctx.clone(), fun.clone())?;
             let s2 = Substitution::new();
             let mut ty_args = vec![];
             let mut targs = vec![];
             for arg in args {
-                let (s_arg, ty_arg, ea) =
-                    infer_expr(apply_subst_ctx(s1.clone(), ctx.clone()), arg)?;
+                let (s_arg, ty_arg, ea) = infer_expr(&mut ctx.apply_subst(s1.clone()), arg)?;
                 targs.push(ea.clone());
                 s2.compose(s_arg);
                 ty_args.push(ty_arg);
@@ -635,12 +665,12 @@ fn infer_expr(
             let mut e_ctx = ctx.clone();
             let f_var = Type::Var(TyVar::fresh());
             e_ctx.extend(*name, Scheme::new(vec![], f_var.clone()));
-            let (s1, t1, e1) = infer_expr(e_ctx.clone(), binding.clone())?;
+            let (s1, t1, e1) = infer_expr(&mut e_ctx.clone(), binding.clone())?;
             let s2 = unify(f_var, t1.clone())?;
             let scheme = generalize(ctx.clone(), t1.clone());
             let mut tmp_ctx = ctx.clone();
             tmp_ctx.extend(*name, scheme);
-            let (s3, t2, e2) = infer_expr(tmp_ctx, body.clone())?;
+            let (s3, t2, e2) = infer_expr(&mut tmp_ctx, body.clone())?;
             Ok((
                 s3.compose(s2).compose(s1),
                 t2.clone(),
@@ -655,11 +685,31 @@ fn infer_expr(
                 ),
             ))
         }
+        res::Expr::If { cond, then, else_ } => {
+            let (s1, t1, e1) = infer_expr(&mut ctx.clone(), cond.clone())?;
+            let s2 = unify(t1, Type::Bool)?;
+            let (s3, t2, e2) = infer_expr(&mut ctx.apply_subst(s1.clone()), then.clone())?;
+            let (s4, t3, e3) = infer_expr(&mut ctx.apply_subst(s3.clone()), else_.clone())?;
+            let s5 = unify(t2.clone(), t3)?;
+            let sf = s5.compose(s4.compose(s3.compose(s2.compose(s1.clone()))));
+            Ok((
+                sf,
+                t2.clone(),
+                SrcNode::new(
+                    Expr::If {
+                        cond: e1,
+                        then: e2,
+                        else_: e3,
+                        ty: t2,
+                    },
+                    expr.span(),
+                ),
+            ))
+        }
         res::Expr::Infix { op, lhs, rhs } => match *op {
             res::InfixOp::Add | res::InfixOp::Sub | res::InfixOp::Mul | res::InfixOp::Div => {
-                let (s1, t1, e1) = infer_expr(ctx.clone(), lhs.clone())?;
-                let (s2, t2, e2) =
-                    infer_expr(apply_subst_ctx(s1.clone(), ctx.clone()), rhs.clone())?;
+                let (s1, t1, e1) = infer_expr(&mut ctx.clone(), lhs.clone())?;
+                let (s2, t2, e2) = infer_expr(&mut ctx.apply_subst(s1.clone()), rhs.clone())?;
                 let s3 = unify(t1, Type::Num)?;
                 let s4 = unify(t2, Type::Num)?;
                 let sf = s4.compose(s3.compose(s2.clone()));
@@ -679,7 +729,7 @@ fn infer_expr(
             }
         },
         res::Expr::Prefix { op, expr } => {
-            let (s1, t1, e1) = infer_expr(ctx.clone(), expr.clone())?;
+            let (s1, t1, e1) = infer_expr(&mut ctx.clone(), expr.clone())?;
             match op.inner() {
                 res::PrefixOp::Neg => {
                     let s2 = unify(t1, Type::Num)?;
@@ -783,6 +833,17 @@ fn apply_subst_expr(subst: Substitution, expr: SrcNode<Expr>) -> SrcNode<Expr> {
                 body: apply_subst_expr(subst.clone(), body),
                 ty: apply_subst(subst, ty),
             },
+            Expr::If {
+                cond,
+                then,
+                else_,
+                ty,
+            } => Expr::If {
+                cond: apply_subst_expr(subst.clone(), cond),
+                then: apply_subst_expr(subst.clone(), then),
+                else_: apply_subst_expr(subst.clone(), else_),
+                ty: apply_subst(subst, ty),
+            },
             Expr::Infix { op, lhs, rhs, ty } => Expr::Infix {
                 op,
                 lhs: apply_subst_expr(subst.clone(), lhs),
@@ -800,19 +861,24 @@ fn apply_subst_expr(subst: Substitution, expr: SrcNode<Expr>) -> SrcNode<Expr> {
     )
 }
 
-pub fn type_inference(ctx: Context, root: SrcNode<res::Root>) -> InferResult<SrcNode<Root>> {
+pub fn type_inference(
+    ctx: &mut Context,
+    root: SrcNode<res::Root>,
+) -> InferResult<(SrcNode<Root>, Context)> {
     let mut s = Substitution::new();
     let mut items = vec![];
+    let mut ctx_ret = Context::new();
     for item in root.inner().items.clone() {
-        let (subst, _, i) = infer_item(ctx.clone(), item)?;
+        let (subst, _, c, i) = infer_item(ctx, item)?;
         // types.push(apply_subst(subst, ty).lower(&mut HashMap::new()));
+        ctx_ret = ctx_ret.union(c);
         items.push(i);
         s = subst.compose(s);
     }
     // println!("s: {:?}", s);
-    Ok(SrcNode::new(
-        apply_subst_root(s, Root { items }),
-        root.span().clone(),
+    Ok((
+        SrcNode::new(apply_subst_root(s, Root { items }), root.span().clone()),
+        ctx_ret,
     ))
 }
 

@@ -14,6 +14,7 @@ pub fn repl() {
     let mut src = String::new();
     let res_env = res::Env::new();
     let eval_env = tree_walk::Env::new();
+    let mut ctx = Context::new();
     loop {
         io::stdin()
             .read_line(&mut src)
@@ -34,10 +35,12 @@ pub fn repl() {
             io::stdout().flush().expect("failed to flush stdout");
             continue;
         }
-        let ctx = Context::new();
-        match type_inference(ctx, res.unwrap()) {
-            Ok(root) => match eval(&src, eval_env.clone(), &root) {
-                Ok(val) => println!("{}", val),
+        match type_inference(&mut ctx, res.unwrap()) {
+            Ok((root, new_ctx)) => match eval(&src, eval_env.clone(), &root) {
+                Ok(val) => {
+                    ctx = new_ctx;
+                    println!("{}", val)
+                }
                 Err(errors) => println!("evaluation errors: {:?}", errors),
             },
             Err(errors) => println!("inference errors: {:?}", errors),

@@ -33,6 +33,11 @@ pub enum Expr {
         expr: SrcNode<Self>,
         body: SrcNode<Self>,
     },
+    If {
+        cond: SrcNode<Self>,
+        then: SrcNode<Self>,
+        else_: SrcNode<Self>,
+    },
     Prefix {
         op: SrcNode<PrefixOp>,
         expr: SrcNode<Self>,

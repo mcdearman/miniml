@@ -156,6 +156,23 @@ fn eval_expr<'src>(
                 env.borrow_mut().insert(name.inner().clone(), value);
                 eval_expr(src, env, body)?
             }
+            Expr::If {
+                cond, then, else_, ..
+            } => {
+                let cond = eval_expr(src, env.clone(), cond)?;
+                match cond {
+                    Value::Lit(Lit::Bool(b)) => {
+                        if b {
+                            eval_expr(src, env, then)?
+                        } else {
+                            eval_expr(src, env, else_)?
+                        }
+                    }
+                    _ => {
+                        return Err(format!("Expected bool, found {:?}", cond).into());
+                    }
+                }
+            }
             Expr::Infix { op, lhs, rhs, .. } => match op.inner() {
                 infer::InfixOp::Add => {
                     let lhs = eval_expr(src, env.clone(), lhs)?;

@@ -86,12 +86,21 @@ fn expr_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
             .then(expr.clone().map_with_span(SrcNode::new))
             .map(|(params, body)| Expr::Lambda { params, body });
 
+        let if_ = just(Token::If)
+            .ignore_then(expr.clone().map_with_span(SrcNode::new))
+            .then_ignore(just(Token::Then))
+            .then(expr.clone().map_with_span(SrcNode::new))
+            .then_ignore(just(Token::Else))
+            .then(expr.clone().map_with_span(SrcNode::new))
+            .map(|((cond, then), else_)| Expr::If { cond, then, else_ });
+
         // atom = ident | number | bool | '(' expr ')'
         let atom = ident_parser()
             .map(Expr::Ident)
             .or(unit)
             .or(lit)
             .or(let_)
+            .or(if_)
             .or(lambda)
             .or(expr
                 .clone()
