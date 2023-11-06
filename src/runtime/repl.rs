@@ -38,7 +38,7 @@ pub fn repl() {
         }
         match type_inference(&mut ctx, res.unwrap()) {
             Ok((root, new_ctx)) => {
-                // println!("root: {:?}", root);
+                println!("root: {:?}", root);
                 match eval(&src, eval_env.clone(), &root) {
                     Ok(val) => {
                         ctx = new_ctx;

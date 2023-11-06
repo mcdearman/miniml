@@ -41,8 +41,10 @@ let f x = x + 1 in f 1
 -- if expression
 if x then y else z
 
--- nice example
+-- examples
 fib n = if n < 2 then 1 else fib (n - 1) + fib (n - 2)
+ack m n = if m == 0 then n + 1 else if n == 0 then ack (m - 1) 1 else ack (m - 1) (ack m (n-1))
+
 
 
 

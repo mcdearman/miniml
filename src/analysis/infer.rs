@@ -939,9 +939,10 @@ pub fn type_inference(
         items.push(i);
         s = subst.compose(s);
     }
-    // println!("s: {:?}", s);
+    println!("s: {:?}", s);
     Ok((
-        SrcNode::new(apply_subst_root(s, Root { items }), root.span().clone()),
+        // SrcNode::new(apply_subst_root(s, Root { items }), root.span().clone()),
+        SrcNode::new(Root { items }, root.span().clone()),
         ctx_ret,
     ))
 }
