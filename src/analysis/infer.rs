@@ -438,13 +438,13 @@ fn unify(t1: Type, t2: Type) -> InferResult<Substitution> {
                     Ok(s.compose(s1))
                 },
             )?;
-            // println!("unify s1: {:?}", s1);
+            println!("unify s1: {:?}", s1);
             let s2 = unify(
                 apply_subst(s1.clone(), *b1.clone()),
                 apply_subst(s1.clone(), *b2.clone()),
             )?;
-            // println!("unify s2: {:?}", s2);
-            // println!("unify s1.compose(s2): {:?}", s1.compose(s2.clone()));
+            println!("unify s2: {:?}", s2);
+            println!("unify s1.compose(s2): {:?}", s1.compose(s2.clone()));
             Ok(s1.compose(s2.clone()))
         }
         (Type::Var(n), t) | (t, Type::Var(n)) => var_bind(n.clone(), t.clone()),
@@ -554,9 +554,9 @@ fn infer_item(
             e_ctx.extend(*name, Scheme::new(vec![], f_var.clone()));
             // println!("e_ctx: {:?}", e_ctx);
             let (s1, t1, expr) = infer_expr(&mut e_ctx, expr)?;
+            println!("def s1: {:?}", s1);
             let s2 = unify(f_var, t1.clone())?;
-            // println!("s1: {:?}", s1);
-            // println!("s2: {:?}", s2);
+            println!("def s2: {:?}", s2);
             let scheme = generalize(ctx.clone(), t1.clone());
             // println!("scheme: {:?}", scheme);
             let mut tmp_ctx = ctx.clone();
