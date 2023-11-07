@@ -554,7 +554,7 @@ fn infer_item(
             e_ctx.extend(*name, Scheme::new(vec![], f_var.clone()));
             // println!("e_ctx: {:?}", e_ctx);
             let (s1, t1, expr) = infer_expr(&mut e_ctx, expr)?;
-            println!("def s1: {:?}", s1);
+            println!("def s1: {:?} src\\analysis\\infer.rs:557", s1);
             let s2 = unify(f_var, t1.clone())?;
             println!("def s2: {:?}", s2);
             let scheme = generalize(ctx.clone(), t1.clone());
