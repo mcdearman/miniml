@@ -434,7 +434,7 @@ fn unify(t1: Type, t2: Type) -> InferResult<Substitution> {
                 Ok(Substitution::new()),
                 |acc: InferResult<Substitution>, (t1, t2)| {
                     let s = acc?;
-                    let s1 = unify(t1, t2)?;
+                    let s1 = unify(apply_subst(s.clone(), t1), apply_subst(s.clone(), t2))?;
                     Ok(s.compose(s1))
                 },
             )?;
