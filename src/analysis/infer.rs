@@ -438,13 +438,13 @@ fn unify(t1: Type, t2: Type) -> InferResult<Substitution> {
                     Ok(s.compose(s1))
                 },
             )?;
-            println!("unify s1: {:?}", s1);
+            // println!("unify s1: {:?}", s1);
             let s2 = unify(
                 apply_subst(s1.clone(), *b1.clone()),
                 apply_subst(s1.clone(), *b2.clone()),
             )?;
-            println!("unify s2: {:?}", s2);
-            println!("unify s1.compose(s2): {:?}", s1.compose(s2.clone()));
+            // println!("unify s2: {:?}", s2);
+            // println!("unify s1.compose(s2): {:?}", s1.compose(s2.clone()));
             Ok(s1.compose(s2.clone()))
         }
         (Type::Var(n), t) | (t, Type::Var(n)) => var_bind(n.clone(), t.clone()),
@@ -554,9 +554,9 @@ fn infer_item(
             e_ctx.extend(*name, Scheme::new(vec![], f_var.clone()));
             // println!("e_ctx: {:?}", e_ctx);
             let (s1, t1, expr) = infer_expr(&mut e_ctx, expr)?;
-            println!("def s1: {:?} src\\analysis\\infer.rs:557", s1);
+            // println!("def s1: {:?} src\\analysis\\infer.rs:557", s1);
             let s2 = unify(f_var, t1.clone())?;
-            println!("def s2: {:?}", s2);
+            // println!("def s2: {:?}", s2);
             let scheme = generalize(ctx.clone(), t1.clone());
             // println!("scheme: {:?}", scheme);
             let mut tmp_ctx = ctx.clone();
@@ -719,9 +719,9 @@ fn infer_expr(
                 apply_subst(s3.clone(), t2.clone()),
                 apply_subst(s4.clone(), t3),
             )?;
-            println!("s5: {:?}", s5);
+            // println!("s5: {:?}", s5);
             let sf = s5.compose(s4.compose(s3.compose(s2.compose(s1.clone()))));
-            println!("sf: {:?}", sf);
+            // println!("sf: {:?}", sf);
             Ok((
                 sf,
                 t2.clone(),
@@ -948,7 +948,7 @@ pub fn type_inference(
         items.push(i);
         s = subst.compose(s);
     }
-    println!("s: {:?}", s);
+    // println!("s: {:?}", s);
     Ok((
         SrcNode::new(apply_subst_root(s, Root { items }), root.span().clone()),
         // SrcNode::new(Root { items }, root.span().clone()),
