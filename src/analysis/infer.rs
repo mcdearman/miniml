@@ -711,11 +711,14 @@ fn infer_expr(
             let s2 = unify(t1, Type::Bool)?;
             let (s3, t2, e2) = infer_expr(&mut ctx.apply_subst(s1.clone()), then.clone())?;
             let (s4, t3, e3) = infer_expr(&mut ctx.apply_subst(s3.clone()), else_.clone())?;
-            println!("s1: {:?}", s1);
-            println!("s2: {:?}", s2);
-            println!("s3: {:?}", s3);
-            println!("s4: {:?}", s4);
-            let s5 = unify(t2.clone(), t3)?;
+            // println!("s1: {:?}", s1);
+            // println!("s2: {:?}", s2);
+            // println!("s3: {:?}", s3);
+            // println!("s4: {:?}", s4);
+            let s5 = unify(
+                apply_subst(s3.clone(), t2.clone()),
+                apply_subst(s4.clone(), t3),
+            )?;
             println!("s5: {:?}", s5);
             let sf = s5.compose(s4.compose(s3.compose(s2.compose(s1.clone()))));
             println!("sf: {:?}", sf);
