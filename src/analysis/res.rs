@@ -343,7 +343,7 @@ fn resolve_expr(
                 param_names.push(SrcNode::new(name, param.span()));
             }
             let expr = resolve_expr(fn_env.clone(), expr, true)?;
-            let body = resolve_expr(fn_env, body, rec)?;
+            let body = resolve_expr(fn_env, body, true)?;
             Ok(SrcNode::new(
                 Expr::Fn {
                     name,

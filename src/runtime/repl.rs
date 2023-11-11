@@ -36,6 +36,7 @@ pub fn repl() {
             io::stdout().flush().expect("failed to flush stdout");
             continue;
         }
+        println!("RES: {:?}", res);
         match type_inference(&mut ctx, res.unwrap()) {
             Ok((root, new_ctx)) => {
                 println!("TAST: {:?}", root);

@@ -40,7 +40,16 @@ fn expr_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
         let lit = lit_parser().map(Expr::Lit);
 
         let let_ = just(Token::Let)
-            .ignore_then(
+            .ignore_then(ident_parser().map_with_span(SrcNode::new))
+            .then_ignore(just(Token::Assign))
+            .then(expr.clone().map_with_span(SrcNode::new))
+            .then_ignore(just(Token::In))
+            .then(expr.clone().map_with_span(SrcNode::new))
+            .map(|((name, expr), body)| Expr::Let { name, expr, body });
+
+        let fn_ = just(Token::Let)
+            .ignore_then(ident_parser().map_with_span(SrcNode::new))
+            .then(
                 ident_parser()
                     .map_with_span(SrcNode::new)
                     .repeated()
@@ -51,27 +60,11 @@ fn expr_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
             .then(expr.clone().map_with_span(SrcNode::new))
             .then_ignore(just(Token::In))
             .then(expr.clone().map_with_span(SrcNode::new))
-            .map(|((names, expr), body)| {
-                if names.len() == 1 {
-                    Expr::Let {
-                        name: names[0].clone(),
-                        expr,
-                        body,
-                    }
-                } else {
-                    let expr = SrcNode::new(
-                        Expr::Lambda {
-                            params: names[1..].to_vec(),
-                            body: expr.clone(),
-                        },
-                        Span::new(names[0].span().start, expr.span().end),
-                    );
-                    Expr::Let {
-                        name: names[0].clone(),
-                        expr,
-                        body,
-                    }
-                }
+            .map(|(((name, params), expr), body)| Expr::Fn {
+                name,
+                params,
+                expr,
+                body,
             });
 
         let lambda = just(Token::Lambda)
@@ -100,6 +93,7 @@ fn expr_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
             .or(unit)
             .or(lit)
             .or(let_)
+            .or(fn_)
             .or(if_)
             .or(lambda)
             .or(expr

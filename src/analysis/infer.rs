@@ -733,17 +733,14 @@ fn infer_expr(
             expr: binding,
             body,
         } => {
-            let mut e_ctx = ctx.clone();
-            let f_var = Type::Var(TyVar::fresh());
-            e_ctx.extend(*name, Scheme::new(vec![], f_var.clone()));
-            let (s1, t1, e1) = infer_expr(&mut e_ctx.clone(), binding.clone())?;
-            let s2 = unify(f_var, t1.clone())?;
+            let (s1, t1, e1) = infer_expr(ctx, binding.clone())?;
+            // let s2 = unify(f_var, t1.clone())?;
             let scheme = generalize(ctx.clone(), t1.clone());
             let mut tmp_ctx = ctx.clone();
             tmp_ctx.extend(*name, scheme);
-            let (s3, t2, e2) = infer_expr(&mut tmp_ctx, body.clone())?;
+            let (s2, t2, e2) = infer_expr(&mut tmp_ctx, body.clone())?;
             Ok((
-                s3.compose(s2).compose(s1),
+                s2.compose(s1),
                 t2.clone(),
                 SrcNode::new(
                     Expr::Let {
@@ -762,16 +759,17 @@ fn infer_expr(
             expr,
             body,
         } => {
+            let mut e_ctx = ctx.clone();
+            let f_var = Type::Var(TyVar::fresh());
+            e_ctx.extend(*name, Scheme::new(vec![], f_var.clone()));
+
             let mut ty_binders = vec![];
             let mut tmp_ctx = ctx.clone();
-            // println!("lam ctx: {:?}", ctx);
             for p in params.clone() {
                 let ty_binder = Type::Var(TyVar::fresh());
                 ty_binders.push(ty_binder.clone());
                 tmp_ctx.extend(*p, Scheme::new(vec![], ty_binder));
             }
-            // println!("lam tmp_ctx: {:?}", tmp_ctx);
-            // println!("lam ty_binders: {:?}", ty_binders);
             let (s1, t1, e1) = infer_expr(&mut tmp_ctx, expr.clone())?;
             let ty = Type::Lambda(
                 apply_subst_vec(s1.clone(), ty_binders.clone()),
