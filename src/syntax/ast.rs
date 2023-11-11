@@ -13,6 +13,11 @@ pub enum Item {
         name: SrcNode<InternedString>,
         expr: SrcNode<Expr>,
     },
+    Fn {
+        name: SrcNode<InternedString>,
+        params: Vec<SrcNode<InternedString>>,
+        body: SrcNode<Expr>,
+    },
     Expr(Expr),
 }
 
@@ -30,6 +35,12 @@ pub enum Expr {
     },
     Let {
         name: SrcNode<InternedString>,
+        expr: SrcNode<Self>,
+        body: SrcNode<Self>,
+    },
+    Fn {
+        name: SrcNode<InternedString>,
+        params: Vec<SrcNode<InternedString>>,
         expr: SrcNode<Self>,
         body: SrcNode<Self>,
     },

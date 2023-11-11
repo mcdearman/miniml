@@ -38,6 +38,13 @@ pub enum Item {
     Def {
         name: SrcNode<UniqueId>,
         expr: SrcNode<Expr>,
+        ty: Type,
+    },
+    Fn {
+        name: SrcNode<UniqueId>,
+        params: Vec<SrcNode<UniqueId>>,
+        body: SrcNode<Expr>,
+        ty: Type,
     },
 }
 
@@ -63,6 +70,13 @@ pub enum Expr {
     },
     Let {
         name: SrcNode<UniqueId>,
+        expr: SrcNode<Expr>,
+        body: SrcNode<Expr>,
+        ty: Type,
+    },
+    Fn {
+        name: SrcNode<UniqueId>,
+        params: Vec<SrcNode<UniqueId>>,
         expr: SrcNode<Expr>,
         body: SrcNode<Expr>,
         ty: Type,
@@ -95,6 +109,7 @@ impl Expr {
             Self::Lambda { ty, .. } => ty.clone(),
             Self::Apply { ty, .. } => ty.clone(),
             Self::Let { ty, .. } => ty.clone(),
+            Self::Fn { ty, .. } => ty.clone(),
             Self::If { ty, .. } => ty.clone(),
             Self::Infix { ty, .. } => ty.clone(),
             Self::Prefix { ty, .. } => ty.clone(),
@@ -549,13 +564,13 @@ fn infer_item(
         res::Item::Def { name, expr } => {
             // println!("infer_item: {:?}", item);
             // println!("ctx: {:?}", ctx);
-            let mut e_ctx = ctx.clone();
-            let f_var = Type::Var(TyVar::fresh());
-            e_ctx.extend(*name, Scheme::new(vec![], f_var.clone()));
+            // let mut e_ctx = ctx.clone();
+            // let f_var = Type::Var(TyVar::fresh());
+            // e_ctx.extend(*name, Scheme::new(vec![], f_var.clone()));
             // println!("e_ctx: {:?}", e_ctx);
-            let (s1, t1, expr) = infer_expr(&mut e_ctx, expr)?;
+            let (s1, t1, expr) = infer_expr(ctx, expr)?;
             // println!("def s1: {:?} src\\analysis\\infer.rs:557", s1);
-            let s2 = unify(f_var, t1.clone())?;
+            // let s2 = unify(f_var, t1.clone())?;
             // println!("def s2: {:?}", s2);
             let scheme = generalize(ctx.clone(), t1.clone());
             // println!("scheme: {:?}", scheme);
@@ -563,10 +578,45 @@ fn infer_item(
             tmp_ctx.extend(*name, scheme);
             // println!("tmp_ctx: {:?}", tmp_ctx);
             Ok((
-                s1.compose(s2),
-                t1,
-                ctx.union(tmp_ctx).union(e_ctx),
-                SrcNode::new(Item::Def { name, expr }, item.span()),
+                s1,
+                t1.clone(),
+                ctx.union(tmp_ctx),
+                SrcNode::new(Item::Def { name, expr, ty: t1 }, item.span()),
+            ))
+        }
+        res::Item::Fn { name, params, body } => {
+            let mut e_ctx = ctx.clone();
+            let f_var = Type::Var(TyVar::fresh());
+            e_ctx.extend(*name, Scheme::new(vec![], f_var.clone()));
+
+            let mut ty_binders = vec![];
+            let mut tmp_ctx = e_ctx.clone();
+            // println!("lam ctx: {:?}", ctx);
+            for p in params.clone() {
+                let ty_binder = Type::Var(TyVar::fresh());
+                ty_binders.push(ty_binder.clone());
+                tmp_ctx.extend(*p, Scheme::new(vec![], ty_binder));
+            }
+            // println!("lam tmp_ctx: {:?}", tmp_ctx);
+            // println!("lam ty_binders: {:?}", ty_binders);
+            let (s1, t1, e1) = infer_expr(&mut tmp_ctx, body)?;
+            let ty = Type::Lambda(
+                apply_subst_vec(s1.clone(), ty_binders.clone()),
+                Box::new(t1),
+            );
+            Ok((
+                s1.clone(),
+                ty.clone(),
+                ctx.union(tmp_ctx),
+                SrcNode::new(
+                    Item::Fn {
+                        name,
+                        params,
+                        body: e1,
+                        ty,
+                    },
+                    item.span(),
+                ),
             ))
         }
     }
@@ -698,6 +748,46 @@ fn infer_expr(
                 SrcNode::new(
                     Expr::Let {
                         name,
+                        expr: e1,
+                        body: e2,
+                        ty: t2,
+                    },
+                    expr.span(),
+                ),
+            ))
+        }
+        res::Expr::Fn {
+            name,
+            params,
+            expr,
+            body,
+        } => {
+            let mut ty_binders = vec![];
+            let mut tmp_ctx = ctx.clone();
+            // println!("lam ctx: {:?}", ctx);
+            for p in params.clone() {
+                let ty_binder = Type::Var(TyVar::fresh());
+                ty_binders.push(ty_binder.clone());
+                tmp_ctx.extend(*p, Scheme::new(vec![], ty_binder));
+            }
+            // println!("lam tmp_ctx: {:?}", tmp_ctx);
+            // println!("lam ty_binders: {:?}", ty_binders);
+            let (s1, t1, e1) = infer_expr(&mut tmp_ctx, expr.clone())?;
+            let ty = Type::Lambda(
+                apply_subst_vec(s1.clone(), ty_binders.clone()),
+                Box::new(t1),
+            );
+            let mut e_ctx = ctx.clone();
+            e_ctx.extend(*name, Scheme::new(vec![], ty.clone()));
+            let (s2, t2, e2) = infer_expr(&mut e_ctx, body.clone())?;
+            let s3 = unify(ty, t2.clone())?;
+            Ok((
+                s3.compose(s2.compose(s1)),
+                t2.clone(),
+                SrcNode::new(
+                    Expr::Fn {
+                        name,
+                        params,
                         expr: e1,
                         body: e2,
                         ty: t2,
@@ -862,9 +952,21 @@ fn apply_subst_item(subst: Substitution, item: SrcNode<Item>) -> SrcNode<Item> {
                     .inner()
                     .clone(),
             ),
-            Item::Def { name, expr } => Item::Def {
+            Item::Def { name, expr, ty } => Item::Def {
                 name,
-                expr: apply_subst_expr(subst, expr),
+                expr: apply_subst_expr(subst.clone(), expr),
+                ty: apply_subst(subst, ty),
+            },
+            Item::Fn {
+                name,
+                params,
+                body,
+                ty,
+            } => Item::Fn {
+                name,
+                params,
+                body: apply_subst_expr(subst.clone(), body),
+                ty: apply_subst(subst, ty),
             },
         },
         item.span(),
@@ -902,6 +1004,19 @@ fn apply_subst_expr(subst: Substitution, expr: SrcNode<Expr>) -> SrcNode<Expr> {
                 ty,
             } => Expr::Let {
                 name,
+                expr: apply_subst_expr(subst.clone(), expr),
+                body: apply_subst_expr(subst.clone(), body),
+                ty: apply_subst(subst, ty),
+            },
+            Expr::Fn {
+                name,
+                params,
+                expr,
+                body,
+                ty,
+            } => Expr::Fn {
+                name,
+                params,
                 expr: apply_subst_expr(subst.clone(), expr),
                 body: apply_subst_expr(subst.clone(), body),
                 ty: apply_subst(subst, ty),

@@ -1,4 +1,4 @@
--- A cons list is either empty or a pair of an element and a cons list.
+-- A pair list is either empty or a pair of an element and a pair list.
 pub type List 'a
   = Node { data : 'a, next : List 'a } 
   | Nil
@@ -6,23 +6,23 @@ pub type List 'a
 -- [len] takes a list [xs] and returns the number of elements in [xs].
 pub fn len (xs : List 'a) -> u64 =
   match xs with
-    List.Cons x -> 1 + len x
+    List.Pair x -> 1 + len x
     List.Nil -> 0
 
 -- [map] takes a function [f] and a list [xs] and returns the list of
 -- the results of applying [f] to each element of [xs].
 pub fn map (f: 'a -> 'b) (xs: List 'a) -> List 'b =
   match xs with
-    List::Cons x -> Cons (map f x) 
+    List::Pair x -> Pair (map f x) 
     List::Nil -> Nil
 
 -- [filter] takes a predicate [f] and a list [xs] and returns the 
 -- list of all elements [x] in [xs] such that [f x] is [True].
 pub fn filter (f : 'a -> Bool) (xs : List 'a) -> List 'a =
   match xs with
-    List::Cons x ->
+    List::Pair x ->
       if f x then
-        Cons (filter f x)
+        Pair (filter f x)
       else
         filter f x
     List::Nil -> Nil
@@ -32,7 +32,7 @@ pub fn filter (f : 'a -> Bool) (xs : List 'a) -> List 'a =
 -- starting with [z] to the left of the leftmost element of [xs].
 pub fn foldl (f: 'a -> 'b -> 'a) (z: 'a) (xs: List 'b) -> 'a =
   match xs with
-    List::Cons x -> foldl f (f z x) x
+    List::Pair x -> foldl f (f z x) x
     List::Nil -> z
 
 -- [foldr] takes a binary operator [f], a starting value [z], and a list [xs],
@@ -42,7 +42,7 @@ pub fn foldl (f: 'a -> 'b -> 'a) (z: 'a) (xs: List 'b) -> 'a =
 pub fn foldr f z xs =
   match xs with
     Nil -> z
-    Cons x -> f x (foldr f z x)
+    Pair x -> f x (foldr f z x)
 
 -- [reduce] takes a binary operator [f] and a list [xs] and returns the result
 -- of inserting [f] between successive elements of [xs], starting with the
@@ -51,4 +51,4 @@ pub fn foldr f z xs =
 pub fn reduce f xs =
   match xs with
     Nil -> error "reduce: empty list"
-    Cons x -> foldl f x x
+    Pair x -> foldl f x x

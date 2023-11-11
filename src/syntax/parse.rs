@@ -269,35 +269,31 @@ fn expr_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
     })
 }
 
-fn def_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
+fn fn_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
 ) -> impl Parser<'a, I, SrcNode<Item>, extra::Err<Rich<'a, Token, Span>>> {
     ident_parser()
         .map_with_span(SrcNode::new)
         .repeated()
-        .at_least(1)
+        .at_least(2)
         .collect::<Vec<_>>()
         .then_ignore(just(Token::Assign))
         .then(expr_parser().map_with_span(SrcNode::new))
-        .map(|(names, expr)| {
-            if names.len() == 1 {
-                Item::Def {
-                    name: names[0].clone(),
-                    expr,
-                }
-            } else {
-                let expr = SrcNode::new(
-                    Expr::Lambda {
-                        params: names[1..].to_vec(),
-                        body: expr.clone(),
-                    },
-                    Span::new(names[0].span().start, expr.span().end),
-                );
-                Item::Def {
-                    name: names[0].clone(),
-                    expr,
-                }
-            }
+        .map(|(names, expr)| Item::Fn {
+            name: names[0].clone(),
+            params: names[1..].to_vec(),
+            body: expr,
         })
+        .map_with_span(SrcNode::new)
+        .boxed()
+}
+
+fn def_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
+) -> impl Parser<'a, I, SrcNode<Item>, extra::Err<Rich<'a, Token, Span>>> {
+    ident_parser()
+        .map_with_span(SrcNode::new)
+        .then_ignore(just(Token::Assign))
+        .then(expr_parser().map_with_span(SrcNode::new))
+        .map(|(name, expr)| Item::Def { name, expr })
         .map_with_span(SrcNode::new)
         .boxed()
 }
@@ -305,6 +301,7 @@ fn def_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
 fn item_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
 ) -> impl Parser<'a, I, SrcNode<Item>, extra::Err<Rich<'a, Token, Span>>> {
     def_parser()
+        .or(fn_parser())
         .or(expr_parser().map(Item::Expr).map_with_span(SrcNode::new))
         .boxed()
 }

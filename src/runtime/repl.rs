@@ -20,7 +20,7 @@ pub fn repl() {
             .read_line(&mut src)
             .expect("failed to read from stdin");
         let (ast, errors) = parse(&src);
-        // println!("ast: {:?}", ast);
+        println!("AST: {:?}", ast);
         if !errors.is_empty() {
             println!("parse errors: {:?}", errors);
             src.clear();
@@ -38,7 +38,7 @@ pub fn repl() {
         }
         match type_inference(&mut ctx, res.unwrap()) {
             Ok((root, new_ctx)) => {
-                // println!("root: {:?}", root);
+                println!("TAST: {:?}", root);
                 match eval(&src, eval_env.clone(), &root) {
                     Ok(val) => {
                         ctx = new_ctx;

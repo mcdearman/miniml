@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use analysis::{
     hir_lower,
     infer::{type_inference, Context},

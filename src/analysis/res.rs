@@ -93,6 +93,11 @@ pub enum Item {
         name: SrcNode<UniqueId>,
         expr: SrcNode<Expr>,
     },
+    Fn {
+        name: SrcNode<UniqueId>,
+        params: Vec<SrcNode<UniqueId>>,
+        body: SrcNode<Expr>,
+    },
     Expr(Expr),
 }
 
@@ -110,6 +115,12 @@ pub enum Expr {
     },
     Let {
         name: SrcNode<UniqueId>,
+        expr: SrcNode<Self>,
+        body: SrcNode<Self>,
+    },
+    Fn {
+        name: SrcNode<UniqueId>,
+        params: Vec<SrcNode<UniqueId>>,
         expr: SrcNode<Self>,
         body: SrcNode<Self>,
     },
@@ -235,6 +246,25 @@ fn resolve_item(env: Rc<RefCell<Env>>, item: &SrcNode<ast::Item>) -> ResResult<S
                 item.span(),
             ))
         }
+        ast::Item::Fn { name, params, body } => {
+            let name = SrcNode::new(env.borrow_mut().define(name.inner().clone()), name.span());
+            let mut params = params.clone();
+            let mut param_names = vec![];
+            let fn_env = Env::new_with_parent(env.clone());
+            for param in &mut params {
+                let name = fn_env.borrow_mut().define(param.inner().clone());
+                param_names.push(SrcNode::new(name, param.span()));
+            }
+            let body = resolve_expr(fn_env, body, true)?;
+            Ok(SrcNode::new(
+                Item::Fn {
+                    name,
+                    params: param_names,
+                    body,
+                },
+                item.span(),
+            ))
+        }
         ast::Item::Expr(expr) => {
             let expr = resolve_expr(env.clone(), &SrcNode::new(expr.clone(), item.span()), false)?;
             Ok(SrcNode::new(Item::Expr(expr.inner().clone()), item.span()))
@@ -292,6 +322,32 @@ fn resolve_expr(
             Ok(SrcNode::new(
                 Expr::Let {
                     name,
+                    expr: expr.clone(),
+                    body: body.clone(),
+                },
+                expr.span(),
+            ))
+        }
+        ast::Expr::Fn {
+            name,
+            params,
+            expr,
+            body,
+        } => {
+            let name = SrcNode::new(env.borrow_mut().define(name.inner().clone()), name.span());
+            let mut params = params.clone();
+            let mut param_names = vec![];
+            let fn_env = Env::new_with_parent(env.clone());
+            for param in &mut params {
+                let name = fn_env.borrow_mut().define(param.inner().clone());
+                param_names.push(SrcNode::new(name, param.span()));
+            }
+            let expr = resolve_expr(fn_env.clone(), expr, true)?;
+            let body = resolve_expr(fn_env, body, rec)?;
+            Ok(SrcNode::new(
+                Expr::Fn {
+                    name,
+                    params: param_names,
                     expr: expr.clone(),
                     body: body.clone(),
                 },

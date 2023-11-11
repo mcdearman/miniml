@@ -89,8 +89,22 @@ pub fn eval<'src>(
             Item::Expr(expr) => {
                 val = eval_expr(src, env.clone(), SrcNode::new(expr, item.span()))?;
             }
-            Item::Def { name, expr } => {
+            Item::Def { name, expr, .. } => {
                 let value = eval_expr(src, env.clone(), expr)?;
+                env.borrow_mut().insert(name.inner().clone(), value);
+                val = Value::Unit;
+            }
+            Item::Fn {
+                name,
+                params,
+                body,
+                ty,
+            } => {
+                let value = Value::Lambda {
+                    env: env.clone(),
+                    params,
+                    body: body.clone(),
+                };
                 env.borrow_mut().insert(name.inner().clone(), value);
                 val = Value::Unit;
             }
@@ -154,6 +168,21 @@ fn eval_expr<'src>(
                 name, expr, body, ..
             } => {
                 let value = eval_expr(src, env.clone(), expr)?;
+                env.borrow_mut().insert(name.inner().clone(), value);
+                eval_expr(src, env, body)?
+            }
+            Expr::Fn {
+                name,
+                params,
+                expr,
+                body,
+                ty,
+            } => {
+                let value = Value::Lambda {
+                    env: Env::new_with_parent(env.clone()),
+                    params,
+                    body: expr.clone(),
+                };
                 env.borrow_mut().insert(name.inner().clone(), value);
                 eval_expr(src, env, body)?
             }

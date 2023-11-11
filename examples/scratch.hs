@@ -9,10 +9,10 @@ println "Hello World!"
 5 % 2
 6^2
 
--- if-elif-else
+-- if/else
 if x == y 
   1
-elif x == z 
+else if x == z 
   2
 else 3
 
@@ -129,17 +129,30 @@ begin
 
 -- Classes
 class Ord <: Eq + PartialOrd = 
-  cmp :: self -> self -> Ordering
+  cmp : self -> self -> Ordering
 
 class Map K V = 
-  empty :: Map K V
-  find :: K -> V
-  insert :: K -> V -> Map K V
-  delete :: K -> Map K V
+  empty : Map K V
+  find : K -> V
+  insert : K -> V -> Map K V
+  delete : K -> Map K V
 
 data List (I = Nat) V <: Map I V 
   = Empty 
   | Pair I V (List I V)
+
+class List (I = Nat) V <: Map I V
+  = Empty
+  | Pair I V (List I V)
+
+  empty : List I V
+  find : I -> V
+  insert : I -> V -> List I V
+  delete : I -> List I V
+
+class Point = 
+  x : Num
+  y : Num
 
 -- Metaprogramming
 -- You can use the `quote` function to get the AST of an expression.
