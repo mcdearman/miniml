@@ -41,15 +41,6 @@ let f x = x + 1 in f 1
 -- if expression
 if x then y else z
 
--- list
-[1, 2, 3]
-
--- record def
-data Point = { x: Int, y: Int }
-
--- record lit
-{x = 1, y = 2}
-
 -- examples
 gcd a b = if b == 0 then a else gcd b (a % b)
 fib n = if n <= 1 then n else fib (n - 1) + fib (n - 2)
