@@ -267,16 +267,16 @@ fn fn_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
 ) -> impl Parser<'a, I, SrcNode<Item>, extra::Err<Rich<'a, Token, Span>>> {
     ident_parser()
         .map_with_span(SrcNode::new)
-        .repeated()
-        .at_least(2)
-        .collect::<Vec<_>>()
+        .then(
+            ident_parser()
+                .map_with_span(SrcNode::new)
+                .repeated()
+                .at_least(1)
+                .collect::<Vec<_>>(),
+        )
         .then_ignore(just(Token::Assign))
         .then(expr_parser().map_with_span(SrcNode::new))
-        .map(|(names, expr)| Item::Fn {
-            name: names[0].clone(),
-            params: names[1..].to_vec(),
-            body: expr,
-        })
+        .map(|((name, params), body)| Item::Fn { name, params, body })
         .map_with_span(SrcNode::new)
         .boxed()
 }
