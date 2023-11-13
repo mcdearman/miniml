@@ -248,6 +248,11 @@ impl Debug for Type {
     }
 }
 
+#[derive(Debug, Clone, PartialEq)]
+enum Constraint {
+    Eq(Type, Type),
+}
+
 // impl Display for Type {
 //     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
 //         match self.clone() {
@@ -671,14 +676,11 @@ fn infer_expr(
         res::Expr::Lambda { params, body } => {
             let mut ty_binders = vec![];
             let mut tmp_ctx = ctx.clone();
-            // println!("lam ctx: {:?}", ctx);
             for p in params.clone() {
                 let ty_binder = Type::Var(TyVar::fresh());
                 ty_binders.push(ty_binder.clone());
                 tmp_ctx.extend(*p, Scheme::new(vec![], ty_binder));
             }
-            // println!("lam tmp_ctx: {:?}", tmp_ctx);
-            // println!("lam ty_binders: {:?}", ty_binders);
             let (s1, t1, e1) = infer_expr(&mut tmp_ctx, body)?;
             let ty = Type::Lambda(
                 apply_subst_vec(s1.clone(), ty_binders.clone()),
