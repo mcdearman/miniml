@@ -445,7 +445,7 @@ fn var_bind(var: TyVar, ty: Type) -> InferResult<Substitution> {
 }
 
 fn unify(t1: Type, t2: Type) -> InferResult<Substitution> {
-    // println!("unify: {:?} and {:?}", t1, t2);
+    println!("unify: {:?} and {:?}", t1, t2);
     match (t1.clone(), t2.clone()) {
         (Type::Num, Type::Num) => Ok(Substitution::new()),
         (Type::Bool, Type::Bool) => Ok(Substitution::new()),
@@ -552,41 +552,395 @@ fn instantiate(scheme: Scheme) -> Type {
     apply_subst(subst, scheme.ty)
 }
 
+// fn infer_item(
+//     ctx: &mut Context,
+//     item: SrcNode<res::Item>,
+// ) -> InferResult<(Substitution, Type, Context, SrcNode<Item>)> {
+//     match item.inner().clone() {
+//         res::Item::Expr(expr) => {
+//             let (s, t, e) = infer_expr(ctx, SrcNode::new(expr, item.span()))?;
+//             Ok((
+//                 s,
+//                 t,
+//                 ctx.clone(),
+//                 SrcNode::new(Item::Expr(e.inner().clone()), item.span()),
+//             ))
+//         }
+//         res::Item::Def { name, expr } => {
+//             let (s1, t1, expr) = infer_expr(ctx, expr)?;
+//             let scheme = generalize(ctx.clone(), t1.clone());
+//             let mut tmp_ctx = ctx.clone();
+//             tmp_ctx.extend(*name, scheme);
+//             Ok((
+//                 s1,
+//                 t1.clone(),
+//                 ctx.union(tmp_ctx),
+//                 SrcNode::new(Item::Def { name, expr, ty: t1 }, item.span()),
+//             ))
+//         }
+//         res::Item::Fn { name, params, body } => {
+//             let mut e_ctx = ctx.clone();
+//             let f_var = Type::Var(TyVar::fresh());
+//             e_ctx.extend(*name, Scheme::new(vec![], f_var.clone()));
+
+//             let mut ty_binders = vec![];
+//             let mut tmp_ctx = e_ctx.clone();
+//             for p in params.clone() {
+//                 let ty_binder = Type::Var(TyVar::fresh());
+//                 ty_binders.push(ty_binder.clone());
+//                 tmp_ctx.extend(*p, Scheme::new(vec![], ty_binder));
+//             }
+//             let (s1, t1, e1) = infer_expr(&mut tmp_ctx, body)?;
+//             let ty = Type::Lambda(
+//                 apply_subst_vec(s1.clone(), ty_binders.clone()),
+//                 Box::new(t1),
+//             );
+//             Ok((
+//                 s1.clone(),
+//                 ty.clone(),
+//                 ctx.union(tmp_ctx),
+//                 SrcNode::new(
+//                     Item::Fn {
+//                         name,
+//                         params,
+//                         body: e1,
+//                         ty,
+//                     },
+//                     item.span(),
+//                 ),
+//             ))
+//         }
+//     }
+// }
+
+// fn infer_expr(
+//     ctx: &mut Context,
+//     expr: SrcNode<res::Expr>,
+// ) -> InferResult<(Substitution, Type, SrcNode<Expr>)> {
+//     match expr.inner().clone() {
+//         res::Expr::Lit(l) => match l.inner() {
+//             res::Lit::Num(n) => Ok((
+//                 Substitution::new(),
+//                 Type::Num,
+//                 SrcNode::new(
+//                     Expr::Lit {
+//                         lit: Lit::Num(n.clone()),
+//                         ty: Type::Num,
+//                     },
+//                     expr.span(),
+//                 ),
+//             )),
+//             res::Lit::Bool(b) => Ok((
+//                 Substitution::new(),
+//                 Type::Bool,
+//                 SrcNode::new(
+//                     Expr::Lit {
+//                         lit: Lit::Bool(b.clone()),
+//                         ty: Type::Bool,
+//                     },
+//                     expr.span(),
+//                 ),
+//             )),
+//         },
+//         res::Expr::Ident(name) => match ctx.clone().vars.get(&name) {
+//             Some(scheme) => {
+//                 let ty = instantiate(scheme.clone());
+//                 Ok((
+//                     Substitution::new(),
+//                     ty.clone(),
+//                     SrcNode::new(
+//                         Expr::Ident {
+//                             name: name.clone(),
+//                             ty: ty.clone(),
+//                         },
+//                         expr.span(),
+//                     ),
+//                 ))
+//             }
+//             None => Err(TypeError::from(format!("unbound variable: {:?}", expr))),
+//         },
+//         res::Expr::Lambda { params, body } => {
+//             let mut ty_binders = vec![];
+//             let mut tmp_ctx = ctx.clone();
+//             for p in params.clone() {
+//                 let ty_binder = Type::Var(TyVar::fresh());
+//                 ty_binders.push(ty_binder.clone());
+//                 tmp_ctx.extend(*p, Scheme::new(vec![], ty_binder));
+//             }
+//             let (s1, t1, e1) = infer_expr(&mut tmp_ctx, body)?;
+//             let ty = Type::Lambda(
+//                 apply_subst_vec(s1.clone(), ty_binders.clone()),
+//                 Box::new(t1),
+//             );
+//             Ok((
+//                 s1.clone(),
+//                 ty.clone(),
+//                 SrcNode::new(
+//                     Expr::Lambda {
+//                         params,
+//                         body: e1,
+//                         ty,
+//                     },
+//                     expr.span(),
+//                 ),
+//             ))
+//         }
+//         res::Expr::Apply { fun, args } => {
+//             let ty_ret = Type::Var(TyVar::fresh());
+//             let (s1, ty_fun, e1) = infer_expr(&mut ctx.clone(), fun.clone())?;
+//             let s2 = Substitution::new();
+//             let mut ty_args = vec![];
+//             let mut targs = vec![];
+//             for arg in args {
+//                 let (s_arg, ty_arg, ea) = infer_expr(&mut ctx.apply_subst(s1.clone()), arg)?;
+//                 targs.push(ea.clone());
+//                 s2.compose(s_arg);
+//                 ty_args.push(ty_arg);
+//             }
+//             let s3 = unify(
+//                 apply_subst(s2.clone(), ty_fun.clone()),
+//                 Type::Lambda(ty_args.clone(), Box::new(ty_ret.clone())),
+//             )?;
+//             let sf = s3.compose(s2.compose(s1.clone()));
+//             let ty = apply_subst(s3, ty_ret.clone());
+//             Ok((
+//                 sf,
+//                 ty.clone(),
+//                 SrcNode::new(
+//                     Expr::Apply {
+//                         fun: e1,
+//                         args: targs,
+//                         ty,
+//                     },
+//                     expr.span(),
+//                 ),
+//             ))
+//         }
+//         res::Expr::Let {
+//             name,
+//             expr: binding,
+//             body,
+//         } => {
+//             let (s1, t1, e1) = infer_expr(ctx, binding.clone())?;
+//             // let s2 = unify(f_var, t1.clone())?;
+//             let scheme = generalize(ctx.clone(), t1.clone());
+//             let mut tmp_ctx = ctx.clone();
+//             tmp_ctx.extend(*name, scheme);
+//             let (s2, t2, e2) = infer_expr(&mut tmp_ctx, body.clone())?;
+//             Ok((
+//                 s2.compose(s1),
+//                 t2.clone(),
+//                 SrcNode::new(
+//                     Expr::Let {
+//                         name,
+//                         expr: e1,
+//                         body: e2,
+//                         ty: t2,
+//                     },
+//                     expr.span(),
+//                 ),
+//             ))
+//         }
+//         res::Expr::Fn {
+//             name,
+//             params,
+//             expr,
+//             body,
+//         } => {
+//             let mut e_ctx = ctx.clone();
+//             let f_var = Type::Var(TyVar::fresh());
+//             e_ctx.extend(*name, Scheme::new(vec![], f_var.clone()));
+
+//             let mut ty_binders = vec![];
+//             let mut tmp_ctx = ctx.clone();
+//             for p in params.clone() {
+//                 let ty_binder = Type::Var(TyVar::fresh());
+//                 ty_binders.push(ty_binder.clone());
+//                 tmp_ctx.extend(*p, Scheme::new(vec![], ty_binder));
+//             }
+//             let (s1, t1, e1) = infer_expr(&mut tmp_ctx, expr.clone())?;
+//             let ty = Type::Lambda(
+//                 apply_subst_vec(s1.clone(), ty_binders.clone()),
+//                 Box::new(t1),
+//             );
+//             let mut e_ctx = ctx.clone();
+//             e_ctx.extend(*name, Scheme::new(vec![], ty.clone()));
+//             let (s2, t2, e2) = infer_expr(&mut e_ctx, body.clone())?;
+//             let s3 = unify(ty, t2.clone())?;
+//             Ok((
+//                 s3.compose(s2.compose(s1)),
+//                 t2.clone(),
+//                 SrcNode::new(
+//                     Expr::Fn {
+//                         name,
+//                         params,
+//                         expr: e1,
+//                         body: e2,
+//                         ty: t2,
+//                     },
+//                     expr.span(),
+//                 ),
+//             ))
+//         }
+//         res::Expr::If { cond, then, else_ } => {
+//             let (s1, t1, e1) = infer_expr(&mut ctx.clone(), cond.clone())?;
+//             let s2 = unify(t1, Type::Bool)?;
+//             let (s3, t2, e2) = infer_expr(&mut ctx.apply_subst(s1.clone()), then.clone())?;
+//             let (s4, t3, e3) = infer_expr(&mut ctx.apply_subst(s3.clone()), else_.clone())?;
+//             // println!("s1: {:?}", s1);
+//             // println!("s2: {:?}", s2);
+//             // println!("s3: {:?}", s3);
+//             // println!("s4: {:?}", s4);
+//             let s5 = unify(
+//                 apply_subst(s3.clone(), t2.clone()),
+//                 apply_subst(s4.clone(), t3),
+//             )?;
+//             // println!("s5: {:?}", s5);
+//             let sf = s5.compose(s4.compose(s3.compose(s2.compose(s1.clone()))));
+//             // println!("sf: {:?}", sf);
+//             Ok((
+//                 sf,
+//                 t2.clone(),
+//                 SrcNode::new(
+//                     Expr::If {
+//                         cond: e1,
+//                         then: e2,
+//                         else_: e3,
+//                         ty: t2,
+//                     },
+//                     expr.span(),
+//                 ),
+//             ))
+//         }
+//         res::Expr::Infix { op, lhs, rhs } => match *op {
+//             res::InfixOp::Add
+//             | res::InfixOp::Sub
+//             | res::InfixOp::Mul
+//             | res::InfixOp::Div
+//             | res::InfixOp::Mod => {
+//                 let (s1, t1, e1) = infer_expr(&mut ctx.clone(), lhs.clone())?;
+//                 let (s2, t2, e2) = infer_expr(&mut ctx.apply_subst(s1.clone()), rhs.clone())?;
+//                 let s3 = unify(t1, Type::Num)?;
+//                 let s4 = unify(t2, Type::Num)?;
+//                 let sf = s4.compose(s3.compose(s2.clone()));
+//                 Ok((
+//                     sf,
+//                     Type::Num,
+//                     SrcNode::new(
+//                         Expr::Infix {
+//                             op: SrcNode::new(InfixOp::from(op.inner().clone()), op.span()),
+//                             lhs: e1,
+//                             rhs: e2,
+//                             ty: Type::Num,
+//                         },
+//                         expr.span(),
+//                     ),
+//                 ))
+//             }
+//             res::InfixOp::Eq | res::InfixOp::Neq => {
+//                 let (s1, t1, e1) = infer_expr(&mut ctx.clone(), lhs.clone())?;
+//                 let (s2, t2, e2) = infer_expr(&mut ctx.apply_subst(s1.clone()), rhs.clone())?;
+//                 let s3 = unify(t1, t2)?;
+//                 let sf = s3.compose(s2.compose(s1.clone()));
+//                 Ok((
+//                     sf,
+//                     Type::Bool,
+//                     SrcNode::new(
+//                         Expr::Infix {
+//                             op: SrcNode::new(InfixOp::from(op.inner().clone()), op.span()),
+//                             lhs: e1,
+//                             rhs: e2,
+//                             ty: Type::Bool,
+//                         },
+//                         expr.span(),
+//                     ),
+//                 ))
+//             }
+//             res::InfixOp::Lt | res::InfixOp::Gt | res::InfixOp::Leq | res::InfixOp::Geq => {
+//                 let (s1, t1, e1) = infer_expr(&mut ctx.clone(), lhs.clone())?;
+//                 let (s2, t2, e2) = infer_expr(&mut ctx.apply_subst(s1.clone()), rhs.clone())?;
+//                 let s3 = unify(t1, Type::Num)?;
+//                 let s4 = unify(t2, Type::Num)?;
+//                 let sf = s4.compose(s3.compose(s2.clone()));
+//                 Ok((
+//                     sf,
+//                     Type::Bool,
+//                     SrcNode::new(
+//                         Expr::Infix {
+//                             op: SrcNode::new(InfixOp::from(op.inner().clone()), op.span()),
+//                             lhs: e1,
+//                             rhs: e2,
+//                             ty: Type::Bool,
+//                         },
+//                         expr.span(),
+//                     ),
+//                 ))
+//             }
+//         },
+//         res::Expr::Prefix { op, expr } => {
+//             let (s1, t1, e1) = infer_expr(&mut ctx.clone(), expr.clone())?;
+//             match op.inner() {
+//                 res::PrefixOp::Neg => {
+//                     let s2 = unify(t1, Type::Num)?;
+//                     Ok((
+//                         s2.compose(s1),
+//                         Type::Num,
+//                         SrcNode::new(
+//                             Expr::Prefix {
+//                                 op: SrcNode::new(PrefixOp::Neg, op.span()),
+//                                 expr: e1,
+//                                 ty: Type::Num,
+//                             },
+//                             expr.span(),
+//                         ),
+//                     ))
+//                 }
+//                 res::PrefixOp::Not => {
+//                     let s2 = unify(t1, Type::Bool)?;
+//                     Ok((
+//                         s2.compose(s1),
+//                         Type::Bool,
+//                         SrcNode::new(
+//                             Expr::Prefix {
+//                                 op: SrcNode::new(PrefixOp::Not, op.span()),
+//                                 expr: e1,
+//                                 ty: Type::Bool,
+//                             },
+//                             expr.span(),
+//                         ),
+//                     ))
+//                 }
+//             }
+//         }
+//         res::Expr::Unit => Ok((
+//             Substitution::new(),
+//             Type::Unit,
+//             SrcNode::new(Expr::Unit, expr.span()),
+//         )),
+//     }
+// }
+
 fn infer_item(
     ctx: &mut Context,
     item: SrcNode<res::Item>,
-) -> InferResult<(Substitution, Type, Context, SrcNode<Item>)> {
+) -> InferResult<(Vec<Constraint>, Context, SrcNode<Item>)> {
     match item.inner().clone() {
-        res::Item::Expr(expr) => {
-            let (s, t, e) = infer_expr(ctx, SrcNode::new(expr, item.span()))?;
-            Ok((
-                s,
-                t,
-                ctx.clone(),
-                SrcNode::new(Item::Expr(e.inner().clone()), item.span()),
-            ))
-        }
         res::Item::Def { name, expr } => {
-            // println!("infer_item: {:?}", item);
-            // println!("ctx: {:?}", ctx);
-            // let mut e_ctx = ctx.clone();
-            // let f_var = Type::Var(TyVar::fresh());
-            // e_ctx.extend(*name, Scheme::new(vec![], f_var.clone()));
-            // println!("e_ctx: {:?}", e_ctx);
-            let (s1, t1, expr) = infer_expr(ctx, expr)?;
-            // println!("def s1: {:?} src\\analysis\\infer.rs:557", s1);
-            // let s2 = unify(f_var, t1.clone())?;
-            // println!("def s2: {:?}", s2);
-            let scheme = generalize(ctx.clone(), t1.clone());
-            // println!("scheme: {:?}", scheme);
-            let mut tmp_ctx = ctx.clone();
+            let (cs, _, ectx, e) = infer_expr(ctx, expr)?;
+            let scheme = generalize(ectx.clone(), e.inner().ty());
+            let mut tmp_ctx = ectx.clone();
             tmp_ctx.extend(*name, scheme);
-            // println!("tmp_ctx: {:?}", tmp_ctx);
             Ok((
-                s1,
-                t1.clone(),
+                cs,
                 ctx.union(tmp_ctx),
-                SrcNode::new(Item::Def { name, expr, ty: t1 }, item.span()),
+                SrcNode::new(
+                    Item::Def {
+                        name,
+                        expr: e.clone(),
+                        ty: e.inner().ty(),
+                    },
+                    item.span(),
+                ),
             ))
         }
         res::Item::Fn { name, params, body } => {
@@ -596,32 +950,38 @@ fn infer_item(
 
             let mut ty_binders = vec![];
             let mut tmp_ctx = e_ctx.clone();
-            // println!("lam ctx: {:?}", ctx);
             for p in params.clone() {
                 let ty_binder = Type::Var(TyVar::fresh());
                 ty_binders.push(ty_binder.clone());
                 tmp_ctx.extend(*p, Scheme::new(vec![], ty_binder));
             }
-            // println!("lam tmp_ctx: {:?}", tmp_ctx);
-            // println!("lam ty_binders: {:?}", ty_binders);
-            let (s1, t1, e1) = infer_expr(&mut tmp_ctx, body)?;
-            let ty = Type::Lambda(
-                apply_subst_vec(s1.clone(), ty_binders.clone()),
-                Box::new(t1),
-            );
+            let (mut cs1, t1, c, body) = infer_expr(&mut tmp_ctx, body)?;
+            let ty = Type::Lambda(ty_binders.clone(), Box::new(t1.clone()));
+            // cs1.push(Constraint::Eq(ty.clone(), t1));
+            // tmp_ctx.extend(*name, Scheme::new(vec![], ty.clone()));
+
+            // let (mut cs2, t2, c2, e2) = infer_expr(&mut tmp_ctx, body)?;
+            println!("cs1: {:?}", cs1);
             Ok((
-                s1.clone(),
-                ty.clone(),
-                ctx.union(tmp_ctx),
+                cs1,
+                tmp_ctx.union(c),
                 SrcNode::new(
                     Item::Fn {
                         name,
                         params,
-                        body: e1,
+                        body,
                         ty,
                     },
                     item.span(),
                 ),
+            ))
+        }
+        res::Item::Expr(expr) => {
+            let (cs, _, ectx, e) = infer_expr(ctx, SrcNode::new(expr, item.span()))?;
+            Ok((
+                cs,
+                ectx,
+                SrcNode::new(Item::Expr(e.inner().clone()), item.span()),
             ))
         }
     }
@@ -630,12 +990,13 @@ fn infer_item(
 fn infer_expr(
     ctx: &mut Context,
     expr: SrcNode<res::Expr>,
-) -> InferResult<(Substitution, Type, SrcNode<Expr>)> {
+) -> InferResult<(Vec<Constraint>, Type, Context, SrcNode<Expr>)> {
     match expr.inner().clone() {
-        res::Expr::Lit(l) => match l.inner() {
+        res::Expr::Lit(lit) => match *lit {
             res::Lit::Num(n) => Ok((
-                Substitution::new(),
+                vec![],
                 Type::Num,
+                ctx.clone(),
                 SrcNode::new(
                     Expr::Lit {
                         lit: Lit::Num(n.clone()),
@@ -645,8 +1006,9 @@ fn infer_expr(
                 ),
             )),
             res::Lit::Bool(b) => Ok((
-                Substitution::new(),
+                vec![],
                 Type::Bool,
+                ctx.clone(),
                 SrcNode::new(
                     Expr::Lit {
                         lit: Lit::Bool(b.clone()),
@@ -656,23 +1018,19 @@ fn infer_expr(
                 ),
             )),
         },
-        res::Expr::Ident(name) => match ctx.clone().vars.get(&name) {
-            Some(scheme) => {
-                let ty = instantiate(scheme.clone());
+        res::Expr::Ident(name) => {
+            if let Some(scm) = ctx.clone().vars.get(&name) {
+                let ty = instantiate(scm.clone());
                 Ok((
-                    Substitution::new(),
+                    vec![],
                     ty.clone(),
-                    SrcNode::new(
-                        Expr::Ident {
-                            name: name.clone(),
-                            ty: ty.clone(),
-                        },
-                        expr.span(),
-                    ),
+                    ctx.clone(),
+                    SrcNode::new(Expr::Ident { name, ty }, expr.span()),
                 ))
+            } else {
+                Err(TypeError::from(format!("unbound variable: {:?}", expr)))
             }
-            None => Err(TypeError::from(format!("unbound variable: {:?}", expr))),
-        },
+        }
         res::Expr::Lambda { params, body } => {
             let mut ty_binders = vec![];
             let mut tmp_ctx = ctx.clone();
@@ -681,18 +1039,16 @@ fn infer_expr(
                 ty_binders.push(ty_binder.clone());
                 tmp_ctx.extend(*p, Scheme::new(vec![], ty_binder));
             }
-            let (s1, t1, e1) = infer_expr(&mut tmp_ctx, body)?;
-            let ty = Type::Lambda(
-                apply_subst_vec(s1.clone(), ty_binders.clone()),
-                Box::new(t1),
-            );
+            let (cs, t, c, e) = infer_expr(&mut tmp_ctx, body)?;
+            let ty = Type::Lambda(ty_binders.clone(), Box::new(t.clone()));
             Ok((
-                s1.clone(),
+                cs,
                 ty.clone(),
+                tmp_ctx.union(c),
                 SrcNode::new(
                     Expr::Lambda {
                         params,
-                        body: e1,
+                        body: e,
                         ty,
                     },
                     expr.span(),
@@ -700,146 +1056,61 @@ fn infer_expr(
             ))
         }
         res::Expr::Apply { fun, args } => {
-            let ty_ret = Type::Var(TyVar::fresh());
-            let (s1, ty_fun, e1) = infer_expr(&mut ctx.clone(), fun.clone())?;
-            let s2 = Substitution::new();
+            let (mut cs1, t1, mut ctx1, e1) = infer_expr(ctx, fun)?;
+            let mut new_args = vec![];
             let mut ty_args = vec![];
-            let mut targs = vec![];
-            for arg in args {
-                let (s_arg, ty_arg, ea) = infer_expr(&mut ctx.apply_subst(s1.clone()), arg)?;
-                targs.push(ea.clone());
-                s2.compose(s_arg);
-                ty_args.push(ty_arg);
+            for a in args {
+                let (cs2, t2, ctx2, e2) = infer_expr(&mut ctx1, a)?;
+                ctx1 = ctx2.union(ctx1);
+                cs1 = cs1.into_iter().chain(cs2.into_iter()).collect();
+                new_args.push(e2);
+                ty_args.push(t2);
             }
-            let s3 = unify(
-                apply_subst(s2.clone(), ty_fun.clone()),
-                Type::Lambda(ty_args.clone(), Box::new(ty_ret.clone())),
-            )?;
-            let sf = s3.compose(s2.compose(s1.clone()));
-            let ty = apply_subst(s3, ty_ret.clone());
+            let ty_ret = Type::Var(TyVar::fresh());
+            cs1.push(Constraint::Eq(
+                t1.clone(),
+                Type::Lambda(ty_args, Box::new(ty_ret.clone())),
+            ));
+            println!("t1: {:?}", t1.clone());
             Ok((
-                sf,
-                ty.clone(),
+                cs1,
+                ty_ret.clone(),
+                ctx1,
                 SrcNode::new(
                     Expr::Apply {
                         fun: e1,
-                        args: targs,
-                        ty,
+                        args: new_args,
+                        ty: ty_ret,
                     },
                     expr.span(),
                 ),
             ))
         }
-        res::Expr::Let {
-            name,
-            expr: binding,
-            body,
-        } => {
-            let (s1, t1, e1) = infer_expr(ctx, binding.clone())?;
-            // let s2 = unify(f_var, t1.clone())?;
-            let scheme = generalize(ctx.clone(), t1.clone());
-            let mut tmp_ctx = ctx.clone();
-            tmp_ctx.extend(*name, scheme);
-            let (s2, t2, e2) = infer_expr(&mut tmp_ctx, body.clone())?;
-            Ok((
-                s2.compose(s1),
-                t2.clone(),
-                SrcNode::new(
-                    Expr::Let {
-                        name,
-                        expr: e1,
-                        body: e2,
-                        ty: t2,
-                    },
-                    expr.span(),
-                ),
-            ))
-        }
+        res::Expr::Let { name, expr, body } => todo!(),
         res::Expr::Fn {
             name,
             params,
             expr,
             body,
-        } => {
-            let mut e_ctx = ctx.clone();
-            let f_var = Type::Var(TyVar::fresh());
-            e_ctx.extend(*name, Scheme::new(vec![], f_var.clone()));
-
-            let mut ty_binders = vec![];
-            let mut tmp_ctx = ctx.clone();
-            for p in params.clone() {
-                let ty_binder = Type::Var(TyVar::fresh());
-                ty_binders.push(ty_binder.clone());
-                tmp_ctx.extend(*p, Scheme::new(vec![], ty_binder));
-            }
-            let (s1, t1, e1) = infer_expr(&mut tmp_ctx, expr.clone())?;
-            let ty = Type::Lambda(
-                apply_subst_vec(s1.clone(), ty_binders.clone()),
-                Box::new(t1),
-            );
-            let mut e_ctx = ctx.clone();
-            e_ctx.extend(*name, Scheme::new(vec![], ty.clone()));
-            let (s2, t2, e2) = infer_expr(&mut e_ctx, body.clone())?;
-            let s3 = unify(ty, t2.clone())?;
-            Ok((
-                s3.compose(s2.compose(s1)),
-                t2.clone(),
-                SrcNode::new(
-                    Expr::Fn {
-                        name,
-                        params,
-                        expr: e1,
-                        body: e2,
-                        ty: t2,
-                    },
-                    expr.span(),
-                ),
-            ))
-        }
-        res::Expr::If { cond, then, else_ } => {
-            let (s1, t1, e1) = infer_expr(&mut ctx.clone(), cond.clone())?;
-            let s2 = unify(t1, Type::Bool)?;
-            let (s3, t2, e2) = infer_expr(&mut ctx.apply_subst(s1.clone()), then.clone())?;
-            let (s4, t3, e3) = infer_expr(&mut ctx.apply_subst(s3.clone()), else_.clone())?;
-            // println!("s1: {:?}", s1);
-            // println!("s2: {:?}", s2);
-            // println!("s3: {:?}", s3);
-            // println!("s4: {:?}", s4);
-            let s5 = unify(
-                apply_subst(s3.clone(), t2.clone()),
-                apply_subst(s4.clone(), t3),
-            )?;
-            // println!("s5: {:?}", s5);
-            let sf = s5.compose(s4.compose(s3.compose(s2.compose(s1.clone()))));
-            // println!("sf: {:?}", sf);
-            Ok((
-                sf,
-                t2.clone(),
-                SrcNode::new(
-                    Expr::If {
-                        cond: e1,
-                        then: e2,
-                        else_: e3,
-                        ty: t2,
-                    },
-                    expr.span(),
-                ),
-            ))
-        }
-        res::Expr::Infix { op, lhs, rhs } => match *op {
+        } => todo!(),
+        res::Expr::If { cond, then, else_ } => todo!(),
+        res::Expr::Prefix { op, expr } => todo!(),
+        res::Expr::Infix { op, lhs, rhs } => match op.inner().clone() {
             res::InfixOp::Add
             | res::InfixOp::Sub
             | res::InfixOp::Mul
             | res::InfixOp::Div
             | res::InfixOp::Mod => {
-                let (s1, t1, e1) = infer_expr(&mut ctx.clone(), lhs.clone())?;
-                let (s2, t2, e2) = infer_expr(&mut ctx.apply_subst(s1.clone()), rhs.clone())?;
-                let s3 = unify(t1, Type::Num)?;
-                let s4 = unify(t2, Type::Num)?;
-                let sf = s4.compose(s3.compose(s2.clone()));
+                let (cs1, t1, mut ctx1, e1) = infer_expr(ctx, lhs)?;
+                let (cs2, t2, ctx2, e2) = infer_expr(&mut ctx1, rhs)?;
+                let mut cs: Vec<Constraint> = cs1.into_iter().chain(cs2.into_iter()).collect();
+                cs.push(Constraint::Eq(t1, Type::Num));
+                cs.push(Constraint::Eq(t2, Type::Num));
+                println!("cs: {:?}", cs);
                 Ok((
-                    sf,
+                    cs,
                     Type::Num,
+                    ctx2,
                     SrcNode::new(
                         Expr::Infix {
                             op: SrcNode::new(InfixOp::from(op.inner().clone()), op.span()),
@@ -851,84 +1122,17 @@ fn infer_expr(
                     ),
                 ))
             }
-            res::InfixOp::Eq | res::InfixOp::Neq => {
-                let (s1, t1, e1) = infer_expr(&mut ctx.clone(), lhs.clone())?;
-                let (s2, t2, e2) = infer_expr(&mut ctx.apply_subst(s1.clone()), rhs.clone())?;
-                let s3 = unify(t1, t2)?;
-                let sf = s3.compose(s2.compose(s1.clone()));
-                Ok((
-                    sf,
-                    Type::Bool,
-                    SrcNode::new(
-                        Expr::Infix {
-                            op: SrcNode::new(InfixOp::from(op.inner().clone()), op.span()),
-                            lhs: e1,
-                            rhs: e2,
-                            ty: Type::Bool,
-                        },
-                        expr.span(),
-                    ),
-                ))
-            }
-            res::InfixOp::Lt | res::InfixOp::Gt | res::InfixOp::Leq | res::InfixOp::Geq => {
-                let (s1, t1, e1) = infer_expr(&mut ctx.clone(), lhs.clone())?;
-                let (s2, t2, e2) = infer_expr(&mut ctx.apply_subst(s1.clone()), rhs.clone())?;
-                let s3 = unify(t1, Type::Num)?;
-                let s4 = unify(t2, Type::Num)?;
-                let sf = s4.compose(s3.compose(s2.clone()));
-                Ok((
-                    sf,
-                    Type::Bool,
-                    SrcNode::new(
-                        Expr::Infix {
-                            op: SrcNode::new(InfixOp::from(op.inner().clone()), op.span()),
-                            lhs: e1,
-                            rhs: e2,
-                            ty: Type::Bool,
-                        },
-                        expr.span(),
-                    ),
-                ))
-            }
+            res::InfixOp::Eq => todo!(),
+            res::InfixOp::Neq => todo!(),
+            res::InfixOp::Lt => todo!(),
+            res::InfixOp::Gt => todo!(),
+            res::InfixOp::Leq => todo!(),
+            res::InfixOp::Geq => todo!(),
         },
-        res::Expr::Prefix { op, expr } => {
-            let (s1, t1, e1) = infer_expr(&mut ctx.clone(), expr.clone())?;
-            match op.inner() {
-                res::PrefixOp::Neg => {
-                    let s2 = unify(t1, Type::Num)?;
-                    Ok((
-                        s2.compose(s1),
-                        Type::Num,
-                        SrcNode::new(
-                            Expr::Prefix {
-                                op: SrcNode::new(PrefixOp::Neg, op.span()),
-                                expr: e1,
-                                ty: Type::Num,
-                            },
-                            expr.span(),
-                        ),
-                    ))
-                }
-                res::PrefixOp::Not => {
-                    let s2 = unify(t1, Type::Bool)?;
-                    Ok((
-                        s2.compose(s1),
-                        Type::Bool,
-                        SrcNode::new(
-                            Expr::Prefix {
-                                op: SrcNode::new(PrefixOp::Not, op.span()),
-                                expr: e1,
-                                ty: Type::Bool,
-                            },
-                            expr.span(),
-                        ),
-                    ))
-                }
-            }
-        }
         res::Expr::Unit => Ok((
-            Substitution::new(),
+            vec![],
             Type::Unit,
+            ctx.clone(),
             SrcNode::new(Expr::Unit, expr.span()),
         )),
     }
@@ -1057,11 +1261,20 @@ pub fn type_inference(
     let mut items = vec![];
     let mut ctx_ret = Context::new();
     for item in root.inner().items.clone() {
-        let (subst, _, c, i) = infer_item(ctx, item)?;
+        let (cs, ctx, i) = infer_item(ctx, item)?;
         // types.push(apply_subst(subst, ty).lower(&mut HashMap::new()));
-        ctx_ret = ctx_ret.union(c);
+        for c in cs {
+            match c {
+                Constraint::Eq(t1, t2) => {
+                    s = s.compose(unify(
+                        apply_subst(s.clone(), t1),
+                        apply_subst(s.clone(), t2),
+                    )?);
+                }
+            }
+        }
+        ctx_ret = ctx_ret.union(ctx);
         items.push(i);
-        s = subst.compose(s);
     }
     // println!("s: {:?}", s);
     Ok((
