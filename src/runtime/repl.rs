@@ -20,7 +20,7 @@ pub fn repl() {
             .read_line(&mut src)
             .expect("failed to read from stdin");
         let (ast, errors) = parse(&src);
-        println!("AST: {:?}", ast);
+        // println!("AST: {:?}", ast);
         if !errors.is_empty() {
             println!("parse errors: {:?}", errors);
             src.clear();
@@ -36,7 +36,7 @@ pub fn repl() {
             io::stdout().flush().expect("failed to flush stdout");
             continue;
         }
-        println!("RES: {:?}", res);
+        // println!("RES: {:?}", res);
         match type_inference(&mut ctx, res.unwrap()) {
             Ok((root, new_ctx)) => {
                 println!("TAST: {:?}", root);

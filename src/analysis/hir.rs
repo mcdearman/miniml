@@ -43,6 +43,12 @@ pub struct Root {
 #[derive(Debug, Clone, PartialEq)]
 pub enum Item {
     Expr(Expr),
+    Fn {
+        name: SrcNode<UniqueId>,
+        params: Vec<SrcNode<UniqueId>>,
+        env: Box<Env>,
+        body: SrcNode<Expr>,
+    },
     Def {
         name: SrcNode<UniqueId>,
         body: SrcNode<Expr>,
@@ -59,10 +65,11 @@ pub enum Expr {
         name: SrcNode<UniqueId>,
         ty: Type,
     },
-    Lambda {
-        env: Box<Env>,
+    Fn {
+        name: SrcNode<UniqueId>,
         params: Vec<SrcNode<UniqueId>>,
-        body: Box<SrcNode<Expr>>,
+        env: Box<Env>,
+        body: SrcNode<Expr>,
         ty: Type,
     },
     // Closure {
@@ -71,7 +78,7 @@ pub enum Expr {
     //     ty: Type,
     // },
     Apply {
-        fun: Box<SrcNode<Expr>>,
+        fun: SrcNode<Expr>,
         args: Vec<SrcNode<Expr>>,
         ty: Type,
     },
