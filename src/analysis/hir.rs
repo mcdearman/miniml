@@ -46,7 +46,6 @@ pub enum Item {
     Fn {
         name: SrcNode<UniqueId>,
         params: Vec<SrcNode<UniqueId>>,
-        env: Box<Env>,
         body: SrcNode<Expr>,
     },
     Def {
@@ -72,11 +71,12 @@ pub enum Expr {
         body: SrcNode<Expr>,
         ty: Type,
     },
-    // Closure {
-    //     fun: Box<SrcNode<Expr>>,
-    //     captured: HashMap<SrcNode<UniqueId>, SrcNode<Expr>>,
-    //     ty: Type,
-    // },
+    Closure {
+        fun: Box<SrcNode<Expr>>,
+        args: Vec<SrcNode<Expr>>,
+        env: Box<Env>,
+        ty: Type,
+    },
     Apply {
         fun: SrcNode<Expr>,
         args: Vec<SrcNode<Expr>>,
