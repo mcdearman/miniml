@@ -72,7 +72,7 @@ pub enum Expr {
         ty: Type,
     },
     Closure {
-        fun: Box<SrcNode<Expr>>,
+        fun: SrcNode<Expr>,
         args: Vec<SrcNode<Expr>>,
         env: Box<Env>,
         ty: Type,
