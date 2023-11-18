@@ -71,6 +71,12 @@ pub enum Expr {
         body: SrcNode<Expr>,
         ty: Type,
     },
+    Let {
+        name: SrcNode<UniqueId>,
+        value: SrcNode<Expr>,
+        body: SrcNode<Expr>,
+        ty: Type,
+    },
     Closure {
         fun: SrcNode<Expr>,
         args: Vec<SrcNode<Expr>>,
