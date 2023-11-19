@@ -1,6 +1,6 @@
 use crate::{
     analysis::infer::{self, Expr, Item, Root},
-    util::{intern::InternedString, node::SrcNode, unique_id::UniqueId},
+    util::{intern::InternedString, node::Node, unique_id::UniqueId},
 };
 use num_rational::Rational64;
 use std::{cell::RefCell, collections::HashMap, fmt::Display, rc::Rc};
@@ -46,8 +46,8 @@ pub enum Value {
     Lit(Lit),
     Lambda {
         env: Rc<RefCell<Env>>,
-        params: Vec<SrcNode<UniqueId>>,
-        body: SrcNode<Expr>,
+        params: Vec<Node<UniqueId>>,
+        body: Node<Expr>,
     },
     Unit,
 }
@@ -81,13 +81,13 @@ impl Display for Lit {
 pub fn eval<'src>(
     src: &'src str,
     env: Rc<RefCell<Env>>,
-    root: &SrcNode<Root>,
+    root: &Node<Root>,
 ) -> RuntimeResult<Value> {
     let mut val = Value::Unit;
     for item in &root.items {
         match item.inner().clone() {
             Item::Expr(expr) => {
-                val = eval_expr(src, env.clone(), SrcNode::new(expr, item.span()))?;
+                val = eval_expr(src, env.clone(), Node::new(expr, item.span()))?;
             }
             Item::Def { name, expr, .. } => {
                 let value = eval_expr(src, env.clone(), expr)?;
@@ -116,7 +116,7 @@ pub fn eval<'src>(
 fn eval_expr<'src>(
     src: &'src str,
     mut env: Rc<RefCell<Env>>,
-    mut expr: SrcNode<Expr>,
+    mut expr: Node<Expr>,
 ) -> RuntimeResult<Value> {
     let val: Value;
     'tco: loop {

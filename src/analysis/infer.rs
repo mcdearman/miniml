@@ -1,5 +1,5 @@
 use super::res;
-use crate::util::{intern::InternedString, node::SrcNode, unique_id::UniqueId};
+use crate::util::{intern::InternedString, node::Node, unique_id::UniqueId};
 use num_rational::Rational64;
 use std::{
     collections::{BTreeSet, HashMap},
@@ -29,21 +29,21 @@ pub type InferResult<T> = Result<T, TypeError>;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Root {
-    pub items: Vec<SrcNode<Item>>,
+    pub items: Vec<Node<Item>>,
 }
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Item {
     Expr(Expr),
     Def {
-        name: SrcNode<UniqueId>,
-        expr: SrcNode<Expr>,
+        name: Node<UniqueId>,
+        expr: Node<Expr>,
         ty: Type,
     },
     Fn {
-        name: SrcNode<UniqueId>,
-        params: Vec<SrcNode<UniqueId>>,
-        body: SrcNode<Expr>,
+        name: Node<UniqueId>,
+        params: Vec<Node<UniqueId>>,
+        body: Node<Expr>,
         ty: Type,
     },
 }
@@ -55,47 +55,47 @@ pub enum Expr {
         ty: Type,
     },
     Ident {
-        name: SrcNode<UniqueId>,
+        name: Node<UniqueId>,
         ty: Type,
     },
     Lambda {
-        params: Vec<SrcNode<UniqueId>>,
-        body: SrcNode<Expr>,
+        params: Vec<Node<UniqueId>>,
+        body: Node<Expr>,
         ty: Type,
     },
     Apply {
-        fun: SrcNode<Expr>,
-        args: Vec<SrcNode<Expr>>,
+        fun: Node<Expr>,
+        args: Vec<Node<Expr>>,
         ty: Type,
     },
     Let {
-        name: SrcNode<UniqueId>,
-        expr: SrcNode<Expr>,
-        body: SrcNode<Expr>,
+        name: Node<UniqueId>,
+        expr: Node<Expr>,
+        body: Node<Expr>,
         ty: Type,
     },
     Fn {
-        name: SrcNode<UniqueId>,
-        params: Vec<SrcNode<UniqueId>>,
-        expr: SrcNode<Expr>,
-        body: SrcNode<Expr>,
+        name: Node<UniqueId>,
+        params: Vec<Node<UniqueId>>,
+        expr: Node<Expr>,
+        body: Node<Expr>,
         ty: Type,
     },
     If {
-        cond: SrcNode<Expr>,
-        then: SrcNode<Expr>,
-        else_: SrcNode<Expr>,
+        cond: Node<Expr>,
+        then: Node<Expr>,
+        else_: Node<Expr>,
         ty: Type,
     },
     Infix {
-        op: SrcNode<InfixOp>,
-        lhs: SrcNode<Expr>,
-        rhs: SrcNode<Expr>,
+        op: Node<InfixOp>,
+        lhs: Node<Expr>,
+        rhs: Node<Expr>,
         ty: Type,
     },
     Prefix {
-        op: SrcNode<PrefixOp>,
-        expr: SrcNode<Expr>,
+        op: Node<PrefixOp>,
+        expr: Node<Expr>,
         ty: Type,
     },
     Unit,
@@ -554,8 +554,8 @@ fn instantiate(scheme: Scheme) -> Type {
 
 fn infer_item(
     ctx: &mut Context,
-    item: SrcNode<res::Item>,
-) -> InferResult<(Vec<Constraint>, Context, SrcNode<Item>)> {
+    item: Node<res::Item>,
+) -> InferResult<(Vec<Constraint>, Context, Node<Item>)> {
     match item.inner().clone() {
         res::Item::Def { name, expr } => {
             let (cs, _, ectx, e) = infer_expr(ctx, expr)?;
@@ -565,7 +565,7 @@ fn infer_item(
             Ok((
                 cs,
                 ctx.union(tmp_ctx),
-                SrcNode::new(
+                Node::new(
                     Item::Def {
                         name,
                         expr: e.clone(),
@@ -597,7 +597,7 @@ fn infer_item(
             Ok((
                 cs1,
                 tmp_ctx.union(c),
-                SrcNode::new(
+                Node::new(
                     Item::Fn {
                         name,
                         params,
@@ -609,11 +609,11 @@ fn infer_item(
             ))
         }
         res::Item::Expr(expr) => {
-            let (cs, _, ectx, e) = infer_expr(ctx, SrcNode::new(expr, item.span()))?;
+            let (cs, _, ectx, e) = infer_expr(ctx, Node::new(expr, item.span()))?;
             Ok((
                 cs,
                 ectx,
-                SrcNode::new(Item::Expr(e.inner().clone()), item.span()),
+                Node::new(Item::Expr(e.inner().clone()), item.span()),
             ))
         }
     }
@@ -621,15 +621,15 @@ fn infer_item(
 
 fn infer_expr(
     ctx: &mut Context,
-    expr: SrcNode<res::Expr>,
-) -> InferResult<(Vec<Constraint>, Type, Context, SrcNode<Expr>)> {
+    expr: Node<res::Expr>,
+) -> InferResult<(Vec<Constraint>, Type, Context, Node<Expr>)> {
     match expr.inner().clone() {
         res::Expr::Lit(lit) => match *lit {
             res::Lit::Num(n) => Ok((
                 vec![],
                 Type::Num,
                 ctx.clone(),
-                SrcNode::new(
+                Node::new(
                     Expr::Lit {
                         lit: Lit::Num(n.clone()),
                         ty: Type::Num,
@@ -641,7 +641,7 @@ fn infer_expr(
                 vec![],
                 Type::Bool,
                 ctx.clone(),
-                SrcNode::new(
+                Node::new(
                     Expr::Lit {
                         lit: Lit::Bool(b.clone()),
                         ty: Type::Bool,
@@ -657,7 +657,7 @@ fn infer_expr(
                     vec![],
                     ty.clone(),
                     ctx.clone(),
-                    SrcNode::new(Expr::Ident { name, ty }, expr.span()),
+                    Node::new(Expr::Ident { name, ty }, expr.span()),
                 ))
             } else {
                 Err(TypeError::from(format!("unbound variable: {:?}", expr)))
@@ -677,7 +677,7 @@ fn infer_expr(
                 cs,
                 ty.clone(),
                 tmp_ctx.union(c),
-                SrcNode::new(
+                Node::new(
                     Expr::Lambda {
                         params,
                         body: e,
@@ -708,7 +708,7 @@ fn infer_expr(
                 cs1,
                 ty_ret.clone(),
                 ctx1,
-                SrcNode::new(
+                Node::new(
                     Expr::Apply {
                         fun: e1,
                         args: new_args,
@@ -744,9 +744,9 @@ fn infer_expr(
                     cs,
                     Type::Num,
                     ctx2,
-                    SrcNode::new(
+                    Node::new(
                         Expr::Infix {
-                            op: SrcNode::new(InfixOp::from(op.inner().clone()), op.span()),
+                            op: Node::new(InfixOp::from(op.inner().clone()), op.span()),
                             lhs: e1,
                             rhs: e2,
                             ty: Type::Num,
@@ -766,7 +766,7 @@ fn infer_expr(
             vec![],
             Type::Unit,
             ctx.clone(),
-            SrcNode::new(Expr::Unit, expr.span()),
+            Node::new(Expr::Unit, expr.span()),
         )),
     }
 }
@@ -781,11 +781,11 @@ fn apply_subst_root(subst: Substitution, root: Root) -> Root {
     }
 }
 
-fn apply_subst_item(subst: Substitution, item: SrcNode<Item>) -> SrcNode<Item> {
-    SrcNode::new(
+fn apply_subst_item(subst: Substitution, item: Node<Item>) -> Node<Item> {
+    Node::new(
         match item.inner().clone() {
             Item::Expr(expr) => Item::Expr(
-                apply_subst_expr(subst, SrcNode::new(expr, item.span()))
+                apply_subst_expr(subst, Node::new(expr, item.span()))
                     .inner()
                     .clone(),
             ),
@@ -810,8 +810,8 @@ fn apply_subst_item(subst: Substitution, item: SrcNode<Item>) -> SrcNode<Item> {
     )
 }
 
-fn apply_subst_expr(subst: Substitution, expr: SrcNode<Expr>) -> SrcNode<Expr> {
-    SrcNode::new(
+fn apply_subst_expr(subst: Substitution, expr: Node<Expr>) -> Node<Expr> {
+    Node::new(
         match expr.inner().clone() {
             Expr::Lit { lit, ty } => Expr::Lit {
                 lit,
@@ -888,8 +888,8 @@ fn apply_subst_expr(subst: Substitution, expr: SrcNode<Expr>) -> SrcNode<Expr> {
 
 pub fn type_inference(
     ctx: &mut Context,
-    root: SrcNode<res::Root>,
-) -> InferResult<(SrcNode<Root>, Context)> {
+    root: Node<res::Root>,
+) -> InferResult<(Node<Root>, Context)> {
     let mut s = Substitution::new();
     let mut items = vec![];
     let mut ctx_ret = Context::new();
@@ -908,15 +908,15 @@ pub fn type_inference(
     }
     // println!("s: {:?}", s);
     Ok((
-        SrcNode::new(apply_subst_root(s, Root { items }), root.span().clone()),
-        // SrcNode::new(Root { items }, root.span().clone()),
+        Node::new(apply_subst_root(s, Root { items }), root.span().clone()),
+        // Node::new(Root { items }, root.span().clone()),
         ctx_ret,
     ))
 }
 
 // mod tests {
 //     use super::res::resolve;
-//     use crate::{analysis::res, syntax::parse::parse, util::node::SrcNode};
+//     use crate::{analysis::res, syntax::parse::parse, util::node::Node};
 
 //     #[test]
 //     fn infer_num() {
@@ -1176,12 +1176,12 @@ pub fn type_inference(
 //     // #[test]
 //     // fn infer_infinite() {
 //     //     let res = res::Root {
-//     //         items: vec![SrcNode::new(res::Item::Def {
-//     //             name: SrcNode::new(0.into(), 0..0),
-//     //             expr: SrcNode::new(
+//     //         items: vec![Node::new(res::Item::Def {
+//     //             name: Node::new(0.into(), 0..0),
+//     //             expr: Node::new(
 //     //                 res::Expr::Apply {
-//     //                     fun: Box::new(SrcNode::new(res::Expr::Ident(0.into()), 0..0)),
-//     //                     args: vec![SrcNode::new(res::Expr::Ident(0.into()), 0..0)],
+//     //                     fun: Box::new(Node::new(res::Expr::Ident(0.into()), 0..0)),
+//     //                     args: vec![Node::new(res::Expr::Ident(0.into()), 0..0)],
 //     //                 },
 //     //                 0..0,
 //     //             ),

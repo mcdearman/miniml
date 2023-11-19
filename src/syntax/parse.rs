@@ -2,7 +2,7 @@ use super::{
     ast::{Expr, InfixOp, Item, Lit, PrefixOp, Root},
     token::Token,
 };
-use crate::util::{intern::InternedString, node::SrcNode, span::Span};
+use crate::util::{intern::InternedString, node::Node, span::Span};
 use chumsky::{
     extra,
     input::{Stream, ValueInput},
@@ -40,26 +40,26 @@ fn expr_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
         let lit = lit_parser().map(Expr::Lit);
 
         let let_ = just(Token::Let)
-            .ignore_then(ident_parser().map_with_span(SrcNode::new))
+            .ignore_then(ident_parser().map_with_span(Node::new))
             .then_ignore(just(Token::Assign))
-            .then(expr.clone().map_with_span(SrcNode::new))
+            .then(expr.clone().map_with_span(Node::new))
             .then_ignore(just(Token::In))
-            .then(expr.clone().map_with_span(SrcNode::new))
+            .then(expr.clone().map_with_span(Node::new))
             .map(|((name, expr), body)| Expr::Let { name, expr, body });
 
         let fn_ = just(Token::Let)
-            .ignore_then(ident_parser().map_with_span(SrcNode::new))
+            .ignore_then(ident_parser().map_with_span(Node::new))
             .then(
                 ident_parser()
-                    .map_with_span(SrcNode::new)
+                    .map_with_span(Node::new)
                     .repeated()
                     .at_least(1)
                     .collect::<Vec<_>>(),
             )
             .then_ignore(just(Token::Assign))
-            .then(expr.clone().map_with_span(SrcNode::new))
+            .then(expr.clone().map_with_span(Node::new))
             .then_ignore(just(Token::In))
-            .then(expr.clone().map_with_span(SrcNode::new))
+            .then(expr.clone().map_with_span(Node::new))
             .map(|(((name, params), expr), body)| Expr::Fn {
                 name,
                 params,
@@ -70,21 +70,21 @@ fn expr_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
         let lambda = just(Token::Lambda)
             .ignore_then(
                 ident_parser()
-                    .map_with_span(SrcNode::new)
+                    .map_with_span(Node::new)
                     .repeated()
                     .at_least(1)
                     .collect::<Vec<_>>(),
             )
             .then_ignore(just(Token::Arrow))
-            .then(expr.clone().map_with_span(SrcNode::new))
+            .then(expr.clone().map_with_span(Node::new))
             .map(|(params, body)| Expr::Lambda { params, body });
 
         let if_ = just(Token::If)
-            .ignore_then(expr.clone().map_with_span(SrcNode::new))
+            .ignore_then(expr.clone().map_with_span(Node::new))
             .then_ignore(just(Token::Then))
-            .then(expr.clone().map_with_span(SrcNode::new))
+            .then(expr.clone().map_with_span(Node::new))
             .then_ignore(just(Token::Else))
-            .then(expr.clone().map_with_span(SrcNode::new))
+            .then(expr.clone().map_with_span(Node::new))
             .map(|((cond, then), else_)| Expr::If { cond, then, else_ });
 
         // atom = ident | number | bool | '(' expr ')'
@@ -99,7 +99,7 @@ fn expr_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
             .or(expr
                 .clone()
                 .delimited_by(just(Token::LParen), just(Token::RParen)))
-            .map_with_span(SrcNode::new)
+            .map_with_span(Node::new)
             .boxed();
 
         // apply = atom+
@@ -110,7 +110,7 @@ fn expr_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
                 if args.is_empty() {
                     fun.clone()
                 } else {
-                    SrcNode::new(
+                    Node::new(
                         Expr::Apply {
                             fun: fun.clone(),
                             args: args.clone(),
@@ -123,47 +123,44 @@ fn expr_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
 
         let op = just(Token::Minus)
             .map(PrefixOp::from)
-            .map_with_span(SrcNode::new)
+            .map_with_span(Node::new)
             .or(just(Token::Bang)
                 .map(PrefixOp::from)
-                .map_with_span(SrcNode::new))
+                .map_with_span(Node::new))
             .boxed();
 
         // unary = ("-" | "not")* apply
         let unary = op
             .clone()
             .repeated()
-            .foldr(
-                apply.clone(),
-                |op: SrcNode<PrefixOp>, expr: SrcNode<Expr>| {
-                    SrcNode::new(
-                        Expr::Prefix {
-                            op: op.clone(),
-                            expr: expr.clone(),
-                        },
-                        Span::new(op.span().start, expr.span().end),
-                    )
-                },
-            )
+            .foldr(apply.clone(), |op: Node<PrefixOp>, expr: Node<Expr>| {
+                Node::new(
+                    Expr::Prefix {
+                        op: op.clone(),
+                        expr: expr.clone(),
+                    },
+                    Span::new(op.span().start, expr.span().end),
+                )
+            })
             .boxed();
 
         let op = just(Token::Star)
             .map(InfixOp::from)
-            .map_with_span(SrcNode::new)
+            .map_with_span(Node::new)
             .or(just(Token::Slash)
                 .map(InfixOp::from)
-                .map_with_span(SrcNode::new))
+                .map_with_span(Node::new))
             .or(just(Token::Percent)
                 .map(InfixOp::from)
-                .map_with_span(SrcNode::new))
+                .map_with_span(Node::new))
             .boxed();
 
         let factor = unary
             .clone()
             .foldl(
                 op.clone().then(unary.clone()).repeated(),
-                |lhs: SrcNode<Expr>, (op, rhs): (SrcNode<InfixOp>, SrcNode<Expr>)| {
-                    SrcNode::new(
+                |lhs: Node<Expr>, (op, rhs): (Node<InfixOp>, Node<Expr>)| {
+                    Node::new(
                         Expr::Infix {
                             op,
                             lhs: lhs.clone(),
@@ -177,18 +174,18 @@ fn expr_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
 
         let op = just(Token::Plus)
             .map(InfixOp::from)
-            .map_with_span(SrcNode::new)
+            .map_with_span(Node::new)
             .or(just(Token::Minus)
                 .map(InfixOp::from)
-                .map_with_span(SrcNode::new))
+                .map_with_span(Node::new))
             .boxed();
 
         let term = factor
             .clone()
             .foldl(
                 op.clone().then(factor.clone()).repeated(),
-                |lhs: SrcNode<Expr>, (op, rhs): (_, SrcNode<Expr>)| {
-                    SrcNode::new(
+                |lhs: Node<Expr>, (op, rhs): (_, Node<Expr>)| {
+                    Node::new(
                         Expr::Infix {
                             op,
                             lhs: lhs.clone(),
@@ -206,21 +203,15 @@ fn expr_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
             .then(
                 just(Token::Lt)
                     .map(InfixOp::from)
-                    .map_with_span(SrcNode::new)
-                    .or(just(Token::Gt)
-                        .map(InfixOp::from)
-                        .map_with_span(SrcNode::new))
-                    .or(just(Token::Leq)
-                        .map(InfixOp::from)
-                        .map_with_span(SrcNode::new))
-                    .or(just(Token::Geq)
-                        .map(InfixOp::from)
-                        .map_with_span(SrcNode::new))
+                    .map_with_span(Node::new)
+                    .or(just(Token::Gt).map(InfixOp::from).map_with_span(Node::new))
+                    .or(just(Token::Leq).map(InfixOp::from).map_with_span(Node::new))
+                    .or(just(Token::Geq).map(InfixOp::from).map_with_span(Node::new))
                     .then(term.clone())
                     .or_not(),
             )
             .map(|(lhs, rhs)| match rhs {
-                Some((op, rhs)) => SrcNode::new(
+                Some((op, rhs)) => Node::new(
                     Expr::Infix {
                         op,
                         lhs: lhs.clone(),
@@ -238,15 +229,13 @@ fn expr_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
             .then(
                 just(Token::Eq)
                     .map(InfixOp::from)
-                    .map_with_span(SrcNode::new)
-                    .or(just(Token::Neq)
-                        .map(InfixOp::from)
-                        .map_with_span(SrcNode::new))
+                    .map_with_span(Node::new)
+                    .or(just(Token::Neq).map(InfixOp::from).map_with_span(Node::new))
                     .then(cmp.clone())
                     .or_not(),
             )
             .map(|(lhs, rhs)| match rhs {
-                Some((op, rhs)) => SrcNode::new(
+                Some((op, rhs)) => Node::new(
                     Expr::Infix {
                         op,
                         lhs: lhs.clone(),
@@ -264,53 +253,53 @@ fn expr_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
 }
 
 fn fn_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
-) -> impl Parser<'a, I, SrcNode<Item>, extra::Err<Rich<'a, Token, Span>>> {
+) -> impl Parser<'a, I, Node<Item>, extra::Err<Rich<'a, Token, Span>>> {
     ident_parser()
-        .map_with_span(SrcNode::new)
+        .map_with_span(Node::new)
         .then(
             ident_parser()
-                .map_with_span(SrcNode::new)
+                .map_with_span(Node::new)
                 .repeated()
                 .at_least(1)
                 .collect::<Vec<_>>(),
         )
         .then_ignore(just(Token::Assign))
-        .then(expr_parser().map_with_span(SrcNode::new))
+        .then(expr_parser().map_with_span(Node::new))
         .map(|((name, params), body)| Item::Fn { name, params, body })
-        .map_with_span(SrcNode::new)
+        .map_with_span(Node::new)
         .boxed()
 }
 
 fn def_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
-) -> impl Parser<'a, I, SrcNode<Item>, extra::Err<Rich<'a, Token, Span>>> {
+) -> impl Parser<'a, I, Node<Item>, extra::Err<Rich<'a, Token, Span>>> {
     ident_parser()
-        .map_with_span(SrcNode::new)
+        .map_with_span(Node::new)
         .then_ignore(just(Token::Assign))
-        .then(expr_parser().map_with_span(SrcNode::new))
+        .then(expr_parser().map_with_span(Node::new))
         .map(|(name, expr)| Item::Def { name, expr })
-        .map_with_span(SrcNode::new)
+        .map_with_span(Node::new)
         .boxed()
 }
 
 fn item_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
-) -> impl Parser<'a, I, SrcNode<Item>, extra::Err<Rich<'a, Token, Span>>> {
+) -> impl Parser<'a, I, Node<Item>, extra::Err<Rich<'a, Token, Span>>> {
     def_parser()
         .or(fn_parser())
-        .or(expr_parser().map(Item::Expr).map_with_span(SrcNode::new))
+        .or(expr_parser().map(Item::Expr).map_with_span(Node::new))
         .boxed()
 }
 
 fn parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
-) -> impl Parser<'a, I, SrcNode<Root>, extra::Err<Rich<'a, Token, Span>>> {
+) -> impl Parser<'a, I, Node<Root>, extra::Err<Rich<'a, Token, Span>>> {
     item_parser()
         .repeated()
         .collect()
         .map(|items| Root { items })
-        .map_with_span(SrcNode::new)
+        .map_with_span(Node::new)
         .boxed()
 }
 
-pub fn parse<'src>(src: &'src str) -> (Option<SrcNode<Root>>, Vec<ParseError<'src>>) {
+pub fn parse<'src>(src: &'src str) -> (Option<Node<Root>>, Vec<ParseError<'src>>) {
     let tokens = Token::lexer(&src).spanned().map(|(tok, span)| match tok {
         Ok(tok) => (tok, Span::from(span)),
         Err(err) => panic!("lex error: {:?}", err),

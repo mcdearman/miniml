@@ -1,22 +1,22 @@
 use super::token::Token;
-use crate::util::{intern::InternedString, node::SrcNode};
+use crate::util::{intern::InternedString, node::Node};
 use num_rational::Rational64;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Root {
-    pub items: Vec<SrcNode<Item>>,
+    pub items: Vec<Node<Item>>,
 }
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Item {
     Def {
-        name: SrcNode<InternedString>,
-        expr: SrcNode<Expr>,
+        name: Node<InternedString>,
+        expr: Node<Expr>,
     },
     Fn {
-        name: SrcNode<InternedString>,
-        params: Vec<SrcNode<InternedString>>,
-        body: SrcNode<Expr>,
+        name: Node<InternedString>,
+        params: Vec<Node<InternedString>>,
+        body: Node<Expr>,
     },
     Expr(Expr),
 }
@@ -26,37 +26,37 @@ pub enum Expr {
     Lit(Lit),
     Ident(InternedString),
     Lambda {
-        params: Vec<SrcNode<InternedString>>,
-        body: SrcNode<Self>,
+        params: Vec<Node<InternedString>>,
+        body: Node<Self>,
     },
     Apply {
-        fun: SrcNode<Self>,
-        args: Vec<SrcNode<Self>>,
+        fun: Node<Self>,
+        args: Vec<Node<Self>>,
     },
     Let {
-        name: SrcNode<InternedString>,
-        expr: SrcNode<Self>,
-        body: SrcNode<Self>,
+        name: Node<InternedString>,
+        expr: Node<Self>,
+        body: Node<Self>,
     },
     Fn {
-        name: SrcNode<InternedString>,
-        params: Vec<SrcNode<InternedString>>,
-        expr: SrcNode<Self>,
-        body: SrcNode<Self>,
+        name: Node<InternedString>,
+        params: Vec<Node<InternedString>>,
+        expr: Node<Self>,
+        body: Node<Self>,
     },
     If {
-        cond: SrcNode<Self>,
-        then: SrcNode<Self>,
-        else_: SrcNode<Self>,
+        cond: Node<Self>,
+        then: Node<Self>,
+        else_: Node<Self>,
     },
     Prefix {
-        op: SrcNode<PrefixOp>,
-        expr: SrcNode<Self>,
+        op: Node<PrefixOp>,
+        expr: Node<Self>,
     },
     Infix {
-        op: SrcNode<InfixOp>,
-        lhs: SrcNode<Self>,
-        rhs: SrcNode<Self>,
+        op: Node<InfixOp>,
+        lhs: Node<Self>,
+        rhs: Node<Self>,
     },
     Unit,
 }

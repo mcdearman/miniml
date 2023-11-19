@@ -154,6 +154,21 @@ class Point =
   x : Num
   y : Num
 
+class Span = 
+  start : Num
+  end : Num
+
+class Node = 
+  span : Span
+
+class Expr <: Node 
+  = Ident String
+  | Literal Lit
+  | Call Expr [Expr]
+  | BinaryOp Expr Op Expr
+  | UnaryOp Op Expr
+
+
 -- Metaprogramming
 -- You can use the `quote` function to get the AST of an expression.
 -- Quoting can also be done with the `:` operator. Symbols are just quoted

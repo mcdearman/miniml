@@ -1,5 +1,5 @@
 use super::infer::Type;
-use crate::util::{node::SrcNode, unique_id::UniqueId};
+use crate::util::{node::Node, unique_id::UniqueId};
 use num_rational::Rational64;
 use std::collections::HashMap;
 
@@ -37,20 +37,20 @@ impl Env {
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Root {
-    pub items: Vec<SrcNode<Item>>,
+    pub items: Vec<Node<Item>>,
 }
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Item {
     Expr(Expr),
     Fn {
-        name: SrcNode<UniqueId>,
-        params: Vec<SrcNode<UniqueId>>,
-        body: SrcNode<Expr>,
+        name: Node<UniqueId>,
+        params: Vec<Node<UniqueId>>,
+        body: Node<Expr>,
     },
     Def {
-        name: SrcNode<UniqueId>,
-        body: SrcNode<Expr>,
+        name: Node<UniqueId>,
+        body: Node<Expr>,
     },
 }
 
@@ -61,31 +61,31 @@ pub enum Expr {
         ty: Type,
     },
     Ident {
-        name: SrcNode<UniqueId>,
+        name: Node<UniqueId>,
         ty: Type,
     },
     Fn {
-        name: SrcNode<UniqueId>,
-        params: Vec<SrcNode<UniqueId>>,
+        name: Node<UniqueId>,
+        params: Vec<Node<UniqueId>>,
         env: Box<Env>,
-        body: SrcNode<Expr>,
+        body: Node<Expr>,
         ty: Type,
     },
     Let {
-        name: SrcNode<UniqueId>,
-        value: SrcNode<Expr>,
-        body: SrcNode<Expr>,
+        name: Node<UniqueId>,
+        value: Node<Expr>,
+        body: Node<Expr>,
         ty: Type,
     },
     Closure {
-        fun: SrcNode<Expr>,
-        args: Vec<SrcNode<Expr>>,
+        fun: Node<Expr>,
+        args: Vec<Node<Expr>>,
         env: Box<Env>,
         ty: Type,
     },
     Apply {
-        fun: SrcNode<Expr>,
-        args: Vec<SrcNode<Expr>>,
+        fun: Node<Expr>,
+        args: Vec<Node<Expr>>,
         ty: Type,
     },
     Unit,

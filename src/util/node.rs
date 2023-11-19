@@ -6,17 +6,17 @@ use std::{
 };
 
 #[derive(Clone)]
-pub struct Node<T, M = ()> {
+pub struct Node<T> {
     inner: Box<T>, // TODO: Replace with smallbox or similar optimisation?
-    meta: M,
+    span: Span,
 }
 
-impl<T, M> Node<T, M> {
+impl<T> Node<T> {
     /// Create a new node with the given inner value and metadata.
-    pub fn new(inner: T, meta: M) -> Self {
+    pub fn new(inner: T, span: Span) -> Self {
         Node {
             inner: Box::new(inner),
-            meta,
+            span,
         }
     }
 
@@ -35,73 +35,55 @@ impl<T, M> Node<T, M> {
         *self.inner
     }
 
+    pub fn span(&self) -> Span {
+        self.span
+    }
+
     /// Map the node's inner value.
-    pub fn map<U, F: FnOnce(T) -> U>(self, f: F) -> Node<U, M> {
+    pub fn map<U, F: FnOnce(T) -> U>(self, f: F) -> Node<U> {
         Node {
             inner: Box::new(f(*self.inner)),
-            meta: self.meta,
+            span: self.span,
         }
-    }
-
-    /// Get a reference to the metadata.
-    pub fn meta(&self) -> &M {
-        &self.meta
-    }
-
-    /// Get a mutable reference to the metadata.
-    pub fn meta_mut(&mut self) -> &mut M {
-        &mut self.meta
-    }
-
-    pub fn as_mut(&mut self) -> (&mut T, &mut M) {
-        (&mut self.inner, &mut self.meta)
     }
 }
 
-impl<T, M> Deref for Node<T, M> {
+impl<T> Deref for Node<T> {
     type Target = T;
     fn deref(&self) -> &Self::Target {
         self.inner()
     }
 }
 
-impl<T, M> DerefMut for Node<T, M> {
+impl<T> DerefMut for Node<T> {
     fn deref_mut(&mut self) -> &mut Self::Target {
         self.inner_mut()
     }
 }
 
-impl<T: PartialEq, M> PartialEq for Node<T, M> {
+impl<T: PartialEq> PartialEq for Node<T> {
     fn eq(&self, other: &Self) -> bool {
         // Only compare inner
         self.inner == other.inner
     }
 }
 
-impl<T: Eq, M> Eq for Node<T, M> {}
+impl<T: Eq> Eq for Node<T> {}
 
-impl<T: Ord, M> Ord for Node<T, M> {
+impl<T: Ord> Ord for Node<T> {
     fn cmp(&self, other: &Self) -> Ordering {
         self.inner.cmp(&other.inner)
     }
 }
 
-impl<T: PartialOrd, M> PartialOrd for Node<T, M> {
+impl<T: PartialOrd> PartialOrd for Node<T> {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
         self.inner.partial_cmp(&other.inner)
     }
 }
 
-impl<T: fmt::Debug, M: fmt::Debug> fmt::Debug for Node<T, M> {
+impl<T: fmt::Debug> fmt::Debug for Node<T> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{:#?} @ {:?}", self.inner, self.meta)
-    }
-}
-
-pub type SrcNode<T> = Node<T, Span>;
-
-impl<T> SrcNode<T> {
-    pub fn span(&self) -> Span {
-        self.meta
+        write!(f, "{:#?} @ {:?}", self.inner, self.span)
     }
 }
