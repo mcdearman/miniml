@@ -93,26 +93,26 @@ add1 = \x -> add x 1
 [a, b, c] = [1, 2, 3]
 
 -- pair pattern
-let [head::tail] = [1, 2, 3]
+[head::tail] = [1, 2, 3]
 
 -- list pair pattern
-let [first, head::tail] = [1, 2, 3]
+[first, head::tail] = [1, 2, 3]
 
 -- record pattern
-let Point { x, y } = Point { x = 1, y = 2 }
+Point { x, y } = Point { x = 1, y = 2 }
 
 -- map pattern
-let { x, y } = { x = 1, y = 2 }
+{ x, y } = { x = 1, y = 2 }
 
 -- Data constructors for a type `'a` are just functions of the
 -- same name that take arguments and return a value of type `'a`.
-data Point = Point Num Num
+class Point = Point Num Num
 
 -- You can define records with `data`.
-data Point = Point { x: Num, y: Num }
+class Point = Point { x: Num, y: Num }
 
 -- Booleans are just sum types.
-data Bool = True | False
+class Bool = True | False
 
 -- You can use `let` to bind values to names.
 let x = 1
@@ -122,19 +122,19 @@ in  x + y
 -- You can use `begin` to group items together.
 -- The value of a `begin` expression is the value of the last expression.
 begin
-  let y = 1
-  let z = 2
+  y = 1
+  z = 2
   y + z
 -- miniml> 3
 
 -- Classes
 class Ord <: Eq + PartialOrd = 
-  cmp : self -> self -> Ordering
+  cmp : [self, self] -> Ordering
 
 class Map K V = 
   empty : Map K V
   find : K -> V
-  insert : K -> V -> Map K V
+  insert : [K, V] -> Map K V
   delete : K -> Map K V
 
 data List (I = Nat) V <: Map I V 
@@ -147,7 +147,7 @@ class List (I = Nat) V <: Map I V
 
   empty : List I V
   find : I -> V
-  insert : I -> V -> List I V
+  insert : [I, V] -> List I V
   delete : I -> List I V
 
 class Point = 
