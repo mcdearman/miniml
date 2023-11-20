@@ -46,6 +46,13 @@ impl<T> Node<T> {
             span: self.span,
         }
     }
+
+    pub fn try_map<U, E, F: FnOnce(T) -> Result<U, E>>(self, f: F) -> Result<Node<U>, E> {
+        Ok(Node {
+            inner: Box::new(f(*self.inner)?),
+            span: self.span,
+        })
+    }
 }
 
 impl<T> Deref for Node<T> {

@@ -236,16 +236,17 @@ pub fn resolve(
 fn resolve_item(env: Rc<RefCell<Env>>, item: Node<ast::Item>) -> ResResult<Node<Item>> {
     match &*item {
         ast::Item::Def { name, expr } => {
-            let name = Node::new(env.borrow_mut().define(**name), name.span());
-            let expr = resolve_expr(env.clone(), &expr, false)?;
-            Ok(Node::new(
-                Item::Def {
-                    name,
-                    expr: expr.clone(),
-                },
-                item.span(),
-            ))
+            let name = Node::new(env.borrow_mut().define(name.inner().clone()), name.span());
+            let expr = resolve_expr(env.clone(), expr, false)?;
+            Ok(Node::new(Item::Def { name, expr }, item.span()))
         }
+        // ast::Item::Def { name, expr } => Ok(item.try_map(|i| {
+        //     Ok(Item::Def {
+        //         name: name.map(|n| env.borrow_mut().define(n)),
+        //         expr: expr
+        //             .try_map(|e| resolve_expr(env.clone(), expr, false).map(|n| n.into_inner()))?,
+        //     })
+        // })?),
         ast::Item::Fn { name, params, body } => {
             let name = Node::new(env.borrow_mut().define(name.inner().clone()), name.span());
             let mut params = params.clone();
