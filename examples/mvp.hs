@@ -41,6 +41,10 @@ let f x = x + 1 in f 1
 -- if expression
 if x then y else z
 
+-- match expression
+match x with
+| y -> z
+
 -- examples
 gcd a b = if b == 0 then a else gcd b (a % b)
 fib n = if n <= 1 then n else fib (n - 1) + fib (n - 2)

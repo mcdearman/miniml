@@ -87,17 +87,6 @@ pub enum Expr {
         else_: Node<Expr>,
         ty: Type,
     },
-    Infix {
-        op: Node<InfixOp>,
-        lhs: Node<Expr>,
-        rhs: Node<Expr>,
-        ty: Type,
-    },
-    Prefix {
-        op: Node<PrefixOp>,
-        expr: Node<Expr>,
-        ty: Type,
-    },
     Unit,
 }
 
@@ -111,89 +100,87 @@ impl Expr {
             Self::Let { ty, .. } => ty.clone(),
             Self::Fn { ty, .. } => ty.clone(),
             Self::If { ty, .. } => ty.clone(),
-            Self::Infix { ty, .. } => ty.clone(),
-            Self::Prefix { ty, .. } => ty.clone(),
             Self::Unit => Type::Unit,
         }
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub enum PrefixOp {
-    Neg,
-    Not,
-}
+// #[derive(Debug, Clone, PartialEq, Eq, Hash)]
+// pub enum PrefixOp {
+//     Neg,
+//     Not,
+// }
 
-impl ToString for PrefixOp {
-    fn to_string(&self) -> String {
-        match self {
-            Self::Neg => "-",
-            Self::Not => "!",
-        }
-        .to_string()
-    }
-}
+// impl ToString for PrefixOp {
+//     fn to_string(&self) -> String {
+//         match self {
+//             Self::Neg => "-",
+//             Self::Not => "!",
+//         }
+//         .to_string()
+//     }
+// }
 
-impl From<res::PrefixOp> for PrefixOp {
-    fn from(op: res::PrefixOp) -> Self {
-        match op {
-            res::PrefixOp::Neg => Self::Neg,
-            res::PrefixOp::Not => Self::Not,
-        }
-    }
-}
+// impl From<res::PrefixOp> for PrefixOp {
+//     fn from(op: res::PrefixOp) -> Self {
+//         match op {
+//             res::PrefixOp::Neg => Self::Neg,
+//             res::PrefixOp::Not => Self::Not,
+//         }
+//     }
+// }
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub enum InfixOp {
-    Add,
-    Sub,
-    Mul,
-    Div,
-    Mod,
-    Eq,
-    Neq,
-    Lt,
-    Gt,
-    Leq,
-    Geq,
-}
+// #[derive(Debug, Clone, PartialEq, Eq, Hash)]
+// pub enum InfixOp {
+//     Add,
+//     Sub,
+//     Mul,
+//     Div,
+//     Mod,
+//     Eq,
+//     Neq,
+//     Lt,
+//     Gt,
+//     Leq,
+//     Geq,
+// }
 
-impl ToString for InfixOp {
-    fn to_string(&self) -> String {
-        match self {
-            Self::Add => "+",
-            Self::Sub => "-",
-            Self::Mul => "*",
-            Self::Div => "/",
-            Self::Mod => "%",
-            Self::Eq => "==",
-            Self::Neq => "!=",
-            Self::Lt => "<",
-            Self::Gt => ">",
-            Self::Leq => "<=",
-            Self::Geq => ">=",
-        }
-        .to_string()
-    }
-}
+// impl ToString for InfixOp {
+//     fn to_string(&self) -> String {
+//         match self {
+//             Self::Add => "+",
+//             Self::Sub => "-",
+//             Self::Mul => "*",
+//             Self::Div => "/",
+//             Self::Mod => "%",
+//             Self::Eq => "==",
+//             Self::Neq => "!=",
+//             Self::Lt => "<",
+//             Self::Gt => ">",
+//             Self::Leq => "<=",
+//             Self::Geq => ">=",
+//         }
+//         .to_string()
+//     }
+// }
 
-impl From<res::InfixOp> for InfixOp {
-    fn from(op: res::InfixOp) -> Self {
-        match op {
-            res::InfixOp::Add => Self::Add,
-            res::InfixOp::Sub => Self::Sub,
-            res::InfixOp::Mul => Self::Mul,
-            res::InfixOp::Div => Self::Div,
-            res::InfixOp::Mod => Self::Mod,
-            res::InfixOp::Eq => Self::Eq,
-            res::InfixOp::Neq => Self::Neq,
-            res::InfixOp::Lt => Self::Lt,
-            res::InfixOp::Gt => Self::Gt,
-            res::InfixOp::Leq => Self::Leq,
-            res::InfixOp::Geq => Self::Geq,
-        }
-    }
-}
+// impl From<res::InfixOp> for InfixOp {
+//     fn from(op: res::InfixOp) -> Self {
+//         match op {
+//             res::InfixOp::Add => Self::Add,
+//             res::InfixOp::Sub => Self::Sub,
+//             res::InfixOp::Mul => Self::Mul,
+//             res::InfixOp::Div => Self::Div,
+//             res::InfixOp::Mod => Self::Mod,
+//             res::InfixOp::Eq => Self::Eq,
+//             res::InfixOp::Neq => Self::Neq,
+//             res::InfixOp::Lt => Self::Lt,
+//             res::InfixOp::Gt => Self::Gt,
+//             res::InfixOp::Leq => Self::Leq,
+//             res::InfixOp::Geq => Self::Geq,
+//         }
+//     }
+// }
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Lit {
@@ -326,13 +313,13 @@ impl IntoIterator for Substitution {
 }
 
 #[derive(Debug, Clone, PartialEq)]
-struct Scheme {
+pub struct Scheme {
     vars: Vec<TyVar>,
     ty: Type,
 }
 
 impl Scheme {
-    fn new(vars: Vec<TyVar>, ty: Type) -> Self {
+    pub fn new(vars: Vec<TyVar>, ty: Type) -> Self {
         Self { vars, ty }
     }
 }
@@ -341,7 +328,7 @@ impl Scheme {
 pub struct TyVar(UniqueId);
 
 impl TyVar {
-    fn fresh() -> Self {
+    pub fn fresh() -> Self {
         Self(UniqueId::gen())
     }
 }
@@ -488,7 +475,7 @@ impl Context {
         }
     }
 
-    fn extend(&mut self, id: UniqueId, scheme: Scheme) {
+    pub fn extend(&mut self, id: UniqueId, scheme: Scheme) {
         self.vars.insert(id, scheme);
     }
 
@@ -726,42 +713,41 @@ fn infer_expr(
             body,
         } => todo!(),
         res::Expr::If { cond, then, else_ } => todo!(),
-        res::Expr::Prefix { op, expr } => todo!(),
-        res::Expr::Infix { op, lhs, rhs } => match op.inner().clone() {
-            res::InfixOp::Add
-            | res::InfixOp::Sub
-            | res::InfixOp::Mul
-            | res::InfixOp::Div
-            | res::InfixOp::Mod => {
-                let (cs1, t1, mut ctx1, e1) = infer_expr(ctx, lhs)?;
-                let (cs2, t2, ctx2, e2) = infer_expr(&mut ctx1, rhs)?;
-                let mut cs: Vec<Constraint> = cs1.into_iter().chain(cs2.into_iter()).collect();
-                cs.push(Constraint::Eq(t1, Type::Num));
-                cs.push(Constraint::Eq(t2, Type::Num));
-                // let ty_ret = Type::Num;
-                println!("cs: {:?}", cs);
-                Ok((
-                    cs,
-                    Type::Num,
-                    ctx2,
-                    Node::new(
-                        Expr::Infix {
-                            op: Node::new(InfixOp::from(op.inner().clone()), op.span()),
-                            lhs: e1,
-                            rhs: e2,
-                            ty: Type::Num,
-                        },
-                        expr.span(),
-                    ),
-                ))
-            }
-            res::InfixOp::Eq => todo!(),
-            res::InfixOp::Neq => todo!(),
-            res::InfixOp::Lt => todo!(),
-            res::InfixOp::Gt => todo!(),
-            res::InfixOp::Leq => todo!(),
-            res::InfixOp::Geq => todo!(),
-        },
+        // res::Expr::Infix { op, lhs, rhs } => match op.inner().clone() {
+        //     res::InfixOp::Add
+        //     | res::InfixOp::Sub
+        //     | res::InfixOp::Mul
+        //     | res::InfixOp::Div
+        //     | res::InfixOp::Mod => {
+        //         let (cs1, t1, mut ctx1, e1) = infer_expr(ctx, lhs)?;
+        //         let (cs2, t2, ctx2, e2) = infer_expr(&mut ctx1, rhs)?;
+        //         let mut cs: Vec<Constraint> = cs1.into_iter().chain(cs2.into_iter()).collect();
+        //         cs.push(Constraint::Eq(t1, Type::Num));
+        //         cs.push(Constraint::Eq(t2, Type::Num));
+        //         // let ty_ret = Type::Num;
+        //         println!("cs: {:?}", cs);
+        //         Ok((
+        //             cs,
+        //             Type::Num,
+        //             ctx2,
+        //             Node::new(
+        //                 Expr::Infix {
+        //                     op: Node::new(InfixOp::from(op.inner().clone()), op.span()),
+        //                     lhs: e1,
+        //                     rhs: e2,
+        //                     ty: Type::Num,
+        //                 },
+        //                 expr.span(),
+        //             ),
+        //         ))
+        //     }
+        //     res::InfixOp::Eq => todo!(),
+        //     res::InfixOp::Neq => todo!(),
+        //     res::InfixOp::Lt => todo!(),
+        //     res::InfixOp::Gt => todo!(),
+        //     res::InfixOp::Leq => todo!(),
+        //     res::InfixOp::Geq => todo!(),
+        // },
         res::Expr::Unit => Ok((
             vec![],
             Type::Unit,
@@ -867,17 +853,6 @@ fn apply_subst_expr(subst: Substitution, expr: Node<Expr>) -> Node<Expr> {
                 cond: apply_subst_expr(subst.clone(), cond),
                 then: apply_subst_expr(subst.clone(), then),
                 else_: apply_subst_expr(subst.clone(), else_),
-                ty: apply_subst(subst, ty),
-            },
-            Expr::Infix { op, lhs, rhs, ty } => Expr::Infix {
-                op,
-                lhs: apply_subst_expr(subst.clone(), lhs),
-                rhs: apply_subst_expr(subst.clone(), rhs),
-                ty: apply_subst(subst, ty),
-            },
-            Expr::Prefix { op, expr, ty } => Expr::Prefix {
-                op,
-                expr: apply_subst_expr(subst.clone(), expr),
                 ty: apply_subst(subst, ty),
             },
             Expr::Unit => Expr::Unit,

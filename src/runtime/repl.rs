@@ -3,7 +3,7 @@ use crate::{
         infer::{type_inference, Context},
         res::{self, resolve},
     },
-    runtime::tree_walk::{self, eval, Env},
+    runtime::tree_walk::{self, default_ctx, default_res_env, eval, op_ids, Env},
     syntax::parse::parse,
 };
 use std::io::{self, Write};
@@ -12,9 +12,10 @@ pub fn repl() {
     print!("miniml> ");
     io::stdout().flush().expect("failed to flush stdout");
     let mut src = String::new();
-    let res_env = res::Env::new();
-    let eval_env = tree_walk::Env::new();
-    let mut ctx = Context::new();
+    let ops = op_ids();
+    let res_env = default_res_env(ops.clone());
+    let eval_env = tree_walk::default_env(ops.clone());
+    let mut ctx = default_ctx(ops);
     loop {
         io::stdin()
             .read_line(&mut src)

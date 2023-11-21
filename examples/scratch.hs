@@ -62,14 +62,21 @@ fib n =
   | 1 -> 1
   | n -> fib (n - 1) + fib (n - 2)
 
-map f [] = []
-map f [x::xs] = f x :: map f xs
+map f xs = 
+  match xs with
+  | [] -> []
+  | [x::xs] -> f x :: map f xs
 
-data Node = Node Int (Maybe Node)
+class Node = Node Int (Maybe Node)
 
 binaryListToDecimal :: Node -> Int
 binaryListToDecimal (Node _ Nothing) = 0
 binaryListToDecimal (Node dataValue (Just rest)) = binaryListToDecimal rest * 2 + dataValue
+
+binaryListToDecimal (Node dataValue rest) = 
+  match rest with
+  | Nothing -> dataValue
+  | Just rest -> binaryListToDecimal rest * 2 + dataValue
 
 let y = 2 in (\x -> x + y) 1
 
@@ -153,21 +160,6 @@ class List (I = Nat) V <: Map I V
 class Point = 
   x : Num
   y : Num
-
-class Span = 
-  start : Num
-  end : Num
-
-class Node = 
-  span : Span
-
-class Expr <: Node 
-  = Ident String
-  | Literal Lit
-  | Call Expr [Expr]
-  | BinaryOp Expr Op Expr
-  | UnaryOp Op Expr
-
 
 -- Metaprogramming
 -- You can use the `quote` function to get the AST of an expression.

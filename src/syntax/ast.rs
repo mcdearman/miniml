@@ -73,6 +73,16 @@ pub enum PrefixOp {
     Not,
 }
 
+impl ToString for PrefixOp {
+    fn to_string(&self) -> String {
+        match self {
+            Self::Neg => "-",
+            Self::Not => "!",
+        }
+        .to_string()
+    }
+}
+
 impl From<Token> for PrefixOp {
     fn from(token: Token) -> Self {
         match token {
@@ -99,6 +109,28 @@ pub enum InfixOp {
     Geq,
     // And,
     // Or,
+}
+
+impl ToString for InfixOp {
+    fn to_string(&self) -> String {
+        match self {
+            Self::Add => "+",
+            Self::Sub => "-",
+            Self::Mul => "*",
+            Self::Div => "/",
+            Self::Mod => "%",
+            // Self::Pow => "^",
+            Self::Eq => "==",
+            Self::Neq => "!=",
+            Self::Lt => "<",
+            Self::Gt => ">",
+            Self::Leq => "<=",
+            Self::Geq => ">=",
+            // Self::And => "&&",
+            // Self::Or => "||",
+        }
+        .to_string()
+    }
 }
 
 impl From<Token> for InfixOp {

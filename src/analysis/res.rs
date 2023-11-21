@@ -129,75 +129,8 @@ pub enum Expr {
         then: Node<Self>,
         else_: Node<Self>,
     },
-    // Prefix {
-    //     op: Node<PrefixOp>,
-    //     expr: Node<Self>,
-    // },
-    // Infix {
-    //     op: Node<InfixOp>,
-    //     lhs: Node<Self>,
-    //     rhs: Node<Self>,
-    // },
     Unit,
 }
-
-// #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-// pub enum PrefixOp {
-//     Neg,
-//     Not,
-// }
-
-// impl From<ast::PrefixOp> for PrefixOp {
-//     fn from(op: ast::PrefixOp) -> Self {
-//         match op {
-//             ast::PrefixOp::Neg => Self::Neg,
-//             ast::PrefixOp::Not => Self::Not,
-//         }
-//     }
-// }
-
-// #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-// pub enum InfixOp {
-//     Add,
-//     Sub,
-//     Mul,
-//     Div,
-//     Mod,
-//     // Pow,
-//     Eq,
-//     Neq,
-//     Lt,
-//     Gt,
-//     Leq,
-//     Geq,
-//     // And,
-//     // Or,
-//     // Pipe,
-//     // Stmt,
-// }
-
-// impl From<ast::InfixOp> for InfixOp {
-//     fn from(op: ast::InfixOp) -> Self {
-//         match op {
-//             ast::InfixOp::Add => Self::Add,
-//             ast::InfixOp::Sub => Self::Sub,
-//             ast::InfixOp::Mul => Self::Mul,
-//             ast::InfixOp::Div => Self::Div,
-//             ast::InfixOp::Mod => Self::Mod,
-//             // ast::InfixOp::Pow => Self::Pow,
-//             ast::InfixOp::Eq => Self::Eq,
-//             ast::InfixOp::Neq => Self::Neq,
-//             ast::InfixOp::Lt => Self::Lt,
-//             ast::InfixOp::Gt => Self::Gt,
-//             ast::InfixOp::Leq => Self::Leq,
-//             ast::InfixOp::Geq => Self::Geq,
-//             // ast::InfixOp::And => Self::And,
-//             // ast::InfixOp::Or => Self::Or,
-//             // ast::InfixOp::Pipe => Self::Pipe,
-//             // ast::InfixOp::Stmt => Self::Stmt,
-//         }
-//     }
-// }
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Lit {
@@ -396,25 +329,32 @@ fn resolve_expr(env: Rc<RefCell<Env>>, expr: &Node<ast::Expr>, rec: bool) -> Res
             ))
         }
         ast::Expr::Prefix { op, expr } => {
-            let op = Node::new(op.inner().clone().into(), op.span());
+            let op_id = Node::new(
+                env.borrow_mut()
+                    .define_if_absent(InternedString::from(op.to_string())),
+                op.span(),
+            );
             let expr = resolve_expr(env, expr, rec)?;
             Ok(Node::new(
-                Expr::Prefix {
-                    op,
-                    expr: expr.clone(),
+                Expr::Apply {
+                    fun: Node::new(Expr::Ident(op_id), op.span()),
+                    args: vec![expr.clone()],
                 },
                 expr.span(),
             ))
         }
         ast::Expr::Infix { op, lhs, rhs } => {
-            let op = Node::new(op.inner().clone().into(), op.span());
+            let op_id = Node::new(
+                env.borrow_mut()
+                    .define_if_absent(InternedString::from(op.to_string())),
+                op.span(),
+            );
             let lhs = resolve_expr(env.clone(), lhs, rec)?;
             let rhs = resolve_expr(env, rhs, rec)?;
             Ok(Node::new(
-                Expr::Infix {
-                    op,
-                    lhs: lhs.clone(),
-                    rhs: rhs.clone(),
+                Expr::Apply {
+                    fun: Node::new(Expr::Ident(op_id), op.span()),
+                    args: vec![lhs.clone(), rhs.clone()],
                 },
                 expr.span(),
             ))
