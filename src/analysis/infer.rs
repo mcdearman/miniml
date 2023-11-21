@@ -48,7 +48,7 @@ pub enum Item {
     },
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Expr {
     Lit {
         lit: Lit,
@@ -182,13 +182,13 @@ impl Expr {
 //     }
 // }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub enum Lit {
     Num(Rational64),
     Bool(bool),
 }
 
-#[derive(Clone, PartialEq)]
+#[derive(Clone, PartialEq, Eq)]
 pub enum Type {
     Num,
     Bool,

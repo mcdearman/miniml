@@ -223,14 +223,34 @@ pub fn default_env(ops: HashMap<InternedString, UniqueId>) -> Rc<RefCell<Env>> {
             if args.len() != 2 {
                 return Err(format!("Expected 2 args, found {}", args.len()).into());
             }
-            Ok(Value::Lit(Lit::Bool(
                 match (args.get(0).unwrap(), args.get(1).unwrap()) {
-                    (Value::Lit(l), Value::Lit(r)) => l == r,
-                    (Value::Lambda { env, params, body }, Value::Lambda { .. }) => true,
+                    (Value::Lit(l), Value::Lit(r)) => 
+            Ok(Value::Lit(Lit::Bool(l == r))),
+                    (
+                        Value::Lambda {
+                            env: _,
+                            params: p1,
+                            body: b1,
+                        },
+                        Value::Lambda {
+                            env: _,
+                            params: p2,
+                            body: b2,
+                        },
+                    ) => {
+                        if p1.len() != p2.len() {
+                            return Ok(Value::Lit(Lit::Bool(false)));
+                        }
+                            for (p1, p2) in p1.iter().zip(p2) {
+                                if *p1.inner() != *p2.inner() {
+                                    return Ok(Value::Lit(Lit::Bool(false)));
+                                }
+                            }
+                            return Ok(Value::Lit(Lit::Bool(b1 == b2)))
+                    }
                     (Value::Unit, Value::Unit) => true,
                     _ => false,
                 },
-            )))
         }),
     );
     env
