@@ -5,6 +5,7 @@ use crate::{
     },
     util::{intern::InternedString, node::Node, unique_id::UniqueId},
 };
+use clap::builder::FalseyValueParser;
 use itertools::Itertools;
 use num_rational::Rational64;
 use std::{
@@ -13,6 +14,8 @@ use std::{
     fmt::{Debug, Display},
     rc::Rc,
 };
+
+use super::repl;
 
 pub type RuntimeError = InternedString;
 pub type RuntimeResult<T> = Result<T, RuntimeError>;
@@ -52,13 +55,17 @@ impl Env {
 
 impl Debug for Env {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.write_str("Env { ")?;
-        if let Some(_) = &self.parent {
-            f.write_str("parent: Some")
-        } else {
-            f.write_str("parent: None")
-        }?;
-        write!(f, ", bindings: {:?} }}", self.bindings)
+        let mut builder = f.debug_struct("Env");
+        builder.field(
+            "parent",
+            if let Some(_) = &self.parent {
+                &"Some"
+            } else {
+                &"None"
+            },
+        );
+        builder.field("bindings", &self.bindings);
+        builder.finish()
     }
 }
 
@@ -136,6 +143,56 @@ pub fn default_ctx(ops: HashMap<InternedString, UniqueId>) -> infer::Context {
     let var = TyVar::from(0);
     ctx.extend(
         ops.get(&InternedString::from("==")).unwrap().clone(),
+        infer::Scheme::new(
+            vec![var],
+            infer::Type::Lambda(
+                vec![infer::Type::Var(var), infer::Type::Var(var)],
+                Box::new(infer::Type::Bool),
+            ),
+        ),
+    );
+    ctx.extend(
+        ops.get(&InternedString::from("!=")).unwrap().clone(),
+        infer::Scheme::new(
+            vec![var],
+            infer::Type::Lambda(
+                vec![infer::Type::Var(var), infer::Type::Var(var)],
+                Box::new(infer::Type::Bool),
+            ),
+        ),
+    );
+    ctx.extend(
+        ops.get(&InternedString::from("<")).unwrap().clone(),
+        infer::Scheme::new(
+            vec![var],
+            infer::Type::Lambda(
+                vec![infer::Type::Var(var), infer::Type::Var(var)],
+                Box::new(infer::Type::Bool),
+            ),
+        ),
+    );
+    ctx.extend(
+        ops.get(&InternedString::from(">")).unwrap().clone(),
+        infer::Scheme::new(
+            vec![var],
+            infer::Type::Lambda(
+                vec![infer::Type::Var(var), infer::Type::Var(var)],
+                Box::new(infer::Type::Bool),
+            ),
+        ),
+    );
+    ctx.extend(
+        ops.get(&InternedString::from("<=")).unwrap().clone(),
+        infer::Scheme::new(
+            vec![var],
+            infer::Type::Lambda(
+                vec![infer::Type::Var(var), infer::Type::Var(var)],
+                Box::new(infer::Type::Bool),
+            ),
+        ),
+    );
+    ctx.extend(
+        ops.get(&InternedString::from(">=")).unwrap().clone(),
         infer::Scheme::new(
             vec![var],
             infer::Type::Lambda(
@@ -271,6 +328,111 @@ pub fn default_env(ops: HashMap<InternedString, UniqueId>) -> Rc<RefCell<Env>> {
             }
         }),
     );
+    env.borrow_mut().insert(
+        ops.get(&InternedString::from("!=")).unwrap().clone(),
+        Value::NativeFn(|args| {
+            if args.len() != 2 {
+                Err(format!("Expected 2 args, found {}", args.len()).into())
+            } else {
+                match (args.get(0).unwrap(), args.get(1).unwrap()) {
+                    (Value::Lit(l), Value::Lit(r)) => Ok(Value::Lit(Lit::Bool(l != r))),
+                    (
+                        Value::Lambda {
+                            env: _,
+                            params: p1,
+                            body: b1,
+                        },
+                        Value::Lambda {
+                            env: _,
+                            params: p2,
+                            body: b2,
+                        },
+                    ) => {
+                        if p1.len() != p2.len() {
+                            return Ok(Value::Lit(Lit::Bool(true)));
+                        } else {
+                            let mut p = true;
+                            for (p1, p2) in p1.iter().zip(p2) {
+                                p = *p1.inner() != *p2.inner();
+                                break;
+                            }
+                            Ok(Value::Lit(Lit::Bool(b1 != b2 || p)))
+                        }
+                    }
+                    (Value::Unit, Value::Unit) => Ok(Value::Lit(Lit::Bool(false))),
+                    _ => Ok(Value::Lit(Lit::Bool(true))),
+                }
+            }
+        }),
+    );
+    env.borrow_mut().insert(
+        ops.get(&InternedString::from("<")).unwrap().clone(),
+        Value::NativeFn(|args| {
+            if args.len() != 2 {
+                Err(format!("Expected 2 args, found {}", args.len()).into())
+            } else {
+                match (args.get(0).unwrap(), args.get(1).unwrap()) {
+                    (Value::Lit(Lit::Num(l)), Value::Lit(Lit::Num(r))) => {
+                        Ok(Value::Lit(Lit::Bool(l < r)))
+                    }
+                    _ => {
+                        return Err(format!("Expected number, found {:?}", args).into());
+                    }
+                }
+            }
+        }),
+    );
+    env.borrow_mut().insert(
+        ops.get(&InternedString::from(">")).unwrap().clone(),
+        Value::NativeFn(|args| {
+            if args.len() != 2 {
+                Err(format!("Expected 2 args, found {}", args.len()).into())
+            } else {
+                match (args.get(0).unwrap(), args.get(1).unwrap()) {
+                    (Value::Lit(Lit::Num(l)), Value::Lit(Lit::Num(r))) => {
+                        Ok(Value::Lit(Lit::Bool(l > r)))
+                    }
+                    _ => {
+                        return Err(format!("Expected number, found {:?}", args).into());
+                    }
+                }
+            }
+        }),
+    );
+    env.borrow_mut().insert(
+        ops.get(&InternedString::from("<=")).unwrap().clone(),
+        Value::NativeFn(|args| {
+            if args.len() != 2 {
+                Err(format!("Expected 2 args, found {}", args.len()).into())
+            } else {
+                match (args.get(0).unwrap(), args.get(1).unwrap()) {
+                    (Value::Lit(Lit::Num(l)), Value::Lit(Lit::Num(r))) => {
+                        Ok(Value::Lit(Lit::Bool(l <= r)))
+                    }
+                    _ => {
+                        return Err(format!("Expected number, found {:?}", args).into());
+                    }
+                }
+            }
+        }),
+    );
+    env.borrow_mut().insert(
+        ops.get(&InternedString::from(">=")).unwrap().clone(),
+        Value::NativeFn(|args| {
+            if args.len() != 2 {
+                Err(format!("Expected 2 args, found {}", args.len()).into())
+            } else {
+                match (args.get(0).unwrap(), args.get(1).unwrap()) {
+                    (Value::Lit(Lit::Num(l)), Value::Lit(Lit::Num(r))) => {
+                        Ok(Value::Lit(Lit::Bool(l >= r)))
+                    }
+                    _ => {
+                        return Err(format!("Expected number, found {:?}", args).into());
+                    }
+                }
+            }
+        }),
+    );
     env
 }
 
@@ -315,6 +477,7 @@ impl Display for Lit {
 
 pub fn eval<'src>(
     src: &'src str,
+    repl_src: &'src str,
     env: Rc<RefCell<Env>>,
     root: &Node<Root>,
 ) -> RuntimeResult<Value> {
@@ -322,10 +485,10 @@ pub fn eval<'src>(
     for item in &root.items {
         match item.inner().clone() {
             Item::Expr(expr) => {
-                val = eval_expr(src, env.clone(), Node::new(expr, item.span()))?;
+                val = eval_expr(src, repl_src, env.clone(), Node::new(expr, item.span()))?;
             }
             Item::Def { name, expr, .. } => {
-                let value = eval_expr(src, env.clone(), expr)?;
+                let value = eval_expr(src, repl_src, env.clone(), expr)?;
                 env.borrow_mut().insert(name.inner().clone(), value);
                 val = Value::Unit;
             }
@@ -336,7 +499,7 @@ pub fn eval<'src>(
                 ty,
             } => {
                 let value = Value::Lambda {
-                    env: Env::new_with_parent(env.clone()),
+                    env: env.clone(),
                     params,
                     body: body.clone(),
                 };
@@ -351,6 +514,7 @@ pub fn eval<'src>(
 
 fn eval_expr<'src>(
     src: &'src str,
+    repl_src: &'src str,
     mut env: Rc<RefCell<Env>>,
     mut expr: Node<Expr>,
 ) -> RuntimeResult<Value> {
@@ -366,17 +530,17 @@ fn eval_expr<'src>(
                     value
                 } else {
                     return Err(
-                        format!("Identifier '{}' not found", src[name.span()].trim()).into(),
+                        format!("Identifier '{}' not found", repl_src[name.span()].trim()).into(),
                     );
                 }
             }
             Expr::Lambda { params, body, .. } => Value::Lambda {
-                env: env.clone(),
+                env: Env::new_with_parent(env.clone()),
                 params: params.clone(),
                 body: body.clone(),
             },
             Expr::Apply { fun, args, .. } => {
-                let fun = eval_expr(src, env.clone(), fun)?;
+                let fun = eval_expr(src, repl_src, env.clone(), fun)?;
                 // println!("fun: {:?}", fun);
                 match fun {
                     Value::Lambda {
@@ -386,11 +550,12 @@ fn eval_expr<'src>(
                     } => {
                         let arg_env = Env::new_with_parent(lam_env.clone());
                         for (param, arg) in params.iter().zip(args) {
-                            arg_env
-                                .borrow_mut()
-                                .insert(param.inner().clone(), eval_expr(src, env.clone(), arg)?);
+                            arg_env.borrow_mut().insert(
+                                param.inner().clone(),
+                                eval_expr(src, repl_src, env.clone(), arg)?,
+                            );
                         }
-                        // eval_expr(src, env.clone(), &body)?
+                        // println!("arg_env: {:#?}", arg_env.borrow());
 
                         expr = body;
                         env = arg_env;
@@ -398,7 +563,7 @@ fn eval_expr<'src>(
                     }
                     Value::NativeFn(fun) => fun(args
                         .into_iter()
-                        .map(|e| eval_expr(src, env.clone(), e))
+                        .map(|e| eval_expr(src, repl_src, env.clone(), e))
                         .try_collect()?)?,
                     _ => {
                         return Err(format!("Expected lambda, found {:?}", fun).into());
@@ -408,9 +573,9 @@ fn eval_expr<'src>(
             Expr::Let {
                 name, expr, body, ..
             } => {
-                let value = eval_expr(src, env.clone(), expr)?;
+                let value = eval_expr(src, repl_src, env.clone(), expr)?;
                 env.borrow_mut().insert(name.inner().clone(), value);
-                eval_expr(src, env, body)?
+                eval_expr(src, repl_src, env, body)?
             }
             Expr::Fn {
                 name,
@@ -425,21 +590,20 @@ fn eval_expr<'src>(
                     body: expr.clone(),
                 };
                 env.borrow_mut().insert(name.inner().clone(), value);
-                eval_expr(src, env, body)?
+                eval_expr(src, repl_src, env, body)?
             }
             Expr::If {
                 cond, then, else_, ..
             } => {
-                let cond = eval_expr(src, env.clone(), cond)?;
+                let cond = eval_expr(src, repl_src, env.clone(), cond)?;
                 match cond {
-                    Value::Lit(Lit::Bool(b)) => {
-                        if b {
-                            let t = eval_expr(src, env.clone(), then)?;
-                            t
-                        } else {
-                            let e = eval_expr(src, env.clone(), else_)?;
-                            e
-                        }
+                    Value::Lit(Lit::Bool(true)) => {
+                        expr = then;
+                        continue 'tco;
+                    }
+                    Value::Lit(Lit::Bool(false)) => {
+                        expr = else_;
+                        continue 'tco;
                     }
                     _ => {
                         return Err(format!("Expected bool, found {:?}", cond).into());

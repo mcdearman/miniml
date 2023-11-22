@@ -13,6 +13,7 @@ pub fn repl() {
     print!("miniml> ");
     io::stdout().flush().expect("failed to flush stdout");
     let mut src = String::new();
+    let mut full_src = String::new();
     let ops = op_ids();
     let res_env = default_res_env(ops.clone());
     let eval_env = tree_walk::default_env(ops.clone());
@@ -26,30 +27,31 @@ pub fn repl() {
         io::stdin()
             .read_line(&mut src)
             .expect("failed to read from stdin");
+        full_src.push_str(&src);
         match src.trim() {
             "env" => {
-                println!("{:?}", eval_env.clone());
+                println!("{:#?}", eval_env.borrow());
                 src.clear();
                 print!("\n> ");
                 io::stdout().flush().expect("failed to flush stdout");
                 continue;
             }
             "ast" => {
-                println!("{:?}", ast.clone());
+                println!("{:?}", ast.clone().unwrap());
                 src.clear();
                 print!("\n> ");
                 io::stdout().flush().expect("failed to flush stdout");
                 continue;
             }
             "res" => {
-                println!("{:?}", res.clone());
+                println!("{:?}", res.clone().unwrap());
                 src.clear();
                 print!("\n> ");
                 io::stdout().flush().expect("failed to flush stdout");
                 continue;
             }
             "tast" => {
-                println!("{:?}", tast.clone());
+                println!("{:?}", tast.clone().unwrap());
                 src.clear();
                 print!("\n> ");
                 io::stdout().flush().expect("failed to flush stdout");
@@ -89,7 +91,7 @@ pub fn repl() {
             Ok((root, new_ctx)) => {
                 // println!("TAST: {:?}", root);
                 tast = Some(root.clone());
-                match eval(&src, eval_env.clone(), &root) {
+                match eval(&src, &full_src, eval_env.clone(), &root) {
                     Ok(val) => {
                         ctx = new_ctx;
                         println!("{}", val)
