@@ -1,10 +1,10 @@
 use crate::{
     analysis::{
-        infer::{self, type_inference, Context, Root},
+        infer::{self, type_inference},
         res::{self, resolve},
     },
-    runtime::tree_walk::{self, default_ctx, default_res_env, eval, op_ids, Env},
-    syntax::{self, ast, parse::parse},
+    runtime::tree_walk::{self, default_ctx, default_res_env, eval, op_ids},
+    syntax::{ast, parse::parse},
     util::node::Node,
 };
 use std::io::{self, Write};

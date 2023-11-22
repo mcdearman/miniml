@@ -6,7 +6,6 @@ use crate::{
     util::{intern::InternedString, node::Node, unique_id::UniqueId},
 };
 use itertools::Itertools;
-use num_complex::ComplexFloat;
 use num_rational::Rational64;
 use std::{
     cell::RefCell,
