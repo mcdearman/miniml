@@ -117,14 +117,13 @@ pub fn default_ctx(ops: HashMap<InternedString, UniqueId>) -> infer::Context {
             ),
         ),
     );
-    let lhs = TyVar::fresh();
-    let rhs = TyVar::fresh();
+    let var = TyVar::from(0);
     ctx.extend(
         ops.get(&InternedString::from("==")).unwrap().clone(),
         infer::Scheme::new(
-            vec![lhs, rhs],
+            vec![var],
             infer::Type::Lambda(
-                vec![infer::Type::Var(lhs), infer::Type::Var(rhs)],
+                vec![infer::Type::Var(var), infer::Type::Var(var)],
                 Box::new(infer::Type::Bool),
             ),
         ),
@@ -221,11 +220,10 @@ pub fn default_env(ops: HashMap<InternedString, UniqueId>) -> Rc<RefCell<Env>> {
         ops.get(&InternedString::from("==")).unwrap().clone(),
         Value::NativeFn(|args| {
             if args.len() != 2 {
-                return Err(format!("Expected 2 args, found {}", args.len()).into());
-            }
+                Err(format!("Expected 2 args, found {}", args.len()).into())
+            } else {
                 match (args.get(0).unwrap(), args.get(1).unwrap()) {
-                    (Value::Lit(l), Value::Lit(r)) => 
-            Ok(Value::Lit(Lit::Bool(l == r))),
+                    (Value::Lit(l), Value::Lit(r)) => Ok(Value::Lit(Lit::Bool(l == r))),
                     (
                         Value::Lambda {
                             env: _,
@@ -240,17 +238,19 @@ pub fn default_env(ops: HashMap<InternedString, UniqueId>) -> Rc<RefCell<Env>> {
                     ) => {
                         if p1.len() != p2.len() {
                             return Ok(Value::Lit(Lit::Bool(false)));
-                        }
+                        } else {
+                            let mut p = true;
                             for (p1, p2) in p1.iter().zip(p2) {
-                                if *p1.inner() != *p2.inner() {
-                                    return Ok(Value::Lit(Lit::Bool(false)));
-                                }
+                                p = *p1.inner() != *p2.inner();
+                                break;
                             }
-                            return Ok(Value::Lit(Lit::Bool(b1 == b2)))
+                            Ok(Value::Lit(Lit::Bool(b1 == b2 && p)))
+                        }
                     }
-                    (Value::Unit, Value::Unit) => true,
-                    _ => false,
-                },
+                    (Value::Unit, Value::Unit) => Ok(Value::Lit(Lit::Bool(true))),
+                    _ => Ok(Value::Lit(Lit::Bool(false))),
+                }
+            }
         }),
     );
     env
@@ -318,11 +318,12 @@ pub fn eval<'src>(
                 ty,
             } => {
                 let value = Value::Lambda {
-                    env: env.clone(),
+                    env: Env::new_with_parent(env.clone()),
                     params,
                     body: body.clone(),
                 };
-                env.borrow_mut().insert(name.inner().clone(), value);
+                env.borrow_mut().insert(name.inner().clone(), value.clone());
+                // println!("val: {:?}", value);
                 val = Value::Unit;
             }
         }

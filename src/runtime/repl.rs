@@ -16,10 +16,23 @@ pub fn repl() {
     let res_env = default_res_env(ops.clone());
     let eval_env = tree_walk::default_env(ops.clone());
     let mut ctx = default_ctx(ops);
+    // println!("repl ctx: {:?}", ctx);
+    // println!("env: {:?}", eval_env.clone());
     loop {
         io::stdin()
             .read_line(&mut src)
             .expect("failed to read from stdin");
+        match src.trim() {
+            "env" => {
+                println!("env: {:?}", eval_env.clone());
+                src.clear();
+                print!("\n> ");
+                io::stdout().flush().expect("failed to flush stdout");
+                continue;
+            }
+            "exit" => break,
+            _ => (),
+        }
         let (ast, errors) = parse(&src);
         // println!("AST: {:?}", ast);
         if !errors.is_empty() {
@@ -38,9 +51,9 @@ pub fn repl() {
             continue;
         }
         // println!("RES: {:?}", res);
-        match type_inference(&mut ctx, res.unwrap()) {
+        match type_inference(&*src, &mut ctx, res.unwrap()) {
             Ok((root, new_ctx)) => {
-                println!("TAST: {:?}", root);
+                // println!("TAST: {:?}", root);
                 match eval(&src, eval_env.clone(), &root) {
                     Ok(val) => {
                         ctx = new_ctx;

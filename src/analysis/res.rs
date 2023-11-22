@@ -330,8 +330,9 @@ fn resolve_expr(env: Rc<RefCell<Env>>, expr: &Node<ast::Expr>, rec: bool) -> Res
         }
         ast::Expr::Prefix { op, expr } => {
             let op_id = Node::new(
-                env.borrow_mut()
-                    .define_if_absent(InternedString::from(op.to_string())),
+                env.borrow()
+                    .find(&InternedString::from(op.to_string()))
+                    .unwrap(),
                 op.span(),
             );
             let expr = resolve_expr(env, expr, rec)?;
@@ -345,8 +346,9 @@ fn resolve_expr(env: Rc<RefCell<Env>>, expr: &Node<ast::Expr>, rec: bool) -> Res
         }
         ast::Expr::Infix { op, lhs, rhs } => {
             let op_id = Node::new(
-                env.borrow_mut()
-                    .define_if_absent(InternedString::from(op.to_string())),
+                env.borrow()
+                    .find(&InternedString::from(op.to_string()))
+                    .unwrap(),
                 op.span(),
             );
             let lhs = resolve_expr(env.clone(), lhs, rec)?;
