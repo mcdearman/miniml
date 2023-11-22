@@ -1,10 +1,11 @@
 use crate::{
     analysis::{
-        infer::{type_inference, Context},
+        infer::{self, type_inference, Context, Root},
         res::{self, resolve},
     },
     runtime::tree_walk::{self, default_ctx, default_res_env, eval, op_ids, Env},
-    syntax::parse::parse,
+    syntax::{self, ast, parse::parse},
+    util::node::Node,
 };
 use std::io::{self, Write};
 
@@ -16,6 +17,9 @@ pub fn repl() {
     let res_env = default_res_env(ops.clone());
     let eval_env = tree_walk::default_env(ops.clone());
     let mut ctx = default_ctx(ops);
+    let mut ast: Option<Node<ast::Root>> = None;
+    let mut res: Option<Node<res::Root>> = None;
+    let mut tast: Option<Node<infer::Root>> = None;
     // println!("repl ctx: {:?}", ctx);
     // println!("env: {:?}", eval_env.clone());
     loop {
@@ -24,7 +28,35 @@ pub fn repl() {
             .expect("failed to read from stdin");
         match src.trim() {
             "env" => {
-                println!("env: {:?}", eval_env.clone());
+                println!("{:?}", eval_env.clone());
+                src.clear();
+                print!("\n> ");
+                io::stdout().flush().expect("failed to flush stdout");
+                continue;
+            }
+            "ast" => {
+                println!("{:?}", ast.clone());
+                src.clear();
+                print!("\n> ");
+                io::stdout().flush().expect("failed to flush stdout");
+                continue;
+            }
+            "res" => {
+                println!("{:?}", res.clone());
+                src.clear();
+                print!("\n> ");
+                io::stdout().flush().expect("failed to flush stdout");
+                continue;
+            }
+            "tast" => {
+                println!("{:?}", tast.clone());
+                src.clear();
+                print!("\n> ");
+                io::stdout().flush().expect("failed to flush stdout");
+                continue;
+            }
+            "ctx" => {
+                println!("{:?}", ctx);
                 src.clear();
                 print!("\n> ");
                 io::stdout().flush().expect("failed to flush stdout");
@@ -33,7 +65,8 @@ pub fn repl() {
             "exit" => break,
             _ => (),
         }
-        let (ast, errors) = parse(&src);
+        let (p, errors) = parse(&src);
+        ast = p;
         // println!("AST: {:?}", ast);
         if !errors.is_empty() {
             println!("parse errors: {:?}", errors);
@@ -42,7 +75,8 @@ pub fn repl() {
             io::stdout().flush().expect("failed to flush stdout");
             continue;
         }
-        let (res, errors) = resolve(res_env.clone(), &ast.unwrap());
+        let (r, errors) = resolve(res_env.clone(), &ast.clone().unwrap());
+        res = r;
         if !errors.is_empty() {
             println!("resolve errors: {:?}", errors);
             src.clear();
@@ -51,9 +85,10 @@ pub fn repl() {
             continue;
         }
         // println!("RES: {:?}", res);
-        match type_inference(&*src, &mut ctx, res.unwrap()) {
+        match type_inference(&*src, &mut ctx, res.clone().unwrap()) {
             Ok((root, new_ctx)) => {
                 // println!("TAST: {:?}", root);
+                tast = Some(root.clone());
                 match eval(&src, eval_env.clone(), &root) {
                     Ok(val) => {
                         ctx = new_ctx;
