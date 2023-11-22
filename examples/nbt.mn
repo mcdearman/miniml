@@ -1,19 +1,37 @@
-pub const TAG_END = 0
-pub const TAG_BYTE = 1
-pub const TAG_SHORT = 2
-pub const TAG_INT = 3
-pub const TAG_LONG = 4
-pub const TAG_FLOAT = 5
-pub const TAG_DOUBLE = 6
-pub const TAG_BYTE_ARRAY = 7
-pub const TAG_STRING = 8
-pub const TAG_LIST = 9
-pub const TAG_COMPOUND = 10
-pub const TAG_INT_ARRAY = 11
-pub const TAG_LONG_ARRAY = 12
+class Tag 
+  = End
+  | Byte
+  | Short
+  | Int
+  | Long
+  | Float
+  | Double
+  | ByteArray
+  | String
+  | List
+  | Compound
+  | IntArray
+  | LongArray
 
-pub struct Node {
-  pub name,
-  pub tag,
-  pub value,
-}
+impl Tag =
+  fn from_byte(byte: u8) -> Tag =
+    match byte:
+      0 => End
+      1 => Byte
+      2 => Short
+      3 => Int
+      4 => Long
+      5 => Float
+      6 => Double
+      7 => ByteArray
+      8 => String
+      9 => List
+      10 => Compound
+      11 => IntArray
+      12 => LongArray
+      _ => panic!("Invalid tag type")
+
+class Node =
+  name : String
+  tag : Tag
+  val : Option[Value]

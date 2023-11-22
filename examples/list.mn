@@ -1,7 +1,13 @@
 -- A pair list is either empty or a pair of an element and a pair list.
-pub type List 'a
-  = Node { data : 'a, next : List 'a } 
+pub class List T
+  = Pair (head : T) (tail : List T)
   | Nil
+
+impl T Add for List T =
+  fn (xs ys : List T) -> List T = 
+    match xs with
+      List::Pair x -> Pair x (xs + ys)
+      List::Nil -> ys
 
 -- [len] takes a list [xs] and returns the number of elements in [xs].
 pub fn len (xs : List 'a) -> u64 =
