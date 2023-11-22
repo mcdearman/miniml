@@ -8,12 +8,17 @@ use crate::{
 use itertools::Itertools;
 use num_complex::ComplexFloat;
 use num_rational::Rational64;
-use std::{cell::RefCell, collections::HashMap, fmt::Display, rc::Rc};
+use std::{
+    cell::RefCell,
+    collections::HashMap,
+    fmt::{Debug, Display},
+    rc::Rc,
+};
 
 pub type RuntimeError = InternedString;
 pub type RuntimeResult<T> = Result<T, RuntimeError>;
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Clone, PartialEq)]
 pub struct Env {
     parent: Option<Rc<RefCell<Env>>>,
     bindings: HashMap<UniqueId, Value>,
@@ -43,6 +48,18 @@ impl Env {
             .parent
             .as_ref()
             .and_then(|parent| parent.borrow().get(id).clone()))
+    }
+}
+
+impl Debug for Env {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str("Env { ")?;
+        if let Some(_) = &self.parent {
+            f.write_str("parent: Some")
+        } else {
+            f.write_str("parent: None")
+        }?;
+        write!(f, ", bindings: {:?} }}", self.bindings)
     }
 }
 
@@ -204,16 +221,18 @@ pub fn default_env(ops: HashMap<InternedString, UniqueId>) -> Rc<RefCell<Env>> {
     env.borrow_mut().insert(
         ops.get(&InternedString::from("%")).unwrap().clone(),
         Value::NativeFn(|args| {
-            let mut sum = Rational64::new(1, 1);
-            for arg in args {
-                match arg {
-                    Value::Lit(Lit::Num(num)) => sum %= num,
+            if args.len() != 2 {
+                return Err(format!("Expected 2 args, found {}", args.len()).into());
+            } else {
+                match (args.get(0).unwrap(), args.get(1).unwrap()) {
+                    (Value::Lit(Lit::Num(l)), Value::Lit(Lit::Num(r))) => {
+                        Ok(Value::Lit(Lit::Num(l % r)))
+                    }
                     _ => {
-                        return Err(format!("Expected number, found {:?}", arg).into());
+                        return Err(format!("Expected number, found {:?}", args).into());
                     }
                 }
             }
-            Ok(Value::Lit(Lit::Num(sum)))
         }),
     );
     env.borrow_mut().insert(
@@ -353,13 +372,13 @@ fn eval_expr<'src>(
                 }
             }
             Expr::Lambda { params, body, .. } => Value::Lambda {
-                env: Env::new_with_parent(env.clone()),
+                env: env.clone(),
                 params: params.clone(),
                 body: body.clone(),
             },
             Expr::Apply { fun, args, .. } => {
                 let fun = eval_expr(src, env.clone(), fun)?;
-                println!("fun: {:?}", fun);
+                // println!("fun: {:?}", fun);
                 match fun {
                     Value::Lambda {
                         env: lam_env,
@@ -416,9 +435,11 @@ fn eval_expr<'src>(
                 match cond {
                     Value::Lit(Lit::Bool(b)) => {
                         if b {
-                            eval_expr(src, env.clone(), then)?
+                            let t = eval_expr(src, env.clone(), then)?;
+                            t
                         } else {
-                            eval_expr(src, env.clone(), else_)?
+                            let e = eval_expr(src, env.clone(), else_)?;
+                            e
                         }
                     }
                     _ => {
@@ -426,164 +447,6 @@ fn eval_expr<'src>(
                     }
                 }
             }
-            //     Expr::Infix { op, lhs, rhs, .. } => match op.inner() {
-            //         infer::InfixOp::Add => {
-            //             let lhs = eval_expr(src, env.clone(), lhs)?;
-            //             let rhs = eval_expr(src, env, rhs)?;
-            //             match (&lhs, &rhs) {
-            //                 (&Value::Lit(Lit::Num(lhs)), &Value::Lit(Lit::Num(rhs))) => {
-            //                     Value::Lit(Lit::Num(lhs + rhs))
-            //                 }
-            //                 _ => {
-            //                     return Err(
-            //                         format!("Expected numbers, found {:?} and {:?}", lhs, rhs).into()
-            //                     );
-            //                 }
-            //             }
-            //         }
-            //         infer::InfixOp::Sub => {
-            //             let lhs = eval_expr(src, env.clone(), lhs)?;
-            //             let rhs = eval_expr(src, env, rhs)?;
-            //             match (&lhs, &rhs) {
-            //                 (&Value::Lit(Lit::Num(lhs)), &Value::Lit(Lit::Num(rhs))) => {
-            //                     Value::Lit(Lit::Num(lhs - rhs))
-            //                 }
-            //                 _ => {
-            //                     return Err(
-            //                         format!("Expected numbers, found {:?} and {:?}", lhs, rhs).into()
-            //                     );
-            //                 }
-            //             }
-            //         }
-            //         infer::InfixOp::Mul => {
-            //             let lhs = eval_expr(src, env.clone(), lhs)?;
-            //             let rhs = eval_expr(src, env, rhs)?;
-            //             match (&lhs, &rhs) {
-            //                 (&Value::Lit(Lit::Num(lhs)), &Value::Lit(Lit::Num(rhs))) => {
-            //                     Value::Lit(Lit::Num(lhs * rhs))
-            //                 }
-            //                 _ => {
-            //                     return Err(
-            //                         format!("Expected numbers, found {:?} and {:?}", lhs, rhs).into()
-            //                     );
-            //                 }
-            //             }
-            //         }
-            //         infer::InfixOp::Div => {
-            //             let lhs = eval_expr(src, env.clone(), lhs)?;
-            //             let rhs = eval_expr(src, env, rhs)?;
-            //             match (&lhs, &rhs) {
-            //                 (&Value::Lit(Lit::Num(lhs)), &Value::Lit(Lit::Num(rhs))) => {
-            //                     Value::Lit(Lit::Num(lhs / rhs))
-            //                 }
-            //                 _ => {
-            //                     return Err(
-            //                         format!("Expected numbers, found {:?} and {:?}", lhs, rhs).into()
-            //                     );
-            //                 }
-            //             }
-            //         }
-            //         infer::InfixOp::Mod => {
-            //             let lhs = eval_expr(src, env.clone(), lhs)?;
-            //             let rhs = eval_expr(src, env, rhs)?;
-            //             match (&lhs, &rhs) {
-            //                 (&Value::Lit(Lit::Num(lhs)), &Value::Lit(Lit::Num(rhs))) => {
-            //                     Value::Lit(Lit::Num(lhs % rhs))
-            //                 }
-            //                 _ => {
-            //                     return Err(
-            //                         format!("Expected numbers, found {:?} and {:?}", lhs, rhs).into()
-            //                     );
-            //                 }
-            //             }
-            //         }
-            //         infer::InfixOp::Eq => {
-            //             let lhs = eval_expr(src, env.clone(), lhs)?;
-            //             let rhs = eval_expr(src, env, rhs)?;
-            //             Value::Lit(Lit::Bool(lhs == rhs))
-            //         }
-            //         infer::InfixOp::Neq => {
-            //             let lhs = eval_expr(src, env.clone(), lhs)?;
-            //             let rhs = eval_expr(src, env, rhs)?;
-            //             Value::Lit(Lit::Bool(lhs != rhs))
-            //         }
-            //         infer::InfixOp::Lt => {
-            //             let lhs = eval_expr(src, env.clone(), lhs)?;
-            //             let rhs = eval_expr(src, env, rhs)?;
-            //             match (&lhs, &rhs) {
-            //                 (&Value::Lit(Lit::Num(lhs)), &Value::Lit(Lit::Num(rhs))) => {
-            //                     Value::Lit(Lit::Bool(lhs < rhs))
-            //                 }
-            //                 _ => {
-            //                     return Err(
-            //                         format!("Expected numbers, found {:?} and {:?}", lhs, rhs).into()
-            //                     );
-            //                 }
-            //             }
-            //         }
-            //         infer::InfixOp::Gt => {
-            //             let lhs = eval_expr(src, env.clone(), lhs)?;
-            //             let rhs = eval_expr(src, env, rhs)?;
-            //             match (&lhs, &rhs) {
-            //                 (&Value::Lit(Lit::Num(lhs)), &Value::Lit(Lit::Num(rhs))) => {
-            //                     Value::Lit(Lit::Bool(lhs > rhs))
-            //                 }
-            //                 _ => {
-            //                     return Err(
-            //                         format!("Expected numbers, found {:?} and {:?}", lhs, rhs).into()
-            //                     );
-            //                 }
-            //             }
-            //         }
-            //         infer::InfixOp::Leq => {
-            //             let lhs = eval_expr(src, env.clone(), lhs)?;
-            //             let rhs = eval_expr(src, env, rhs)?;
-            //             match (&lhs, &rhs) {
-            //                 (&Value::Lit(Lit::Num(lhs)), &Value::Lit(Lit::Num(rhs))) => {
-            //                     Value::Lit(Lit::Bool(lhs <= rhs))
-            //                 }
-            //                 _ => {
-            //                     return Err(
-            //                         format!("Expected numbers, found {:?} and {:?}", lhs, rhs).into()
-            //                     );
-            //                 }
-            //             }
-            //         }
-            //         infer::InfixOp::Geq => {
-            //             let lhs = eval_expr(src, env.clone(), lhs)?;
-            //             let rhs = eval_expr(src, env, rhs)?;
-            //             match (&lhs, &rhs) {
-            //                 (&Value::Lit(Lit::Num(lhs)), &Value::Lit(Lit::Num(rhs))) => {
-            //                     Value::Lit(Lit::Bool(lhs >= rhs))
-            //                 }
-            //                 _ => {
-            //                     return Err(
-            //                         format!("Expected numbers, found {:?} and {:?}", lhs, rhs).into()
-            //                     );
-            //                 }
-            //             }
-            //         }
-            //     },
-            //     Expr::Prefix { op, expr, .. } => match op.inner() {
-            //         infer::PrefixOp::Neg => {
-            //             let val = eval_expr(src, env, expr)?;
-            //             match val {
-            //                 Value::Lit(Lit::Num(num)) => Value::Lit(Lit::Num(-num)),
-            //                 _ => {
-            //                     return Err(format!("Expected number, found {:?}", val).into());
-            //                 }
-            //             }
-            //         }
-            //         infer::PrefixOp::Not => {
-            //             let val = eval_expr(src, env, expr)?;
-            //             match val {
-            //                 Value::Lit(Lit::Bool(b)) => Value::Lit(Lit::Bool(!b)),
-            //                 _ => {
-            //                     return Err(format!("Expected bool, found {:?}", val).into());
-            //                 }
-            //             }
-            //         }
-            //     },
             Expr::Unit => Value::Unit,
         };
 
