@@ -3,7 +3,7 @@ use crate::{
         infer::{self, type_inference},
         res::{self, resolve},
     },
-    runtime::tree_walk::{self, default_ctx, default_res_env, eval, op_ids},
+    runtime::tree_walk::{self, default_ctx, default_res_env, eval, primitive_ids},
     syntax::{ast, parse::parse},
     util::node::Node,
 };
@@ -14,10 +14,10 @@ pub fn repl() {
     io::stdout().flush().expect("failed to flush stdout");
     let mut src = String::new();
     let mut full_src = String::new();
-    let ops = op_ids();
-    let res_env = default_res_env(ops.clone());
-    let eval_env = tree_walk::default_env(ops.clone());
-    let mut ctx = default_ctx(ops);
+    let prims = primitive_ids();
+    let res_env = default_res_env(prims.clone());
+    let eval_env = tree_walk::default_env(prims.clone());
+    let mut ctx = default_ctx(prims);
     let mut ast: Option<Node<ast::Root>> = None;
     let mut res: Option<Node<res::Root>> = None;
     let mut tast: Option<Node<infer::Root>> = None;

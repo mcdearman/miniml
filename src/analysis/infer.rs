@@ -725,7 +725,29 @@ fn infer_expr<'src>(
                 ),
             ))
         }
-        res::Expr::Let { name, expr, body } => todo!(),
+        res::Expr::Let { name, expr, body } => {
+            let (cs1, t1, mut ctx1, e1) = infer_expr(src, ctx, expr.clone())?;
+            let scheme = generalize(ctx1.clone(), t1.clone());
+            let mut tmp_ctx = ctx1.clone();
+            tmp_ctx.extend(*name, scheme);
+            let (cs2, t2, ctx2, e2) = infer_expr(src, &mut tmp_ctx, body)?;
+            ctx1 = ctx2.union(ctx1);
+            let cs = cs1.into_iter().chain(cs2.into_iter()).collect::<Vec<_>>();
+            Ok((
+                cs,
+                t2.clone(),
+                ctx1,
+                Node::new(
+                    Expr::Let {
+                        name,
+                        expr: e1,
+                        body: e2,
+                        ty: t2,
+                    },
+                    expr.span(),
+                ),
+            ))
+        }
         res::Expr::Fn {
             name,
             params,

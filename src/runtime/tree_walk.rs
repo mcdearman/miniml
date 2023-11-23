@@ -69,7 +69,7 @@ impl Debug for Env {
     }
 }
 
-pub fn op_ids() -> HashMap<InternedString, UniqueId> {
+pub fn primitive_ids() -> HashMap<InternedString, UniqueId> {
     let mut ids = HashMap::new();
     ids.insert(InternedString::from("+"), UniqueId::gen());
     ids.insert(InternedString::from("-"), UniqueId::gen());
@@ -85,6 +85,7 @@ pub fn op_ids() -> HashMap<InternedString, UniqueId> {
     ids.insert(InternedString::from("!"), UniqueId::gen());
     ids.insert(InternedString::from("&&"), UniqueId::gen());
     ids.insert(InternedString::from("||"), UniqueId::gen());
+    ids.insert(InternedString::from("print"), UniqueId::gen());
     ids
 }
 
@@ -201,12 +202,22 @@ pub fn default_ctx(ops: HashMap<InternedString, UniqueId>) -> infer::Context {
             ),
         ),
     );
+    ctx.extend(
+        ops.get(&InternedString::from("print")).unwrap().clone(),
+        infer::Scheme::new(
+            vec![],
+            infer::Type::Lambda(
+                vec![infer::Type::Var(TyVar::from(0))],
+                Box::new(infer::Type::Unit),
+            ),
+        ),
+    );
     ctx
 }
 
-pub fn default_res_env(ops: HashMap<InternedString, UniqueId>) -> Rc<RefCell<res::Env>> {
+pub fn default_res_env(prims: HashMap<InternedString, UniqueId>) -> Rc<RefCell<res::Env>> {
     let env = res::Env::new();
-    for (name, id) in ops {
+    for (name, id) in prims {
         env.borrow_mut().insert(name, id);
     }
     env
@@ -441,6 +452,17 @@ pub fn default_env(ops: HashMap<InternedString, UniqueId>) -> Rc<RefCell<Env>> {
                         return Err(format!("Expected number, found {:?}", args).into());
                     }
                 }
+            }
+        }),
+    );
+    env.borrow_mut().insert(
+        ops.get(&InternedString::from("print")).unwrap().clone(),
+        Value::NativeFn(|args| {
+            if args.len() != 1 {
+                Err(format!("Expected 1 arg, found {}", args.len()).into())
+            } else {
+                println!("{}", args.get(0).unwrap());
+                Ok(Value::Unit)
             }
         }),
     );
