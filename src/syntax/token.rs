@@ -64,6 +64,10 @@ pub enum Token {
     LBrack,
     #[token("]")]
     RBrack,
+    #[token("|")]
+    Pipe,
+    #[token("|>")]
+    PipeArrow,
 
     #[token(":")]
     Colon,
@@ -71,6 +75,8 @@ pub enum Token {
     Semicolon,
     #[token(",")]
     Comma,
+    #[token("_")]
+    Wildcard,
 
     // Keywords
     #[token("let")]
@@ -119,9 +125,12 @@ impl Display for Token {
             Self::RBrace => write!(f, "}}"),
             Self::LBrack => write!(f, "["),
             Self::RBrack => write!(f, "]"),
+            Self::Pipe => write!(f, "|"),
+            Self::PipeArrow => write!(f, "|>"),
             Self::Colon => write!(f, ":"),
             Self::Semicolon => write!(f, ";"),
             Self::Comma => write!(f, ","),
+            Self::Wildcard => write!(f, "_"),
             Self::Let => write!(f, "let"),
             Self::In => write!(f, "in"),
             Self::Match => write!(f, "match"),

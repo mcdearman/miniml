@@ -1,5 +1,5 @@
 use super::{
-    ast::{Expr, InfixOp, Item, Lit, PrefixOp, Root},
+    ast::{Expr, InfixOp, Item, Lit, MatchCase, Pattern, PrefixOp, Root},
     token::Token,
 };
 use crate::util::{intern::InternedString, node::Node, span::Span};
@@ -29,6 +29,17 @@ fn lit_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
         Token::Bool(b) => Lit::Bool(b),
         Token::String(s) => Lit::String(s),
     }
+}
+
+fn pattern_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
+) -> impl Parser<'a, I, Pattern, extra::Err<Rich<'a, Token, Span>>> {
+    ident_parser()
+        .or(just(Token::Wildcard).map(|_| InternedString::from("_")))
+        .map(Pattern::Ident)
+        .or(just(Token::LParen)
+            .then(just(Token::RParen))
+            .map(|_| Pattern::Unit))
+        .or(lit_parser().map(Pattern::Lit))
 }
 
 fn expr_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
@@ -80,6 +91,27 @@ fn expr_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
             .then(expr.clone().map_with_span(Node::new))
             .map(|(params, body)| Expr::Lambda { params, body });
 
+        // match = "match" expr "with" ("|" case)* "\\" case
+        // case = pat "->" expr
+        let case = pattern_parser()
+            .map_with_span(Node::new)
+            .then_ignore(just(Token::Arrow))
+            .then(expr.clone().map_with_span(Node::new))
+            .map(|(pattern, expr)| MatchCase { pattern, expr })
+            .boxed();
+
+        let match_ = just(Token::Match)
+            .ignore_then(expr.clone().map_with_span(Node::new))
+            .then_ignore(just(Token::With))
+            .then(
+                just(Token::Pipe)
+                    .ignore_then(case.clone().map_with_span(Node::new))
+                    .repeated()
+                    .at_least(1)
+                    .collect::<Vec<_>>(),
+            )
+            .map(|(expr, cases)| Expr::Match { expr, cases });
+
         let if_ = just(Token::If)
             .ignore_then(expr.clone().map_with_span(Node::new))
             .then_ignore(just(Token::Then))
@@ -95,6 +127,7 @@ fn expr_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
             .or(lit)
             .or(let_)
             .or(fn_)
+            .or(match_)
             .or(if_)
             .or(lambda)
             .or(expr

@@ -81,12 +81,31 @@ pub enum Expr {
         body: Node<Expr>,
         ty: Type,
     },
+    Match {
+        expr: Node<Expr>,
+        cases: Vec<Node<MatchCase>>,
+        ty: Type,
+    },
     If {
         cond: Node<Expr>,
         then: Node<Expr>,
         else_: Node<Expr>,
         ty: Type,
     },
+    Unit,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct MatchCase {
+    pub pattern: Node<Pattern>,
+    pub expr: Node<Expr>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum Pattern {
+    Lit(Lit),
+    Ident(UniqueId),
+    Wildcard,
     Unit,
 }
 
@@ -99,6 +118,7 @@ impl Expr {
             Self::Apply { ty, .. } => ty.clone(),
             Self::Let { ty, .. } => ty.clone(),
             Self::Fn { ty, .. } => ty.clone(),
+            Self::Match { ty, .. } => ty.clone(),
             Self::If { ty, .. } => ty.clone(),
             Self::Unit => Type::Unit,
         }
@@ -794,6 +814,36 @@ fn infer_expr<'src>(
                         expr: expr.clone(),
                         body: e2,
                         ty: t2,
+                    },
+                    expr.span(),
+                ),
+            ))
+        }
+        res::Expr::Match { expr, cases } => {
+            let (cs1, t1, mut ctx1, e1) = infer_expr(src, ctx, expr)?;
+            let mut new_cases = vec![];
+            let mut ty_cases = vec![];
+            for c in cases {
+                let (cs2, t2, ctx2, e2) = infer_expr(src, &mut ctx1, c.clone())?;
+                ctx1 = ctx2.union(ctx1);
+                cs1 = cs1.into_iter().chain(cs2.into_iter()).collect();
+                new_cases.push(e2);
+                ty_cases.push(t2);
+            }
+            let ty_ret = Type::Var(TyVar::fresh());
+            cs1.push(Constraint::Eq(
+                t1.clone(),
+                Type::Lambda(ty_cases, Box::new(ty_ret.clone())),
+            ));
+            Ok((
+                cs1,
+                ty_ret.clone(),
+                ctx1,
+                Node::new(
+                    Expr::Match {
+                        expr: e1,
+                        cases: new_cases,
+                        ty: ty_ret,
                     },
                     expr.span(),
                 ),

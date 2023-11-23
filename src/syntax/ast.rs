@@ -44,6 +44,10 @@ pub enum Expr {
         expr: Node<Self>,
         body: Node<Self>,
     },
+    Match {
+        expr: Node<Self>,
+        cases: Vec<Node<MatchCase>>,
+    },
     If {
         cond: Node<Self>,
         then: Node<Self>,
@@ -62,10 +66,29 @@ pub enum Expr {
 }
 
 #[derive(Debug, Clone, PartialEq)]
+pub struct MatchCase {
+    pub pattern: Node<Pattern>,
+    pub expr: Node<Expr>,
+}
+
+#[derive(Debug, Clone, PartialEq)]
 pub enum Lit {
     Num(Rational64),
     Bool(bool),
     String(InternedString),
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum Pattern {
+    Lit(Lit),
+    Ident(InternedString),
+    Wildcard,
+    Unit,
+    // Tuple(Vec<Node<Self>>),
+    // Pair {
+    //     head: Node<Self>,
+    //     tail: Node<Self>,
+    // },
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

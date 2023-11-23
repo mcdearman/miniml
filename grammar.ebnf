@@ -1,12 +1,15 @@
 # Non-terminals
 
-root = decl+
+root = item+
 
-decl = let
+item = decl | expr
 
-const = "const" ident "=" expr
+decl = let 
+     | fn 
 
-let = "let" (pat | ident pat+) "=" expr
+let = "let" pat "=" expr
+
+fn = "let" ident pat+ "->" expr
 
 expr = pipe
 
@@ -30,9 +33,20 @@ unary = ("-" | "not")* apply
 
 apply = atom atom*
 
-atom = ident | lit | letExpr | if | match | lambda | map | list | "("  expr  ")"
+atom = ident 
+     | lit 
+     | letExpr 
+     | fnExpr 
+     | if 
+     | match 
+     | lambda 
+    #  | map 
+    #  | list 
+     | "("  expr  ")"
 
-letExpr = "let" (pat | ident pat*) "=" expr "in" expr
+letExpr = "let" pat "=" expr "in" expr
+
+fnExpr = "let" ident pat+ "->" expr
 
 if = "if" expr "then" expr 
     ("elif" expr "then" expr)* "else" expr
@@ -41,22 +55,27 @@ match = "match" expr "with" ("|" case)* "\\" case
 
 case = pat "->" expr
 
-pat = ident | lit | listPat | consPat | wildcard | unit
+pat = ident 
+    | lit 
+    # | listPat 
+    # | pairPat 
+    | wildcard 
+    | unit
 
-listPat = "[" pat ("," pat)* "]"
+# listPat = "[" pat ("," pat)* "]"
 
-consPat = "(" (pat  (","  pat)*)? ":"  pat ")"
+# pairPat = "(" (pat  (","  pat)*)? ":"  pat ")"
 
 lit = int 
-| rational
-| bool 
-| string 
+    | rational
+    | bool 
+    | string 
 
 lambda = "\\" pat+ "-" expr
 
-map = "{" ident ":" expr ("," ident ":" expr)* "}"
+# map = "{" ident ":" expr ("," ident ":" expr)* "}"
 
-list = "[" expr? ("," expr)* "]"
+# list = "[" expr? ("," expr)* "]"
 
 # Terminals/Tokens
 
@@ -66,13 +85,15 @@ int = ?"((0b[0-1]+)|(0o[0-7]+)|(0x[0-9a-fA-F]+)|([1-9]\d*|0))"?
 
 rational = ?"\d+/\d+"?
 
-real = "((\d+(\.\d+))|(\.\d+))([Ee](\+|-)?\d+)?"
+# real = "((\d+(\.\d+))|(\.\d+))([Ee](\+|-)?\d+)?"
 
-complex = "((\d+(\.\d+)?)|(\.\d+))([Ee](\+|-)?\d+)?i"
+# complex = "((\d+(\.\d+)?)|(\.\d+))([Ee](\+|-)?\d+)?i"
 
-char = '\w'
+# char = '\w'
 
 string = "((\\"|\\\\)|[^\\"])*"
+
+bool = "true" | "false"
 
 comment = "--[^\n]*|/\*([^*]|\**[^*/])*\*+/"
 

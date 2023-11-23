@@ -124,12 +124,22 @@ pub enum Expr {
         expr: Node<Self>,
         body: Node<Self>,
     },
+    Match {
+        expr: Node<Self>,
+        cases: Vec<Node<MatchCase>>,
+    },
     If {
         cond: Node<Self>,
         then: Node<Self>,
         else_: Node<Self>,
     },
     Unit,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct MatchCase {
+    pub pattern: Node<Pattern>,
+    pub expr: Node<Expr>,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -147,6 +157,14 @@ impl From<ast::Lit> for Lit {
             ast::Lit::String(s) => Self::String(s),
         }
     }
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum Pattern {
+    Lit(Lit),
+    Ident(UniqueId),
+    Wildcard,
+    Unit,
 }
 
 pub fn resolve(
@@ -317,6 +335,30 @@ fn resolve_expr(env: Rc<RefCell<Env>>, expr: &Node<ast::Expr>, rec: bool) -> Res
                 expr.span(),
             ))
         }
+        ast::Expr::Match { expr, cases } => {
+            let expr = resolve_expr(env.clone(), expr, rec)?;
+            let cases = cases
+                .iter()
+                .map(|case| {
+                    let pattern = resolve_pattern(env.clone(), &case.pattern, rec)?;
+                    let expr = resolve_expr(env.clone(), &case.expr, rec)?;
+                    Ok(Node::new(
+                        MatchCase {
+                            pattern: pattern.clone(),
+                            expr: expr.clone(),
+                        },
+                        case.span(),
+                    ))
+                })
+                .collect::<ResResult<Vec<_>>>()?;
+            Ok(Node::new(
+                Expr::Match {
+                    expr: expr.clone(),
+                    cases,
+                },
+                expr.span(),
+            ))
+        }
         ast::Expr::If { cond, then, else_ } => {
             let cond = resolve_expr(env.clone(), cond, rec)?;
             let then = resolve_expr(env.clone(), then, rec)?;
@@ -364,6 +406,45 @@ fn resolve_expr(env: Rc<RefCell<Env>>, expr: &Node<ast::Expr>, rec: bool) -> Res
             ))
         }
         ast::Expr::Unit => Ok(Node::new(Expr::Unit, expr.span())),
+    }
+}
+
+fn resolve_pattern(
+    env: Rc<RefCell<Env>>,
+    pattern: &Node<ast::Pattern>,
+    rec: bool,
+) -> ResResult<Node<Pattern>> {
+    match pattern.inner() {
+        ast::Pattern::Lit(l) => Ok(Node::new(Pattern::Lit(l.clone().into()), pattern.span())),
+        ast::Pattern::Ident(ident) => {
+            if rec {
+                if let Some(name) = env.borrow().find(ident) {
+                    Ok(Node::new(Pattern::Ident(name), pattern.span()))
+                } else {
+                    Err(ResError {
+                        msg: InternedString::from(&*format!(
+                            "name '{:?}' is not defined",
+                            pattern.inner()
+                        )),
+                        span: pattern.span(),
+                    })
+                }
+            } else {
+                if let Some(name) = env.borrow().find_in_scope(ident) {
+                    Ok(Node::new(Pattern::Ident(name), pattern.span()))
+                } else {
+                    Err(ResError {
+                        msg: InternedString::from(&*format!(
+                            "name '{:?}' is not defined",
+                            pattern.inner()
+                        )),
+                        span: pattern.span(),
+                    })
+                }
+            }
+        }
+        ast::Pattern::Wildcard => Ok(Node::new(Pattern::Wildcard, pattern.span())),
+        ast::Pattern::Unit => Ok(Node::new(Pattern::Unit, pattern.span())),
     }
 }
 
