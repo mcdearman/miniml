@@ -217,61 +217,72 @@ pub fn default_env(ops: HashMap<InternedString, UniqueId>) -> Rc<RefCell<Env>> {
     env.borrow_mut().insert(
         ops.get(&InternedString::from("+")).unwrap().clone(),
         Value::NativeFn(|args| {
-            let mut sum = Rational64::new(0, 1);
-            for arg in args {
-                match arg {
-                    Value::Lit(Lit::Num(num)) => sum += num,
+            if args.len() != 2 {
+                return Err(format!("Expected 2 args, found {}", args.len()).into());
+            } else {
+                match (args.get(0).unwrap(), args.get(1).unwrap()) {
+                    (Value::Lit(Lit::Num(l)), Value::Lit(Lit::Num(r))) => {
+                        Ok(Value::Lit(Lit::Num(l + r)))
+                    }
                     _ => {
-                        return Err(format!("Expected number, found {:?}", arg).into());
+                        return Err(format!("Expected number, found {:?}", args).into());
                     }
                 }
             }
-            Ok(Value::Lit(Lit::Num(sum)))
         }),
     );
     env.borrow_mut().insert(
         ops.get(&InternedString::from("-")).unwrap().clone(),
         Value::NativeFn(|args| {
-            let mut sum = Rational64::new(0, 1);
-            for arg in args {
-                match arg {
-                    Value::Lit(Lit::Num(num)) => sum -= num,
+            if args.len() != 2 {
+                return Err(format!("Expected 2 args, found {}", args.len()).into());
+            } else {
+                match (args.get(0).unwrap(), args.get(1).unwrap()) {
+                    (Value::Lit(Lit::Num(l)), Value::Lit(Lit::Num(r))) => {
+                        Ok(Value::Lit(Lit::Num(l - r)))
+                    }
                     _ => {
-                        return Err(format!("Expected number, found {:?}", arg).into());
+                        return Err(format!("Expected number, found {:?}", args).into());
                     }
                 }
             }
-            Ok(Value::Lit(Lit::Num(sum)))
         }),
     );
     env.borrow_mut().insert(
         ops.get(&InternedString::from("*")).unwrap().clone(),
         Value::NativeFn(|args| {
-            let mut sum = Rational64::new(1, 1);
-            for arg in args {
-                match arg {
-                    Value::Lit(Lit::Num(num)) => sum *= num,
+            if args.len() != 2 {
+                return Err(format!("Expected 2 args, found {}", args.len()).into());
+            } else {
+                match (args.get(0).unwrap(), args.get(1).unwrap()) {
+                    (Value::Lit(Lit::Num(l)), Value::Lit(Lit::Num(r))) => {
+                        Ok(Value::Lit(Lit::Num(l * r)))
+                    }
                     _ => {
-                        return Err(format!("Expected number, found {:?}", arg).into());
+                        return Err(format!("Expected number, found {:?}", args).into());
                     }
                 }
             }
-            Ok(Value::Lit(Lit::Num(sum)))
         }),
     );
     env.borrow_mut().insert(
         ops.get(&InternedString::from("/")).unwrap().clone(),
         Value::NativeFn(|args| {
-            let mut sum = Rational64::new(1, 1);
-            for arg in args {
-                match arg {
-                    Value::Lit(Lit::Num(num)) => sum /= num,
+            if args.len() != 2 {
+                return Err(format!("Expected 2 args, found {}", args.len()).into());
+            } else {
+                match (args.get(0).unwrap(), args.get(1).unwrap()) {
+                    (Value::Lit(Lit::Num(l)), Value::Lit(Lit::Num(r))) => {
+                        if r == &Rational64::from_integer(0) {
+                            return Err(format!("Division by zero").into());
+                        }
+                        Ok(Value::Lit(Lit::Num(l / r)))
+                    }
                     _ => {
-                        return Err(format!("Expected number, found {:?}", arg).into());
+                        return Err(format!("Expected number, found {:?}", args).into());
                     }
                 }
             }
-            Ok(Value::Lit(Lit::Num(sum)))
         }),
     );
     env.borrow_mut().insert(
