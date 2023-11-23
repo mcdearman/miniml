@@ -136,6 +136,7 @@ pub enum Expr {
 pub enum Lit {
     Num(Rational64),
     Bool(bool),
+    String(InternedString),
 }
 
 impl From<ast::Lit> for Lit {
@@ -143,6 +144,7 @@ impl From<ast::Lit> for Lit {
         match lit {
             ast::Lit::Num(num) => Self::Num(num),
             ast::Lit::Bool(b) => Self::Bool(b),
+            ast::Lit::String(s) => Self::String(s),
         }
     }
 }

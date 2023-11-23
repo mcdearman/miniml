@@ -186,12 +186,14 @@ impl Expr {
 pub enum Lit {
     Num(Rational64),
     Bool(bool),
+    String(InternedString),
 }
 
 #[derive(Clone, PartialEq, Eq)]
 pub enum Type {
     Num,
     Bool,
+    String,
     Var(TyVar),
     Lambda(Vec<Self>, Box<Self>),
     Unit,
@@ -202,6 +204,7 @@ impl Type {
         match self.clone() {
             Self::Num => Self::Num,
             Self::Bool => Self::Bool,
+            Self::String => Self::String,
             Self::Var(name) => {
                 if let Some(n) = vars.get(&name) {
                     Self::Var(*n)
@@ -228,6 +231,7 @@ impl Debug for Type {
         match self.clone() {
             Self::Num => write!(f, "Num"),
             Self::Bool => write!(f, "Bool"),
+            Self::String => write!(f, "String"),
             Self::Var(n) => write!(f, "{:?}", n),
             Self::Lambda(params, body) => write!(f, "{:?} -> {:?}", params, body),
             Self::Unit => write!(f, "()"),
@@ -378,7 +382,7 @@ impl Display for TyVar {
 
 fn apply_subst(subst: Substitution, ty: Type) -> Type {
     match ty {
-        Type::Num | Type::Bool | Type::Unit => ty.clone(),
+        Type::Num | Type::Bool | Type::String | Type::Unit => ty.clone(),
         Type::Var(n) => subst.get(&n).cloned().unwrap_or(ty.clone()),
         Type::Lambda(params, body) => Type::Lambda(
             params
@@ -448,6 +452,7 @@ fn unify(t1: Type, t2: Type) -> InferResult<Substitution> {
     match (t1.clone(), t2.clone()) {
         (Type::Num, Type::Num) => Ok(Substitution::new()),
         (Type::Bool, Type::Bool) => Ok(Substitution::new()),
+        (Type::String, Type::String) => Ok(Substitution::new()),
         (Type::Lambda(p1, b1), Type::Lambda(p2, b2)) => {
             let s1 = p1.into_iter().zip(p2.into_iter()).fold(
                 Ok(Substitution::new()),
@@ -647,6 +652,18 @@ fn infer_expr<'src>(
                     Expr::Lit {
                         lit: Lit::Bool(b.clone()),
                         ty: Type::Bool,
+                    },
+                    expr.span(),
+                ),
+            )),
+            res::Lit::String(s) => Ok((
+                vec![],
+                Type::String,
+                ctx.clone(),
+                Node::new(
+                    Expr::Lit {
+                        lit: Lit::String(s.clone()),
+                        ty: Type::String,
                     },
                     expr.span(),
                 ),

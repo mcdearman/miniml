@@ -27,6 +27,7 @@ fn lit_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
     select! {
         Token::Num(n) => Lit::Num(n),
         Token::Bool(b) => Lit::Bool(b),
+        Token::String(s) => Lit::String(s),
     }
 }
 

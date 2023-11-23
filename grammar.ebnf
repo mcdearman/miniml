@@ -49,11 +49,8 @@ consPat = "(" (pat  (","  pat)*)? ":"  pat ")"
 
 lit = int 
 | rational
-| real 
-| complex
-| string 
-| char 
 | bool 
+| string 
 
 lambda = "\\" pat+ "-" expr
 

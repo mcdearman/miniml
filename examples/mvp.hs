@@ -11,6 +11,9 @@
 1 < 2
 1 <= 2
 
+-- strings
+"hello world"
+
 -- lambda
 \a b -> a + b
 

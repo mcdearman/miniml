@@ -1,13 +1,10 @@
 use lasso::{Spur, ThreadedRodeo};
 use once_cell::sync::Lazy;
-use std::{
-    fmt::{Debug, Display},
-    str::FromStr,
-};
+use std::fmt::{Debug, Display};
 
 pub static mut INTERNER: Lazy<ThreadedRodeo> = Lazy::new(|| ThreadedRodeo::default());
 
-#[derive(Copy, Clone, PartialEq, Eq, Hash)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub struct InternedString {
     pub key: Spur,
 }

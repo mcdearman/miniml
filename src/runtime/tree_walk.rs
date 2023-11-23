@@ -5,7 +5,6 @@ use crate::{
     },
     util::{intern::InternedString, node::Node, unique_id::UniqueId},
 };
-use clap::builder::FalseyValueParser;
 use itertools::Itertools;
 use num_rational::Rational64;
 use std::{
@@ -14,8 +13,6 @@ use std::{
     fmt::{Debug, Display},
     rc::Rc,
 };
-
-use super::repl;
 
 pub type RuntimeError = InternedString;
 pub type RuntimeResult<T> = Result<T, RuntimeError>;
@@ -486,6 +483,7 @@ impl Display for Value {
         match self {
             Value::Lit(Lit::Num(num)) => write!(f, "{}", num),
             Value::Lit(Lit::Bool(b)) => write!(f, "{}", b),
+            Value::Lit(Lit::String(s)) => write!(f, "{}", s),
             Value::Lambda { .. } => write!(f, "<lambda>"),
             Value::NativeFn { .. } => write!(f, "<native fn>"),
             Value::Unit => write!(f, "()"),
@@ -497,6 +495,7 @@ impl Display for Value {
 pub enum Lit {
     Num(Rational64),
     Bool(bool),
+    String(InternedString),
 }
 
 impl Display for Lit {
@@ -504,6 +503,7 @@ impl Display for Lit {
         match self {
             Lit::Num(num) => write!(f, "{}", num),
             Lit::Bool(b) => write!(f, "{}", b),
+            Lit::String(s) => write!(f, "{}", s),
         }
     }
 }
@@ -557,6 +557,7 @@ fn eval_expr<'src>(
             Expr::Lit { lit, .. } => match lit {
                 infer::Lit::Num(num) => Value::Lit(Lit::Num(num.clone())),
                 infer::Lit::Bool(b) => Value::Lit(Lit::Bool(b)),
+                infer::Lit::String(s) => Value::Lit(Lit::String(s.clone())),
             },
             Expr::Ident { name, .. } => {
                 if let Some(value) = env.borrow().get(&name) {

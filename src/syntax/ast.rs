@@ -65,6 +65,7 @@ pub enum Expr {
 pub enum Lit {
     Num(Rational64),
     Bool(bool),
+    String(InternedString),
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

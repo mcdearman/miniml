@@ -1,6 +1,6 @@
 -- A pair list is either empty or a pair of an element and a pair list.
-pub class List T
-  = Pair (head : T) (tail : List T)
+pub class List 'a
+  = Pair (head : 'a) (tail : List 'a)
   | Nil
 
 impl T Add for List T =
