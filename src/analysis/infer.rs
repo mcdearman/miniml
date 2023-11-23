@@ -592,14 +592,10 @@ fn infer_item<'src>(
                 ty_binders.push(ty_binder.clone());
                 tmp_ctx.extend(*p, Scheme::new(vec![], ty_binder));
             }
-            // println!("tmp_ctx: {:?}", tmp_ctx);
-            let (mut cs1, t1, c, body) = infer_expr(src, &mut tmp_ctx, body)?;
+            let (cs1, t1, c, body) = infer_expr(src, &mut tmp_ctx, body)?;
             let ty = Type::Lambda(ty_binders.clone(), Box::new(t1.clone()));
-            // cs1.push(Constraint::Eq(ty.clone(), t1));
-            // tmp_ctx.extend(*name, Scheme::new(vec![], ty.clone()));
+            tmp_ctx.extend(*name, Scheme::new(vec![], ty.clone()));
 
-            // let (mut cs2, t2, c2, e2) = infer_expr(&mut tmp_ctx, body)?;
-            // println!("cs1: {:?}", cs1);
             Ok((
                 cs1,
                 tmp_ctx.union(c),
@@ -770,7 +766,39 @@ fn infer_expr<'src>(
             params,
             expr,
             body,
-        } => todo!(),
+        } => {
+            let mut e_ctx = ctx.clone();
+            let f_var = Type::Var(TyVar::fresh());
+            e_ctx.extend(*name, Scheme::new(vec![], f_var.clone()));
+
+            let mut ty_binders = vec![];
+            let mut tmp_ctx = e_ctx.clone();
+            for p in params.clone() {
+                let ty_binder = Type::Var(TyVar::fresh());
+                ty_binders.push(ty_binder.clone());
+                tmp_ctx.extend(*p, Scheme::new(vec![], ty_binder));
+            }
+            let (cs1, t1, c, expr) = infer_expr(src, &mut tmp_ctx, expr)?;
+            let ty = Type::Lambda(ty_binders.clone(), Box::new(t1.clone()));
+            tmp_ctx.extend(*name, Scheme::new(vec![], ty.clone()));
+
+            let (cs2, t2, c2, e2) = infer_expr(src, &mut tmp_ctx, body)?;
+            Ok((
+                cs1.into_iter().chain(cs2.into_iter()).collect(),
+                t2.clone(),
+                tmp_ctx.union(c).union(c2),
+                Node::new(
+                    Expr::Fn {
+                        name,
+                        params,
+                        expr: expr.clone(),
+                        body: e2,
+                        ty: t2,
+                    },
+                    expr.span(),
+                ),
+            ))
+        }
         res::Expr::If { cond, then, else_ } => {
             // println!("ctx: {:?}", ctx);
             let (mut cs1, t1, mut ctx1, e1) = infer_expr(src, ctx, cond)?;

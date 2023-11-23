@@ -56,12 +56,31 @@ pub enum Token {
     LParen,
     #[token(")")]
     RParen,
+    #[token("{")]
+    LBrace,
+    #[token("}")]
+    RBrace,
+    #[token("[")]
+    LBrack,
+    #[token("]")]
+    RBrack,
+
+    #[token(":")]
+    Colon,
+    #[token(";")]
+    Semicolon,
+    #[token(",")]
+    Comma,
 
     // Keywords
     #[token("let")]
     Let,
     #[token("in")]
     In,
+    #[token("match")]
+    Match,
+    #[token("with")]
+    With,
     #[token("if")]
     If,
     #[token("then")]
@@ -96,8 +115,17 @@ impl Display for Token {
             Self::Bang => write!(f, "!"),
             Self::LParen => write!(f, "("),
             Self::RParen => write!(f, ")"),
+            Self::LBrace => write!(f, "{{"),
+            Self::RBrace => write!(f, "}}"),
+            Self::LBrack => write!(f, "["),
+            Self::RBrack => write!(f, "]"),
+            Self::Colon => write!(f, ":"),
+            Self::Semicolon => write!(f, ";"),
+            Self::Comma => write!(f, ","),
             Self::Let => write!(f, "let"),
             Self::In => write!(f, "in"),
+            Self::Match => write!(f, "match"),
+            Self::With => write!(f, "with"),
             Self::If => write!(f, "if"),
             Self::Then => write!(f, "then"),
             Self::Else => write!(f, "else"),
