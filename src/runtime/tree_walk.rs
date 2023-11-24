@@ -498,6 +498,28 @@ pub enum Lit {
     String(InternedString),
 }
 
+impl PartialEq<infer::Lit> for Lit {
+    fn eq(&self, other: &infer::Lit) -> bool {
+        match (self, other) {
+            (Lit::Num(l), infer::Lit::Num(r)) => l == r,
+            (Lit::Bool(l), infer::Lit::Bool(r)) => l == r,
+            (Lit::String(l), infer::Lit::String(r)) => l == r,
+            _ => false,
+        }
+    }
+}
+
+impl PartialEq<Lit> for infer::Lit {
+    fn eq(&self, other: &Lit) -> bool {
+        match (self, other) {
+            (infer::Lit::Num(l), Lit::Num(r)) => l == r,
+            (infer::Lit::Bool(l), Lit::Bool(r)) => l == r,
+            (infer::Lit::String(l), Lit::String(r)) => l == r,
+            _ => false,
+        }
+    }
+}
+
 impl Display for Lit {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
@@ -627,16 +649,23 @@ fn eval_expr<'src>(
                 eval_expr(src, repl_src, env, body)?
             }
             Expr::Match { expr, cases, ty } => {
-                let expr = eval_expr(src, repl_src, env.clone(), expr)?;
-                let mut val = Value::Unit;
+                let val = eval_expr(src, repl_src, env.clone(), expr.clone())?;
                 for case in cases {
-                    let pat = &case.pattern;
-                    let body = &case.expr;
-                    match pat.inner().clone() {
-                        infer::Pattern::Lit(_) => todo!(),
-                        infer::Pattern::Ident(_) => todo!(),
-                        infer::Pattern::Wildcard => todo!(),
-                        infer::Pattern::Unit => todo!(),
+                    match destructure_pattern(
+                        repl_src,
+                        env.clone(),
+                        case.pattern.clone(),
+                        Node::new(val.clone(), expr.span()),
+                    ) {
+                        Ok(destructure) => {
+                            env = Env::new_with_parent(env.clone());
+                            for (param, arg) in case.params.iter().zip(destructure.pat) {
+                                env.borrow_mut().insert(param.inner().clone(), arg);
+                            }
+                            expr = case.body;
+                            continue 'tco;
+                        }
+                        Err(_) => {}
                     }
                 }
                 todo!()
@@ -665,4 +694,65 @@ fn eval_expr<'src>(
         break 'tco;
     }
     Ok(val)
+}
+
+#[derive(Debug, Clone, PartialEq)]
+struct Destructure {
+    env: Rc<RefCell<Env>>,
+    rest: Option<Node<Value>>,
+}
+
+fn destructure_pattern(
+    repl_src: &str,
+    env: Rc<RefCell<Env>>,
+    pat: Node<infer::Pattern>,
+    val: Node<Value>,
+) -> RuntimeResult<Destructure> {
+    match pat.inner().clone() {
+        infer::Pattern::Lit(l) => {
+            if let Value::Lit(v) = val.inner() {
+                if l == *v {
+                    Ok(Destructure {
+                        pat,
+                        val: val.inner().clone(),
+                    })
+                } else {
+                    Err(format!(
+                        "Expected literal {:?}, found {:?}",
+                        l,
+                        repl_src[val.span()].trim()
+                    )
+                    .into())
+                }
+            } else {
+                Err(format!(
+                    "Expected literal {:?}, found {:?}",
+                    l,
+                    repl_src[val.span()].trim()
+                )
+                .into())
+            }
+        }
+        infer::Pattern::Ident(name) => {
+            env.borrow_mut().insert(name, val.inner().clone());
+            Ok(Destructure {
+                pat,
+                val: val.inner().clone(),
+            })
+        }
+        infer::Pattern::Wildcard => Ok(Destructure {
+            pat,
+            val: val.inner().clone(),
+        }),
+        infer::Pattern::Unit => {
+            if let Value::Unit = val.inner() {
+                Ok(Destructure {
+                    pat,
+                    val: val.inner().clone(),
+                })
+            } else {
+                Err(format!("Expected unit, found {:?}", repl_src[val.span()].trim()).into())
+            }
+        }
+    }
 }
