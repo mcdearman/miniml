@@ -831,23 +831,21 @@ fn infer_expr<'src>(
                 ty_cases.push(t2);
             }
             let ty_ret = Type::Var(TyVar::fresh());
-            cs1.push(Constraint::Eq(
-                t1.clone(),
-                Type::Lambda(ty_cases, Box::new(ty_ret.clone())),
-            ));
-            Ok((
-                cs1,
-                ty_ret.clone(),
-                ctx1,
-                Node::new(
-                    Expr::Match {
-                        expr: e1,
-                        cases: new_cases,
-                        ty: ty_ret,
-                    },
-                    expr.span(),
-                ),
-            ))
+            cs1.push(Constraint::Eq(t1.clone(), ty_ret.clone()));
+            todo!()
+            // Ok((
+            //     cs1,
+            //     ty_ret.clone(),
+            //     ctx1,
+            //     Node::new(
+            //         Expr::Match {
+            //             expr: e1,
+            //             cases: new_cases,
+            //             ty: ty_ret,
+            //         },
+            //         expr.span(),
+            //     ),
+            // ))
         }
         res::Expr::If { cond, then, else_ } => {
             // println!("ctx: {:?}", ctx);
