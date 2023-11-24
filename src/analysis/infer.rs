@@ -889,6 +889,64 @@ fn infer_expr<'src>(
     }
 }
 
+fn infer_pattern(
+    src: &str,
+    ctx: &mut Context,
+    pattern: Node<res::Pattern>,
+) -> InferResult<(Vec<Constraint>, Type, Context, Node<Pattern>)> {
+    match pattern.inner().clone() {
+        res::Pattern::Lit(lit) => match lit {
+            res::Lit::Num(n) => Ok((
+                vec![],
+                Type::Num,
+                ctx.clone(),
+                Node::new(Pattern::Lit(Lit::Num(n.clone())), pattern.span().clone()),
+            )),
+            res::Lit::Bool(b) => Ok((
+                vec![],
+                Type::Bool,
+                ctx.clone(),
+                Node::new(Pattern::Lit(Lit::Bool(b.clone())), pattern.span().clone()),
+            )),
+            res::Lit::String(s) => Ok((
+                vec![],
+                Type::String,
+                ctx.clone(),
+                Node::new(Pattern::Lit(Lit::String(s.clone())), pattern.span().clone()),
+            )),
+        },
+        res::Pattern::Ident(name) => {
+            if let Some(scm) = ctx.clone().vars.get(&name) {
+                let ty = instantiate(scm.clone());
+                Ok((
+                    vec![],
+                    ty.clone(),
+                    ctx.clone(),
+                    Node::new(Pattern::Ident(name), pattern.span().clone()),
+                ))
+            } else {
+                Err(TypeError::from(format!(
+                    "unbound variable: {:?} - \"{}\"",
+                    pattern,
+                    src[pattern.span()].to_string()
+                )))
+            }
+        }
+        res::Pattern::Wildcard => Ok((
+            vec![],
+            Type::Var(TyVar::fresh()),
+            ctx.clone(),
+            Node::new(Pattern::Wildcard, pattern.span().clone()),
+        )),
+        res::Pattern::Unit => Ok((
+            vec![],
+            Type::Unit,
+            ctx.clone(),
+            Node::new(Pattern::Unit, pattern.span().clone()),
+        )),
+    }
+}
+
 fn apply_subst_root(subst: Substitution, root: Root) -> Root {
     Root {
         items: root
@@ -974,6 +1032,22 @@ fn apply_subst_expr(subst: Substitution, expr: Node<Expr>) -> Node<Expr> {
                 params,
                 expr: apply_subst_expr(subst.clone(), expr),
                 body: apply_subst_expr(subst.clone(), body),
+                ty: apply_subst(subst, ty),
+            },
+            Expr::Match { expr, cases, ty } => Expr::Match {
+                expr: apply_subst_expr(subst.clone(), expr),
+                cases: cases
+                    .into_iter()
+                    .map(|case| {
+                        Node::new(
+                            MatchCase {
+                                pattern: case.inner().pattern.clone(),
+                                expr: apply_subst_expr(subst.clone(), case.inner().expr),
+                            },
+                            case.span(),
+                        )
+                    })
+                    .collect(),
                 ty: apply_subst(subst, ty),
             },
             Expr::If {
