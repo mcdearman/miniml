@@ -626,6 +626,21 @@ fn eval_expr<'src>(
                 env.borrow_mut().insert(name.inner().clone(), value);
                 eval_expr(src, repl_src, env, body)?
             }
+            Expr::Match { expr, cases, ty } => {
+                let expr = eval_expr(src, repl_src, env.clone(), expr)?;
+                let mut val = Value::Unit;
+                for case in cases {
+                    let pat = &case.pattern;
+                    let body = &case.expr;
+                    match pat.inner().clone() {
+                        infer::Pattern::Lit(_) => todo!(),
+                        infer::Pattern::Ident(_) => todo!(),
+                        infer::Pattern::Wildcard => todo!(),
+                        infer::Pattern::Unit => todo!(),
+                    }
+                }
+                todo!()
+            }
             Expr::If {
                 cond, then, else_, ..
             } => {

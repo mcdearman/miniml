@@ -125,83 +125,6 @@ impl Expr {
     }
 }
 
-// #[derive(Debug, Clone, PartialEq, Eq, Hash)]
-// pub enum PrefixOp {
-//     Neg,
-//     Not,
-// }
-
-// impl ToString for PrefixOp {
-//     fn to_string(&self) -> String {
-//         match self {
-//             Self::Neg => "-",
-//             Self::Not => "!",
-//         }
-//         .to_string()
-//     }
-// }
-
-// impl From<res::PrefixOp> for PrefixOp {
-//     fn from(op: res::PrefixOp) -> Self {
-//         match op {
-//             res::PrefixOp::Neg => Self::Neg,
-//             res::PrefixOp::Not => Self::Not,
-//         }
-//     }
-// }
-
-// #[derive(Debug, Clone, PartialEq, Eq, Hash)]
-// pub enum InfixOp {
-//     Add,
-//     Sub,
-//     Mul,
-//     Div,
-//     Mod,
-//     Eq,
-//     Neq,
-//     Lt,
-//     Gt,
-//     Leq,
-//     Geq,
-// }
-
-// impl ToString for InfixOp {
-//     fn to_string(&self) -> String {
-//         match self {
-//             Self::Add => "+",
-//             Self::Sub => "-",
-//             Self::Mul => "*",
-//             Self::Div => "/",
-//             Self::Mod => "%",
-//             Self::Eq => "==",
-//             Self::Neq => "!=",
-//             Self::Lt => "<",
-//             Self::Gt => ">",
-//             Self::Leq => "<=",
-//             Self::Geq => ">=",
-//         }
-//         .to_string()
-//     }
-// }
-
-// impl From<res::InfixOp> for InfixOp {
-//     fn from(op: res::InfixOp) -> Self {
-//         match op {
-//             res::InfixOp::Add => Self::Add,
-//             res::InfixOp::Sub => Self::Sub,
-//             res::InfixOp::Mul => Self::Mul,
-//             res::InfixOp::Div => Self::Div,
-//             res::InfixOp::Mod => Self::Mod,
-//             res::InfixOp::Eq => Self::Eq,
-//             res::InfixOp::Neq => Self::Neq,
-//             res::InfixOp::Lt => Self::Lt,
-//             res::InfixOp::Gt => Self::Gt,
-//             res::InfixOp::Leq => Self::Leq,
-//             res::InfixOp::Geq => Self::Geq,
-//         }
-//     }
-// }
-
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub enum Lit {
     Num(Rational64),
@@ -820,32 +743,42 @@ fn infer_expr<'src>(
             ))
         }
         res::Expr::Match { expr, cases } => {
-            let (cs1, t1, mut ctx1, e1) = infer_expr(src, ctx, expr)?;
+            let (mut cs1, t1, mut ctx1, e1) = infer_expr(src, ctx, expr.clone())?;
             let mut new_cases = vec![];
-            let mut ty_cases = vec![];
-            for c in cases {
-                let (cs2, t2, ctx2, e2) = infer_expr(src, &mut ctx1, c.clone())?;
-                ctx1 = ctx2.union(ctx1);
-                cs1 = cs1.into_iter().chain(cs2.into_iter()).collect();
-                new_cases.push(e2);
-                ty_cases.push(t2);
-            }
             let ty_ret = Type::Var(TyVar::fresh());
-            cs1.push(Constraint::Eq(t1.clone(), ty_ret.clone()));
-            todo!()
-            // Ok((
-            //     cs1,
-            //     ty_ret.clone(),
-            //     ctx1,
-            //     Node::new(
-            //         Expr::Match {
-            //             expr: e1,
-            //             cases: new_cases,
-            //             ty: ty_ret,
-            //         },
-            //         expr.span(),
-            //     ),
-            // ))
+            for c in cases {
+                let (csp, tp, mut ctxp, p) =
+                    infer_pattern(src, &mut ctx1, c.inner().pattern.clone())?;
+                let (cse, te, ctxe, e) = infer_expr(src, &mut ctxp, c.inner().expr.clone())?;
+                cs1 = cs1
+                    .into_iter()
+                    .chain(csp.into_iter())
+                    .chain(cse.into_iter())
+                    .collect();
+                cs1.push(Constraint::Eq(t1.clone(), tp));
+                cs1.push(Constraint::Eq(te, ty_ret.clone()));
+                ctx1 = ctxe.union(ctxp).union(ctx1);
+                new_cases.push(Node::new(
+                    MatchCase {
+                        pattern: p,
+                        expr: e,
+                    },
+                    c.span(),
+                ));
+            }
+            Ok((
+                cs1,
+                ty_ret.clone(),
+                ctx1,
+                Node::new(
+                    Expr::Match {
+                        expr: e1,
+                        cases: new_cases,
+                        ty: ty_ret,
+                    },
+                    expr.span(),
+                ),
+            ))
         }
         res::Expr::If { cond, then, else_ } => {
             // println!("ctx: {:?}", ctx);
@@ -1040,7 +973,7 @@ fn apply_subst_expr(subst: Substitution, expr: Node<Expr>) -> Node<Expr> {
                         Node::new(
                             MatchCase {
                                 pattern: case.inner().pattern.clone(),
-                                expr: apply_subst_expr(subst.clone(), case.inner().expr),
+                                expr: apply_subst_expr(subst.clone(), case.inner().clone().expr),
                             },
                             case.span(),
                         )
