@@ -648,27 +648,27 @@ fn eval_expr<'src>(
                 env.borrow_mut().insert(name.inner().clone(), value);
                 eval_expr(src, repl_src, env, body)?
             }
-            Expr::Match { expr, cases, ty } => {
-                let val = eval_expr(src, repl_src, env.clone(), expr.clone())?;
+            Expr::Match {
+                expr: mexpr,
+                cases,
+                ty,
+            } => {
+                let val = eval_expr(src, repl_src, env.clone(), mexpr.clone())?;
                 for case in cases {
                     match destructure_pattern(
-                        repl_src,
                         env.clone(),
                         case.pattern.clone(),
-                        Node::new(val.clone(), expr.span()),
+                        Node::new(val.clone(), mexpr.span()),
                     ) {
-                        Ok(destructure) => {
-                            env = Env::new_with_parent(env.clone());
-                            for (param, arg) in case.params.iter().zip(destructure.pat) {
-                                env.borrow_mut().insert(param.inner().clone(), arg);
-                            }
-                            expr = case.body;
+                        Some(case_env) => {
+                            env = case_env;
+                            expr = case.expr.clone();
                             continue 'tco;
                         }
-                        Err(_) => {}
+                        None => continue,
                     }
                 }
-                todo!()
+                return Err(format!("No matching pattern found for {:?}", val).into());
             }
             Expr::If {
                 cond, then, else_, ..
@@ -696,62 +696,40 @@ fn eval_expr<'src>(
     Ok(val)
 }
 
-#[derive(Debug, Clone, PartialEq)]
-struct Destructure {
-    env: Rc<RefCell<Env>>,
-    rest: Option<Node<Value>>,
-}
+// #[derive(Debug, Clone, PartialEq)]
+// struct Destructure {
+//     env: Rc<RefCell<Env>>,
+//     rest: Option<Node<Value>>,
+// }
 
 fn destructure_pattern(
-    repl_src: &str,
     env: Rc<RefCell<Env>>,
     pat: Node<infer::Pattern>,
     val: Node<Value>,
-) -> RuntimeResult<Destructure> {
+) -> Option<Rc<RefCell<Env>>> {
+    let pat_env = Env::new_with_parent(env.clone());
     match pat.inner().clone() {
         infer::Pattern::Lit(l) => {
             if let Value::Lit(v) = val.inner() {
                 if l == *v {
-                    Ok(Destructure {
-                        pat,
-                        val: val.inner().clone(),
-                    })
+                    Some(pat_env)
                 } else {
-                    Err(format!(
-                        "Expected literal {:?}, found {:?}",
-                        l,
-                        repl_src[val.span()].trim()
-                    )
-                    .into())
+                    None
                 }
             } else {
-                Err(format!(
-                    "Expected literal {:?}, found {:?}",
-                    l,
-                    repl_src[val.span()].trim()
-                )
-                .into())
+                None
             }
         }
         infer::Pattern::Ident(name) => {
             env.borrow_mut().insert(name, val.inner().clone());
-            Ok(Destructure {
-                pat,
-                val: val.inner().clone(),
-            })
+            Some(pat_env)
         }
-        infer::Pattern::Wildcard => Ok(Destructure {
-            pat,
-            val: val.inner().clone(),
-        }),
+        infer::Pattern::Wildcard => Some(pat_env),
         infer::Pattern::Unit => {
             if let Value::Unit = val.inner() {
-                Ok(Destructure {
-                    pat,
-                    val: val.inner().clone(),
-                })
+                Some(pat_env)
             } else {
-                Err(format!("Expected unit, found {:?}", repl_src[val.span()].trim()).into())
+                None
             }
         }
     }

@@ -34,8 +34,8 @@ fn lit_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
 fn pattern_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
 ) -> impl Parser<'a, I, Pattern, extra::Err<Rich<'a, Token, Span>>> {
     ident_parser()
-        .or(just(Token::Wildcard).map(|_| InternedString::from("_")))
         .map(Pattern::Ident)
+        .or(just(Token::Wildcard).map(|_| Pattern::Wildcard))
         .or(just(Token::LParen)
             .then(just(Token::RParen))
             .map(|_| Pattern::Unit))

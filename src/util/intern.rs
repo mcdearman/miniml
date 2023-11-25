@@ -1,6 +1,9 @@
 use lasso::{Spur, ThreadedRodeo};
 use once_cell::sync::Lazy;
-use std::fmt::{Debug, Display};
+use std::{
+    fmt::{Debug, Display},
+    ops::Deref,
+};
 
 pub static mut INTERNER: Lazy<ThreadedRodeo> = Lazy::new(|| ThreadedRodeo::default());
 
@@ -28,6 +31,14 @@ impl From<String> for InternedString {
         Self {
             key: unsafe { INTERNER.get_or_intern(s) },
         }
+    }
+}
+
+impl Deref for InternedString {
+    type Target = str;
+
+    fn deref(&self) -> &Self::Target {
+        unsafe { INTERNER.resolve(&self.key) }
     }
 }
 

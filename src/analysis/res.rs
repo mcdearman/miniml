@@ -235,6 +235,11 @@ fn resolve_expr(env: Rc<RefCell<Env>>, expr: &Node<ast::Expr>, rec: bool) -> Res
                         Expr::Ident(Node::new(name, expr.span())),
                         expr.span(),
                     ))
+                // } else if &**ident == "_" {
+                //     Ok(Node::new(
+                //         Expr::Ident(Node::new(env.borrow_mut().define(*ident), expr.span())),
+                //         expr.span(),
+                //     ))
                 } else {
                     Err(ResError {
                         msg: InternedString::from(&*format!(
@@ -250,6 +255,11 @@ fn resolve_expr(env: Rc<RefCell<Env>>, expr: &Node<ast::Expr>, rec: bool) -> Res
                         Expr::Ident(Node::new(name, expr.span())),
                         expr.span(),
                     ))
+                // } else if &**ident == "_" {
+                //     Ok(Node::new(
+                //         Expr::Ident(Node::new(env.borrow_mut().define(*ident), expr.span())),
+                //         expr.span(),
+                //     ))
                 } else {
                     Err(ResError {
                         msg: InternedString::from(&*format!(
