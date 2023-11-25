@@ -90,12 +90,12 @@ pub struct Root {
 #[derive(Debug, Clone, PartialEq)]
 pub enum Item {
     Def {
-        name: Node<UniqueId>,
+        pat: Node<Pattern>,
         expr: Node<Expr>,
     },
     Fn {
         name: Node<UniqueId>,
-        params: Vec<Node<UniqueId>>,
+        params: Vec<Node<Pattern>>,
         body: Node<Expr>,
     },
     Expr(Expr),
@@ -106,7 +106,7 @@ pub enum Expr {
     Lit(Node<Lit>),
     Ident(Node<UniqueId>),
     Lambda {
-        params: Vec<Node<UniqueId>>,
+        params: Vec<Node<Pattern>>,
         body: Node<Self>,
     },
     Apply {
@@ -114,13 +114,13 @@ pub enum Expr {
         args: Vec<Node<Self>>,
     },
     Let {
-        name: Node<UniqueId>,
+        pat: Node<Pattern>,
         expr: Node<Self>,
         body: Node<Self>,
     },
     Fn {
         name: Node<UniqueId>,
-        params: Vec<Node<UniqueId>>,
+        params: Vec<Node<Pattern>>,
         expr: Node<Self>,
         body: Node<Self>,
     },
@@ -188,32 +188,24 @@ pub fn resolve(
 
 fn resolve_item(env: Rc<RefCell<Env>>, item: Node<ast::Item>) -> ResResult<Node<Item>> {
     match &*item {
-        ast::Item::Def { name, expr } => {
-            let name = Node::new(env.borrow_mut().define(name.inner().clone()), name.span());
+        ast::Item::Def { pat, expr } => {
+            let pat = resolve_pattern(env.clone(), pat, false)?;
             let expr = resolve_expr(env.clone(), expr, false)?;
-            Ok(Node::new(Item::Def { name, expr }, item.span()))
+            Ok(Node::new(Item::Def { pat, expr }, item.span()))
         }
-        // ast::Item::Def { name, expr } => Ok(item.try_map(|i| {
-        //     Ok(Item::Def {
-        //         name: name.map(|n| env.borrow_mut().define(n)),
-        //         expr: expr
-        //             .try_map(|e| resolve_expr(env.clone(), expr, false).map(|n| n.into_inner()))?,
-        //     })
-        // })?),
         ast::Item::Fn { name, params, body } => {
             let name = Node::new(env.borrow_mut().define(name.inner().clone()), name.span());
-            let mut params = params.clone();
-            let mut param_names = vec![];
+            let mut new_params = vec![];
             let fn_env = Env::new_with_parent(env.clone());
-            for param in &mut params {
-                let name = fn_env.borrow_mut().define(param.inner().clone());
-                param_names.push(Node::new(name, param.span()));
+            for p in params {
+                let pat = resolve_pattern(fn_env.clone(), &p, true)?;
+                new_params.push(pat);
             }
             let body = resolve_expr(fn_env, &body, true)?;
             Ok(Node::new(
                 Item::Fn {
                     name,
-                    params: param_names,
+                    params: new_params,
                     body,
                 },
                 item.span(),
@@ -276,17 +268,10 @@ fn resolve_expr(env: Rc<RefCell<Env>>, expr: &Node<ast::Expr>, rec: bool) -> Res
             expr.span(),
         )),
         ast::Expr::Let { pat, expr, body } => {
-            let name = Node::new(env.borrow_mut().define(name.inner().clone()), name.span());
+            let pat = resolve_pattern(env.clone(), pat, rec)?;
             let expr = resolve_expr(Env::new_with_parent(env.clone()), expr, rec)?;
             let body = resolve_expr(env, body, rec)?;
-            Ok(Node::new(
-                Expr::Let {
-                    name,
-                    expr: expr.clone(),
-                    body: body.clone(),
-                },
-                expr.span(),
-            ))
+            Ok(Node::new(Expr::Let { pat, expr, body }, expr.span()))
         }
         ast::Expr::Fn {
             name,
@@ -295,21 +280,21 @@ fn resolve_expr(env: Rc<RefCell<Env>>, expr: &Node<ast::Expr>, rec: bool) -> Res
             body,
         } => {
             let name = Node::new(env.borrow_mut().define(name.inner().clone()), name.span());
-            let mut params = params.clone();
-            let mut param_names = vec![];
+            let mut new_params = vec![];
             let fn_env = Env::new_with_parent(env.clone());
-            for param in &mut params {
-                let name = fn_env.borrow_mut().define(param.inner().clone());
-                param_names.push(Node::new(name, param.span()));
+            for p in params {
+                // let name = fn_env.borrow_mut().define(param.inner().clone());
+                let pat = resolve_pattern(fn_env.clone(), p, true)?;
+                new_params.push(pat);
             }
             let expr = resolve_expr(fn_env.clone(), expr, true)?;
             let body = resolve_expr(fn_env, body, true)?;
             Ok(Node::new(
                 Expr::Fn {
                     name,
-                    params: param_names,
-                    expr: expr.clone(),
-                    body: body.clone(),
+                    params: new_params,
+                    expr,
+                    body,
                 },
                 expr.span(),
             ))
@@ -329,17 +314,16 @@ fn resolve_expr(env: Rc<RefCell<Env>>, expr: &Node<ast::Expr>, rec: bool) -> Res
             ))
         }
         ast::Expr::Lambda { params, body } => {
-            let mut params = params.clone();
-            let mut param_names = vec![];
+            let mut new_params = vec![];
             let lambda_env = Env::new_with_parent(env.clone());
-            for param in &mut params {
-                let name = lambda_env.borrow_mut().define(param.inner().clone());
-                param_names.push(Node::new(name, param.span()));
+            for p in params {
+                let pat = resolve_pattern(lambda_env.clone(), p, true)?;
+                new_params.push(pat);
             }
             let body = resolve_expr(lambda_env, body, true)?;
             Ok(Node::new(
                 Expr::Lambda {
-                    params: param_names,
+                    params: new_params,
                     body,
                 },
                 expr.span(),

@@ -81,7 +81,7 @@ fn expr_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
 
         let lambda = just(Token::Lambda)
             .ignore_then(
-                ident_parser()
+                pattern_parser()
                     .map_with_span(Node::new)
                     .repeated()
                     .at_least(1)
@@ -291,7 +291,7 @@ fn fn_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
     ident_parser()
         .map_with_span(Node::new)
         .then(
-            ident_parser()
+            pattern_parser()
                 .map_with_span(Node::new)
                 .repeated()
                 .at_least(1)
@@ -306,11 +306,11 @@ fn fn_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
 
 fn def_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
 ) -> impl Parser<'a, I, Node<Item>, extra::Err<Rich<'a, Token, Span>>> {
-    ident_parser()
+    pattern_parser()
         .map_with_span(Node::new)
         .then_ignore(just(Token::Assign))
         .then(expr_parser().map_with_span(Node::new))
-        .map(|(name, expr)| Item::Def { name, expr })
+        .map(|(pat, expr)| Item::Def { pat, expr })
         .map_with_span(Node::new)
         .boxed()
 }

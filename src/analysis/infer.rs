@@ -505,17 +505,18 @@ fn infer_item<'src>(
     item: Node<res::Item>,
 ) -> InferResult<(Vec<Constraint>, Context, Node<Item>)> {
     match item.inner().clone() {
-        res::Item::Def { name, expr } => {
+        res::Item::Def { pat, expr } => {
             let (cs, _, ectx, e) = infer_expr(src, ctx, expr)?;
             let scheme = generalize(ectx.clone(), e.inner().ty());
             let mut tmp_ctx = ectx.clone();
-            tmp_ctx.extend(*name, scheme);
+            // tmp_ctx.extend(*name, scheme);
+
             Ok((
                 cs,
                 ctx.union(tmp_ctx),
                 Node::new(
                     Item::Def {
-                        name,
+                        pat,
                         expr: e.clone(),
                         ty: e.inner().ty(),
                     },
@@ -681,7 +682,7 @@ fn infer_expr<'src>(
                 ),
             ))
         }
-        res::Expr::Let { name, expr, body } => {
+        res::Expr::Let { pat, expr, body } => {
             let (cs1, t1, mut ctx1, e1) = infer_expr(src, ctx, expr.clone())?;
             let scheme = generalize(ctx1.clone(), t1.clone());
             let mut tmp_ctx = ctx1.clone();

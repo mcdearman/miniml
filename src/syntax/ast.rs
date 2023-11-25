@@ -10,12 +10,12 @@ pub struct Root {
 #[derive(Debug, Clone, PartialEq)]
 pub enum Item {
     Def {
-        name: Node<InternedString>,
+        pat: Node<Pattern>,
         expr: Node<Expr>,
     },
     Fn {
         name: Node<InternedString>,
-        params: Vec<Node<InternedString>>,
+        params: Vec<Node<Pattern>>,
         body: Node<Expr>,
     },
     Expr(Expr),
@@ -26,7 +26,7 @@ pub enum Expr {
     Lit(Lit),
     Ident(InternedString),
     Lambda {
-        params: Vec<Node<InternedString>>,
+        params: Vec<Node<Pattern>>,
         body: Node<Self>,
     },
     Apply {
