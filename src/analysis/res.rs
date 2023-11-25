@@ -275,7 +275,7 @@ fn resolve_expr(env: Rc<RefCell<Env>>, expr: &Node<ast::Expr>, rec: bool) -> Res
             Expr::Lit(Node::new(l.clone().into(), expr.span())),
             expr.span(),
         )),
-        ast::Expr::Let { name, expr, body } => {
+        ast::Expr::Let { pat, expr, body } => {
             let name = Node::new(env.borrow_mut().define(name.inner().clone()), name.span());
             let expr = resolve_expr(Env::new_with_parent(env.clone()), expr, rec)?;
             let body = resolve_expr(env, body, rec)?;

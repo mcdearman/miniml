@@ -40,8 +40,8 @@ atom = ident
      | if 
      | match 
      | lambda 
+     | list 
     #  | map 
-    #  | list 
      | "("  expr  ")"
 
 letExpr = "let" pat "=" expr "in" expr
@@ -75,7 +75,7 @@ lambda = "\\" pat+ "-" expr
 
 # map = "{" ident ":" expr ("," ident ":" expr)* "}"
 
-# list = "[" expr? ("," expr)* "]"
+list = "[" (expr ("," expr)*)? "]"
 
 # Terminals/Tokens
 

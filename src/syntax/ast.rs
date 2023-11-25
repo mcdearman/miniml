@@ -34,13 +34,13 @@ pub enum Expr {
         args: Vec<Node<Self>>,
     },
     Let {
-        name: Node<InternedString>,
+        pat: Node<Pattern>,
         expr: Node<Self>,
         body: Node<Self>,
     },
     Fn {
         name: Node<InternedString>,
-        params: Vec<Node<InternedString>>,
+        params: Vec<Node<Pattern>>,
         expr: Node<Self>,
         body: Node<Self>,
     },

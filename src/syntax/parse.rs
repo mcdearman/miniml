@@ -52,17 +52,17 @@ fn expr_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
         let lit = lit_parser().map(Expr::Lit);
 
         let let_ = just(Token::Let)
-            .ignore_then(ident_parser().map_with_span(Node::new))
+            .ignore_then(pattern_parser().map_with_span(Node::new))
             .then_ignore(just(Token::Assign))
             .then(expr.clone().map_with_span(Node::new))
             .then_ignore(just(Token::In))
             .then(expr.clone().map_with_span(Node::new))
-            .map(|((name, expr), body)| Expr::Let { name, expr, body });
+            .map(|((pat, expr), body)| Expr::Let { pat, expr, body });
 
         let fn_ = just(Token::Let)
             .ignore_then(ident_parser().map_with_span(Node::new))
             .then(
-                ident_parser()
+                pattern_parser()
                     .map_with_span(Node::new)
                     .repeated()
                     .at_least(1)
