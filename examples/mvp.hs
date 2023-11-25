@@ -56,6 +56,7 @@ fib n = if n <= 1 then n else fib (n - 1) + fib (n - 2)
 ack m n = if m == 0 then n + 1 else if n == 0 then ack (m - 1) 1 else ack (m - 1) (ack m (n-1))
 
 loop i j = if i > 5 then () else if j > 5 then loop (i+1) 0 else let _ = print (ack i j) in loop i (j + 1)
+loop i = if i > 30 then () else let a = print (fib i) in loop (i + 1)
 
 gcd a b = match b with | 0 -> a | _ -> gcd b (a % b)
 
@@ -64,6 +65,14 @@ gcd a b =
   | 0 -> a 
   | _ -> gcd b (a % b)
 
+-- lists
+[1, 2, 3]
+1..10
+
+-- classes 
+class Point =
+  x: Int
+  y: Int
 
 
 
