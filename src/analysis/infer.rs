@@ -36,13 +36,13 @@ pub struct Root {
 pub enum Item {
     Expr(Expr),
     Def {
-        name: Node<UniqueId>,
+        pat: Node<Pattern>,
         expr: Node<Expr>,
         ty: Type,
     },
     Fn {
         name: Node<UniqueId>,
-        params: Vec<Node<UniqueId>>,
+        params: Vec<Node<Pattern>>,
         body: Node<Expr>,
         ty: Type,
     },
@@ -59,7 +59,7 @@ pub enum Expr {
         ty: Type,
     },
     Lambda {
-        params: Vec<Node<UniqueId>>,
+        params: Vec<Node<Pattern>>,
         body: Node<Expr>,
         ty: Type,
     },
@@ -69,14 +69,14 @@ pub enum Expr {
         ty: Type,
     },
     Let {
-        name: Node<UniqueId>,
+        pat: Node<Pattern>,
         expr: Node<Expr>,
         body: Node<Expr>,
         ty: Type,
     },
     Fn {
         name: Node<UniqueId>,
-        params: Vec<Node<UniqueId>>,
+        params: Vec<Node<Pattern>>,
         expr: Node<Expr>,
         body: Node<Expr>,
         ty: Type,
@@ -509,8 +509,7 @@ fn infer_item<'src>(
             let (cs, _, ectx, e) = infer_expr(src, ctx, expr)?;
             let scheme = generalize(ectx.clone(), e.inner().ty());
             let mut tmp_ctx = ectx.clone();
-            // tmp_ctx.extend(*name, scheme);
-
+            let (cs, t, ctx, pat) = infer_pattern(src, &mut tmp_ctx, pat)?;
             Ok((
                 cs,
                 ctx.union(tmp_ctx),
@@ -528,13 +527,16 @@ fn infer_item<'src>(
             let mut e_ctx = ctx.clone();
             let f_var = Type::Var(TyVar::fresh());
             e_ctx.extend(*name, Scheme::new(vec![], f_var.clone()));
-
             let mut ty_binders = vec![];
             let mut tmp_ctx = e_ctx.clone();
+            let mut new_params = vec![];
             for p in params.clone() {
                 let ty_binder = Type::Var(TyVar::fresh());
                 ty_binders.push(ty_binder.clone());
-                tmp_ctx.extend(*p, Scheme::new(vec![], ty_binder));
+                let (cs, ty, ctx, pat) = infer_pattern(src, &mut tmp_ctx, p)?;
+                tmp_ctx = ctx.union(tmp_ctx);
+                new_params.push(pat);
+                // tmp_ctx.extend(*p, Scheme::new(vec![], ty_binder));
             }
             let (cs1, t1, c, body) = infer_expr(src, &mut tmp_ctx, body)?;
             let ty = Type::Lambda(ty_binders.clone(), Box::new(t1.clone()));
@@ -546,7 +548,7 @@ fn infer_item<'src>(
                 Node::new(
                     Item::Fn {
                         name,
-                        params,
+                        params: new_params,
                         body,
                         ty,
                     },
@@ -629,10 +631,13 @@ fn infer_expr<'src>(
         res::Expr::Lambda { params, body } => {
             let mut ty_binders = vec![];
             let mut tmp_ctx = ctx.clone();
+            let mut new_params = vec![];
             for p in params.clone() {
                 let ty_binder = Type::Var(TyVar::fresh());
                 ty_binders.push(ty_binder.clone());
-                tmp_ctx.extend(*p, Scheme::new(vec![], ty_binder));
+                let (cs, ty, ctx, pat) = infer_pattern(src, ctx, p)?;
+                tmp_ctx = ctx.union(tmp_ctx);
+                new_params.push(pat);
             }
             let (cs, t, c, e) = infer_expr(src, &mut tmp_ctx, body)?;
             let ty = Type::Lambda(ty_binders.clone(), Box::new(t.clone()));
@@ -642,7 +647,7 @@ fn infer_expr<'src>(
                 tmp_ctx.union(c),
                 Node::new(
                     Expr::Lambda {
-                        params,
+                        params: new_params,
                         body: e,
                         ty,
                     },
@@ -686,7 +691,8 @@ fn infer_expr<'src>(
             let (cs1, t1, mut ctx1, e1) = infer_expr(src, ctx, expr.clone())?;
             let scheme = generalize(ctx1.clone(), t1.clone());
             let mut tmp_ctx = ctx1.clone();
-            tmp_ctx.extend(*name, scheme);
+            // tmp_ctx.extend(*name, scheme);
+            let (cs1, t1, mut ctx1, pat) = infer_pattern(src, &mut tmp_ctx, pat)?;
             let (cs2, t2, ctx2, e2) = infer_expr(src, &mut tmp_ctx, body)?;
             ctx1 = ctx2.union(ctx1);
             let cs = cs1.into_iter().chain(cs2.into_iter()).collect::<Vec<_>>();
@@ -696,7 +702,7 @@ fn infer_expr<'src>(
                 ctx1,
                 Node::new(
                     Expr::Let {
-                        name,
+                        pat,
                         expr: e1,
                         body: e2,
                         ty: t2,
@@ -717,10 +723,13 @@ fn infer_expr<'src>(
 
             let mut ty_binders = vec![];
             let mut tmp_ctx = e_ctx.clone();
+            let mut new_params = vec![];
             for p in params.clone() {
                 let ty_binder = Type::Var(TyVar::fresh());
                 ty_binders.push(ty_binder.clone());
-                tmp_ctx.extend(*p, Scheme::new(vec![], ty_binder));
+                let (cs, ty, ctx, new_p) = infer_pattern(src, &mut tmp_ctx, p)?;
+                tmp_ctx = ctx.union(tmp_ctx);
+                new_params.push(new_p);
             }
             let (cs1, t1, c, expr) = infer_expr(src, &mut tmp_ctx, expr)?;
             let ty = Type::Lambda(ty_binders.clone(), Box::new(t1.clone()));
@@ -734,7 +743,7 @@ fn infer_expr<'src>(
                 Node::new(
                     Expr::Fn {
                         name,
-                        params,
+                        params: new_params,
                         expr: expr.clone(),
                         body: e2,
                         ty: t2,
@@ -850,6 +859,7 @@ fn infer_pattern(
         res::Pattern::Ident(name) => {
             if let Some(scm) = ctx.clone().vars.get(&name) {
                 let ty = instantiate(scm.clone());
+                ctx.extend(name, Scheme::new(vec![], ty.clone()));
                 Ok((
                     vec![],
                     ty.clone(),
@@ -897,8 +907,8 @@ fn apply_subst_item(subst: Substitution, item: Node<Item>) -> Node<Item> {
                     .inner()
                     .clone(),
             ),
-            Item::Def { name, expr, ty } => Item::Def {
-                name,
+            Item::Def { pat, expr, ty } => Item::Def {
+                pat,
                 expr: apply_subst_expr(subst.clone(), expr),
                 ty: apply_subst(subst, ty),
             },
@@ -943,12 +953,12 @@ fn apply_subst_expr(subst: Substitution, expr: Node<Expr>) -> Node<Expr> {
                 ty: apply_subst(subst, ty),
             },
             Expr::Let {
-                name,
+                pat,
                 expr,
                 body,
                 ty,
             } => Expr::Let {
-                name,
+                pat,
                 expr: apply_subst_expr(subst.clone(), expr),
                 body: apply_subst_expr(subst.clone(), body),
                 ty: apply_subst(subst, ty),

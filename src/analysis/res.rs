@@ -269,9 +269,16 @@ fn resolve_expr(env: Rc<RefCell<Env>>, expr: &Node<ast::Expr>, rec: bool) -> Res
         )),
         ast::Expr::Let { pat, expr, body } => {
             let pat = resolve_pattern(env.clone(), pat, rec)?;
-            let expr = resolve_expr(Env::new_with_parent(env.clone()), expr, rec)?;
+            let expr = resolve_expr(Env::new_with_parent(env.clone()), &expr.clone(), rec)?;
             let body = resolve_expr(env, body, rec)?;
-            Ok(Node::new(Expr::Let { pat, expr, body }, expr.span()))
+            Ok(Node::new(
+                Expr::Let {
+                    pat,
+                    expr: expr.clone(),
+                    body,
+                },
+                expr.span(),
+            ))
         }
         ast::Expr::Fn {
             name,
@@ -293,7 +300,7 @@ fn resolve_expr(env: Rc<RefCell<Env>>, expr: &Node<ast::Expr>, rec: bool) -> Res
                 Expr::Fn {
                     name,
                     params: new_params,
-                    expr,
+                    expr: expr.clone(),
                     body,
                 },
                 expr.span(),

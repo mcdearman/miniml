@@ -1,6 +1,6 @@
 use crate::{
     analysis::{
-        infer::{self, Expr, Item, Root, TyVar},
+        infer::{self, Expr, Item, Pattern, Root, TyVar},
         res,
     },
     util::{intern::InternedString, node::Node, unique_id::UniqueId},
@@ -471,7 +471,7 @@ pub enum Value {
     Lit(Lit),
     Lambda {
         env: Rc<RefCell<Env>>,
-        params: Vec<Node<UniqueId>>,
+        params: Vec<Node<Pattern>>,
         body: Node<Expr>,
     },
     NativeFn(fn(Vec<Value>) -> RuntimeResult<Value>),
@@ -542,9 +542,10 @@ pub fn eval<'src>(
             Item::Expr(expr) => {
                 val = eval_expr(src, repl_src, env.clone(), Node::new(expr, item.span()))?;
             }
-            Item::Def { name, expr, .. } => {
+            Item::Def { pat, expr, .. } => {
                 let value = eval_expr(src, repl_src, env.clone(), expr)?;
-                env.borrow_mut().insert(name.inner().clone(), value);
+                let ds = destructure_pattern(env.clone(), pat, Node::new(value, item.span()));
+                // env.borrow_mut().insert(name.inner().clone(), value);
                 val = Value::Unit;
             }
             Item::Fn {
@@ -591,9 +592,9 @@ fn eval_expr<'src>(
                 }
             }
             Expr::Lambda { params, body, .. } => Value::Lambda {
-                env: Env::new_with_parent(env.clone()),
-                params: params.clone(),
-                body: body.clone(),
+                env: env.clone(),
+                params,
+                body,
             },
             Expr::Apply { fun, args, .. } => {
                 let fun = eval_expr(src, repl_src, env.clone(), fun)?;
@@ -605,11 +606,21 @@ fn eval_expr<'src>(
                         body,
                     } => {
                         let arg_env = Env::new_with_parent(lam_env.clone());
-                        for (param, arg) in params.iter().zip(args) {
-                            arg_env.borrow_mut().insert(
-                                param.inner().clone(),
-                                eval_expr(src, repl_src, env.clone(), arg)?,
-                            );
+                        for (p, arg) in params.iter().zip(args) {
+                            if !destructure_pattern(
+                                arg_env.clone(),
+                                p.clone(),
+                                Node::new(
+                                    eval_expr(src, repl_src, env.clone(), arg.clone())?,
+                                    expr.span(),
+                                ),
+                            ) {
+                                return Err(format!("Could not destructure pattern").into());
+                            }
+                            // arg_env.borrow_mut().insert(
+                            //     param.inner().clone(),
+                            //     eval_expr(src, repl_src, env.clone(), arg)?,
+                            // );
                         }
                         // println!("arg_env: {:#?}", arg_env.borrow());
 
@@ -627,11 +638,18 @@ fn eval_expr<'src>(
                 }
             }
             Expr::Let {
-                name, expr, body, ..
+                pat,
+                expr: let_expr,
+                body,
+                ..
             } => {
-                let value = eval_expr(src, repl_src, env.clone(), expr)?;
-                env.borrow_mut().insert(name.inner().clone(), value);
-                eval_expr(src, repl_src, env, body)?
+                let value = eval_expr(src, repl_src, env.clone(), let_expr.clone())?;
+                if destructure_pattern(env.clone(), pat, Node::new(value, let_expr.span())) {
+                    expr = body;
+                    continue 'tco;
+                } else {
+                    return Err(format!("Could not destructure pattern").into());
+                }
             }
             Expr::Fn {
                 name,
@@ -654,18 +672,18 @@ fn eval_expr<'src>(
                 ty,
             } => {
                 let val = eval_expr(src, repl_src, env.clone(), mexpr.clone())?;
+                let match_env = Env::new_with_parent(env.clone());
                 for case in cases {
-                    match destructure_pattern(
-                        env.clone(),
+                    if destructure_pattern(
+                        match_env.clone(),
                         case.pattern.clone(),
                         Node::new(val.clone(), mexpr.span()),
                     ) {
-                        Some(case_env) => {
-                            env = case_env;
-                            expr = case.expr.clone();
-                            continue 'tco;
-                        }
-                        None => continue,
+                        env = match_env;
+                        expr = case.expr.clone();
+                        continue 'tco;
+                    } else {
+                        continue;
                     }
                 }
                 return Err(format!("No matching pattern found for {:?}", val).into());
@@ -696,41 +714,20 @@ fn eval_expr<'src>(
     Ok(val)
 }
 
-// #[derive(Debug, Clone, PartialEq)]
-// struct Destructure {
-//     env: Rc<RefCell<Env>>,
-//     rest: Option<Node<Value>>,
-// }
-
-fn destructure_pattern(
-    env: Rc<RefCell<Env>>,
-    pat: Node<infer::Pattern>,
-    val: Node<Value>,
-) -> Option<Rc<RefCell<Env>>> {
-    let pat_env = Env::new_with_parent(env.clone());
+fn destructure_pattern(env: Rc<RefCell<Env>>, pat: Node<infer::Pattern>, val: Node<Value>) -> bool {
     match pat.inner().clone() {
         infer::Pattern::Lit(l) => {
             if let Value::Lit(v) = val.inner() {
-                if l == *v {
-                    Some(pat_env)
-                } else {
-                    None
-                }
+                l == *v
             } else {
-                None
+                false
             }
         }
         infer::Pattern::Ident(name) => {
             env.borrow_mut().insert(name, val.inner().clone());
-            Some(pat_env)
+            true
         }
-        infer::Pattern::Wildcard => Some(pat_env),
-        infer::Pattern::Unit => {
-            if let Value::Unit = val.inner() {
-                Some(pat_env)
-            } else {
-                None
-            }
-        }
+        infer::Pattern::Wildcard => true,
+        infer::Pattern::Unit => Value::Unit == val.inner().clone(),
     }
 }
