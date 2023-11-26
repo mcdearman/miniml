@@ -506,18 +506,21 @@ fn infer_item<'src>(
 ) -> InferResult<(Vec<Constraint>, Context, Node<Item>)> {
     match item.inner().clone() {
         res::Item::Def { pat, expr } => {
-            let (cs, _, ectx, e) = infer_expr(src, ctx, expr)?;
-            let scheme = generalize(ectx.clone(), e.inner().ty());
+            let (cs, ty, ectx, e) = infer_expr(src, ctx, expr)?;
+            // let scheme = generalize(ectx.clone(), e.inner().ty());
             let mut tmp_ctx = ectx.clone();
-            let (cs, t, ctx, pat) = infer_pattern(src, &mut tmp_ctx, pat)?;
+            // println!("tmp_ctx: {:?}", tmp_ctx);
+            let (mut csp, tp, ctx, pat) = infer_pattern(src, &mut tmp_ctx, pat, true)?;
+            csp.push(Constraint::Eq(tp, ty.clone()));
+
             Ok((
-                cs,
+                cs.into_iter().chain(csp.into_iter()).collect(),
                 ctx.union(tmp_ctx),
                 Node::new(
                     Item::Def {
                         pat,
                         expr: e.clone(),
-                        ty: e.inner().ty(),
+                        ty,
                     },
                     item.span(),
                 ),
@@ -533,7 +536,7 @@ fn infer_item<'src>(
             for p in params.clone() {
                 let ty_binder = Type::Var(TyVar::fresh());
                 ty_binders.push(ty_binder.clone());
-                let (cs, ty, ctx, pat) = infer_pattern(src, &mut tmp_ctx, p)?;
+                let (cs, ty, ctx, pat) = infer_pattern(src, &mut tmp_ctx, p, true)?;
                 tmp_ctx = ctx.union(tmp_ctx);
                 new_params.push(pat);
                 // tmp_ctx.extend(*p, Scheme::new(vec![], ty_binder));
@@ -635,7 +638,7 @@ fn infer_expr<'src>(
             for p in params.clone() {
                 let ty_binder = Type::Var(TyVar::fresh());
                 ty_binders.push(ty_binder.clone());
-                let (cs, ty, ctx, pat) = infer_pattern(src, ctx, p)?;
+                let (cs, ty, ctx, pat) = infer_pattern(src, ctx, p, true)?;
                 tmp_ctx = ctx.union(tmp_ctx);
                 new_params.push(pat);
             }
@@ -689,10 +692,10 @@ fn infer_expr<'src>(
         }
         res::Expr::Let { pat, expr, body } => {
             let (cs1, t1, mut ctx1, e1) = infer_expr(src, ctx, expr.clone())?;
-            let scheme = generalize(ctx1.clone(), t1.clone());
+            // let scheme = generalize(ctx1.clone(), t1.clone());
             let mut tmp_ctx = ctx1.clone();
             // tmp_ctx.extend(*name, scheme);
-            let (cs1, t1, mut ctx1, pat) = infer_pattern(src, &mut tmp_ctx, pat)?;
+            let (cs1, t1, mut ctx1, pat) = infer_pattern(src, &mut tmp_ctx, pat, true)?;
             let (cs2, t2, ctx2, e2) = infer_expr(src, &mut tmp_ctx, body)?;
             ctx1 = ctx2.union(ctx1);
             let cs = cs1.into_iter().chain(cs2.into_iter()).collect::<Vec<_>>();
@@ -727,7 +730,7 @@ fn infer_expr<'src>(
             for p in params.clone() {
                 let ty_binder = Type::Var(TyVar::fresh());
                 ty_binders.push(ty_binder.clone());
-                let (cs, ty, ctx, new_p) = infer_pattern(src, &mut tmp_ctx, p)?;
+                let (cs, ty, ctx, new_p) = infer_pattern(src, &mut tmp_ctx, p, true)?;
                 tmp_ctx = ctx.union(tmp_ctx);
                 new_params.push(new_p);
             }
@@ -758,7 +761,7 @@ fn infer_expr<'src>(
             let ty_ret = Type::Var(TyVar::fresh());
             for c in cases {
                 let (csp, tp, mut ctxp, p) =
-                    infer_pattern(src, &mut ctx1, c.inner().pattern.clone())?;
+                    infer_pattern(src, &mut ctx1, c.inner().pattern.clone(), true)?;
                 let (cse, te, ctxe, e) = infer_expr(src, &mut ctxp, c.inner().expr.clone())?;
                 cs1 = cs1
                     .into_iter()
@@ -834,6 +837,7 @@ fn infer_pattern(
     src: &str,
     ctx: &mut Context,
     pattern: Node<res::Pattern>,
+    def: bool,
 ) -> InferResult<(Vec<Constraint>, Type, Context, Node<Pattern>)> {
     match pattern.inner().clone() {
         res::Pattern::Lit(lit) => match lit {
@@ -857,21 +861,31 @@ fn infer_pattern(
             )),
         },
         res::Pattern::Ident(name) => {
-            if let Some(scm) = ctx.clone().vars.get(&name) {
-                let ty = instantiate(scm.clone());
-                ctx.extend(name, Scheme::new(vec![], ty.clone()));
+            if def {
+                ctx.extend(name, Scheme::new(vec![], Type::Var(TyVar::fresh())));
                 Ok((
                     vec![],
-                    ty.clone(),
+                    Type::Var(TyVar::fresh()),
                     ctx.clone(),
                     Node::new(Pattern::Ident(name), pattern.span().clone()),
                 ))
             } else {
-                Err(TypeError::from(format!(
-                    "unbound variable: {:?} - \"{}\"",
-                    pattern,
-                    src[pattern.span()].to_string()
-                )))
+                if let Some(scm) = ctx.clone().vars.get(&name) {
+                    let ty = instantiate(scm.clone());
+                    ctx.extend(name, Scheme::new(vec![], ty.clone()));
+                    Ok((
+                        vec![],
+                        ty.clone(),
+                        ctx.clone(),
+                        Node::new(Pattern::Ident(name), pattern.span().clone()),
+                    ))
+                } else {
+                    Err(TypeError::from(format!(
+                        "unbound variable: {:?} - \"{}\"",
+                        pattern,
+                        src[pattern.span()].to_string()
+                    )))
+                }
             }
         }
         res::Pattern::Wildcard => Ok((

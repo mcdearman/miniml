@@ -189,7 +189,7 @@ pub fn resolve(
 fn resolve_item(env: Rc<RefCell<Env>>, item: Node<ast::Item>) -> ResResult<Node<Item>> {
     match &*item {
         ast::Item::Def { pat, expr } => {
-            let pat = resolve_pattern(env.clone(), pat, false)?;
+            let pat = resolve_pattern(env.clone(), pat, false, true)?;
             let expr = resolve_expr(env.clone(), expr, false)?;
             Ok(Node::new(Item::Def { pat, expr }, item.span()))
         }
@@ -198,7 +198,7 @@ fn resolve_item(env: Rc<RefCell<Env>>, item: Node<ast::Item>) -> ResResult<Node<
             let mut new_params = vec![];
             let fn_env = Env::new_with_parent(env.clone());
             for p in params {
-                let pat = resolve_pattern(fn_env.clone(), &p, true)?;
+                let pat = resolve_pattern(fn_env.clone(), &p, true, true)?;
                 new_params.push(pat);
             }
             let body = resolve_expr(fn_env, &body, true)?;
@@ -268,7 +268,7 @@ fn resolve_expr(env: Rc<RefCell<Env>>, expr: &Node<ast::Expr>, rec: bool) -> Res
             expr.span(),
         )),
         ast::Expr::Let { pat, expr, body } => {
-            let pat = resolve_pattern(env.clone(), pat, rec)?;
+            let pat = resolve_pattern(env.clone(), pat, rec, true)?;
             let expr = resolve_expr(Env::new_with_parent(env.clone()), &expr.clone(), rec)?;
             let body = resolve_expr(env, body, rec)?;
             Ok(Node::new(
@@ -291,7 +291,7 @@ fn resolve_expr(env: Rc<RefCell<Env>>, expr: &Node<ast::Expr>, rec: bool) -> Res
             let fn_env = Env::new_with_parent(env.clone());
             for p in params {
                 // let name = fn_env.borrow_mut().define(param.inner().clone());
-                let pat = resolve_pattern(fn_env.clone(), p, true)?;
+                let pat = resolve_pattern(fn_env.clone(), p, true, true)?;
                 new_params.push(pat);
             }
             let expr = resolve_expr(fn_env.clone(), expr, true)?;
@@ -324,7 +324,7 @@ fn resolve_expr(env: Rc<RefCell<Env>>, expr: &Node<ast::Expr>, rec: bool) -> Res
             let mut new_params = vec![];
             let lambda_env = Env::new_with_parent(env.clone());
             for p in params {
-                let pat = resolve_pattern(lambda_env.clone(), p, true)?;
+                let pat = resolve_pattern(lambda_env.clone(), p, true, true)?;
                 new_params.push(pat);
             }
             let body = resolve_expr(lambda_env, body, true)?;
@@ -341,7 +341,7 @@ fn resolve_expr(env: Rc<RefCell<Env>>, expr: &Node<ast::Expr>, rec: bool) -> Res
             let cases = cases
                 .iter()
                 .map(|case| {
-                    let pattern = resolve_pattern(env.clone(), &case.pattern, rec)?;
+                    let pattern = resolve_pattern(env.clone(), &case.pattern, rec, false)?;
                     let expr = resolve_expr(env.clone(), &case.expr, rec)?;
                     Ok(Node::new(
                         MatchCase {
@@ -414,33 +414,39 @@ fn resolve_pattern(
     env: Rc<RefCell<Env>>,
     pattern: &Node<ast::Pattern>,
     rec: bool,
+    def: bool,
 ) -> ResResult<Node<Pattern>> {
     match pattern.inner() {
         ast::Pattern::Lit(l) => Ok(Node::new(Pattern::Lit(l.clone().into()), pattern.span())),
         ast::Pattern::Ident(ident) => {
-            if rec {
-                if let Some(name) = env.borrow().find(ident) {
-                    Ok(Node::new(Pattern::Ident(name), pattern.span()))
-                } else {
-                    Err(ResError {
-                        msg: InternedString::from(&*format!(
-                            "name '{:?}' is not defined",
-                            pattern.inner()
-                        )),
-                        span: pattern.span(),
-                    })
-                }
+            if def {
+                let name = env.borrow_mut().define(ident.clone());
+                Ok(Node::new(Pattern::Ident(name), pattern.span()))
             } else {
-                if let Some(name) = env.borrow().find_in_scope(ident) {
-                    Ok(Node::new(Pattern::Ident(name), pattern.span()))
+                if rec {
+                    if let Some(name) = env.borrow().find(ident) {
+                        Ok(Node::new(Pattern::Ident(name), pattern.span()))
+                    } else {
+                        Err(ResError {
+                            msg: InternedString::from(&*format!(
+                                "name '{:?}' is not defined",
+                                pattern.inner()
+                            )),
+                            span: pattern.span(),
+                        })
+                    }
                 } else {
-                    Err(ResError {
-                        msg: InternedString::from(&*format!(
-                            "name '{:?}' is not defined",
-                            pattern.inner()
-                        )),
-                        span: pattern.span(),
-                    })
+                    if let Some(name) = env.borrow().find_in_scope(ident) {
+                        Ok(Node::new(Pattern::Ident(name), pattern.span()))
+                    } else {
+                        Err(ResError {
+                            msg: InternedString::from(&*format!(
+                                "name '{:?}' is not defined",
+                                pattern.inner()
+                            )),
+                            span: pattern.span(),
+                        })
+                    }
                 }
             }
         }
