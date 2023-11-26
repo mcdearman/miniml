@@ -72,7 +72,7 @@ gcd a b = match b with | 0 -> a | _ -> gcd b (a % b)
 map f xs = 
   match xs with 
   | [] -> [] 
-  | x :: xs -> f x :: map f xs
+  | [x::xs] -> f x :: map f xs
 
 -- multiline
 gcd a b = 
