@@ -106,10 +106,12 @@ pub fn repl() {
             Ok((root, new_ctx)) => {
                 // println!("TAST: {:?}", root);
                 tast = Some(root.clone());
+                let start = std::time::Instant::now();
                 match eval(&src, &full_src, eval_env.clone(), &root) {
                     Ok(val) => {
                         ctx = new_ctx;
-                        println!("{}", val)
+                        println!("{}", val);
+                        println!("Took {:?}", start.elapsed());
                     }
                     Err(errors) => println!("evaluation errors: {:?}", errors),
                 }

@@ -69,13 +69,20 @@ loop i = if i > 30 then () else let _ = print (fib i) in loop (i + 1)
 
 gcd a b = match b with | 0 -> a | _ -> gcd b (a % b)
 
-map f xs = match xs with | [] -> [] | x :: xs -> f x :: map f xs
+map f xs = 
+  match xs with 
+  | [] -> [] 
+  | x :: xs -> f x :: map f xs
 
 -- multiline
 gcd a b = 
   match b with 
   | 0 -> a 
   | _ -> gcd b (a % b)
+
+fib n = 
+  if n <= 1 then n 
+  else fib (n - 1) + fib (n - 2)
 
 
 

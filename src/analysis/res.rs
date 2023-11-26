@@ -8,7 +8,7 @@ use crate::{
     util::{intern::InternedString, node::Node, span::Span, unique_id::UniqueId},
 };
 use num_rational::Rational64;
-use std::{cell::RefCell, collections::HashMap, hash::Hash, rc::Rc};
+use std::{cell::RefCell, collections::HashMap, rc::Rc};
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct ResError {
@@ -201,7 +201,7 @@ fn resolve_item(env: Rc<RefCell<Env>>, item: Node<ast::Item>) -> ResResult<Node<
                 let pat = resolve_pattern(fn_env.clone(), &p, true, true)?;
                 new_params.push(pat);
             }
-            let body = resolve_expr(fn_env, &body, true)?;
+            let body = resolve_expr(fn_env.clone(), &body, true)?;
             Ok(Node::new(
                 Item::Fn {
                     name,
@@ -227,11 +227,6 @@ fn resolve_expr(env: Rc<RefCell<Env>>, expr: &Node<ast::Expr>, rec: bool) -> Res
                         Expr::Ident(Node::new(name, expr.span())),
                         expr.span(),
                     ))
-                // } else if &**ident == "_" {
-                //     Ok(Node::new(
-                //         Expr::Ident(Node::new(env.borrow_mut().define(*ident), expr.span())),
-                //         expr.span(),
-                //     ))
                 } else {
                     Err(ResError {
                         msg: InternedString::from(&*format!(
@@ -247,11 +242,6 @@ fn resolve_expr(env: Rc<RefCell<Env>>, expr: &Node<ast::Expr>, rec: bool) -> Res
                         Expr::Ident(Node::new(name, expr.span())),
                         expr.span(),
                     ))
-                // } else if &**ident == "_" {
-                //     Ok(Node::new(
-                //         Expr::Ident(Node::new(env.borrow_mut().define(*ident), expr.span())),
-                //         expr.span(),
-                //     ))
                 } else {
                     Err(ResError {
                         msg: InternedString::from(&*format!(
