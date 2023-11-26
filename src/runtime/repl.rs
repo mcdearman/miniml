@@ -1,11 +1,13 @@
+use logos::Logos;
+
 use crate::{
     analysis::{
         infer::{self, type_inference},
         res::{self, resolve},
     },
     runtime::tree_walk::{self, default_ctx, default_res_env, eval, primitive_ids},
-    syntax::{ast, parse::parse},
-    util::node::Node,
+    syntax::{ast, parse::parse, token::Token},
+    util::{node::Node, span::Span},
 };
 use std::io::{self, Write};
 
@@ -18,6 +20,7 @@ pub fn repl() {
     let res_env = default_res_env(prims.clone());
     let eval_env = tree_walk::default_env(prims.clone());
     let mut ctx = default_ctx(prims);
+    let mut tokens: Option<Vec<Node<Token>>> = None;
     let mut ast: Option<Node<ast::Root>> = None;
     let mut res: Option<Node<res::Root>> = None;
     let mut tast: Option<Node<infer::Root>> = None;
@@ -29,6 +32,13 @@ pub fn repl() {
             .expect("failed to read from stdin");
         full_src.push_str(&src);
         match src.trim() {
+            "tokens" => {
+                println!("{:#?}", tokens);
+                src.clear();
+                print!("\n> ");
+                io::stdout().flush().expect("failed to flush stdout");
+                continue;
+            }
             "env" => {
                 println!("{:#?}", eval_env.borrow());
                 src.clear();
@@ -67,6 +77,11 @@ pub fn repl() {
             "exit" => break,
             _ => (),
         }
+        let lexer = Token::lexer(&src).spanned().map(|(tok, span)| match tok {
+            Ok(tok) => Node::new(tok, Span::from(span)),
+            Err(err) => panic!("lex error: {:?}", err),
+        });
+        tokens = Some(lexer.collect());
         let (p, errors) = parse(&src);
         ast = p;
         // println!("AST: {:?}", ast);
