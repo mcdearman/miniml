@@ -197,9 +197,10 @@ fn resolve_item(env: Rc<RefCell<Env>>, item: Node<ast::Item>) -> ResResult<Node<
     trace!("item env: {:#?}", env.borrow());
     match &*item {
         ast::Item::Def { pat, expr } => {
-            let pat = resolve_pattern(env.clone(), pat, false, true)?;
+            let def_env = Env::new_with_parent(env.clone());
+            let pat = resolve_pattern(def_env.clone(), pat)?;
             trace!("def env: {:#?}", env.borrow());
-            let expr = resolve_expr(Env::new_with_parent(env.clone()), expr, false)?;
+            let expr = resolve_expr(Env::new_with_parent(def_env.clone()), expr, false)?;
             Ok(Node::new(Item::Def { pat, expr }, item.span()))
         }
         ast::Item::Fn { name, params, body } => {
@@ -207,7 +208,7 @@ fn resolve_item(env: Rc<RefCell<Env>>, item: Node<ast::Item>) -> ResResult<Node<
             let mut new_params = vec![];
             let fn_env = Env::new_with_parent(env.clone());
             for p in params {
-                let pat = resolve_pattern(fn_env.clone(), &p, true, true)?;
+                let pat = resolve_pattern(fn_env.clone(), &p)?;
                 new_params.push(pat);
             }
             let body = resolve_expr(fn_env.clone(), &body, true)?;
@@ -268,9 +269,9 @@ fn resolve_expr(env: Rc<RefCell<Env>>, expr: &Node<ast::Expr>, rec: bool) -> Res
         )),
         ast::Expr::Let { pat, expr, body } => {
             let let_env = Env::new_with_parent(env.clone());
-            let pat = resolve_pattern(let_env.clone(), pat, rec, true)?;
+            let pat = resolve_pattern(let_env.clone(), pat)?;
             trace!("let env: {:#?}", let_env.borrow());
-            let expr = resolve_expr(Env::new_with_parent(let_env.clone()), &expr.clone(), rec)?;
+            let expr = resolve_expr(let_env.clone(), &expr.clone(), rec)?;
             let body = resolve_expr(let_env.clone(), body, rec)?;
             Ok(Node::new(
                 Expr::Let {
@@ -292,7 +293,7 @@ fn resolve_expr(env: Rc<RefCell<Env>>, expr: &Node<ast::Expr>, rec: bool) -> Res
             let fn_env = Env::new_with_parent(env.clone());
             for p in params {
                 // let name = fn_env.borrow_mut().define(param.inner().clone());
-                let pat = resolve_pattern(fn_env.clone(), p, true, true)?;
+                let pat = resolve_pattern(fn_env.clone(), p)?;
                 new_params.push(pat);
             }
             let expr = resolve_expr(fn_env.clone(), expr, true)?;
@@ -325,7 +326,7 @@ fn resolve_expr(env: Rc<RefCell<Env>>, expr: &Node<ast::Expr>, rec: bool) -> Res
             let mut new_params = vec![];
             let lambda_env = Env::new_with_parent(env.clone());
             for p in params {
-                let pat = resolve_pattern(lambda_env.clone(), p, true, true)?;
+                let pat = resolve_pattern(lambda_env.clone(), p)?;
                 new_params.push(pat);
             }
             let body = resolve_expr(lambda_env, body, true)?;
@@ -342,7 +343,7 @@ fn resolve_expr(env: Rc<RefCell<Env>>, expr: &Node<ast::Expr>, rec: bool) -> Res
             let cases = cases
                 .iter()
                 .map(|case| {
-                    let pattern = resolve_pattern(env.clone(), &case.pattern, rec, false)?;
+                    let pattern = resolve_pattern(env.clone(), &case.pattern)?;
                     let expr = resolve_expr(env.clone(), &case.expr, rec)?;
                     Ok(Node::new(
                         MatchCase {
@@ -414,52 +415,52 @@ fn resolve_expr(env: Rc<RefCell<Env>>, expr: &Node<ast::Expr>, rec: bool) -> Res
 fn resolve_pattern(
     env: Rc<RefCell<Env>>,
     pattern: &Node<ast::Pattern>,
-    rec: bool,
-    def: bool,
+    // rec: bool,
+    // def: bool,
 ) -> ResResult<Node<Pattern>> {
     match pattern.inner() {
         ast::Pattern::Lit(l) => Ok(Node::new(Pattern::Lit(l.clone().into()), pattern.span())),
         ast::Pattern::Ident(ident) => {
-            if def {
-                if let Some(name) = env.borrow().find(ident) {
-                    return Err(ResError {
-                        msg: InternedString::from(&*format!(
-                            "name '{:?}' is already defined as {:?}",
-                            pattern.inner(),
-                            name
-                        )),
-                        span: pattern.span(),
-                    });
-                }
-                let name = env.borrow_mut().define(ident.clone());
-                Ok(Node::new(Pattern::Ident(name), pattern.span()))
-            } else {
-                if rec {
-                    if let Some(name) = env.borrow().find(ident) {
-                        Ok(Node::new(Pattern::Ident(name), pattern.span()))
-                    } else {
-                        Err(ResError {
-                            msg: InternedString::from(&*format!(
-                                "name '{:?}' is not defined",
-                                pattern.inner()
-                            )),
-                            span: pattern.span(),
-                        })
-                    }
-                } else {
-                    if let Some(name) = env.borrow().find_in_scope(ident) {
-                        Ok(Node::new(Pattern::Ident(name), pattern.span()))
-                    } else {
-                        Err(ResError {
-                            msg: InternedString::from(&*format!(
-                                "name '{:?}' is not defined",
-                                pattern.inner()
-                            )),
-                            span: pattern.span(),
-                        })
-                    }
-                }
-            }
+            // if def {
+            // if let Some(name) = env.borrow().find(ident) {
+            //     return Err(ResError {
+            //         msg: InternedString::from(&*format!(
+            //             "name '{:?}' is already defined as {:?}",
+            //             pattern.inner(),
+            //             name
+            //         )),
+            //         span: pattern.span(),
+            //     });
+            // }
+            let name = env.borrow_mut().define(ident.clone());
+            Ok(Node::new(Pattern::Ident(name), pattern.span()))
+            // } else {
+            //     if rec {
+            //         if let Some(name) = env.borrow().find(ident) {
+            //             Ok(Node::new(Pattern::Ident(name), pattern.span()))
+            //         } else {
+            //             Err(ResError {
+            //                 msg: InternedString::from(&*format!(
+            //                     "name '{:?}' is not defined",
+            //                     pattern.inner()
+            //                 )),
+            //                 span: pattern.span(),
+            //             })
+            //         }
+            //     } else {
+            //         if let Some(name) = env.borrow().find_in_scope(ident) {
+            //             Ok(Node::new(Pattern::Ident(name), pattern.span()))
+            //         } else {
+            //             Err(ResError {
+            //                 msg: InternedString::from(&*format!(
+            //                     "name '{:?}' is not defined",
+            //                     pattern.inner()
+            //                 )),
+            //                 span: pattern.span(),
+            //             })
+            //         }
+            //     }
+            // }
         }
         ast::Pattern::Wildcard => Ok(Node::new(Pattern::Wildcard, pattern.span())),
         ast::Pattern::Unit => Ok(Node::new(Pattern::Unit, pattern.span())),
