@@ -190,7 +190,7 @@ fn resolve_item(env: Rc<RefCell<Env>>, item: Node<ast::Item>) -> ResResult<Node<
     match &*item {
         ast::Item::Def { pat, expr } => {
             let pat = resolve_pattern(env.clone(), pat, false, true)?;
-            let expr = resolve_expr(env.clone(), expr, false)?;
+            let expr = resolve_expr(Env::new_with_parent(env.clone()), expr, false)?;
             Ok(Node::new(Item::Def { pat, expr }, item.span()))
         }
         ast::Item::Fn { name, params, body } => {
@@ -260,7 +260,7 @@ fn resolve_expr(env: Rc<RefCell<Env>>, expr: &Node<ast::Expr>, rec: bool) -> Res
         ast::Expr::Let { pat, expr, body } => {
             let pat = resolve_pattern(env.clone(), pat, rec, true)?;
             let expr = resolve_expr(Env::new_with_parent(env.clone()), &expr.clone(), rec)?;
-            let body = resolve_expr(env, body, rec)?;
+            let body = resolve_expr(env.clone(), body, rec)?;
             Ok(Node::new(
                 Expr::Let {
                     pat,
