@@ -197,10 +197,10 @@ fn resolve_item(env: Rc<RefCell<Env>>, item: Node<ast::Item>) -> ResResult<Node<
     trace!("item env: {:#?}", env.borrow());
     match &*item {
         ast::Item::Def { pat, expr } => {
-            let def_env = Env::new_with_parent(env.clone());
-            let pat = resolve_pattern(def_env.clone(), pat)?;
+            // let def_env = Env::new_with_parent(env.clone());
+            let expr = resolve_expr(env.clone(), expr)?;
+            let pat = resolve_pattern(env.clone(), pat)?;
             trace!("def env: {:#?}", env.borrow());
-            let expr = resolve_expr(Env::new_with_parent(def_env.clone()), expr, false)?;
             Ok(Node::new(Item::Def { pat, expr }, item.span()))
         }
         ast::Item::Fn { name, params, body } => {
@@ -211,7 +211,7 @@ fn resolve_item(env: Rc<RefCell<Env>>, item: Node<ast::Item>) -> ResResult<Node<
                 let pat = resolve_pattern(fn_env.clone(), &p)?;
                 new_params.push(pat);
             }
-            let body = resolve_expr(fn_env.clone(), &body, true)?;
+            let body = resolve_expr(fn_env.clone(), &body)?;
             Ok(Node::new(
                 Item::Fn {
                     name,
@@ -222,45 +222,28 @@ fn resolve_item(env: Rc<RefCell<Env>>, item: Node<ast::Item>) -> ResResult<Node<
             ))
         }
         ast::Item::Expr(expr) => {
-            let expr = resolve_expr(env.clone(), &Node::new(expr.clone(), item.span()), false)?;
+            let expr = resolve_expr(env.clone(), &Node::new(expr.clone(), item.span()))?;
             Ok(Node::new(Item::Expr(expr.inner().clone()), item.span()))
         }
     }
 }
 
-fn resolve_expr(env: Rc<RefCell<Env>>, expr: &Node<ast::Expr>, rec: bool) -> ResResult<Node<Expr>> {
+fn resolve_expr(env: Rc<RefCell<Env>>, expr: &Node<ast::Expr>) -> ResResult<Node<Expr>> {
     match expr.inner() {
         ast::Expr::Ident(ident) => {
-            if rec {
-                if let Some(name) = env.borrow().find(ident) {
-                    Ok(Node::new(
-                        Expr::Ident(Node::new(name, expr.span())),
-                        expr.span(),
-                    ))
-                } else {
-                    Err(ResError {
-                        msg: InternedString::from(&*format!(
-                            "name '{:?}' is not defined",
-                            expr.inner()
-                        )),
-                        span: expr.span(),
-                    })
-                }
+            if let Some(name) = env.borrow().find(ident) {
+                Ok(Node::new(
+                    Expr::Ident(Node::new(name, expr.span())),
+                    expr.span(),
+                ))
             } else {
-                if let Some(name) = env.borrow().find_in_scope(ident) {
-                    Ok(Node::new(
-                        Expr::Ident(Node::new(name, expr.span())),
-                        expr.span(),
-                    ))
-                } else {
-                    Err(ResError {
-                        msg: InternedString::from(&*format!(
-                            "name '{:?}' is not defined",
-                            expr.inner()
-                        )),
-                        span: expr.span(),
-                    })
-                }
+                Err(ResError {
+                    msg: InternedString::from(&*format!(
+                        "name '{:?}' is not defined",
+                        expr.inner()
+                    )),
+                    span: expr.span(),
+                })
             }
         }
         ast::Expr::Lit(l) => Ok(Node::new(
@@ -269,10 +252,10 @@ fn resolve_expr(env: Rc<RefCell<Env>>, expr: &Node<ast::Expr>, rec: bool) -> Res
         )),
         ast::Expr::Let { pat, expr, body } => {
             let let_env = Env::new_with_parent(env.clone());
+            let expr = resolve_expr(let_env.clone(), &expr.clone())?;
             let pat = resolve_pattern(let_env.clone(), pat)?;
             trace!("let env: {:#?}", let_env.borrow());
-            let expr = resolve_expr(let_env.clone(), &expr.clone(), rec)?;
-            let body = resolve_expr(let_env.clone(), body, rec)?;
+            let body = resolve_expr(let_env.clone(), body)?;
             Ok(Node::new(
                 Expr::Let {
                     pat,
@@ -292,12 +275,11 @@ fn resolve_expr(env: Rc<RefCell<Env>>, expr: &Node<ast::Expr>, rec: bool) -> Res
             let mut new_params = vec![];
             let fn_env = Env::new_with_parent(env.clone());
             for p in params {
-                // let name = fn_env.borrow_mut().define(param.inner().clone());
                 let pat = resolve_pattern(fn_env.clone(), p)?;
                 new_params.push(pat);
             }
-            let expr = resolve_expr(fn_env.clone(), expr, true)?;
-            let body = resolve_expr(fn_env, body, true)?;
+            let expr = resolve_expr(fn_env.clone(), expr)?;
+            let body = resolve_expr(fn_env, body)?;
             Ok(Node::new(
                 Expr::Fn {
                     name,
@@ -309,10 +291,10 @@ fn resolve_expr(env: Rc<RefCell<Env>>, expr: &Node<ast::Expr>, rec: bool) -> Res
             ))
         }
         ast::Expr::Apply { fun, args } => {
-            let fun = resolve_expr(env.clone(), fun, rec)?;
+            let fun = resolve_expr(env.clone(), fun)?;
             let args = args
                 .iter()
-                .map(|arg| resolve_expr(env.clone(), arg, rec))
+                .map(|arg| resolve_expr(env.clone(), arg))
                 .collect::<ResResult<Vec<_>>>()?;
             Ok(Node::new(
                 Expr::Apply {
@@ -329,7 +311,7 @@ fn resolve_expr(env: Rc<RefCell<Env>>, expr: &Node<ast::Expr>, rec: bool) -> Res
                 let pat = resolve_pattern(lambda_env.clone(), p)?;
                 new_params.push(pat);
             }
-            let body = resolve_expr(lambda_env, body, true)?;
+            let body = resolve_expr(lambda_env, body)?;
             Ok(Node::new(
                 Expr::Lambda {
                     params: new_params,
@@ -339,12 +321,12 @@ fn resolve_expr(env: Rc<RefCell<Env>>, expr: &Node<ast::Expr>, rec: bool) -> Res
             ))
         }
         ast::Expr::Match { expr, cases } => {
-            let expr = resolve_expr(env.clone(), expr, rec)?;
+            let expr = resolve_expr(env.clone(), expr)?;
             let cases = cases
                 .iter()
                 .map(|case| {
                     let pattern = resolve_pattern(env.clone(), &case.pattern)?;
-                    let expr = resolve_expr(env.clone(), &case.expr, rec)?;
+                    let expr = resolve_expr(env.clone(), &case.expr)?;
                     Ok(Node::new(
                         MatchCase {
                             pattern: pattern.clone(),
@@ -363,9 +345,9 @@ fn resolve_expr(env: Rc<RefCell<Env>>, expr: &Node<ast::Expr>, rec: bool) -> Res
             ))
         }
         ast::Expr::If { cond, then, else_ } => {
-            let cond = resolve_expr(env.clone(), cond, rec)?;
-            let then = resolve_expr(env.clone(), then, rec)?;
-            let else_ = resolve_expr(env, else_, rec)?;
+            let cond = resolve_expr(env.clone(), cond)?;
+            let then = resolve_expr(env.clone(), then)?;
+            let else_ = resolve_expr(env, else_)?;
             Ok(Node::new(
                 Expr::If {
                     cond: cond.clone(),
@@ -382,7 +364,7 @@ fn resolve_expr(env: Rc<RefCell<Env>>, expr: &Node<ast::Expr>, rec: bool) -> Res
                     .unwrap(),
                 op.span(),
             );
-            let expr = resolve_expr(env, expr, rec)?;
+            let expr = resolve_expr(env, expr)?;
             Ok(Node::new(
                 Expr::Apply {
                     fun: Node::new(Expr::Ident(op_id), op.span()),
@@ -398,8 +380,8 @@ fn resolve_expr(env: Rc<RefCell<Env>>, expr: &Node<ast::Expr>, rec: bool) -> Res
                     .unwrap(),
                 op.span(),
             );
-            let lhs = resolve_expr(env.clone(), lhs, rec)?;
-            let rhs = resolve_expr(env, rhs, rec)?;
+            let lhs = resolve_expr(env.clone(), lhs)?;
+            let rhs = resolve_expr(env, rhs)?;
             Ok(Node::new(
                 Expr::Apply {
                     fun: Node::new(Expr::Ident(op_id), op.span()),
