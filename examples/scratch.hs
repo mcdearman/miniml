@@ -69,13 +69,9 @@ map f xs =
 
 class Node = Node Int (Maybe Node)
 
-binaryListToDecimal :: Node -> Int
-binaryListToDecimal (Node _ Nothing) = 0
-binaryListToDecimal (Node dataValue (Just rest)) = binaryListToDecimal rest * 2 + dataValue
-
 binaryListToDecimal (Node dataValue rest) = 
   match rest with
-  | Nothing -> dataValue
+  | Nothing -> 0
   | Just rest -> binaryListToDecimal rest * 2 + dataValue
 
 let y = 2 in (\x -> x + y) 1

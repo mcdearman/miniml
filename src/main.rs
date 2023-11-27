@@ -1,12 +1,4 @@
-use std::collections::HashMap;
-
-use analysis::{
-    hir_lower,
-    infer::{type_inference, Context},
-    res::resolve,
-};
 use runtime::repl::repl;
-use syntax::parse::parse;
 
 mod analysis;
 mod runtime;
@@ -14,6 +6,7 @@ mod syntax;
 mod util;
 
 fn main() {
+    env_logger::init();
     repl();
     // f: 'a -> 'b
     // x: 'a

@@ -1,0 +1,30 @@
+Root {
+    items: [
+        Def {
+            pat: Ident(
+                InternedString(x),
+            ) @ 0..1,
+            expr: Lit(
+                Num(
+                    Ratio {
+                        numer: 1,
+                        denom: 1,
+                    },
+                ),
+            ) @ 4..5,
+        } @ 0..5,
+        Expr(
+            Let {
+                pat: Ident(
+                    InternedString(x),
+                ) @ 4..5,
+                expr: Ident(
+                    InternedString(x),
+                ) @ 8..9,
+                body: Ident(
+                    InternedString(x),
+                ) @ 13..14,
+            },
+        ) @ 0..14,
+    ],
+} @ 0..14

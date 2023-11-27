@@ -7,6 +7,7 @@ use crate::{
     syntax::ast,
     util::{intern::InternedString, node::Node, span::Span, unique_id::UniqueId},
 };
+use log::trace;
 use num_rational::Rational64;
 use std::{cell::RefCell, collections::HashMap, rc::Rc};
 
@@ -175,8 +176,14 @@ pub fn resolve(
     let mut items = vec![];
     for item in root.inner().clone().items {
         match resolve_item(env.clone(), item) {
-            Ok(i) => items.push(i),
-            Err(err) => errors.push(err),
+            Ok(i) => {
+                // trace!("env: {:#?}", env.borrow());
+                items.push(i);
+            }
+            Err(err) => {
+                trace!("env: {:#?}", env.borrow());
+                errors.push(err)
+            }
         }
     }
     if items.is_empty() {
@@ -187,9 +194,11 @@ pub fn resolve(
 }
 
 fn resolve_item(env: Rc<RefCell<Env>>, item: Node<ast::Item>) -> ResResult<Node<Item>> {
+    trace!("item env: {:#?}", env.borrow());
     match &*item {
         ast::Item::Def { pat, expr } => {
             let pat = resolve_pattern(env.clone(), pat, false, true)?;
+            trace!("def env: {:#?}", env.borrow());
             let expr = resolve_expr(Env::new_with_parent(env.clone()), expr, false)?;
             Ok(Node::new(Item::Def { pat, expr }, item.span()))
         }
@@ -258,9 +267,11 @@ fn resolve_expr(env: Rc<RefCell<Env>>, expr: &Node<ast::Expr>, rec: bool) -> Res
             expr.span(),
         )),
         ast::Expr::Let { pat, expr, body } => {
-            let pat = resolve_pattern(env.clone(), pat, rec, true)?;
-            let expr = resolve_expr(Env::new_with_parent(env.clone()), &expr.clone(), rec)?;
-            let body = resolve_expr(env.clone(), body, rec)?;
+            let let_env = Env::new_with_parent(env.clone());
+            let pat = resolve_pattern(let_env.clone(), pat, rec, true)?;
+            trace!("let env: {:#?}", let_env.borrow());
+            let expr = resolve_expr(Env::new_with_parent(let_env.clone()), &expr.clone(), rec)?;
+            let body = resolve_expr(let_env.clone(), body, rec)?;
             Ok(Node::new(
                 Expr::Let {
                     pat,
@@ -410,6 +421,16 @@ fn resolve_pattern(
         ast::Pattern::Lit(l) => Ok(Node::new(Pattern::Lit(l.clone().into()), pattern.span())),
         ast::Pattern::Ident(ident) => {
             if def {
+                if let Some(name) = env.borrow().find(ident) {
+                    return Err(ResError {
+                        msg: InternedString::from(&*format!(
+                            "name '{:?}' is already defined as {:?}",
+                            pattern.inner(),
+                            name
+                        )),
+                        span: pattern.span(),
+                    });
+                }
                 let name = env.borrow_mut().define(ident.clone());
                 Ok(Node::new(Pattern::Ident(name), pattern.span()))
             } else {
