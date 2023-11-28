@@ -140,11 +140,11 @@ class Map K V =
   insert : [K, V] -> Map K V
   delete : K -> Map K V
 
-data List (I = Nat) V <: Map I V 
-  = Empty 
-  | Pair I V (List I V)
+data List (I = Nat) V <: Map I V =
+  push : V -> List I V
+  pop : () -> List I V 
 
-class List (I = Nat) V <: Map I V
+class LinkedList (I = Nat) V <: List I V
   = Empty
   | Pair I V (List I V)
 
