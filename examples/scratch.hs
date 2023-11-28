@@ -195,9 +195,9 @@ show_sexpr :(let x = 1 in x + 1)
 -- miniml> '(let ((x 1)) (+ x 1))
 
 show_sexpr 
-  :(let fib 0 = 0 
-    | fib 1 = 1 
-    | fib n = fib (n - 1) + fib (n - 2))
+  :(fib 0 = 0 
+      | 1 = 1 
+      | n = fib (n - 1) + fib (n - 2))
 -- miniml> '(let ((fib (lambda (n) (match n (0 0) (1 1) (n (+ (fib (- n 1)) (fib (- n 2))))))))
 
 -- Macros
