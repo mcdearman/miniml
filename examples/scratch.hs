@@ -134,13 +134,25 @@ begin
 class Ord <: Eq + PartialOrd = 
   cmp : [self, self] -> Ordering
 
+class Collection = 
+  empty : Collection
+  insert : [self, a] -> Collection
+  delete : [self, a] -> Collection
+  contains : [self, a] -> Bool
+
+class Tree a <: Collection = 
+  empty : Tree a
+  insert : [a] -> Tree a
+  delete : [a] -> Tree a
+  contains : [a] -> Bool
+
 class Map K V = 
   empty : Map K V
   find : K -> V
   insert : [K, V] -> Map K V
   delete : K -> Map K V
 
-data List (I = Nat) V <: Map I V =
+class List (I = Nat) V <: Map I V =
   push : V -> List I V
   pop : () -> List I V 
 
