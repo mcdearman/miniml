@@ -54,8 +54,15 @@ match x with
 
 -- classes 
 class Point =
-  x: Int
-  y: Int
+  x : Int
+  y : Int
+
+  impl Point =
+    move dx dy = Point (x + dx) (y + dy)
+
+  impl ToString for Point =
+    toString = f"Point(x: {x}, y: {y})"
+    
 
 -- examples
 gcd a b = if b == 0 then a else gcd b (a % b)
