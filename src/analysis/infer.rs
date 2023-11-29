@@ -396,6 +396,7 @@ fn unify(t1: Type, t2: Type) -> InferResult<Substitution> {
         (Type::Num, Type::Num) => Ok(Substitution::new()),
         (Type::Bool, Type::Bool) => Ok(Substitution::new()),
         (Type::String, Type::String) => Ok(Substitution::new()),
+        (Type::Unit, Type::Unit) => Ok(Substitution::new()),
         (Type::Lambda(p1, b1), Type::Lambda(p2, b2)) => {
             let s1 = p1.into_iter().zip(p2.into_iter()).fold(
                 Ok(Substitution::new()),

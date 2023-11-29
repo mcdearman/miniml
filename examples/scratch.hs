@@ -135,30 +135,31 @@ class Main =
   main = println "Hello World!"
 
 -- Classes
-class Ord <: Eq + PartialOrd = 
-  cmp : [self, self] -> Ordering
+class Ord <: Eq PartialOrd = 
+  cmp : (self, self) -> Ordering
 
 class Collection = 
   empty : Collection
-  insert : [self, a] -> Collection
-  delete : [self, a] -> Collection
-  contains : [self, a] -> Bool
+  insert : (self, a) -> Collection
+  delete : (self, a) -> Collection
+  contains : (self, a) -> Bool
 
 class Tree a <: Collection = 
   empty : Tree a
-  insert : [a] -> Tree a
-  delete : [a] -> Tree a
-  contains : [a] -> Bool
+  insert : a -> Tree a
+  delete : a -> Tree a
+  contains : a -> Bool
 
 class Map K V = 
   empty : Map K V
   find : K -> V
-  insert : [K, V] -> Map K V
+  insert : (K, V) -> Map K V
   delete : K -> Map K V
 
 class List (I = Nat) V <: Map I V =
   push : V -> List I V
   pop : () -> List I V 
+  get : I -> V
 
 class LinkedList (I = Nat) V <: List I V
   = Empty
@@ -166,7 +167,7 @@ class LinkedList (I = Nat) V <: List I V
 
   empty : List I V
   find : I -> V
-  insert : [I, V] -> List I V
+  insert : (I, V) -> List I V
   delete : I -> List I V
 
 class Point = 

@@ -1,9 +1,23 @@
 -- A pair list is either empty or a pair of an element and a pair list.
-pub class List T
-  = Pair (head: T) (tail: List T)
+class LinkedList T
+  = Pair (head: T, tail: List T)
   | Empty
 
-impl T Add for List T =
+  -- impl T <: Add Add T T for List T =
+
+class LinkedList T =
+  head : T
+  tail : List T
+  
+  LinkedList : () -> Self
+  LinkedList ()
+
+  LinkedList : (T, List T) -> Self
+  LinkedList head tail =
+    this.head = head
+    this.tail = tail
+
+
   -- [len] takes a list [xs] and returns the number of elements in [xs].
   len : List T -> u64
   len xs =
@@ -18,14 +32,16 @@ pub len (xs : List T) -> u64 =
 
 -- [map] takes a function [f] and a list [xs] and returns the list of
 -- the results of applying [f] to each element of [xs].
-pub fn map (f: 'a -> 'b) (xs: List 'a) -> List 'b =
+map : (T -> U, List T) -> List U
+map f xs =
   match xs with
     List::Pair x -> Pair (map f x) 
-    List::Empty -> Nil
+    List::Empty -> []
 
 -- [filter] takes a predicate [f] and a list [xs] and returns the 
 -- list of all elements [x] in [xs] such that [f x] is [True].
-pub fn filter (f : 'a -> Bool) (xs : List 'a) -> List 'a =
+filter : (T -> Bool, List T) -> List T
+filter f xs =
   match xs with
     List::Pair x ->
       if f x then

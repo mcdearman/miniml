@@ -68,6 +68,8 @@ pub enum Token {
     Pipe,
     #[token("|>")]
     PipeArrow,
+    #[token("<:")]
+    Subtype,
 
     #[token(":")]
     Colon,
@@ -79,6 +81,8 @@ pub enum Token {
     Wildcard,
 
     // Keywords
+    #[token("class")]
+    Class,
     #[token("let")]
     Let,
     #[token("in")]
@@ -127,10 +131,12 @@ impl Display for Token {
             Self::RBrack => write!(f, "]"),
             Self::Pipe => write!(f, "|"),
             Self::PipeArrow => write!(f, "|>"),
+            Self::Subtype => write!(f, "<:"),
             Self::Colon => write!(f, ":"),
             Self::Semicolon => write!(f, ";"),
             Self::Comma => write!(f, ","),
             Self::Wildcard => write!(f, "_"),
+            Self::Class => write!(f, "class"),
             Self::Let => write!(f, "let"),
             Self::In => write!(f, "in"),
             Self::Match => write!(f, "match"),
