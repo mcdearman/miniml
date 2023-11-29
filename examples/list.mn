@@ -8,7 +8,7 @@ class LinkedList T
 class LinkedList T =
   head : T
   tail : List T
-  
+ 
   LinkedList : () -> Self
   LinkedList ()
 
@@ -16,7 +16,6 @@ class LinkedList T =
   LinkedList head tail =
     this.head = head
     this.tail = tail
-
 
   -- [len] takes a list [xs] and returns the number of elements in [xs].
   len : List T -> u64
