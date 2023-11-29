@@ -130,6 +130,10 @@ begin
   y + z
 -- miniml> 3
 
+class Main = 
+  main : ()
+  main = println "Hello World!"
+
 -- Classes
 class Ord <: Eq + PartialOrd = 
   cmp : [self, self] -> Ordering
