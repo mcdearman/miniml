@@ -617,12 +617,7 @@ fn eval_expr<'src>(
                             ) {
                                 return Err(format!("Could not destructure pattern").into());
                             }
-                            // arg_env.borrow_mut().insert(
-                            //     param.inner().clone(),
-                            //     eval_expr(src, repl_src, env.clone(), arg)?,
-                            // );
                         }
-                        // println!("arg_env: {:#?}", arg_env.borrow());
 
                         expr = body;
                         env = arg_env;

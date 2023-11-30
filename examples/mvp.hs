@@ -54,10 +54,6 @@ gcd a b =
   if b == 0 then a 
   else gcd b (a % b)
 
-gcd(a: Int, b: Int) -> Int = 
-  if b == 0 then a 
-  else gcd(b, a % b)
-
 -- lists
 [1, 2, 3]
 
