@@ -48,8 +48,20 @@ if x then y else z
 match x with
 | y -> z
 
+-- type hints
+gcd : (Int, Int) -> Int
+gcd a b = 
+  if b == 0 then a 
+  else gcd b (a % b)
+
+gcd(a: Int, b: Int) -> Int = 
+  if b == 0 then a 
+  else gcd(b, a % b)
+
 -- lists
 [1, 2, 3]
+
+-- ranges
 1..10
 
 -- classes 
@@ -57,12 +69,16 @@ class Point =
   x : Int
   y : Int
 
-  impl Point =
-    move dx dy = Point (x + dx) (y + dy)
+impl Point =
+  move dx dy = Point (x + dx) (y + dy)
 
-  impl ToString for Point =
-    toString = f"Point(x: {x}, y: {y})"
-    
+impl ToString for Point =
+  toString () = f"Point(x: {x}, y: {y})"
+
+-- generic classes
+class List T =
+  Empty
+  Pair T (List T)
 
 -- examples
 gcd a b = if b == 0 then a else gcd b (a % b)
