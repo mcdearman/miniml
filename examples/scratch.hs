@@ -156,10 +156,10 @@ class Map K V =
   insert : (K, V) -> Map K V
   delete : K -> Map K V
 
-class List (I = Nat) V <: Map I V =
-  push : V -> List I V
-  pop : () -> List I V 
-  get : I -> V
+class List V <: Map Nat V =
+  push : V -> List V
+  pop : () -> List V 
+  get : Nat -> V
 
 class LinkedList (I = Nat) V <: List I V
   = Empty
