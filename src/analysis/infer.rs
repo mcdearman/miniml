@@ -508,9 +508,7 @@ fn infer_item<'src>(
     match item.inner().clone() {
         res::Item::Def { pat, expr } => {
             let (cs, ty, ectx, e) = infer_expr(src, ctx, expr)?;
-            // let scheme = generalize(ectx.clone(), e.inner().ty());
             let mut tmp_ctx = ectx.clone();
-            // println!("tmp_ctx: {:?}", tmp_ctx);
             let (mut csp, tp, ctx, pat) = infer_pattern(src, &mut tmp_ctx, pat, true)?;
             csp.push(Constraint::Eq(tp, ty.clone()));
 
@@ -675,8 +673,6 @@ fn infer_expr<'src>(
                 t1.clone(),
                 Type::Lambda(ty_args, Box::new(ty_ret.clone())),
             ));
-            // println!("t1: {:?}", t1.clone());
-            // println!("e1: {:?}", e1.clone());
             Ok((
                 cs1,
                 ty_ret.clone(),
@@ -693,7 +689,6 @@ fn infer_expr<'src>(
         }
         res::Expr::Let { pat, expr, body } => {
             let (cs1, t1, mut ctx1, e1) = infer_expr(src, ctx, expr.clone())?;
-            // let scheme = generalize(ctx1.clone(), t1.clone());
             let mut tmp_ctx = ctx1.clone();
             // tmp_ctx.extend(*name, scheme);
             let (cs1, t1, mut ctx1, pat) = infer_pattern(src, &mut tmp_ctx, pat, true)?;
@@ -795,13 +790,9 @@ fn infer_expr<'src>(
             ))
         }
         res::Expr::If { cond, then, else_ } => {
-            // println!("ctx: {:?}", ctx);
             let (mut cs1, t1, mut ctx1, e1) = infer_expr(src, ctx, cond)?;
-            // println!("ctx1: {:?}", ctx1);
             let (cs2, t2, mut ctx2, e2) = infer_expr(src, &mut ctx1, then)?;
-            // println!("ctx2: {:?}", ctx2);
             let (cs3, t3, ctx3, e3) = infer_expr(src, &mut ctx2, else_)?;
-            // println!("ctx3: {:?}", ctx3);
             ctx1 = ctx3.union(ctx2).union(ctx1);
             cs1 = cs1
                 .into_iter()
@@ -1032,17 +1023,8 @@ pub fn type_inference<'src>(
     let mut s = Substitution::new();
     let mut items = vec![];
     let mut ctx_ret = Context::new();
-    // println!("top ctx: {:?}", ctx);
-    // if let Some(scm) = ctx.clone().vars.get(&UniqueId::from(19)) {
-    //     let ty = instantiate(scm.clone());
-    //     println!("ty: {:?}", ty);
-    //     ctx_ret.extend(UniqueId::from(0), Scheme::new(vec![], ty));
-    // } else {
-    //     panic!("unbound variable: {:?}", UniqueId::from(19));
-    // }
     for item in root.inner().items.clone() {
         let (cs, ctx, i) = infer_item(src, ctx, item)?;
-        // types.push(apply_subst(subst, ty).lower(&mut HashMap::new()));
         for c in cs {
             match c {
                 Constraint::Eq(t1, t2) => {
@@ -1053,15 +1035,11 @@ pub fn type_inference<'src>(
         ctx_ret = ctx_ret.union(ctx);
         items.push(i);
     }
-    // println!("s: {:?}", s);
-    // println!("ctx_ret: {:#?}", ctx_ret);
-    // println!("ctx_ret subs: {:#?}", ctx_ret.apply_subst(s.clone()));
     Ok((
         Node::new(
             apply_subst_root(s.clone(), Root { items }),
             root.span().clone(),
         ),
-        // Node::new(Root { items }, root.span().clone()),
         ctx_ret.apply_subst(s),
     ))
 }
