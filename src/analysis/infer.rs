@@ -1,5 +1,6 @@
 use super::res;
 use crate::util::{intern::InternedString, node::Node, unique_id::UniqueId};
+use itertools::Itertools;
 use num_rational::Rational64;
 use std::{
     collections::{BTreeSet, HashMap},
@@ -532,10 +533,13 @@ fn infer_item<'src>(
             let mut ty_binders = vec![];
             let mut tmp_ctx = e_ctx.clone();
             let mut new_params = vec![];
+            let mut cons = vec![];
             for p in params.clone() {
                 let ty_binder = Type::Var(TyVar::fresh());
                 ty_binders.push(ty_binder.clone());
-                let (cs, ty, ctx, pat) = infer_pattern(src, &mut tmp_ctx, p, true)?;
+                let (mut cs, ty, ctx, pat) = infer_pattern(src, &mut tmp_ctx, p, true)?;
+                // cons = cons.into_iter().chain(cs.into_iter()).collect_vec();
+                cons.append(&mut cs);
                 tmp_ctx = ctx.union(tmp_ctx);
                 new_params.push(pat);
                 // tmp_ctx.extend(*p, Scheme::new(vec![], ty_binder));
@@ -545,7 +549,7 @@ fn infer_item<'src>(
             tmp_ctx.extend(*name, Scheme::new(vec![], ty.clone()));
 
             Ok((
-                cs1,
+                cs1.into_iter().chain(cons.into_iter()).collect(),
                 tmp_ctx.union(c),
                 Node::new(
                     Item::Fn {

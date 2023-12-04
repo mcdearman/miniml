@@ -68,7 +68,7 @@ pub fn repl() {
                 continue;
             }
             "ctx" => {
-                println!("{:?}", ctx);
+                println!("{:#?}", ctx);
                 src.clear();
                 print!("\n> ");
                 io::stdout().flush().expect("failed to flush stdout");
