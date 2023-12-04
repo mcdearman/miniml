@@ -49,8 +49,8 @@ match x with
 | y -> z
 
 -- type hints
-gcd : (Int, Int) -> Int
-gcd a b = 
+-- gcd : (Int, Int) -> Int
+gcd (a : Int) (b : Int) : Int = 
   if b == 0 then a 
   else gcd b (a % b)
 
