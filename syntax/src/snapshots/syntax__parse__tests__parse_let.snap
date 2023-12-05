@@ -1,12 +1,14 @@
 ---
-source: src/syntax/parse.rs
+source: syntax/src/parse.rs
 expression: root.unwrap()
 ---
 Root {
     items: [
         Expr(
             Let {
-                name: Ident(x) @ 4..5,
+                pat: Ident(
+                    InternedString(x),
+                ) @ 4..5,
                 expr: Lit(
                     Num(
                         Ratio {
@@ -16,7 +18,7 @@ Root {
                     ),
                 ) @ 8..9,
                 body: Ident(
-                    Ident(x),
+                    InternedString(x),
                 ) @ 13..14,
             },
         ) @ 0..14,

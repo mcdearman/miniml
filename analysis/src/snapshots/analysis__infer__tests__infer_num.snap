@@ -1,7 +1,6 @@
 ---
-source: src/analysis/infer.rs
-assertion_line: 1071
-expression: types
+source: analysis/src/infer.rs
+expression: "test_helper(\"1\")"
 ---
 (
     Root {

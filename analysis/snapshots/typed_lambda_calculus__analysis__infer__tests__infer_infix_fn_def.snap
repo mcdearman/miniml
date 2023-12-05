@@ -1,7 +1,0 @@
----
-source: src/analysis/infer.rs
-expression: types
----
-[
-    [Num, Num] -> Num,
-]

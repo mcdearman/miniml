@@ -1,6 +1,5 @@
 ---
-source: src/syntax/parse.rs
-assertion_line: 372
+source: syntax/src/parse.rs
 expression: root.unwrap()
 ---
 Root {

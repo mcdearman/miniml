@@ -1,5 +1,5 @@
 ---
-source: src/syntax/parse.rs
+source: syntax/src/parse.rs
 expression: root.unwrap()
 ---
 Root {
@@ -8,7 +8,7 @@ Root {
             Prefix {
                 op: Neg @ 0..1,
                 expr: Ident(
-                    Ident(x),
+                    InternedString(x),
                 ) @ 1..2,
             },
         ) @ 0..2,

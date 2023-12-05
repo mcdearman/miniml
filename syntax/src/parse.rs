@@ -382,8 +382,26 @@ mod tests {
     }
 
     #[test]
+    fn parse_unary() {
+        let (root, errs) = parse("-x");
+        if !errs.is_empty() {
+            panic!("parse error: {:?}", errs);
+        }
+        insta::assert_debug_snapshot!(root.unwrap());
+    }
+
+    #[test]
     fn parse_let() {
         let (root, errs) = parse("let x = 1 in x");
+        if !errs.is_empty() {
+            panic!("parse error: {:?}", errs);
+        }
+        insta::assert_debug_snapshot!(root.unwrap());
+    }
+
+    #[test]
+    fn parse_let_unary() {
+        let (root, errs) = parse("let x = 1 in -x");
         if !errs.is_empty() {
             panic!("parse error: {:?}", errs);
         }

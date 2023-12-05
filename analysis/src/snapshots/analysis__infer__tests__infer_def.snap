@@ -1,0 +1,33 @@
+---
+source: analysis/src/infer.rs
+expression: "test_helper(\"x = 1\")"
+---
+(
+    Root {
+        items: [
+            Def {
+                pat: Ident(
+                    UniqueId(0),
+                ) @ 0..1,
+                expr: Lit {
+                    lit: Num(
+                        Ratio {
+                            numer: 1,
+                            denom: 1,
+                        },
+                    ),
+                    ty: Num,
+                } @ 4..5,
+                ty: Num,
+            } @ 0..5,
+        ],
+    } @ 0..5,
+    Context {
+        vars: {
+            UniqueId(0): Scheme {
+                vars: [],
+                ty: TyVar('b),
+            },
+        },
+    },
+)

@@ -1,19 +1,18 @@
 ---
-source: src/syntax/parse.rs
+source: syntax/src/parse.rs
 expression: root.unwrap()
 ---
 Root {
     items: [
-        Def {
-            name: Ident(x) @ 0..1,
-            expr: Lit(
+        Expr(
+            Lit(
                 Num(
                     Ratio {
                         numer: 1,
                         denom: 1,
                     },
                 ),
-            ) @ 4..5,
-        } @ 0..5,
+            ),
+        ) @ 0..1,
     ],
-} @ 0..5
+} @ 0..1

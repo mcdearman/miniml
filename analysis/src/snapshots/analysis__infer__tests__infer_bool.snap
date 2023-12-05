@@ -1,0 +1,21 @@
+---
+source: analysis/src/infer.rs
+expression: "test_helper(\"true\")"
+---
+(
+    Root {
+        items: [
+            Expr(
+                Lit {
+                    lit: Bool(
+                        true,
+                    ),
+                    ty: Bool,
+                },
+            ) @ 0..4,
+        ],
+    } @ 0..4,
+    Context {
+        vars: {},
+    },
+)

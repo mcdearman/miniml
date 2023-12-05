@@ -620,11 +620,13 @@ fn eval_expr<'src>(
                         env = arg_env;
                         continue 'tco;
                     }
-                    // Value::NativeFn(fun) => fun(args
-                    //     .into_iter()
-                    //     .map(|e| eval_expr(src, repl_src, env.clone(), e))
-                    //     .try_collect()?)?,
-                    Value::NativeFn(fun) => todo!(),
+                    Value::NativeFn(fun) => {
+                        let mut new_args = Vec::new();
+                        for arg in args {
+                            new_args.push(eval_expr(src, repl_src, env.clone(), arg)?);
+                        }
+                        fun(new_args)?
+                    }
                     _ => {
                         return Err(format!("Expected lambda, found {:?}", fun).into());
                     }

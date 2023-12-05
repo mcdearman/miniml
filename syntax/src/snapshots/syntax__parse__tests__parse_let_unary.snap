@@ -1,6 +1,5 @@
 ---
-source: src/syntax/parse.rs
-assertion_line: 390
+source: syntax/src/parse.rs
 expression: root.unwrap()
 ---
 Root {
@@ -18,10 +17,13 @@ Root {
                         },
                     ),
                 ) @ 8..9,
-                body: Ident(
-                    InternedString(x),
-                ) @ 13..14,
+                body: Prefix {
+                    op: Neg @ 13..14,
+                    expr: Ident(
+                        InternedString(x),
+                    ) @ 14..15,
+                } @ 13..15,
             },
-        ) @ 0..14,
+        ) @ 0..15,
     ],
-} @ 0..14
+} @ 0..15

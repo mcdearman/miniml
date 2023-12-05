@@ -1,30 +1,32 @@
 ---
-source: src/syntax/parse.rs
+source: syntax/src/parse.rs
 expression: root.unwrap()
 ---
 Root {
     items: [
         Expr(
-            Let {
-                name: Ident(add) @ 4..7,
-                expr: Lambda {
-                    params: [
-                        Ident(x) @ 8..9,
-                        Ident(y) @ 10..11,
-                    ],
-                    body: Infix {
-                        op: Add @ 16..17,
-                        lhs: Ident(
-                            Ident(x),
-                        ) @ 14..15,
-                        rhs: Ident(
-                            Ident(y),
-                        ) @ 18..19,
-                    } @ 14..19,
-                } @ 4..19,
+            Fn {
+                name: InternedString(add) @ 4..7,
+                params: [
+                    Ident(
+                        InternedString(x),
+                    ) @ 8..9,
+                    Ident(
+                        InternedString(y),
+                    ) @ 10..11,
+                ],
+                expr: Infix {
+                    op: Add @ 16..17,
+                    lhs: Ident(
+                        InternedString(x),
+                    ) @ 14..15,
+                    rhs: Ident(
+                        InternedString(y),
+                    ) @ 18..19,
+                } @ 14..19,
                 body: Apply {
                     fun: Ident(
-                        Ident(add),
+                        InternedString(add),
                     ) @ 23..26,
                     args: [
                         Lit(

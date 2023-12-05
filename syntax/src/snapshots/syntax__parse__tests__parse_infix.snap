@@ -1,5 +1,5 @@
 ---
-source: src/syntax/parse.rs
+source: syntax/src/parse.rs
 expression: root.unwrap()
 ---
 Root {
@@ -8,15 +8,15 @@ Root {
             Infix {
                 op: Add @ 2..3,
                 lhs: Ident(
-                    Ident(x),
+                    InternedString(x),
                 ) @ 0..1,
                 rhs: Infix {
                     op: Mul @ 6..7,
                     lhs: Ident(
-                        Ident(y),
+                        InternedString(y),
                     ) @ 4..5,
                     rhs: Ident(
-                        Ident(z),
+                        InternedString(z),
                     ) @ 8..9,
                 } @ 4..9,
             },

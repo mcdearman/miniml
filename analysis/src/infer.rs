@@ -1048,13 +1048,12 @@ pub fn type_inference<'src>(
 }
 
 mod tests {
-    use super::res::resolve;
+    use super::{res::resolve, Context, Root};
     use crate::res;
+    use common::node::Node;
     use syntax::parse::parse;
 
-    #[test]
-    fn infer_num() {
-        let src = "1";
+    fn test_helper<'src>(src: &'src str) -> (Node<Root>, Context) {
         let (ast, errors) = parse(src);
         if !errors.is_empty() {
             panic!("{:?}", errors);
@@ -1067,69 +1066,28 @@ mod tests {
         }
 
         let mut ctx = super::Context::new();
-        if let Ok(types) = super::type_inference(src, &mut ctx, res.unwrap()) {
-            insta::assert_debug_snapshot!(types);
-        } else {
-            panic!("inference failed: {:?}", errors);
-        }
+        super::type_inference(src, &mut ctx, res.unwrap()).unwrap()
     }
 
-    // #[test]
-    // fn infer_bool() {
-    //     let (ast, errors) = parse("true");
-    //     if !errors.is_empty() {
-    //         panic!("{:?}", errors);
-    //     }
-    //     let (res, errors) = resolve(&ast.unwrap());
-    //     if !errors.is_empty() {
-    //         panic!("{:?}", errors);
-    //     }
+    #[test]
+    fn infer_num() {
+        insta::assert_debug_snapshot!(test_helper("1"));
+    }
 
-    //     let ctx = super::Context::new();
-    //     if let Ok(types) = super::type_inference(ctx, res.unwrap()) {
-    //         insta::assert_debug_snapshot!(types);
-    //     } else {
-    //         panic!("inference failed: {:?}", errors);
-    //     }
-    // }
+    #[test]
+    fn infer_bool() {
+        insta::assert_debug_snapshot!(test_helper("true"));
+    }
 
-    // #[test]
-    // fn infer_def() {
-    //     let (ast, errors) = parse("x = 1");
-    //     if !errors.is_empty() {
-    //         panic!("{:?}", errors);
-    //     }
-    //     let (res, errors) = resolve(&ast.unwrap());
-    //     if !errors.is_empty() {
-    //         panic!("{:?}", errors);
-    //     }
+    #[test]
+    fn infer_def() {
+        insta::assert_debug_snapshot!(test_helper("x = 1"));
+    }
 
-    //     let ctx = super::Context::new();
-    //     if let Ok(types) = super::type_inference(ctx, res.unwrap()) {
-    //         insta::assert_debug_snapshot!(types);
-    //     } else {
-    //         panic!("inference failed: {:?}", errors);
-    //     }
-    // }
-
-    // #[test]
-    // fn infer_prefix() {
-    //     let (ast, errors) = parse("-1");
-    //     if !errors.is_empty() {
-    //         panic!("{:?}", errors);
-    //     }
-    //     let (res, errors) = resolve(&ast.unwrap());
-    //     if !errors.is_empty() {
-    //         panic!("{:?}", errors);
-    //     }
-
-    //     let ctx = super::Context::new();
-    //     if let Ok(types) = super::type_inference(ctx, res.unwrap()) {
-    //         insta::assert_debug_snapshot!(types);
-    //     } else {
-    //         panic!("inference failed: {:?}", errors);
-    //     }
-    // }
+    #[test]
+    fn infer_prefix() {
+        insta::assert_debug_snapshot!(test_helper("let x = 1 in -x"));
+    }
 
     // #[test]
     // fn infer_infix() {

@@ -1,5 +1,5 @@
 ---
-source: src/syntax/parse.rs
+source: syntax/src/parse.rs
 expression: root.unwrap()
 ---
 Root {
@@ -7,14 +7,14 @@ Root {
         Expr(
             Apply {
                 fun: Ident(
-                    Ident(f),
+                    InternedString(f),
                 ) @ 0..1,
                 args: [
                     Ident(
-                        Ident(x),
+                        InternedString(x),
                     ) @ 2..3,
                     Ident(
-                        Ident(y),
+                        InternedString(y),
                     ) @ 4..5,
                 ],
             },
