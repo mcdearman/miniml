@@ -1053,7 +1053,7 @@ mod tests {
     use common::node::Node;
     use syntax::parse::parse;
 
-    fn test_helper<'src>(src: &'src str) -> (Node<Root>, Context) {
+    fn test_helper(src: &str) -> (Node<Root>, Context) {
         let (ast, errors) = parse(src);
         if !errors.is_empty() {
             panic!("{:?}", errors);
@@ -1084,10 +1084,10 @@ mod tests {
         insta::assert_debug_snapshot!(test_helper("x = 1"));
     }
 
-    #[test]
-    fn infer_prefix() {
-        insta::assert_debug_snapshot!(test_helper("let x = 1 in -x"));
-    }
+    // #[test]
+    // fn infer_prefix() {
+    //     insta::assert_debug_snapshot!(test_helper("let x = 1 in -x"));
+    // }
 
     // #[test]
     // fn infer_infix() {

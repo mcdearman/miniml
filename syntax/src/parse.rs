@@ -345,147 +345,91 @@ pub fn parse<'src>(src: &'src str) -> (Option<Node<Root>>, Vec<ParseError<'src>>
 mod tests {
     use crate::parse::parse;
 
-    #[test]
-    fn parse_unit() {
-        let (root, errs) = parse("()");
+    fn test_helper(src: &str) -> super::Node<super::Root> {
+        let (root, errs) = parse(src);
         if !errs.is_empty() {
             panic!("parse error: {:?}", errs);
         }
-        insta::assert_debug_snapshot!(root.unwrap());
+        root.unwrap()
+    }
+
+    #[test]
+    fn parse_unit() {
+        insta::assert_debug_snapshot!(test_helper("()"));
     }
 
     #[test]
     fn parse_num() {
-        let (root, errs) = parse("1");
-        if !errs.is_empty() {
-            panic!("parse error: {:?}", errs);
-        }
-        insta::assert_debug_snapshot!(root.unwrap());
+        insta::assert_debug_snapshot!(test_helper("1"));
     }
 
     #[test]
     fn parse_bool() {
-        let (root, errs) = parse("true");
-        if !errs.is_empty() {
-            panic!("parse error: {:?}", errs);
-        }
-        insta::assert_debug_snapshot!(root.unwrap());
+        insta::assert_debug_snapshot!(test_helper("true"));
     }
 
     #[test]
     fn parse_ident() {
-        let (root, errs) = parse("x");
-        if !errs.is_empty() {
-            panic!("parse error: {:?}", errs);
-        }
-        insta::assert_debug_snapshot!(root.unwrap());
-    }
-
-    #[test]
-    fn parse_unary() {
-        let (root, errs) = parse("-x");
-        if !errs.is_empty() {
-            panic!("parse error: {:?}", errs);
-        }
-        insta::assert_debug_snapshot!(root.unwrap());
+        insta::assert_debug_snapshot!(test_helper("x"));
     }
 
     #[test]
     fn parse_let() {
-        let (root, errs) = parse("let x = 1 in x");
-        if !errs.is_empty() {
-            panic!("parse error: {:?}", errs);
-        }
-        insta::assert_debug_snapshot!(root.unwrap());
+        insta::assert_debug_snapshot!(test_helper("let x = 1 in x"));
     }
 
     #[test]
     fn parse_let_unary() {
-        let (root, errs) = parse("let x = 1 in -x");
-        if !errs.is_empty() {
-            panic!("parse error: {:?}", errs);
-        }
-        insta::assert_debug_snapshot!(root.unwrap());
+        insta::assert_debug_snapshot!(test_helper("let x = 1 in -x"));
     }
 
     #[test]
     fn parse_let_fn() {
-        let (root, errs) = parse("let add x y = x + y in add 1 2");
-        if !errs.is_empty() {
-            panic!("parse error: {:?}", errs);
-        }
-        insta::assert_debug_snapshot!(root.unwrap());
+        insta::assert_debug_snapshot!(test_helper("let add x y = x + y in add 1 2"));
     }
 
     #[test]
     fn parse_apply() {
-        let (root, errs) = parse("f x y");
-        if !errs.is_empty() {
-            panic!("parse error: {:?}", errs);
-        }
-        insta::assert_debug_snapshot!(root.unwrap());
+        insta::assert_debug_snapshot!(test_helper("f x y"));
     }
 
     #[test]
     fn parse_prefix() {
-        let (root, errs) = parse("-x");
-        if !errs.is_empty() {
-            panic!("parse error: {:?}", errs);
-        }
-        insta::assert_debug_snapshot!(root.unwrap());
+        insta::assert_debug_snapshot!(test_helper("-x"));
     }
 
     #[test]
     fn parse_infix() {
-        let (root, errs) = parse("x + y * z");
-        if !errs.is_empty() {
-            panic!("parse error: {:?}", errs);
-        }
-        insta::assert_debug_snapshot!(root.unwrap());
+        insta::assert_debug_snapshot!(test_helper("x + y * z"));
     }
 
     #[test]
     fn parse_paren() {
-        let (root, errs) = parse("(x + y) * z");
-        if !errs.is_empty() {
-            panic!("parse error: {:?}", errs);
-        }
-        insta::assert_debug_snapshot!(root.unwrap());
+        insta::assert_debug_snapshot!(test_helper("(x + y) * z"));
     }
 
     #[test]
     fn parse_lambda() {
-        let (root, errs) = parse("\\a b -> a + b");
-        if !errs.is_empty() {
-            panic!("parse error: {:?}", errs);
-        }
-        insta::assert_debug_snapshot!(root.unwrap());
+        insta::assert_debug_snapshot!(test_helper("\\a b -> a + b"));
     }
 
     #[test]
     fn parse_lambda_apply() {
-        let (root, errs) = parse("(\\a b -> a + b) 1 2");
-        if !errs.is_empty() {
-            panic!("parse error: {:?}", errs);
-        }
-        insta::assert_debug_snapshot!(root.unwrap());
+        insta::assert_debug_snapshot!(test_helper("(\\a b -> a + b) 1 2"));
     }
 
     #[test]
     fn parse_def() {
-        let (root, errs) = parse("x = 1");
-        if !errs.is_empty() {
-            panic!("parse error: {:?}", errs);
-        }
-        insta::assert_debug_snapshot!(root.unwrap());
+        insta::assert_debug_snapshot!(test_helper("x = 1"));
     }
 
     #[test]
     fn parse_fn_def() {
-        let (root, errs) = parse("add x y = x + y");
-        if !errs.is_empty() {
-            panic!("parse error: {:?}", errs);
-        }
-        insta::assert_debug_snapshot!(root.unwrap());
+        insta::assert_debug_snapshot!(test_helper("add x y = x + y"));
+    }
+
+    #[test]
+    fn parse_nested_let() {
+        insta::assert_debug_snapshot!(test_helper("let x = 1 in let y = 2 in x + y"));
     }
 }

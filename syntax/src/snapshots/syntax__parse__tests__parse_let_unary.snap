@@ -1,6 +1,6 @@
 ---
 source: syntax/src/parse.rs
-expression: root.unwrap()
+expression: "test_helper(\"let x = 1 in -x\")"
 ---
 Root {
     items: [

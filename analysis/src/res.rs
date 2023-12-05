@@ -395,52 +395,12 @@ fn resolve_expr(env: Rc<RefCell<Env>>, expr: &Node<ast::Expr>) -> ResResult<Node
 fn resolve_pattern(
     env: Rc<RefCell<Env>>,
     pattern: &Node<ast::Pattern>,
-    // rec: bool,
-    // def: bool,
 ) -> ResResult<Node<Pattern>> {
     match pattern.inner() {
         ast::Pattern::Lit(l) => Ok(Node::new(Pattern::Lit(l.clone().into()), pattern.span())),
         ast::Pattern::Ident(ident) => {
-            // if def {
-            // if let Some(name) = env.borrow().find(ident) {
-            //     return Err(ResError {
-            //         msg: InternedString::from(&*format!(
-            //             "name '{:?}' is already defined as {:?}",
-            //             pattern.inner(),
-            //             name
-            //         )),
-            //         span: pattern.span(),
-            //     });
-            // }
             let name = env.borrow_mut().define(ident.clone());
             Ok(Node::new(Pattern::Ident(name), pattern.span()))
-            // } else {
-            //     if rec {
-            //         if let Some(name) = env.borrow().find(ident) {
-            //             Ok(Node::new(Pattern::Ident(name), pattern.span()))
-            //         } else {
-            //             Err(ResError {
-            //                 msg: InternedString::from(&*format!(
-            //                     "name '{:?}' is not defined",
-            //                     pattern.inner()
-            //                 )),
-            //                 span: pattern.span(),
-            //             })
-            //         }
-            //     } else {
-            //         if let Some(name) = env.borrow().find_in_scope(ident) {
-            //             Ok(Node::new(Pattern::Ident(name), pattern.span()))
-            //         } else {
-            //             Err(ResError {
-            //                 msg: InternedString::from(&*format!(
-            //                     "name '{:?}' is not defined",
-            //                     pattern.inner()
-            //                 )),
-            //                 span: pattern.span(),
-            //             })
-            //         }
-            //     }
-            // }
         }
         ast::Pattern::Wildcard => Ok(Node::new(Pattern::Wildcard, pattern.span())),
         ast::Pattern::Unit => Ok(Node::new(Pattern::Unit, pattern.span())),
@@ -448,40 +408,42 @@ fn resolve_pattern(
 }
 
 mod tests {
-    // #[test]
-    // fn res_nested() {
-    //     let (ast, errors) = crate::syntax::parse::parse("let x = 1 in let x = 2 in x + 1");
-    //     if !errors.is_empty() {
-    //         panic!("parse error: {:?}", errors);
-    //     }
-    //     let (res, errors) = super::resolve(&ast.unwrap());
-    //     if !errors.is_empty() {
-    //         panic!("resolve error: {:?}", errors);
-    //     }
-    //     insta::assert_debug_snapshot!(res);
-    // }
-    // #[test]
-    // fn res_def() {
-    //     let (ast, errors) = crate::syntax::parse::parse("x = 1");
-    //     if !errors.is_empty() {
-    //         panic!("parse error: {:?}", errors);
-    //     }
-    //     let (res, errors) = super::resolve(&ast.unwrap());
-    //     if !errors.is_empty() {
-    //         panic!("resolve error: {:?}", errors);
-    //     }
-    //     insta::assert_debug_snapshot!(res);
-    // }
+    fn test_helper(src: &str) -> common::node::Node<super::Root> {
+        let (ast, errors) = syntax::parse::parse(src);
+        if !errors.is_empty() {
+            panic!("parse error: {:?}", errors);
+        }
+        let (res, errors) = super::resolve(super::Env::new(), &ast.unwrap());
+        if !errors.is_empty() {
+            panic!("resolve error: {:?}", errors);
+        }
+        res.unwrap()
+    }
 
-    // #[test]
-    // fn res_def_error() {
-    //     let (ast, errors) = crate::syntax::parse::parse("x = x");
-    //     if !errors.is_empty() {
-    //         panic!("parse error: {:?}", errors);
-    //     }
-    //     let (_, errors) = super::resolve(&ast.unwrap());
-    //     assert!(!errors.is_empty());
-    // }
+    #[test]
+    fn res_let() {
+        insta::assert_debug_snapshot!(test_helper("let x = 1 in x"));
+    }
+
+    #[test]
+    fn res_def() {
+        insta::assert_debug_snapshot!(test_helper("x = 1"));
+    }
+
+    #[test]
+    fn res_def_error() {
+        let (ast, errors) = syntax::parse::parse("x = x");
+        if !errors.is_empty() {
+            panic!("parse error: {:?}", errors);
+        }
+        let (_, errors) = super::resolve(super::Env::new(), &ast.unwrap());
+        assert!(!errors.is_empty());
+    }
+
+    #[test]
+    fn res_nested() {
+        insta::assert_debug_snapshot!(test_helper("let x = 1 in let y = 2 in x + y"));
+    }
 
     // #[test]
     // fn res_fn_def() {
@@ -499,19 +461,6 @@ mod tests {
     // #[test]
     // fn res_rec_fn_def() {
     //     let (ast, errors) = crate::syntax::parse::parse("f x = f x");
-    //     if !errors.is_empty() {
-    //         panic!("parse error: {:?}", errors);
-    //     }
-    //     let (res, errors) = super::resolve(&ast.unwrap());
-    //     if !errors.is_empty() {
-    //         panic!("resolve error: {:?}", errors);
-    //     }
-    //     insta::assert_debug_snapshot!(res);
-    // }
-
-    // #[test]
-    // fn res_let() {
-    //     let (ast, errors) = crate::syntax::parse::parse("let x = 1 in x");
     //     if !errors.is_empty() {
     //         panic!("parse error: {:?}", errors);
     //     }

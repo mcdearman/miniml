@@ -1,0 +1,45 @@
+---
+source: syntax/src/parse.rs
+expression: "test_helper(\"let x = 1 in let y = 2 in x + y\")"
+---
+Root {
+    items: [
+        Expr(
+            Let {
+                pat: Ident(
+                    InternedString(x),
+                ) @ 4..5,
+                expr: Lit(
+                    Num(
+                        Ratio {
+                            numer: 1,
+                            denom: 1,
+                        },
+                    ),
+                ) @ 8..9,
+                body: Let {
+                    pat: Ident(
+                        InternedString(y),
+                    ) @ 17..18,
+                    expr: Lit(
+                        Num(
+                            Ratio {
+                                numer: 2,
+                                denom: 1,
+                            },
+                        ),
+                    ) @ 21..22,
+                    body: Infix {
+                        op: Add @ 28..29,
+                        lhs: Ident(
+                            InternedString(x),
+                        ) @ 26..27,
+                        rhs: Ident(
+                            InternedString(y),
+                        ) @ 30..31,
+                    } @ 26..31,
+                } @ 13..31,
+            },
+        ) @ 0..31,
+    ],
+} @ 0..31
