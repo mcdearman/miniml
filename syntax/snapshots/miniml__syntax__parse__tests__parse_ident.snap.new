@@ -1,0 +1,14 @@
+---
+source: src/syntax/parse.rs
+assertion_line: 381
+expression: root.unwrap()
+---
+Root {
+    items: [
+        Expr(
+            Ident(
+                InternedString(x),
+            ),
+        ) @ 0..1,
+    ],
+} @ 0..1

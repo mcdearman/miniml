@@ -1,10 +1,5 @@
 use runtime::repl::repl;
 
-mod analysis;
-mod runtime;
-mod syntax;
-mod util;
-
 fn main() {
     env_logger::init();
     repl();

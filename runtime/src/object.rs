@@ -1,4 +1,4 @@
-use crate::util::intern::InternedString;
+use common::intern::InternedString;
 
 #[repr(C)]
 #[derive(Debug, Clone, PartialEq)]

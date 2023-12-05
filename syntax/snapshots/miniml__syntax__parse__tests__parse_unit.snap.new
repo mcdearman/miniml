@@ -1,0 +1,12 @@
+---
+source: src/syntax/parse.rs
+assertion_line: 354
+expression: root.unwrap()
+---
+Root {
+    items: [
+        Expr(
+            Unit,
+        ) @ 0..2,
+    ],
+} @ 0..2

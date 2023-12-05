@@ -1,0 +1,16 @@
+---
+source: src/syntax/parse.rs
+assertion_line: 372
+expression: root.unwrap()
+---
+Root {
+    items: [
+        Expr(
+            Lit(
+                Bool(
+                    true,
+                ),
+            ),
+        ) @ 0..4,
+    ],
+} @ 0..4

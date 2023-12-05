@@ -1,0 +1,29 @@
+---
+source: src/syntax/parse.rs
+assertion_line: 471
+expression: root.unwrap()
+---
+Root {
+    items: [
+        Fn {
+            name: InternedString(add) @ 0..3,
+            params: [
+                Ident(
+                    InternedString(x),
+                ) @ 4..5,
+                Ident(
+                    InternedString(y),
+                ) @ 6..7,
+            ],
+            body: Infix {
+                op: Add @ 12..13,
+                lhs: Ident(
+                    InternedString(x),
+                ) @ 10..11,
+                rhs: Ident(
+                    InternedString(y),
+                ) @ 14..15,
+            } @ 10..15,
+        } @ 0..15,
+    ],
+} @ 0..15

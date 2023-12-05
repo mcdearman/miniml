@@ -1,5 +1,5 @@
 use super::infer::Type;
-use crate::util::{node::Node, unique_id::UniqueId};
+use common::{node::Node, unique_id::UniqueId};
 use num_rational::Rational64;
 use std::collections::HashMap;
 

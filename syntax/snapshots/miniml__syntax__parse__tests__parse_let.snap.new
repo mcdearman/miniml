@@ -1,0 +1,27 @@
+---
+source: src/syntax/parse.rs
+assertion_line: 390
+expression: root.unwrap()
+---
+Root {
+    items: [
+        Expr(
+            Let {
+                pat: Ident(
+                    InternedString(x),
+                ) @ 4..5,
+                expr: Lit(
+                    Num(
+                        Ratio {
+                            numer: 1,
+                            denom: 1,
+                        },
+                    ),
+                ) @ 8..9,
+                body: Ident(
+                    InternedString(x),
+                ) @ 13..14,
+            },
+        ) @ 0..14,
+    ],
+} @ 0..14

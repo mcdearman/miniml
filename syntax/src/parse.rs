@@ -2,7 +2,6 @@ use super::{
     ast::{Expr, InfixOp, Item, Lit, MatchCase, Pattern, PrefixOp, Root},
     token::Token,
 };
-use crate::util::{intern::InternedString, node::Node, span::Span};
 use chumsky::{
     extra,
     input::{Stream, ValueInput},
@@ -11,6 +10,7 @@ use chumsky::{
     recursive::recursive,
     select, IterParser, Parser,
 };
+use common::{intern::InternedString, node::Node, span::Span};
 use logos::Logos;
 
 pub type ParseError<'a> = Rich<'a, Token, Span, &'a str>;
@@ -343,7 +343,7 @@ pub fn parse<'src>(src: &'src str) -> (Option<Node<Root>>, Vec<ParseError<'src>>
 }
 
 mod tests {
-    use crate::syntax::parse::parse;
+    use crate::parse::parse;
 
     #[test]
     fn parse_unit() {

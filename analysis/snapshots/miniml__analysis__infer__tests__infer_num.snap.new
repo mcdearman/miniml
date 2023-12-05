@@ -1,0 +1,25 @@
+---
+source: src/analysis/infer.rs
+assertion_line: 1071
+expression: types
+---
+(
+    Root {
+        items: [
+            Expr(
+                Lit {
+                    lit: Num(
+                        Ratio {
+                            numer: 1,
+                            denom: 1,
+                        },
+                    ),
+                    ty: Num,
+                },
+            ) @ 0..1,
+        ],
+    } @ 0..1,
+    Context {
+        vars: {},
+    },
+)

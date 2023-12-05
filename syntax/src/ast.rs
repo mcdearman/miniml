@@ -1,5 +1,5 @@
 use super::token::Token;
-use crate::util::{intern::InternedString, node::Node};
+use common::{intern::InternedString, node::Node};
 use num_rational::Rational64;
 
 #[derive(Debug, Clone, PartialEq)]

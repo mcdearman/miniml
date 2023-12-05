@@ -34,6 +34,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "analysis"
+version = "0.1.0"
+dependencies = [
+ "common",
+ "insta",
+ "log",
+ "num-bigint",
+ "num-complex",
+ "num-rational",
+ "syntax",
+]
+
+[[package]]
 name = "anstream"
 version = "0.6.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -192,6 +205,27 @@ name = "colorchoice"
 version = "1.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "acbf1af155f9b9ef647e42cdc158db4b64a1b61f743629225fde6f3e0be2a7c7"
+
+[[package]]
+name = "common"
+version = "0.1.0"
+dependencies = [
+ "chumsky",
+ "clap",
+ "cstree",
+ "env_logger",
+ "insta",
+ "itertools",
+ "lasso",
+ "log",
+ "logos",
+ "notify",
+ "num-bigint",
+ "num-complex",
+ "num-rational",
+ "once_cell",
+ "rustyline",
+]
 
 [[package]]
 name = "console"
@@ -608,21 +642,9 @@ checksum = "f665ee40bc4a3c5590afb1e9677db74a508659dfd71e126420da8274909a0167"
 name = "miniml"
 version = "0.1.0"
 dependencies = [
- "chumsky",
- "clap",
- "cstree",
  "env_logger",
- "insta",
- "itertools",
- "lasso",
  "log",
- "logos",
- "notify",
- "num-bigint",
- "num-complex",
- "num-rational",
- "once_cell",
- "rustyline",
+ "runtime",
 ]
 
 [[package]]
@@ -877,6 +899,21 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c08c74e62047bb2de4ff487b251e4a92e24f48745648451635cec7d591162d9f"
 
 [[package]]
+name = "runtime"
+version = "0.1.0"
+dependencies = [
+ "analysis",
+ "common",
+ "insta",
+ "log",
+ "logos",
+ "num-bigint",
+ "num-complex",
+ "num-rational",
+ "syntax",
+]
+
+[[package]]
 name = "rustix"
 version = "0.38.20"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1005,6 +1042,21 @@ dependencies = [
  "proc-macro2",
  "quote",
  "unicode-ident",
+]
+
+[[package]]
+name = "syntax"
+version = "0.1.0"
+dependencies = [
+ "chumsky",
+ "common",
+ "cstree",
+ "insta",
+ "log",
+ "logos",
+ "num-bigint",
+ "num-complex",
+ "num-rational",
 ]
 
 [[package]]

@@ -1,15 +1,12 @@
-use logos::Logos;
-
-use crate::{
-    analysis::{
-        infer::{self, type_inference},
-        res::{self, resolve},
-    },
-    runtime::tree_walk::{self, default_ctx, default_res_env, eval, primitive_ids},
-    syntax::{ast, parse::parse, token::Token},
-    util::{node::Node, span::Span},
+use crate::tree_walk::{self, default_ctx, default_res_env, eval, primitive_ids};
+use analysis::{
+    infer::{self, type_inference},
+    res::{self, resolve},
 };
+use common::{node::Node, span::Span};
+use logos::Logos;
 use std::io::{self, Write};
+use syntax::{ast, parse::parse, token::Token};
 
 pub fn repl() {
     print!("miniml> ");

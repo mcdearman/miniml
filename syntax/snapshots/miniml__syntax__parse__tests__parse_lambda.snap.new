@@ -1,0 +1,30 @@
+---
+source: src/syntax/parse.rs
+assertion_line: 444
+expression: root.unwrap()
+---
+Root {
+    items: [
+        Expr(
+            Lambda {
+                params: [
+                    Ident(
+                        InternedString(a),
+                    ) @ 1..2,
+                    Ident(
+                        InternedString(b),
+                    ) @ 3..4,
+                ],
+                body: Infix {
+                    op: Add @ 10..11,
+                    lhs: Ident(
+                        InternedString(a),
+                    ) @ 8..9,
+                    rhs: Ident(
+                        InternedString(b),
+                    ) @ 12..13,
+                } @ 8..13,
+            },
+        ) @ 0..13,
+    ],
+} @ 0..13

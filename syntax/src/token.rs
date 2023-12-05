@@ -1,4 +1,4 @@
-use crate::util::intern::InternedString;
+use common::intern::InternedString;
 use logos::Logos;
 use num_rational::Rational64;
 use std::fmt::Display;

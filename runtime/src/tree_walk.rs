@@ -1,11 +1,8 @@
-use crate::{
-    analysis::{
-        infer::{self, Expr, Item, Pattern, Root, TyVar},
-        res,
-    },
-    util::{intern::InternedString, node::Node, unique_id::UniqueId},
+use analysis::{
+    infer::{self, Expr, Item, Pattern, Root, TyVar},
+    res,
 };
-use itertools::Itertools;
+use common::{intern::InternedString, node::Node, unique_id::UniqueId};
 use num_rational::Rational64;
 use std::{
     cell::RefCell,
@@ -623,10 +620,11 @@ fn eval_expr<'src>(
                         env = arg_env;
                         continue 'tco;
                     }
-                    Value::NativeFn(fun) => fun(args
-                        .into_iter()
-                        .map(|e| eval_expr(src, repl_src, env.clone(), e))
-                        .try_collect()?)?,
+                    // Value::NativeFn(fun) => fun(args
+                    //     .into_iter()
+                    //     .map(|e| eval_expr(src, repl_src, env.clone(), e))
+                    //     .try_collect()?)?,
+                    Value::NativeFn(fun) => todo!(),
                     _ => {
                         return Err(format!("Expected lambda, found {:?}", fun).into());
                     }
