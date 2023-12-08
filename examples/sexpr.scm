@@ -6,7 +6,7 @@
 (class span (start end))
 
 ;; class method
-(method span 
+(impl 
 
 ;; instance method
 (method span (length) (- end start))
