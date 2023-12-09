@@ -1,24 +1,13 @@
-use common::intern::InternedString;
+use common::interner::InternedString;
+use std::fmt::Debug;
 
-#[repr(C)]
-#[derive(Debug, Clone, PartialEq)]
-pub struct Object {
-    pub name: InternedString,
-    pub fields: Vec<ObjectField>,
-    pub methods: Vec<ObjectMethod>,
-}
-
-#[repr(C)]
-#[derive(Debug, Clone, PartialEq)]
-pub struct ObjectField {
-    pub name: InternedString,
-    pub value: Object,
-}
-
-#[repr(C)]
-#[derive(Debug, Clone, PartialEq)]
-pub struct ObjectMethod {
-    pub name: InternedString,
-    pub args: Vec<Object>,
-    pub body: Object,
+pub trait Object: Debug + Clone + PartialEq + Eq + PartialOrd {
+    fn new() -> Self;
+    fn name(&self) -> InternedString;
+    fn define_method(&mut self, name: InternedString, args: Vec<Self>, body: Self);
+    fn invoke_method(&self, name: InternedString, args: Vec<Self>) -> Self;
+    fn get_property(&self, name: InternedString) -> Self;
+    fn set_property(&mut self, name: InternedString, value: Self);
+    fn add_parent(&mut self, parent: Self);
+    fn get_parents(&self) -> Vec<Self>;
 }

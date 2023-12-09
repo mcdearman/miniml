@@ -3,7 +3,7 @@
  * to the AST but with all names resolved to their unique IDs. Names
  * that shadow names from an outer scope are given a new unique ID.
  */
-use common::{intern::InternedString, node::Node, span::Span, unique_id::UniqueId};
+use common::{interner::InternedString, node::Node, span::Span, unique_id::UniqueId};
 use log::trace;
 use num_rational::Rational64;
 use std::{cell::RefCell, collections::HashMap, rc::Rc};

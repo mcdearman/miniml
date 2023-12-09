@@ -5,8 +5,11 @@ use std::{
     ops::Deref,
 };
 
+
+
 pub static mut INTERNER: Lazy<ThreadedRodeo> = Lazy::new(|| ThreadedRodeo::default());
 
+#[repr(C)]
 #[derive(Copy, Clone, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub struct InternedString {
     pub key: Spur,

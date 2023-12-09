@@ -51,6 +51,7 @@ gcd = \a b ->
   else gcd b (a % b)
 
 -- You can define functions by pattern matching
+fib : Nat -> Nat
 fib 0 = 0
 fib 1 = 1
 fib n = fib (n - 1) + fib (n - 2)
@@ -61,6 +62,10 @@ fib n =
   | 0 -> 0
   | 1 -> 1
   | n -> fib (n - 1) + fib (n - 2)
+
+map : (a -> b) -> [a] -> [b]
+map f [] = []
+map f [x::xs] = f x :: map f xs
 
 map f xs = 
   match xs with

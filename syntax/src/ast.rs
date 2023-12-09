@@ -1,5 +1,5 @@
 use super::token::Token;
-use common::{intern::InternedString, node::Node};
+use common::{interner::InternedString, node::Node};
 use num_rational::Rational64;
 
 #[derive(Debug, Clone, PartialEq)]

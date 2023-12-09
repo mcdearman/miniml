@@ -10,7 +10,7 @@ use chumsky::{
     recursive::recursive,
     select, IterParser, Parser,
 };
-use common::{intern::InternedString, node::Node, span::Span};
+use common::{interner::InternedString, node::Node, span::Span};
 use logos::Logos;
 
 pub type ParseError<'a> = Rich<'a, Token, Span, &'a str>;

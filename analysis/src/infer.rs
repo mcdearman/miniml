@@ -1,5 +1,5 @@
 use super::res;
-use common::{intern::InternedString, node::Node, unique_id::UniqueId};
+use common::{interner::InternedString, node::Node, unique_id::UniqueId};
 use num_rational::Rational64;
 use std::{
     collections::{BTreeSet, HashMap},

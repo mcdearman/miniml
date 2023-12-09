@@ -1,0 +1,1 @@
+<Graph indexType="custom" height="400" width="400" nodes={[{label:"Object",center:{x:211.9,y:159.5}},{label:"CompilerObject",center:{x:222.1,y:274.6}}]} edges={[{source:0,target:1}]} />

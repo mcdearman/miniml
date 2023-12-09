@@ -1,4 +1,4 @@
-use common::intern::InternedString;
+use common::interner::InternedString;
 use logos::Logos;
 use num_rational::Rational64;
 use std::fmt::Display;
