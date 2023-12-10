@@ -136,8 +136,7 @@ begin
 -- miniml> 3
 
 class Main = 
-  main : ()
-  main = println "Hello World!"
+  main args = println "Hello World!"
 
 -- Classes
 class Ord <: Eq PartialOrd = 
