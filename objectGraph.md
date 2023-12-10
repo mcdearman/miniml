@@ -1,7 +1,6 @@
 ```mermaid
 classDiagram
     Compiler : +StringInterner interner
-    Compiler : +Lexer lexer
     Compiler : +Parser parser
     Compiler : +NameResolver res
     Compiler : +InferenceEngine inf
@@ -15,6 +14,7 @@ classDiagram
 
     CompilerPass <|-- Lexer
     CompilerPass <|-- Parser
+    Parser : +Lexer lexer
     CompilerPass <|-- ContextHandler
     CompilerPass <|-- NameResolver
     CompilerPass <|-- InferenceEngine

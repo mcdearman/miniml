@@ -212,6 +212,7 @@ version = "0.1.0"
 dependencies = [
  "chumsky",
  "clap",
+ "compiler",
  "cstree",
  "env_logger",
  "insta",
@@ -226,6 +227,10 @@ dependencies = [
  "once_cell",
  "rustyline",
 ]
+
+[[package]]
+name = "compiler"
+version = "0.1.0"
 
 [[package]]
 name = "console"

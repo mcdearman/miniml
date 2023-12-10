@@ -66,6 +66,9 @@ class Point =
   y : Int
 
 impl Point =
+  Point () = Point 0 0
+  Point x y = Point x y
+
   move dx dy = Point (x + dx) (y + dy)
 
 impl ToString for Point =
