@@ -1,9 +1,10 @@
+use common::interner::InternedString;
 use logos::Logos;
 use num_rational::Rational64;
 use std::fmt::Display;
 
 #[derive(Logos, Debug, Clone, PartialEq)]
-pub enum Token<'src> {
+pub enum Token {
     #[regex(r"--.*", logos::skip)]
     Comment,
     #[regex(r"[ \t\n\r]", logos::skip)]
@@ -15,9 +16,9 @@ pub enum Token<'src> {
     #[regex(r"true|false", |lex| lex.slice().parse().ok())]
     Bool(bool),
     #[regex(r#""(\\.|[^"\\])*""#, |lex| lex.slice())]
-    String(&'src str),
+    String(InternedString),
     #[regex(r"[a-zA-Z_][a-zA-Z0-9_]*", |lex| lex.slice())]
-    Ident(&'src str),
+    Ident(InternedString),
 
     // Punctuation
     #[token("\\")]
