@@ -3,13 +3,7 @@
 (+ 1 2)
 
 ;; class def
-(class span (start end))
-
-;; class method
-(impl 
-
-;; instance method
-(method span (length) (- end start))
+(class )
 
 ;; instance
 (span 1 2)
