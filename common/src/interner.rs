@@ -27,46 +27,46 @@ pub struct InternedString {
     pub key: Spur,
 }
 
-// impl From<Spur> for InternedString {
-//     fn from(key: Spur) -> Self {
-//         Self { key }
-//     }
-// }
+impl From<Spur> for InternedString {
+    fn from(key: Spur) -> Self {
+        Self { key }
+    }
+}
 
-// impl From<&str> for InternedString {
-//     fn from(s: &str) -> Self {
-//         Self {
-//             key: unsafe { INTERNER.get_or_intern(s) },
-//         }
-//     }
-// }
+impl From<&str> for InternedString {
+    fn from(s: &str) -> Self {
+        Self {
+            key: unsafe { INTERNER.get_or_intern(s) },
+        }
+    }
+}
 
-// impl From<String> for InternedString {
-//     fn from(s: String) -> Self {
-//         Self {
-//             key: unsafe { INTERNER.get_or_intern(s) },
-//         }
-//     }
-// }
+impl From<String> for InternedString {
+    fn from(s: String) -> Self {
+        Self {
+            key: unsafe { INTERNER.get_or_intern(s) },
+        }
+    }
+}
 
-// impl Deref for InternedString {
-//     type Target = str;
+impl Deref for InternedString {
+    type Target = str;
 
-//     fn deref(&self) -> &Self::Target {
-//         unsafe { INTERNER.resolve(&self.key) }
-//     }
-// }
+    fn deref(&self) -> &Self::Target {
+        unsafe { INTERNER.resolve(&self.key) }
+    }
+}
 
-// impl Debug for InternedString {
-//     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-//         write!(f, "InternedString({})", unsafe {
-//             INTERNER.resolve(&self.key)
-//         })
-//     }
-// }
+impl Debug for InternedString {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "InternedString({})", unsafe {
+            INTERNER.resolve(&self.key)
+        })
+    }
+}
 
-// impl Display for InternedString {
-//     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-//         write!(f, "{}", unsafe { INTERNER.resolve(&self.key) })
-//     }
-// }
+impl Display for InternedString {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", unsafe { INTERNER.resolve(&self.key) })
+    }
+}

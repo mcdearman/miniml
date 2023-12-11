@@ -343,7 +343,7 @@ pub fn parse<'src>(src: &'src str) -> (Option<Node<Root>>, Vec<ParseError<'src>>
 }
 
 mod tests {
-    use crate::parse::parse;
+    use crate::parser::parse;
 
     fn test_helper(src: &str) -> super::Node<super::Root> {
         let (root, errs) = parse(src);

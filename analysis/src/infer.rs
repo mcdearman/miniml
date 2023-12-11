@@ -1051,7 +1051,7 @@ mod tests {
     use super::{res::resolve, Context, Root};
     use crate::res;
     use common::node::Node;
-    use syntax::parse::parse;
+    use syntax::parser::parse;
 
     fn test_helper(src: &str) -> (Node<Root>, Context) {
         let (ast, errors) = parse(src);

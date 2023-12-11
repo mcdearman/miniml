@@ -1,6 +1,7 @@
 use parser::Parser;
 use string_interner::StringInterner;
 
+pub mod interned_string;
 pub mod node;
 pub mod parser;
 pub mod string_interner;
