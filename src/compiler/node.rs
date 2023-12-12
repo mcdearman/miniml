@@ -1,3 +1,4 @@
+use super::span::Span;
 use std::{
     cmp::Ordering,
     fmt,
