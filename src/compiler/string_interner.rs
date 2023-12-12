@@ -1,4 +1,4 @@
-use crate::interned_string::InternedString;
+use super::interned_string::InternedString;
 use std::fmt::Debug;
 
 pub trait StringInterner: Debug + Clone {

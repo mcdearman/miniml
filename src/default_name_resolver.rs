@@ -409,7 +409,7 @@ fn resolve_pattern(
 
 mod tests {
     fn test_helper(src: &str) -> common::node::Node<super::Root> {
-        let (ast, errors) = syntax::parser::parse(src);
+        let (ast, errors) = syntax::chumsky_parser::parse(src);
         if !errors.is_empty() {
             panic!("parse error: {:?}", errors);
         }
@@ -432,7 +432,7 @@ mod tests {
 
     #[test]
     fn res_def_error() {
-        let (ast, errors) = syntax::parser::parse("x = x");
+        let (ast, errors) = syntax::chumsky_parser::parse("x = x");
         if !errors.is_empty() {
             panic!("parse error: {:?}", errors);
         }

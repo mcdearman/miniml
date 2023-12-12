@@ -6,7 +6,7 @@ use analysis::{
 use common::{node::Node, span::Span};
 use logos::Logos;
 use std::io::{self, Write};
-use syntax::{ast, parser::parse, token::Token};
+use syntax::{ast, chumsky_parser::parse, logos_token::Token};
 
 pub fn repl() {
     print!("miniml> ");

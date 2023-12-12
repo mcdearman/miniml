@@ -61,9 +61,11 @@ gcd (a : Int) (b : Int) : Int =
 
 -- classes 
 class Point (x : Int = 0) (y : Int = 0)
+-- sexpr: (class Point (x : Int = 0) (y : Int = 0))
 
 impl Point =
   move dx dy = Point (x + dx) (y + dy)
+-- sexpr: (impl Point (move dx dy = Point (+ x dx) (+ y dy)))
 
 impl ToString for Point =
   toString () = f"Point(x: {x}, y: {y})"

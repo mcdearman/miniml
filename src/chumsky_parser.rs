@@ -1,6 +1,6 @@
 use super::{
     ast::{Expr, InfixOp, Item, Lit, MatchCase, Pattern, PrefixOp, Root},
-    token::Token,
+    logos_token::Token,
 };
 use chumsky::{
     extra,
@@ -10,7 +10,6 @@ use chumsky::{
     recursive::recursive,
     select, IterParser, Parser,
 };
-use common::{interner::InternedString, node::Node, span::Span};
 use logos::Logos;
 
 pub type ParseError<'a> = Rich<'a, Token, Span, &'a str>;
@@ -343,7 +342,7 @@ pub fn parse<'src>(src: &'src str) -> (Option<Node<Root>>, Vec<ParseError<'src>>
 }
 
 mod tests {
-    use crate::parser::parse;
+    use crate::chumsky_parser::parse;
 
     fn test_helper(src: &str) -> super::Node<super::Root> {
         let (root, errs) = parse(src);

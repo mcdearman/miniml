@@ -1,8 +1,12 @@
-use runtime::repl::repl;
+mod chumsky_parser;
+mod compiler;
+mod logos_lexer;
+mod logos_token;
+mod runtime;
 
 fn main() {
     env_logger::init();
-    repl();
+    // repl();
     // f: 'a -> 'b
     // x: 'a
     // f x: 'b = 'a -> 'b

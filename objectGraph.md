@@ -22,7 +22,7 @@ classDiagram
     Node : +Span span
     Node : +File file
     Node <|-- Token
-    Node <|-- SyntaxNode
+    Node <|-- AstNode
     Node <|-- NameResNode
-    Node <|-- InferenceNode
+    Node <|-- InferNode
 ```
