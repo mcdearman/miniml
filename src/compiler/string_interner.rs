@@ -1,7 +1,7 @@
 use super::interned_string::InternedString;
 use std::fmt::Debug;
 
-pub trait StringInterner: Debug + Clone {
-    fn get_or_intern<T: InternedString>(&self, s: &str) -> T;
-    fn resolve<T: InternedString>(&self, key: &T) -> &str;
+pub trait StringInterner<K: InternedString>: Debug {
+    fn get_or_intern(&self, s: &str) -> K;
+    fn resolve(&self, key: &K) -> &str;
 }

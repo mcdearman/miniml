@@ -1,9 +1,10 @@
+use crate::threaded_rodeo_interned_string::ThreadedRodeoInternedString;
 use logos::Logos;
 use num_rational::Rational64;
 use std::fmt::Display;
 
 #[derive(Logos, Debug, Clone, PartialEq)]
-pub enum Token {
+pub enum Token<'a> {
     #[regex(r"--.*", logos::skip)]
     Comment,
     #[regex(r"[ \t\n\r]", logos::skip)]
@@ -14,10 +15,10 @@ pub enum Token {
     Num(Rational64),
     #[regex(r"true|false", |lex| lex.slice().parse().ok())]
     Bool(bool),
-    #[regex(r#""(\\.|[^"\\])*""#, |lex| InternedString::from(lex.slice()))]
-    String(InternedString),
-    #[regex(r"[a-zA-Z_][a-zA-Z0-9_]*", |lex| InternedString::from(lex.slice()))]
-    Ident(InternedString),
+    #[regex(r#""(\\.|[^"\\])*""#, |lex| ThreadedRodeoInternedString::from(lex.slice()))]
+    String(ThreadedRodeoInternedString<'a>),
+    #[regex(r"[a-zA-Z_][a-zA-Z0-9_]*", |lex| ThreadedRodeoInternedString::from(lex.slice()))]
+    Ident(ThreadedRodeoInternedString<'a>),
 
     // Punctuation
     #[token("\\")]
@@ -97,15 +98,15 @@ pub enum Token {
     Else,
 }
 
-impl Display for Token {
+impl<'a> Display for Token<'a> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match *self {
             Self::Comment => write!(f, "Comment"),
             Self::Whitespace => write!(f, "WS"),
             Self::Num(n) => write!(f, "{}", n),
             Self::Bool(b) => write!(f, "{}", b),
-            Self::String(s) => write!(f, "{}", s),
-            Self::Ident(name) => write!(f, "{}", name),
+            Self::String(s) => write!(f, "{:?}", s),
+            Self::Ident(name) => write!(f, "{:?}", name),
             Self::Lambda => write!(f, "\\"),
             Self::Arrow => write!(f, "->"),
             Self::Assign => write!(f, "="),

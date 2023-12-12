@@ -1,16 +1,19 @@
-use crate::compiler::{interned_string::InternedString, string_interner::StringInterner};
+use crate::{
+    compiler::string_interner::StringInterner,
+    threaded_rodeo_interned_string::ThreadedRodeoInternedString,
+};
 use lasso::ThreadedRodeo;
 use std::fmt::Debug;
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq)]
 pub struct ThreadedRodeoInterner(ThreadedRodeo);
 
-impl StringInterner for ThreadedRodeoInterner {
-    fn get_or_intern<T: InternedString>(&self, s: &str) -> T {
-        T::from_str(self.0.get_or_intern(s))
+impl<'a> StringInterner<ThreadedRodeoInternedString<'a>> for ThreadedRodeoInterner {
+    fn get_or_intern(&self, s: &str) -> ThreadedRodeoInternedString<'a> {
+        self.0.get_or_intern(s)
     }
 
-    fn resolve<T: InternedString>(&self, key: &T) -> &str {
-        self.0.resolve(key.key)
+    fn resolve(&self, key: &ThreadedRodeoInternedString<'a>) -> &str {
+        self.0.resolve(key)
     }
 }

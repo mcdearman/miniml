@@ -1,4 +1,4 @@
-use std::{fmt::Debug, ops::Deref, str::FromStr};
+use std::{fmt::Debug, ops::Deref};
 
 use crate::{
     compiler::interned_string::InternedString,
@@ -6,23 +6,30 @@ use crate::{
 };
 use lasso::Spur;
 
-#[derive(Copy, Clone, PartialEq, Eq, Hash, PartialOrd, Ord)]
+#[derive(Copy, Clone, PartialEq, Hash, PartialOrd)]
 pub struct ThreadedRodeoInternedString<'a> {
     interner: &'a ThreadedRodeoInterner,
     key: Spur,
 }
 
+// impl<'a> ThreadedRodeoInternedString<'a> {}
+
 impl<'a> InternedString for ThreadedRodeoInternedString<'a> {
-    fn get_interner<'a, I: crate::compiler::string_interner::StringInterner>() -> &'a I {
-        todo!()
+    fn new(interner: &'a ThreadedRodeoInterner, key: Spur) -> Self {
+        Self { interner, key }
+    }
+
+    fn get_interner<'b, I: crate::compiler::string_interner::StringInterner>(&self) -> &'b I {
+        self.interner
     }
 }
 
-impl<'a> FromStr for ThreadedRodeoInternedString<'a> {
-    type Err = ();
-
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        todo!()
+impl<'a> From<&'a str> for ThreadedRodeoInternedString<'a> {
+    fn from(s: &'a str) -> Self {
+        Self {
+            interner: &ThreadedRodeoInterner::new(),
+            key: ThreadedRodeoInterner::new().get_or_intern(s),
+        }
     }
 }
 
@@ -41,3 +48,5 @@ impl<'a> Debug for ThreadedRodeoInternedString<'a> {
         })
     }
 }
+
+impl<'a> Eq for ThreadedRodeoInternedString<'a> {}
