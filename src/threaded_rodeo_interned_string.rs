@@ -6,34 +6,26 @@ use crate::{
 };
 use lasso::Spur;
 
-#[derive(Copy, Clone, PartialEq, Hash, PartialOrd)]
-pub struct ThreadedRodeoInternedString<'a> {
-    interner: &'a ThreadedRodeoInterner,
+
+#[derive(Clone, Hash, PartialEq, Eq, PartialOrd, Ord)]
+pub struct ThreadedRodeoInternedString {
+    interner: Box<ThreadedRodeoInterner>,
     key: Spur,
 }
 
-// impl<'a> ThreadedRodeoInternedString<'a> {}
+impl InternedString for ThreadedRodeoInternedString {
+    type Interner = ThreadedRodeoInterner;
 
-impl<'a> InternedString for ThreadedRodeoInternedString<'a> {
-    fn new(interner: &'a ThreadedRodeoInterner, key: Spur) -> Self {
+    fn new(interner: Box<Self::Interner>, key: Spur) -> Self {
         Self { interner, key }
     }
 
-    fn get_interner<'b, I: crate::compiler::string_interner::StringInterner>(&self) -> &'b I {
+    fn get_interner(&self) -> Box<Self::Interner> {
         self.interner
     }
 }
 
-impl<'a> From<&'a str> for ThreadedRodeoInternedString<'a> {
-    fn from(s: &'a str) -> Self {
-        Self {
-            interner: &ThreadedRodeoInterner::new(),
-            key: ThreadedRodeoInterner::new().get_or_intern(s),
-        }
-    }
-}
-
-impl<'a> Deref for ThreadedRodeoInternedString<'a> {
+impl Deref for ThreadedRodeoInternedString {
     type Target = str;
 
     fn deref(&self) -> &Self::Target {
@@ -41,12 +33,10 @@ impl<'a> Deref for ThreadedRodeoInternedString<'a> {
     }
 }
 
-impl<'a> Debug for ThreadedRodeoInternedString<'a> {
+impl Debug for ThreadedRodeoInternedString {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "InternedString({})", unsafe {
             self.interner.resolve(&self.key)
         })
     }
 }
-
-impl<'a> Eq for ThreadedRodeoInternedString<'a> {}

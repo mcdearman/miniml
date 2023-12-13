@@ -1,7 +1,9 @@
 use super::string_interner::StringInterner;
 use std::{fmt::Debug, hash::Hash};
 
-pub trait InternedString: Debug + Copy + Clone + PartialEq + Eq + Hash {
-    fn new<K: InternedString, I: StringInterner<K>>(interner: I, s: &str) -> Self;
-    fn get_interner<'b, K: InternedString, I: StringInterner<K>>(&self) -> &'b I;
+pub trait InternedString: Debug + Clone + PartialEq + Eq + Hash {
+    type Interner: StringInterner;
+
+    fn new(interner: Box<Self::Interner>, s: &str) -> Self;
+    fn get_interner(&self) -> Box<Self::Interner>;
 }

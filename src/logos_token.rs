@@ -4,7 +4,7 @@ use num_rational::Rational64;
 use std::fmt::Display;
 
 #[derive(Logos, Debug, Clone, PartialEq)]
-pub enum Token<'a> {
+pub enum Token {
     #[regex(r"--.*", logos::skip)]
     Comment,
     #[regex(r"[ \t\n\r]", logos::skip)]
@@ -16,9 +16,9 @@ pub enum Token<'a> {
     #[regex(r"true|false", |lex| lex.slice().parse().ok())]
     Bool(bool),
     #[regex(r#""(\\.|[^"\\])*""#, |lex| ThreadedRodeoInternedString::from(lex.slice()))]
-    String(ThreadedRodeoInternedString<'a>),
+    String(ThreadedRodeoInternedString),
     #[regex(r"[a-zA-Z_][a-zA-Z0-9_]*", |lex| ThreadedRodeoInternedString::from(lex.slice()))]
-    Ident(ThreadedRodeoInternedString<'a>),
+    Ident(ThreadedRodeoInternedString),
 
     // Punctuation
     #[token("\\")]
@@ -98,7 +98,7 @@ pub enum Token<'a> {
     Else,
 }
 
-impl<'a> Display for Token<'a> {
+impl Display for Token {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match *self {
             Self::Comment => write!(f, "Comment"),
