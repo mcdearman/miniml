@@ -1,7 +1,5 @@
-// mod chumsky_parser;
+mod chumsky_parser;
 mod compiler;
-mod logos_lexer;
-mod logos_token;
 // mod runtime;
 
 fn main() {

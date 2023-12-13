@@ -1,3 +1,5 @@
+pub mod lexer;
+pub mod token;
 // use super::{
 //     ast::{Expr, InfixOp, Item, Lit, MatchCase, Pattern, PrefixOp, Root},
 //     logos_token::Token,
