@@ -12,7 +12,7 @@ pub static mut INTERNER: Lazy<ThreadedRodeo> = Lazy::new(|| ThreadedRodeo::defau
 pub struct ThreadedRodeoInterner(ThreadedRodeo);
 
 impl StringInterner for ThreadedRodeoInterner {
-    type Key = ThreadedRodeoInternedString;
+    type Key = ThreadedRodeoInternedString<'a>;
 
     fn get_or_intern(&self, s: &str) -> Self::Key {
         ThreadedRodeoInternedString::new(self, self.0.get_or_intern(s))

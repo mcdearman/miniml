@@ -8,8 +8,8 @@ use lasso::Spur;
 
 
 #[derive(Clone, Hash, PartialEq, Eq, PartialOrd, Ord)]
-pub struct ThreadedRodeoInternedString {
-    interner: Box<ThreadedRodeoInterner>,
+pub struct ThreadedRodeoInternedString<'a> {
+    interner: &'a ThreadedRodeoInterner,
     key: Spur,
 }
 
