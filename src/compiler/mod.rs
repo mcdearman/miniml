@@ -1,19 +1,16 @@
-use string_interner::StringInterner;
+use self::parser::Parser;
 
-// pub mod ast;
+pub mod ast;
 // pub mod context_handler;
 // pub mod hir;
-pub mod interned_string;
 pub mod node;
-// pub mod parser;
+pub mod parser;
 pub mod span;
-pub mod string_interner;
 // pub mod unique_id;
 
 #[derive(Debug)]
-pub struct Compiler<'src, I: StringInterner> {
+pub struct Compiler<'src, P: Parser> {
     src: &'src str,
-    interner: &'src I,
-    // parser: P,
+    parser: P,
     // ctx_handler: C,
 }

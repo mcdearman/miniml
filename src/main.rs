@@ -2,8 +2,6 @@
 mod compiler;
 mod logos_lexer;
 mod logos_token;
-mod threaded_rodeo_interned_string;
-mod threaded_rodeo_string_interner;
 // mod runtime;
 
 fn main() {

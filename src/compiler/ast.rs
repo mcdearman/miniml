@@ -1,4 +1,4 @@
-use super::{node::Node, interned_string::InternedString};
+use super::node::Node;
 use num_rational::Rational64;
 
 #[derive(Debug, Clone, PartialEq)]
@@ -13,7 +13,7 @@ pub enum Item {
         expr: Node<Expr>,
     },
     Fn {
-        name: Node<InternedString>,
+        name: Node<String>,
         params: Vec<Node<Pattern>>,
         body: Node<Expr>,
     },
