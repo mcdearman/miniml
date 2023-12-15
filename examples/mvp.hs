@@ -60,15 +60,10 @@ gcd (a : Int) (b : Int) : Int =
 1..10
 
 -- classes 
-class Point (x : Int = 0) (y : Int = 0)
--- sexpr: (class Point (x : Int = 0) (y : Int = 0))
-
-impl Point =
+class Point (x : Int = 0) (y : Int = 0) <: ToString = 
   move dx dy = Point (x + dx) (y + dy)
--- sexpr: (impl Point (move dx dy = Point (+ x dx) (+ y dy)))
 
-impl ToString for Point =
-  toString () = f"Point(x: {x}, y: {y})"
+  override toString () = f"Point(x: {x}, y: {y})"
 
 -- generic classes
 class Stack T (xs : List T)
