@@ -65,10 +65,16 @@ class Point (x : Int = 0) (y : Int = 0) <: ToString =
 
   override toString () = f"Point(x: {x}, y: {y})"
 
+-- sexpr
+-- (class Point ((x Int 0) (y Int 0)) (<: ToString) 
+--   (
+
 -- generic classes
 class Stack T (xs : List T)
 
 impl Stack =
+  Stack x = Stack [x]
+
   push (x : T) = Stack x :: xs
 
   pop () = 
