@@ -21,3 +21,4 @@ clap = { version = "4.3.0", features = ["cargo", "derive"] }
 rustyline = "11.0.0"
 notify = "6.1.1"
 chumsky = "=1.0.0-alpha.4"
+num-traits = "0.2.17"

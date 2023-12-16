@@ -49,9 +49,10 @@ match x with
 | y -> z
 
 -- type hints
-gcd (a : Int) (b : Int) : Int = 
-  if b == 0 then a 
+def gcd (a : Int) (b : Int) : Int = 
+  if b = 0 then a 
   else gcd b (a % b)
+end
 
 -- lists
 [1, 2, 3]
@@ -59,28 +60,26 @@ gcd (a : Int) (b : Int) : Int =
 -- ranges
 1..10
 
+-- -?((0b[0-1]+)|(0o[0-7]+)|(0x[0-9a-fA-F]+)|([1-9]\d*|0))(/-?([1-9]\d*|0))?
+
 -- classes 
 class Point (x : Int = 0) (y : Int = 0) <: ToString = 
-  move dx dy = Point (x + dx) (y + dy)
+  def move dx dy = Point (x + dx) (y + dy)
 
-  override toString () = f"Point(x: {x}, y: {y})"
-
--- sexpr
--- (class Point ((x Int 0) (y Int 0)) (<: ToString) 
---   (
+  override def toString () : String = f"Point(x: {x}, y: {y})"
+end
 
 -- generic classes
-class Stack T (xs : List T)
+class Stack T (xs : List T) =
+  def Stack x = Stack [x]
 
-impl Stack =
-  Stack x = Stack [x]
+  def push (x : T) = Stack x :: xs
 
-  push (x : T) = Stack x :: xs
-
-  pop () = 
+  def pop () = 
     match this.xs with
     | [] -> None
     | [x::xs] -> Some x (Stack xs)
+end
 
 class List T =
   Empty

@@ -866,6 +866,7 @@ dependencies = [
  "num-bigint",
  "num-complex",
  "num-rational",
+ "num-traits",
  "once_cell",
  "rustyline",
 ]

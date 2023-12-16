@@ -1,5 +1,7 @@
+use crate::num::Num;
 use logos::Logos;
 use num_rational::Rational64;
+use num_traits::Num as NumT;
 use std::fmt::Display;
 
 #[derive(Logos, Debug, Clone, PartialEq)]
@@ -10,8 +12,12 @@ pub enum Token {
     Whitespace,
 
     // Literals and identifiers
-    #[regex(r#"-?((0b[0-1]+)|(0o[0-7]+)|(0x[0-9a-fA-F]+)|([1-9]\d*|0))(/-?((0b[0-1]+)|(0o[0-7]+)|(0x[0-9a-fA-F]+)|([1-9]\d*|0)))?"#, |lex| lex.slice().parse().ok())]
-    Num(Rational64),
+    // #[regex(r"-?0b(0|1)+(/-?(0|1)+)?", |lex| Rational64::from_str_radix(&lex.slice()[2..], 2).ok().map(Num))]
+    // #[regex(r"-?0o[0-7]+(/-?[0-7]+)?", |lex| Rational64::from_str_radix(&lex.slice()[2..], 8).ok().map(Num))]
+    // #[regex(r"-?0x[0-9a-fA-F]+(/-?[0-9a-fA-F]+)?", |lex| Rational64::from_str_radix(&lex.slice()[2..], 16).ok().map(Num))]
+    #[regex(r"-?([1-9]\d*|0)(/-?-[1-9]\d*|0)?", |lex| lex.slice().parse().ok())]
+    // #[regex(r"-?(0b(0|1)+(/-?(0|1)+)?)|(0o[0-7]+(/-?[0-7]+)?)|(0x[0-9a-fA-F]+(/-?[0-9a-fA-F]+)?)|(([1-9]\d*|0)(/-?-[1-9]\d*|0)?)", |lex| lex.slice().parse().ok())]
+    Num(Num),
     #[regex(r"true|false", |lex| lex.slice().parse().ok())]
     Bool(bool),
     #[regex(r#""(\\.|[^"\\])*""#, |lex| lex.slice().to_string())]
@@ -81,6 +87,14 @@ pub enum Token {
     // Keywords
     #[token("class")]
     Class,
+    #[token("enum")]
+    Enum,
+    #[token("def")]
+    Def,
+    #[token("override")]
+    Override,
+    #[token("end")]
+    End,
     #[token("let")]
     Let,
     #[token("in")]
@@ -102,10 +116,10 @@ impl Display for Token {
         match self {
             Self::Comment => write!(f, "Comment"),
             Self::Whitespace => write!(f, "WS"),
-            Self::Num(n) => write!(f, "{}", n),
-            Self::Bool(b) => write!(f, "{}", b),
-            Self::String(s) => write!(f, "{}", s),
-            Self::Ident(name) => write!(f, "{}", name),
+            Self::Num(n) => write!(f, "Num({})", n),
+            Self::Bool(b) => write!(f, "Bool({})", b),
+            Self::String(s) => write!(f, "String({})", s),
+            Self::Ident(name) => write!(f, "Ident({})", name),
             Self::Lambda => write!(f, "\\"),
             Self::Arrow => write!(f, "->"),
             Self::Assign => write!(f, "="),
@@ -135,6 +149,10 @@ impl Display for Token {
             Self::Comma => write!(f, ","),
             Self::Wildcard => write!(f, "_"),
             Self::Class => write!(f, "class"),
+            Self::Enum => write!(f, "enum"),
+            Self::Def => write!(f, "def"),
+            Self::Override => write!(f, "override"),
+            Self::End => write!(f, "end"),
             Self::Let => write!(f, "let"),
             Self::In => write!(f, "in"),
             Self::Match => write!(f, "match"),

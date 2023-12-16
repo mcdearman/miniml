@@ -1,13 +1,10 @@
-let add x y = x + y
-Root 
-  Decl
-    Let
-      name: add
-      body: 
-        Lambda
-          args: x y
-          body: 
-            BinOp
-              op: +
-              left: x
-              right: y
+-- class Point (x : Int = 0) (y : Int = 0) <: ToString = 
+--   def move dx dy = Point (x + dx) (y + dy)
+-- 
+--   override def toString () : String = f"Point(x: {x}, y: {y})"
+-- end
+
+class Node T =
+  inner : T
+  span : Int
+end

@@ -1,5 +1,5 @@
 use std::{
-    fmt::{Debug, Display},
+    fmt::{write, Debug, Display},
     ops::{Index, Range},
 };
 
@@ -87,5 +87,23 @@ impl Index<Span> for String {
 
     fn index(&self, index: Span) -> &Self::Output {
         &self[Range::from(index)]
+    }
+}
+
+#[derive(Clone, Copy, Eq, PartialEq, Default, Hash)]
+pub struct Spanned<T> {
+    pub span: Span,
+    pub value: T,
+}
+
+impl<T> Spanned<T> {
+    pub fn new(span: Span, value: T) -> Self {
+        Self { span, value }
+    }
+}
+
+impl<T: Debug> Debug for Spanned<T> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{:?} @ {}", self.value, self.span)
     }
 }
