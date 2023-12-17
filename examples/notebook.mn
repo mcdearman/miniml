@@ -4,7 +4,7 @@
 --   override def toString () : String = f"Point(x: {x}, y: {y})"
 -- end
 
-class Node T =
+struct Node T =
   inner : T
   span : Int
 end
