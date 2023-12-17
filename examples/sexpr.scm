@@ -11,18 +11,15 @@
     (f"Point(" self.x "," self.y ")")))
 
 ;; generic class
-(class (Stack (T) xs) (ToString)
+(class (Stack (T) xs)
   (def (push x) (Stack T))
   (def (pop) T)
   (def (size) int)
-  (override def (toString self)
-    (str "(" (join ", " (map (fn (x) (toString x)) self)) ")")))
-;; (class (List (T)) (ToString)
-;;   (def (add x) (List T))
-;;   (def (get i) T)
-;;   (def (size) int)
-;;   (def (toString self)
-;;     (str "(" (join ", " (map (fn (x) (toString x)) self)) ")")))
+  (impl ToString
+    (def (toString)
+      (f"Stack(" (join ", " (map (fn (x) (toString x)) xs)) ")"))))
+
+(def s (Stack Int))
 
 ;; sum class (enum)
 (enum (Color Red Green Blue))
@@ -38,12 +35,17 @@
 
 (enum (List (T) (Pair T (List T)) Empty))
 
-(class Point 
-  (def x Int 0)
-  (def y Int 0)
+(class (Point x y)
+  (var x Int 0)
+  (var y Int 0)
   (def (move dx dy)
-    (Point (+ x dx) (+ y dy)))
-  (override def (toString)
-    (format "Point(x: {0}, y: {1})" x y)))
+    (begin 
+      (set! x (+ x dx))
+      (set! y (+ y dy))))
+  (impl ToString
+    (def (toString)
+      (f"Point(x: {x}, y: {y})"))))
 
-(class Node T (inner T) (span Int))
+(enum #:forall T (Option (Some T) None))
+
+(enum #:forall T (List (Pair T (List T)) Empty))
