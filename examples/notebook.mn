@@ -1,10 +1,10 @@
--- class Point (x : Int = 0) (y : Int = 0) <: ToString = 
---   def move dx dy = Point (x + dx) (y + dy)
--- 
---   override def toString () : String = f"Point(x: {x}, y: {y})"
--- end
+class Point (x : Int = 0) (y : Int = 0) <: ToString = 
+  def move dx dy = Point (x + dx) (y + dy)
 
-struct Node T =
+  override def toString () : String = f"Point(x: {x}, y: {y})"
+end
+
+class Node T =
   inner : T
   span : Int
 end

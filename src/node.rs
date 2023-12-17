@@ -91,6 +91,6 @@ impl<T: PartialOrd> PartialOrd for Node<T> {
 
 impl<T: fmt::Debug> fmt::Debug for Node<T> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{:#?} @ {:?}", self.inner, self.span)
+        write!(f, "{:?} @ {:?}", self.inner, self.span)
     }
 }

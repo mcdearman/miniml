@@ -37,3 +37,13 @@
 (enum (Option (T) (Some T) None))
 
 (enum (List (T) (Pair T (List T)) Empty))
+
+(class Point 
+  (def x Int 0)
+  (def y Int 0)
+  (def (move dx dy)
+    (Point (+ x dx) (+ y dy)))
+  (override def (toString)
+    (format "Point(x: {0}, y: {1})" x y)))
+
+(class Node T (inner T) (span Int))

@@ -224,13 +224,13 @@ show_sexpr
 -- Macros
 -- You can define macros with the `macro` keyword.
 macro when cond body... =
-  :(if $(cond) then $(body) else ())
+  @(if $(cond) then $(body) else ())
 
 macro unless cond body =
-  :(if $(cond) then () else $(body))
+  @(if $(cond) then () else $(body))
 
 macro begin body... =
-  :(let _ = $(body) in ())
+  @(let _ = $(body) in ())
 
 -- (macro (while condition . body)
 --   `(let loop ()
@@ -239,11 +239,11 @@ macro begin body... =
 -- 	    (loop)))))
 
 macro while cond body... =
-  :(let loop () = 
+  @(let loop () = 
       (if $(cond) then (begin $(body); loop) else ()))
 
 macro while cond body =
-  :(if $(cond) then $(body); while $(cond) $(body) else ())
+  @(if $(cond) then $(body); while $(cond) $(body) else ())
 
 macro match expr with... = 
   
