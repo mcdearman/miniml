@@ -44,8 +44,18 @@
       (set! y (+ y dy))))
   (impl ToString
     (def (toString)
-      (f"Point(x: {x}, y: {y})"))))
+      (f"Point {X} {Y} (x: {x}, y: {y})"))))
 
-(enum #:forall T (Option (Some T) None))
+(class (Point [X Y] (var (x : X)) (var (y : Y))
+  (def (move (dx : X) (dy : Y))
+    (begin 
+      (set! x (+ x dx))
+      (set! y (+ y dy))))
+  (impl ToString
+    (def (toString)
+      (f"Point {X} {Y} (x: {x}, y: {y})")))))
 
-(enum #:forall T (List (Pair T (List T)) Empty))
+
+(enum (Option [T] (Some T) None))
+
+(enum (List [T] (Pair T (List T)) Empty))
