@@ -4,22 +4,18 @@
     (println "Hello World!")))
 
 ;; class def
-(class (Point x y) (ToString)
-  (def (move dx dy) (Point (+ self.x dx) (+ self.y dy)))
-    
-  (override def (toString self)
-    (f"Point(" self.x "," self.y ")")))
+(class (Point x y))
 
 ;; generic class
-(class (Stack (T) xs)
-  (def (push x) (Stack T))
+(class (Stack [T] (var xs))
+  (def (push x) (set! xs (pair x xs)))
   (def (pop) T)
   (def (size) int)
   (impl ToString
     (def (toString)
-      (f"Stack(" (join ", " (map (fn (x) (toString x)) xs)) ")"))))
+      (f"Stack(" (join ", " (map (fn (x) (to-string x)) xs)) ")"))))
 
-(def s (Stack Int))
+(val s (Stack [Int] '(1 2 3)))
 
 ;; sum class (enum)
 (enum (Color Red Green Blue))
@@ -30,22 +26,7 @@
   (Square len) 
   (Rectangle w h)))
 
-;; generic enum
-(enum (Option (T) (Some T) None))
-
-(enum (List (T) (Pair T (List T)) Empty))
-
-(class (Point x y)
-  (var x Int 0)
-  (var y Int 0)
-  (def (move dx dy)
-    (begin 
-      (set! x (+ x dx))
-      (set! y (+ y dy))))
-  (impl ToString
-    (def (toString)
-      (f"Point {X} {Y} (x: {x}, y: {y})"))))
-
+;; generic class with type hints
 (class (Point [X Y] (var (x : X)) (var (y : Y))
   (def (move (dx : X) (dy : Y))
     (begin 
@@ -55,6 +36,8 @@
     (def (toString)
       (f"Point {X} {Y} (x: {x}, y: {y})")))))
 
+;; instantiate generic class
+(val p (Point [Int Int] 1 2))
 
 (enum (Option [T] (Some T) None))
 

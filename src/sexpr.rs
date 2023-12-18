@@ -4,8 +4,7 @@ use crate::{node::Node, num::Num};
 pub enum Sexpr {
     Atom(Node<Atom>),
     Pair { head: Node<Self>, tail: Node<Self> },
-    // List(Vec<Node<Self>>),
-    Vector(Vec<Self>),
+    Vector(Vec<Node<Self>>),
     ByteVector(Vec<u8>),
 }
 
