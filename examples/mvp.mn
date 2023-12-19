@@ -126,7 +126,24 @@ def map f xs =
   | [] -> [] 
   | [x::xs] -> f x :: map f xs
 
+class Point (var x : Int = 0) (var y : Int = 0) = 
+  def move dx dy: () = begin
+    x = x + dx
+    y = y + dy
 
+  impl ToString =
+    def toString (): String = f"Point(x: {x}, y: {y})"
+  end
+end
+
+class Node T =
+  var inner : T
+  var span : Int
+end
+
+enum List T = Nil
+  | Pair { head: T, tail: List T }
+end
 
 
 

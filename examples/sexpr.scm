@@ -27,7 +27,7 @@
   (Rectangle w h)))
 
 ;; generic class with type hints
-(class (Point [X Y] (var (x : X)) (var (y : Y))
+(class (Point <X Y> (var (x : X)) (var (y : Y))
   (def (move (dx : X) (dy : Y))
     (begin 
       (set! x (+ x dx))
