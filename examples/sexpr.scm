@@ -7,7 +7,7 @@
 (class (Point x y))
 
 ;; generic class
-(class (Stack [T] (var xs))
+(class (Stack (T) (var xs))
   (def (push x) (set! xs (pair x xs)))
   (def (pop) T)
   (def (size) int)
@@ -15,7 +15,7 @@
     (def (toString)
       (f"Stack(" (join ", " (map (fn (x) (to-string x)) xs)) ")"))))
 
-(val s (Stack [Int] '(1 2 3)))
+(val s (Stack (Int) '(1 2 3)))
 
 ;; sum class (enum)
 (enum (Color Red Green Blue))
@@ -27,18 +27,28 @@
   (Rectangle w h)))
 
 ;; generic class with type hints
-(class (Point <X Y> (var (x : X)) (var (y : Y))
+(class ((Point X Y) (x :var : X) (y :var : Y))
   (def (move (dx : X) (dy : Y))
     (begin 
       (set! x (+ x dx))
       (set! y (+ y dy))))
   (impl ToString
     (def (toString)
-      (f"Point {X} {Y} (x: {x}, y: {y})")))))
+      (f"Point {X} {Y} (x: {x}, y: {y})"))))
 
 ;; instantiate generic class
-(val p (Point [Int Int] 1 2))
+(val p (Point Int Int 1 2))
 
-(enum (Option [T] (Some T) None))
+(enum (Option (T) (Some T) None))
 
-(enum (List [T] (Pair T (List T)) Empty))
+(enum (List (T) (Pair T (List T)) Empty))
+
+(def (sum (xs : List Int))
+  (match xs
+    (Empty 0)
+    (Pair x xs (+ x (sum xs)))))
+
+(def (fib (n : Int))
+  (if (<= n 1)
+    n
+    (+ (fib (- n 1)) (fib (- n 2)))))

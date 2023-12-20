@@ -60,15 +60,6 @@ end
 -- ranges
 1..10
 
--- -?((0b[0-1]+)|(0o[0-7]+)|(0x[0-9a-fA-F]+)|([1-9]\d*|0))(/-?([1-9]\d*|0))?
-
--- classes 
-class Point (x : Int = 0) (y : Int = 0) <: ToString = 
-  def move dx dy = Point (x + dx) (y + dy)
-
-  override def toString () : String = f"Point(x: {x}, y: {y})"
-end
-
 -- generic classes
 class Stack T (xs : List T) =
   def Stack x = Stack [x]
@@ -89,6 +80,12 @@ class List T =
 def gcd a b = 
   if b = 0 then a 
   else gcd b (a % b)
+
+def gcd a b =
+  if b = 0 then
+    a
+  else
+    gcd b (a % b)
 
 -- sexpr
 -- (def (gcd a b)
@@ -128,8 +125,8 @@ def map f xs =
 
 class Point (var x : Int = 0) (var y : Int = 0) = 
   def move dx dy: () = begin
-    x = x + dx
-    y = y + dy
+    x <- x + dx
+    y <- y + dy
 
   impl ToString =
     def toString (): String = f"Point(x: {x}, y: {y})"
@@ -137,8 +134,8 @@ class Point (var x : Int = 0) (var y : Int = 0) =
 end
 
 class Node T =
-  var inner : T
-  var span : Int
+  inner : T
+  span : Int
 end
 
 enum List T = Nil
