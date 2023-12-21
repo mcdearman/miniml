@@ -1,7 +1,3 @@
-class Point (var x : Int = 0) (var y : Int = 0) = 
-  def move dx dy: () = begin
-    x <- x + dx
-    y <- y + dy
-
-  impl ToString =
-    def toString (): String = f"Point(x: {x}, y: {y})"
+def fib n =
+  if n <= 1 then n 
+  else fib (n - 1) + fib (n - 2)

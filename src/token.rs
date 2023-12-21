@@ -4,20 +4,38 @@ use std::fmt::Display;
 
 fn format_string(lex: &mut logos::Lexer<Token>) -> Option<Vec<Token>> {
     let mut tokens = Vec::new();
-    let mut depth = 1;
-    while let Some(token) = lex.next() {
-        match token {
-            Token::String(_) => {
-                depth -= 1;
-                if depth == 0 {
-                    break;
+    let mut current_token = String::new();
+    let mut in_braces = false;
+
+    for char in lex.slice().chars() {
+        match char {
+            '{' if !in_braces => {
+                if !current_token.is_empty() {
+                    tokens.push(Token::Literal(current_token.clone()));
+                    current_token.clear();
                 }
+                in_braces = true;
             }
-            Token::FormatString(_) => depth += 1,
-            _ => {}
+            '}' if in_braces => {
+                if !current_token.is_empty() {
+                    tokens.push(Token::Expression(current_token.clone()));
+                    current_token.clear();
+                }
+                in_braces = false;
+            }
+            _ => current_token.push(char),
         }
+    }
+
+    if !current_token.is_empty() {
+        let token = if in_braces {
+            Token::Expression(current_token)
+        } else {
+            Token::Literal(current_token)
+        };
         tokens.push(token);
     }
+
     Some(tokens)
 }
 
@@ -28,8 +46,12 @@ pub enum Token {
     Error,
     #[regex(r"--.*", logos::skip)]
     Comment,
-    #[regex(r"[ \t\n\r]", logos::skip)]
+    #[regex(r" +")]
     Whitespace,
+    #[regex(r"\t")]
+    Tab,
+    #[regex(r"[\n\r]+")]
+    Newline,
 
     // Literals and identifiers
     // #[regex(r"-?0b(0|1)+(/-?(0|1)+)?", |lex| Rational64::from_str_radix(&lex.slice()[2..], 2).ok().map(Num))]
@@ -133,7 +155,9 @@ impl Display for Token {
         match self {
             Self::Error => write!(f, "<Error>"),
             Self::Comment => write!(f, "<Comment>"),
-            Self::Whitespace => write!(f, "<WS>"),
+            Self::Whitespace => write!(f, "<Whitespace>"),
+            Self::Tab => write!(f, "<Tab>"),
+            Self::Newline => write!(f, "<Newline>"),
             Self::Num(n) => write!(f, "Num({})", n),
             Self::Bool(b) => write!(f, "Bool({})", b),
             Self::String(s) => write!(f, "String({})", s),
