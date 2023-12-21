@@ -1,8 +1,7 @@
-(class (Point <X Y> (var (x : X)) (var (y : Y))
-  (def (move (dx : X) (dy : Y))
-    (begin 
-      (set! x (+ x dx))
-      (set! y (+ y dy))))
-  (impl ToString
-    (def (toString)
-      (f"Point {X} {Y} (x: {x}, y: {y})")))))
+class Point (var x : Int = 0) (var y : Int = 0) = 
+  def move dx dy: () = begin
+    x <- x + dx
+    y <- y + dy
+
+  impl ToString =
+    def toString (): String = f"Point(x: {x}, y: {y})"

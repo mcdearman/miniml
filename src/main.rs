@@ -3,7 +3,6 @@ mod lexer;
 mod node;
 mod num;
 mod object;
-mod reader;
 mod sexpr;
 mod span;
 mod token;
