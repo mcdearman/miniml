@@ -2,11 +2,6 @@ use crate::num::Num;
 use logos::Logos;
 use std::fmt::Display;
 
-fn format_string(lex: &mut logos::Lexer<Token>) -> Option<Vec<Token>> {
-    // let mut tokens = Vec::new();
-    todo!()
-}
-
 #[derive(Logos, Debug, Clone, PartialEq, Default)]
 pub enum Token {
     #[default]
@@ -30,8 +25,8 @@ pub enum Token {
     Bool(bool),
     #[regex(r#""(\\.|[^"\\])*""#, |lex| lex.slice().to_string())]
     String(String),
-    #[token(r#"f""#, format_string)]
-    FormatString(Vec<Self>),
+    // #[token(r#"f""#, format_string)]
+    // FormatString(Vec<Self>),
     #[regex(r"[a-zA-Z_][a-zA-Z0-9_]*", |lex| lex.slice().to_string())]
     Ident(String),
 
@@ -128,10 +123,10 @@ impl Display for Token {
             Self::Num(n) => write!(f, "Num({})", n),
             Self::Bool(b) => write!(f, "Bool({})", b),
             Self::String(s) => write!(f, "String({})", s),
-            Self::FormatString(tokens) => {
-                for t
-                write!(f, "FormatString({})")
-            }
+            // Self::FormatString(tokens) => {
+            //     for t
+            //     write!(f, "FormatString({})")
+            // }
             Self::Ident(name) => write!(f, "Ident({})", name),
             Self::Lambda => write!(f, "\\"),
             Self::Arrow => write!(f, "->"),
@@ -174,3 +169,8 @@ impl Display for Token {
         }
     }
 }
+
+// fn format_string(lex: &mut logos::Lexer<Token>) -> Option<Vec<Token>> {
+//     // let mut tokens = Vec::new();
+//     todo!()
+// }
