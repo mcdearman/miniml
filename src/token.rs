@@ -9,8 +9,8 @@ pub enum Token {
     #[regex(r"--.*", logos::skip)]
     Comment,
     #[regex(r" +")]
-    Whitespace,
-    #[regex(r"\t")]
+    Space,
+    #[regex(r"\t+")]
     Tab,
     #[regex(r"[\n\r]+")]
     Newline,
@@ -117,7 +117,7 @@ impl Display for Token {
         match self {
             Self::Error => write!(f, "<Error>"),
             Self::Comment => write!(f, "<Comment>"),
-            Self::Whitespace => write!(f, "<Whitespace>"),
+            Self::Space => write!(f, "<Space>"),
             Self::Tab => write!(f, "<Tab>"),
             Self::Newline => write!(f, "<Newline>"),
             Self::Num(n) => write!(f, "Num({})", n),
