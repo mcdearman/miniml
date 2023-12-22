@@ -3,44 +3,11 @@ use logos::Logos;
 use std::fmt::Display;
 
 fn format_string(lex: &mut logos::Lexer<Token>) -> Option<Vec<Token>> {
-    let mut tokens = Vec::new();
-    let mut current_token = String::new();
-    let mut in_braces = false;
-
-    for char in lex.slice().chars() {
-        match char {
-            '{' if !in_braces => {
-                if !current_token.is_empty() {
-                    tokens.push(Token::Literal(current_token.clone()));
-                    current_token.clear();
-                }
-                in_braces = true;
-            }
-            '}' if in_braces => {
-                if !current_token.is_empty() {
-                    tokens.push(Token::Expression(current_token.clone()));
-                    current_token.clear();
-                }
-                in_braces = false;
-            }
-            _ => current_token.push(char),
-        }
-    }
-
-    if !current_token.is_empty() {
-        let token = if in_braces {
-            Token::Expression(current_token)
-        } else {
-            Token::Literal(current_token)
-        };
-        tokens.push(token);
-    }
-
-    Some(tokens)
+    // let mut tokens = Vec::new();
+    todo!()
 }
 
 #[derive(Logos, Debug, Clone, PartialEq, Default)]
-// #[logos(error = LexerError)]
 pub enum Token {
     #[default]
     Error,
@@ -161,6 +128,10 @@ impl Display for Token {
             Self::Num(n) => write!(f, "Num({})", n),
             Self::Bool(b) => write!(f, "Bool({})", b),
             Self::String(s) => write!(f, "String({})", s),
+            Self::FormatString(tokens) => {
+                for t
+                write!(f, "FormatString({})")
+            }
             Self::Ident(name) => write!(f, "Ident({})", name),
             Self::Lambda => write!(f, "\\"),
             Self::Arrow => write!(f, "->"),
