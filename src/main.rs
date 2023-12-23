@@ -1,5 +1,4 @@
 mod compiler;
-mod indenter;
 mod lexer;
 mod node;
 mod num;
