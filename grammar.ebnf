@@ -7,7 +7,7 @@ item = decl | expr
 decl = let 
      | fn 
 
-let = "let" pat "=" expr
+def = "let" pat "=" expr
 
 fn = "let" ident pat+ "->" expr
 

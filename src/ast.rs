@@ -1,29 +1,35 @@
 use super::node::Node;
-use num_rational::Rational64;
+use crate::{num::Num, token::Token};
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Root {
-    pub items: Vec<Node<Item>>,
+    pub classes: Vec<Node<Class>>,
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub enum Item {
-    Def {
-        pat: Node<Pattern>,
-        expr: Node<Expr>,
-    },
-    Fn {
-        name: Node<String>,
-        params: Vec<Node<Pattern>>,
-        body: Node<Expr>,
-    },
-    Expr(Expr),
+pub struct Class {
+    pub name: Node<String>,
+    pub fields: Vec<Node<Field>>,
+    pub methods: Vec<Node<Method>>,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct Field {
+    pub name: Node<String>,
+    pub expr: Node<Expr>,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct Method {
+    pub name: Node<String>,
+    pub params: Vec<Node<Pattern>>,
+    pub body: Node<Expr>,
 }
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Expr {
     Lit(Lit),
-    Ident(InternedString),
+    Ident(String),
     Lambda {
         params: Vec<Node<Pattern>>,
         body: Node<Self>,
@@ -38,7 +44,7 @@ pub enum Expr {
         body: Node<Self>,
     },
     Fn {
-        name: Node<InternedString>,
+        name: Node<String>,
         params: Vec<Node<Pattern>>,
         expr: Node<Self>,
         body: Node<Self>,
@@ -72,15 +78,15 @@ pub struct MatchCase {
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Lit {
-    Num(Rational64),
+    Num(Num),
     Bool(bool),
-    String(InternedString),
+    String(String),
 }
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Pattern {
     Lit(Lit),
-    Ident(InternedString),
+    Ident(String),
     Wildcard,
     Unit,
     // Tuple(Vec<Node<Self>>),

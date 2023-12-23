@@ -1,8 +1,10 @@
-root = item*
+root = class
 
-item = def | expr
+class = "class" ident ("extends" ident)?
 
-def = ident+ '=' expr
+field = ident (':' type)?
+
+method = ident+ '=' expr
 
 expr = eq
 

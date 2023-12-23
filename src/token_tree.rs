@@ -1,21 +1,26 @@
-use crate::num::Num;
+use crate::{node::Node, num::Num};
 
 #[derive(Debug, Clone)]
 pub enum TokenTree {
-    Error,
-    Comment,
-    Space,
-    Tab,
-    Newline,
+    Group {
+        delimiter: Node<Delimiter>,
+        inner: Vec<Node<Self>>,
+    },
+    Ident(Node<String>),
+    Punct(Node<Punct>),
+    Literal(Node<Literal>),
+}
 
-    // Literals and identifiers
-    Num(Num),
-    Bool(bool),
-    String(String),
-    // FormatString(Vec<Self>),
-    Ident(String),
+#[derive(Debug, Clone)]
+pub enum Delimiter {
+    Paren,
+    Bracket,
+    Brace,
+    End,
+}
 
-    // Punctuation
+#[derive(Debug, Clone)]
+pub enum Punct {
     Lambda,
     Arrow,
     Assign,
@@ -27,31 +32,21 @@ pub enum TokenTree {
     Eq,
     Neq,
     Lt,
+    Gt,
     Leq,
     Geq,
     Bang,
     LParen,
     RParen,
+    LBrace,
     RBrace,
     LBrack,
     RBrack,
-    Pipe,
-    PipeArrow,
-    Subtype,
+}
 
-    Semicolon,
-    Comma,
-    Wildcard,
-
-    // Keywords
-    Class,
-    Enum,
-    Trait,
-    Let,
-    In,
-    Match,
-    With,
-    If,
-    Then,
-    Else,
+#[derive(Debug, Clone)]
+pub enum Literal {
+    Num(Num),
+    Bool(bool),
+    String(String),
 }

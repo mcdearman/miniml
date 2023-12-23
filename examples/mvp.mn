@@ -78,9 +78,11 @@ gcd (a : Int) (b : Int) : Int =
 class Stack T (var xs : List T) =
   Stack x = begin 
     xs <- x :: xs
+  end
 
   push (x : T) = begin 
     xs <- x :: xs
+  end
 
   pop () = 
     match xs with
@@ -93,11 +95,11 @@ class List T =
 
 -- examples
 gcd a b = 
-  if b = 0 then a 
+  if b == 0 then a 
   else gcd b (a % b)
 
 gcd a b =
-  if b = 0 then
+  if b == 0 then
     a
   else
     gcd b (a % b)
@@ -134,6 +136,7 @@ class Point (var x : Int = 0) (var y : Int = 0) =
   move dx dy: () = begin
     x <- x + dx
     y <- y + dy
+  end
 
   impl ToString =
     toString (): String = f"Point(x: {x}, y: {y})"

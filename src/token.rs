@@ -8,10 +8,8 @@ pub enum Token {
     Error,
     #[regex(r"--.*", logos::skip)]
     Comment,
-    #[regex(r" +")]
-    Space,
-    #[regex(r"\t+")]
-    Tab,
+    #[regex(r"[ \t]+", logos::skip)]
+    Whitespace,
     #[regex(r"[\n\r]+")]
     Newline,
 
@@ -30,7 +28,7 @@ pub enum Token {
 
     // Punctuation
     #[token("\\")]
-    Lambda,
+    Backslash,
     #[token("->")]
     Arrow,
     #[token("=")]
@@ -100,6 +98,10 @@ pub enum Token {
     Let,
     #[token("in")]
     In,
+    #[token("begin")]
+    Begin,
+    #[token("end")]
+    End,
     #[token("match")]
     Match,
     #[token("with")]
@@ -117,14 +119,13 @@ impl Display for Token {
         match self {
             Self::Error => write!(f, "<Error>"),
             Self::Comment => write!(f, "<Comment>"),
-            Self::Space => write!(f, "<Space>"),
-            Self::Tab => write!(f, "<Tab>"),
+            Self::Whitespace => write!(f, "<Whitespace>"),
             Self::Newline => write!(f, "<Newline>"),
             Self::Num(n) => write!(f, "Num({})", n),
             Self::Bool(b) => write!(f, "Bool({})", b),
             Self::String(s) => write!(f, "String({})", s),
             Self::Ident(name) => write!(f, "Ident({})", name),
-            Self::Lambda => write!(f, "\\"),
+            Self::Backslash => write!(f, "\\"),
             Self::Arrow => write!(f, "->"),
             Self::Assign => write!(f, "="),
             Self::Plus => write!(f, "+"),
@@ -158,6 +159,8 @@ impl Display for Token {
             Self::Trait => write!(f, "trait"),
             Self::Let => write!(f, "let"),
             Self::In => write!(f, "in"),
+            Self::Begin => write!(f, "begin"),
+            Self::End => write!(f, "end"),
             Self::Match => write!(f, "match"),
             Self::With => write!(f, "with"),
             Self::If => write!(f, "if"),

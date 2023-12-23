@@ -1,3 +1,5 @@
-fib n =
-  if n <= 1 then n 
-  else fib (n - 1) + fib (n - 2)
+class Point (var x : Int = 0) (var y : Int = 0) = 
+  move dx dy: () = begin
+    x <- x + dx
+    y <- y + dy
+  end
