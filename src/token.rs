@@ -25,8 +25,6 @@ pub enum Token {
     Bool(bool),
     #[regex(r#""(\\.|[^"\\])*""#, |lex| lex.slice().to_string())]
     String(String),
-    // #[token(r#"f""#, format_string)]
-    // FormatString(Vec<Self>),
     #[regex(r"[a-zA-Z_][a-zA-Z0-9_]*", |lex| lex.slice().to_string())]
     Ident(String),
 
@@ -82,6 +80,8 @@ pub enum Token {
 
     #[token(":")]
     Colon,
+    #[token("::")]
+    DoubleColon,
     #[token(";")]
     Semicolon,
     #[token(",")]
@@ -94,8 +94,8 @@ pub enum Token {
     Class,
     #[token("enum")]
     Enum,
-    #[token("def")]
-    Def,
+    #[token("trait")]
+    Trait,
     #[token("let")]
     Let,
     #[token("in")]
@@ -123,10 +123,6 @@ impl Display for Token {
             Self::Num(n) => write!(f, "Num({})", n),
             Self::Bool(b) => write!(f, "Bool({})", b),
             Self::String(s) => write!(f, "String({})", s),
-            // Self::FormatString(tokens) => {
-            //     for t
-            //     write!(f, "FormatString({})")
-            // }
             Self::Ident(name) => write!(f, "Ident({})", name),
             Self::Lambda => write!(f, "\\"),
             Self::Arrow => write!(f, "->"),
@@ -153,12 +149,13 @@ impl Display for Token {
             Self::PipeArrow => write!(f, "|>"),
             Self::Subtype => write!(f, "<:"),
             Self::Colon => write!(f, ":"),
+            Self::DoubleColon => write!(f, "::"),
             Self::Semicolon => write!(f, ";"),
             Self::Comma => write!(f, ","),
             Self::Wildcard => write!(f, "_"),
             Self::Class => write!(f, "class"),
             Self::Enum => write!(f, "enum"),
-            Self::Def => write!(f, "def"),
+            Self::Trait => write!(f, "trait"),
             Self::Let => write!(f, "let"),
             Self::In => write!(f, "in"),
             Self::Match => write!(f, "match"),
@@ -169,8 +166,3 @@ impl Display for Token {
         }
     }
 }
-
-// fn format_string(lex: &mut logos::Lexer<Token>) -> Option<Vec<Token>> {
-//     // let mut tokens = Vec::new();
-//     todo!()
-// }

@@ -1,3 +1,18 @@
+-- Main entry point
+class Main =
+  main args: () = begin
+    let _ = println "Hello World!" in
+    let _ = loop 0 in
+    ()
+
+  loop i =
+    if i > 30 then ()
+    else let _ = print (fib i) in loop (i + 1)
+
+  fib n = 
+    if n <= 1 then n 
+    else fib (n - 1) + fib (n - 2)
+
 -- arithmetic operators
 1 + 2
 1 - 2
@@ -50,7 +65,7 @@ match x with
 
 -- type hints
 gcd (a : Int) (b : Int) : Int = 
-  if b = 0 then a 
+  if b == 0 then a 
   else gcd b (a % b)
   
 -- lists
