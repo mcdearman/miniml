@@ -148,10 +148,12 @@ class Node T =
 enum List T = Nil
   | Pair { head: T, tail: List T }
 
-class Rectangle (var width : Int) (var height : Int) <: ToString = 
-  var area: Int
+class Rectangle <: ToString = 
+  mut width : Int
+  mut height : Int
+  mut area: Int = width * height
 
-  Rectangle (size : Int) = Rectangle size size
+  Rectangle (size : Int) = Rectangle size size (size * size)
 
   updateDimensions newWidth newHeight: () = begin
     width <- newWidth
