@@ -1,4 +1,4 @@
-class Tag 
+enum Tag 
   = End
   | Byte
   | Short
@@ -13,25 +13,29 @@ class Tag
   | IntArray
   | LongArray
 
-impl Tag =
-  from_byte (byte: u8) -> Tag =
-    match byte with
-    | 0 -> End
-    | 1 => Byte
-    | 2 => Short
-    | 3 => Int
-    | 4 => Long
-    | 5 => Float
-    | 6 => Double
-    | 7 => ByteArray
-    | 8 => String
-    | 9 => List
-    | 10 => Compound
-    | 11 => IntArray
-    | 12 => LongArray
-    | _ => panic "Invalid tag"
+  impl Tag =
+    from_byte (byte: u8) -> Tag =
+      match byte with
+      | 0 -> End
+      | 1 -> Byte
+      | 2 -> Short
+      | 3 -> Int
+      | 4 -> Long
+      | 5 -> Float
+      | 6 -> Double
+      | 7 -> ByteArray
+      | 8 -> String
+      | 9 -> List
+      | 10 -> Compound
+      | 11 -> IntArray
+      | 12 -> LongArray
+      | _ -> panic "Invalid tag"
 
 class Node =
-  name : String
-  tag : Tag
-  val : Option[Value]
+  val name : String
+  val tag : Tag
+  val value : Option Value
+
+class Value =
+  val node : Node
+
