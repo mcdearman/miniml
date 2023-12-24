@@ -14,10 +14,9 @@ pub enum Token {
     Newline,
 
     // Literals and identifiers
-    // #[regex(r"-?0b(0|1)+(/-?(0|1)+)?", |lex| Rational64::from_str_radix(&lex.slice()[2..], 2).ok().map(Num))]
-    // #[regex(r"-?0o[0-7]+(/-?[0-7]+)?", |lex| Rational64::from_str_radix(&lex.slice()[2..], 8).ok().map(Num))]
-    // #[regex(r"-?0x[0-9a-fA-F]+(/-?[0-9a-fA-F]+)?", |lex| Rational64::from_str_radix(&lex.slice()[2..], 16).ok().map(Num))]
-    #[regex(r"-?([1-9]\d*|0)(/-?-[1-9]\d*|0)?", |lex| lex.slice().parse().ok())]
+    #[regex(
+        r"-?((0b[0-1]+)|(0o[0-7]+)|(0x[0-9a-fA-F]+)|([1-9]\d*|0))(/-?((0b[0-1]+)|(0o[0-7]+)|(0x[0-9a-fA-F]+)|([1-9]\d*|0)))?", 
+        |lex| lex.slice().parse().ok())]
     Num(Num),
     #[regex(r"true|false", |lex| lex.slice().parse().ok())]
     Bool(bool),
@@ -30,7 +29,9 @@ pub enum Token {
     #[token("\\")]
     Backslash,
     #[token("->")]
-    Arrow,
+    RArrow,
+    #[token("<-")]
+    LArrow,
     #[token("=")]
     Assign,
     #[token("+")]
@@ -94,6 +95,12 @@ pub enum Token {
     Enum,
     #[token("trait")]
     Trait,
+    #[token("impl")]
+    Impl,
+    #[token("val")]
+    Val,
+    #[token("var")]
+    Var,
     #[token("let")]
     Let,
     #[token("in")]
@@ -126,7 +133,8 @@ impl Display for Token {
             Self::String(s) => write!(f, "String({})", s),
             Self::Ident(name) => write!(f, "Ident({})", name),
             Self::Backslash => write!(f, "\\"),
-            Self::Arrow => write!(f, "->"),
+            Self::RArrow => write!(f, "->"),
+            Self::LArrow => write!(f, "<-"),
             Self::Assign => write!(f, "="),
             Self::Plus => write!(f, "+"),
             Self::Minus => write!(f, "-"),
@@ -157,6 +165,9 @@ impl Display for Token {
             Self::Class => write!(f, "class"),
             Self::Enum => write!(f, "enum"),
             Self::Trait => write!(f, "trait"),
+            Self::Impl => write!(f, "impl"),
+            Self::Val => write!(f, "val"),
+            Self::Var => write!(f, "var"),
             Self::Let => write!(f, "let"),
             Self::In => write!(f, "in"),
             Self::Begin => write!(f, "begin"),

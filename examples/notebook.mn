@@ -1,5 +1,8 @@
-class Point (var x : Int = 0) (var y : Int = 0) = 
+class Point (var x : Int = 0) (var y : Int = 0) <: ToString = 
   move dx dy: () = begin
     x <- x + dx
     y <- y + dy
   end
+
+  impl ToString =
+    toString (): String = f"Point(x: {x}, y: {y})"

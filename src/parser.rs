@@ -87,7 +87,7 @@ fn expr_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
                     .at_least(1)
                     .collect::<Vec<_>>(),
             )
-            .then_ignore(just(Token::Arrow))
+            .then_ignore(just(Token::RArrow))
             .then(expr.clone().map_with_span(Node::new))
             .map(|(params, body)| Expr::Lambda { params, body });
 
@@ -95,7 +95,7 @@ fn expr_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
         // case = pat "->" expr
         let case = pattern_parser()
             .map_with_span(Node::new)
-            .then_ignore(just(Token::Arrow))
+            .then_ignore(just(Token::RArrow))
             .then(expr.clone().map_with_span(Node::new))
             .map(|(pattern, expr)| MatchCase { pattern, expr })
             .boxed();
