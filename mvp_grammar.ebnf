@@ -1,6 +1,6 @@
 root = class
 
-class = "class" ident ("extends" ident)?
+class = "class" ident
 
 field = ident (':' type)?
 

@@ -1,5 +1,5 @@
 use crate::{
-    ast::{Expr, Lit, MatchCase, Pattern, PrefixOp, InfixOp},
+    ast::{Expr, InfixOp, Lit, MatchCase, Pattern, PrefixOp},
     node::Node,
     span::Span,
     token::Token,
@@ -286,150 +286,62 @@ fn expr_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
     })
 }
 
-fn fn_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
-) -> impl Parser<'a, I, Node<Item>, extra::Err<Rich<'a, Token, Span>>> {
-    ident_parser()
-        .map_with_span(Node::new)
-        .then(
-            pattern_parser()
-                .map_with_span(Node::new)
-                .repeated()
-                .at_least(1)
-                .collect::<Vec<_>>(),
-        )
-        .then_ignore(just(Token::Assign))
-        .then(expr_parser().map_with_span(Node::new))
-        .map(|((name, params), body)| Item::Fn { name, params, body })
-        .map_with_span(Node::new)
-        .boxed()
-}
+// fn fn_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
+// ) -> impl Parser<'a, I, Node<Item>, extra::Err<Rich<'a, Token, Span>>> {
+//     ident_parser()
+//         .map_with_span(Node::new)
+//         .then(
+//             pattern_parser()
+//                 .map_with_span(Node::new)
+//                 .repeated()
+//                 .at_least(1)
+//                 .collect::<Vec<_>>(),
+//         )
+//         .then_ignore(just(Token::Assign))
+//         .then(expr_parser().map_with_span(Node::new))
+//         .map(|((name, params), body)| Item::Fn { name, params, body })
+//         .map_with_span(Node::new)
+//         .boxed()
+// }
 
-fn def_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
-) -> impl Parser<'a, I, Node<Item>, extra::Err<Rich<'a, Token, Span>>> {
-    pattern_parser()
-        .map_with_span(Node::new)
-        .then_ignore(just(Token::Assign))
-        .then(expr_parser().map_with_span(Node::new))
-        .map(|(pat, expr)| Item::Def { pat, expr })
-        .map_with_span(Node::new)
-        .boxed()
-}
+// fn def_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
+// ) -> impl Parser<'a, I, Node<Item>, extra::Err<Rich<'a, Token, Span>>> {
+//     pattern_parser()
+//         .map_with_span(Node::new)
+//         .then_ignore(just(Token::Assign))
+//         .then(expr_parser().map_with_span(Node::new))
+//         .map(|(pat, expr)| Item::Def { pat, expr })
+//         .map_with_span(Node::new)
+//         .boxed()
+// }
 
-fn item_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
-) -> impl Parser<'a, I, Node<Item>, extra::Err<Rich<'a, Token, Span>>> {
-    def_parser()
-        .or(fn_parser())
-        .or(expr_parser().map(Item::Expr).map_with_span(Node::new))
-        .boxed()
-}
+// fn item_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
+// ) -> impl Parser<'a, I, Node<Item>, extra::Err<Rich<'a, Token, Span>>> {
+//     def_parser()
+//         .or(fn_parser())
+//         .or(expr_parser().map(Item::Expr).map_with_span(Node::new))
+//         .boxed()
+// }
 
-fn parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
-) -> impl Parser<'a, I, Node<Root>, extra::Err<Rich<'a, Token, Span>>> {
-    item_parser()
-        .repeated()
-        .collect()
-        .map(|items| Root { items })
-        .map_with_span(Node::new)
-        .boxed()
-}
+// fn parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
+// ) -> impl Parser<'a, I, Node<Root>, extra::Err<Rich<'a, Token, Span>>> {
+//     item_parser()
+//         .repeated()
+//         .collect()
+//         .map(|items| Root { items })
+//         .map_with_span(Node::new)
+//         .boxed()
+// }
 
-pub fn parse<'src>(src: &'src str) -> (Option<Node<Root>>, Vec<ParseError<'src>>) {
-    let tokens = Token::lexer(&src).spanned().map(|(tok, span)| match tok {
-        Ok(tok) => (tok, Span::from(span)),
-        Err(err) => panic!("lex error: {:?}", err),
-    });
-    let tok_stream = Stream::from_iter(tokens).spanned(Span::from(src.len()..src.len()));
-    parser().parse(tok_stream).into_output_errors()
-}
+// pub fn parse<'src>(src: &'src str) -> (Option<Node<Root>>, Vec<ParseError<'src>>) {
+//     let tokens = Token::lexer(&src).spanned().map(|(tok, span)| match tok {
+//         Ok(tok) => (tok, Span::from(span)),
+//         Err(err) => panic!("lex error: {:?}", err),
+//     });
+//     let tok_stream = Stream::from_iter(tokens).spanned(Span::from(src.len()..src.len()));
+//     parser().parse(tok_stream).into_output_errors()
+// }
 
 mod tests {
-    use crate::chumsky_parser::parse;
-
-    fn test_helper(src: &str) -> super::Node<super::Root> {
-        let (root, errs) = parse(src);
-        if !errs.is_empty() {
-            panic!("parse error: {:?}", errs);
-        }
-        root.unwrap()
-    }
-
-    #[test]
-    fn parse_unit() {
-        insta::assert_debug_snapshot!(test_helper("()"));
-    }
-
-    #[test]
-    fn parse_num() {
-        insta::assert_debug_snapshot!(test_helper("1"));
-    }
-
-    #[test]
-    fn parse_bool() {
-        insta::assert_debug_snapshot!(test_helper("true"));
-    }
-
-    #[test]
-    fn parse_ident() {
-        insta::assert_debug_snapshot!(test_helper("x"));
-    }
-
-    #[test]
-    fn parse_let() {
-        insta::assert_debug_snapshot!(test_helper("let x = 1 in x"));
-    }
-
-    #[test]
-    fn parse_let_unary() {
-        insta::assert_debug_snapshot!(test_helper("let x = 1 in -x"));
-    }
-
-    #[test]
-    fn parse_let_fn() {
-        insta::assert_debug_snapshot!(test_helper("let add x y = x + y in add 1 2"));
-    }
-
-    #[test]
-    fn parse_apply() {
-        insta::assert_debug_snapshot!(test_helper("f x y"));
-    }
-
-    #[test]
-    fn parse_prefix() {
-        insta::assert_debug_snapshot!(test_helper("-x"));
-    }
-
-    #[test]
-    fn parse_infix() {
-        insta::assert_debug_snapshot!(test_helper("x + y * z"));
-    }
-
-    #[test]
-    fn parse_paren() {
-        insta::assert_debug_snapshot!(test_helper("(x + y) * z"));
-    }
-
-    #[test]
-    fn parse_lambda() {
-        insta::assert_debug_snapshot!(test_helper("\\a b -> a + b"));
-    }
-
-    #[test]
-    fn parse_lambda_apply() {
-        insta::assert_debug_snapshot!(test_helper("(\\a b -> a + b) 1 2"));
-    }
-
-    #[test]
-    fn parse_def() {
-        insta::assert_debug_snapshot!(test_helper("x = 1"));
-    }
-
-    #[test]
-    fn parse_fn_def() {
-        insta::assert_debug_snapshot!(test_helper("add x y = x + y"));
-    }
-
-    #[test]
-    fn parse_nested_let() {
-        insta::assert_debug_snapshot!(test_helper("let x = 1 in let y = 2 in x + y"));
-    }
+    use crate::{ast::Root, node::Node};
 }
