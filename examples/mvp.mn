@@ -148,11 +148,34 @@ class Node T =
 enum List T = Nil
   | Pair { head: T, tail: List T }
 
+-- [======================== Object Orientation ======================]
+MiniML is a pure Object Oriented language. This means that everything is an object.
+And the only way to interact with objects is through messages. Messages are sent
+to objects by calling methods. Methods are defined in classes.
+
+
+-- [======================== Constructors ======================]
+-- Constructors in MiniML are different from ordinary constructors.
+-- They are akin to Rust struct initializers. However, they share syntax
+-- with ordinary functions. A constructor is a function with the name of
+-- the type it constructs. They are not methods as they don't take `self`.
+-- Nor can they modify the state of the object. Instead, they use initialization
+-- syntax to initialize the object. All fields must be initialized. If a field 
+-- is intended to sometimes be empty, it must be wrapped in an `Option`.
+-- By default, all fields are immutable. To make a field mutable, it must be
+-- declared with the `mut` keyword. The `mut` keyword is also used to declared
+-- mutable variables in functions. A private initializer with all fields as 
+-- arguments will be created by default. A public initializer with all
+-- public fields as arguments will be created by default as well. You can also
+-- create your own initializers (constructors).
 class Rectangle <: ToString = 
+  -- private fields
   mut width : Int
   mut height : Int
   mut area: Int = width * height
 
+  -- public initializer
+  -- default private initializer used in the public initializer
   Rectangle (size : Int) = Rectangle size size (size * size)
 
   updateDimensions newWidth newHeight: () = begin
