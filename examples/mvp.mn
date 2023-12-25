@@ -178,10 +178,10 @@ class Rectangle <: ToString =
   -- default private initializer used in the public initializer
   Rectangle (size : Int) = Rectangle size size (size * size)
 
-  updateDimensions newWidth newHeight: () = begin
-    width <- newWidth
-    height <- newHeight
-    area <- width * height
+  updateDimensions self newWidth newHeight: () = begin
+    self.width = newWidth
+    self.height = newHeight
+    self.area = width * height
   end
 
   impl ToString =
