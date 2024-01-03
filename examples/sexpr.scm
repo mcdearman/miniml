@@ -16,16 +16,15 @@
   (add x y))
 
 (def (fib n)
-  (let 
-    (((aux n a b)
-        (if (= n 0)
-            a
-            (aux (- n 1) b (+ a b)))))
+  (let (((aux n a b)
+           (if (= n 0)
+               a
+               (aux (- n 1) b (+ a b)))))
     (aux n 0 1)))
 
-;; def fib n =
+;; fib n =
 ;;   let aux n a b =
-;;     if n = 0 then a
+;;     if n == 0 then a
 ;;     else aux (n - 1) b (a + b)
 ;;   in aux n 0 1
 
@@ -38,7 +37,7 @@
       (y 2))
   (+ x y))
 
-(let ((x  10)
+(let ((x 10)
       ((fib n)
          (if (<= n 1)
              n
@@ -108,7 +107,6 @@
   (if (<= n 1)
       n
       (for (i 2) (< i n) (+ i 1)
-        (def a b)
         (set! a b)
         (set! b (+ a b))
         b)))
@@ -119,8 +117,7 @@
       n
       (let loop ((i 2) (a 0) (b 1))
         (if (< i n)
-            (begin (def a b)
-                   (set! a b)
+            (begin (set! a b)
                    (set! b (+ a b))
                    (loop (+ i 1) a b))
             b))))
@@ -131,7 +128,6 @@
       n
       (let ((i 2) (a 0) (b 1))
         (while (< i n)
-               (def a b)
                (set! a b)
                (set! b (+ a b))
                (inc! i))
