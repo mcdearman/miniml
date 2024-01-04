@@ -5,8 +5,8 @@ use std::{
 
 #[derive(Clone, Copy, Eq, PartialEq, Default, Hash)]
 pub struct Span {
-    pub start: u32,
-    pub end: u32,
+    start: u32,
+    end: u32,
 }
 
 impl Span {
@@ -19,6 +19,14 @@ impl Span {
             start: self.start.min(other.start),
             end: self.end.max(other.end),
         }
+    }
+
+    pub fn start(&self) -> u32 {
+        self.start
+    }
+
+    pub fn end(&self) -> u32 {
+        self.end
     }
 }
 
@@ -45,6 +53,15 @@ impl From<Range<usize>> for Span {
         Self {
             start: range.start as u32,
             end: range.end as u32,
+        }
+    }
+}
+
+impl From<Range<u32>> for Span {
+    fn from(range: Range<u32>) -> Self {
+        Self {
+            start: range.start,
+            end: range.end,
         }
     }
 }

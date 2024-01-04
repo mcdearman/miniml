@@ -3,7 +3,7 @@ use miniml_common::{interner::InternedString, span::Span};
 use num_rational::Rational64;
 use std::fmt::{Debug, Display};
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Token {
     kind: TokenKind,
     span: Span,
@@ -20,6 +20,33 @@ impl Token {
 
     pub fn span(&self) -> &Span {
         &self.span
+    }
+}
+
+impl Display for Token {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        use TokenKind::*;
+        match &self.kind {
+            Error => write!(f, "Error @ {}", self.span),
+            Whitespace => write!(f, "Whitespace @ {}", self.span),
+            Comment => write!(f, "Comment @ {}", self.span),
+            Symbol(name) => write!(f, "Symbol({}) @ {}", name, self.span),
+            Number(n) => write!(f, "Number({}) @ {}", n, self.span),
+            String(s) => write!(f, "String({}) @ {}", s, self.span),
+            LParen => write!(f, "( @ {}", self.span),
+            RParen => write!(f, ") @ {}", self.span),
+            LBrack => write!(f, "[ @ {}", self.span),
+            RBrack => write!(f, "] @ {}", self.span),
+            LBrace => write!(f, "{{ @ {}", self.span),
+            RBrace => write!(f, "}} @ {}", self.span),
+            Colon => write!(f, ": @ {}", self.span),
+            Period => write!(f, ". @ {}", self.span),
+            Comma => write!(f, ", @ {}", self.span),
+            CommaAt => write!(f, ",@ @ {}", self.span),
+            Hash => write!(f, "# @ {}", self.span),
+            Quote => write!(f, "' @ {}", self.span),
+            Backquote => write!(f, "` @ {}", self.span),
+        }
     }
 }
 
