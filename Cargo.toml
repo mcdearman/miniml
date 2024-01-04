@@ -1,2 +1,9 @@
 [workspace]
-members = ["analysis", "codegen", "miniml", "runtime", "syntax", "utils"]
+members = [
+    "miniml",
+    "miniml-analysis",
+    "miniml-codegen",
+    "miniml-common",
+    "miniml-runtime",
+    "miniml-syntax",
+]

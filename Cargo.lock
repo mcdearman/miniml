@@ -35,28 +35,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "analysis"
-version = "0.1.0"
-dependencies = [
- "chumsky",
- "clap",
- "cstree",
- "env_logger",
- "insta",
- "itertools",
- "lasso",
- "log",
- "logos",
- "notify",
- "num-bigint",
- "num-complex",
- "num-rational",
- "num-traits",
- "once_cell",
- "rustyline",
-]
-
-[[package]]
 name = "anstream"
 version = "0.6.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -208,28 +186,6 @@ dependencies = [
  "error-code",
  "str-buf",
  "winapi",
-]
-
-[[package]]
-name = "codegen"
-version = "0.1.0"
-dependencies = [
- "chumsky",
- "clap",
- "cstree",
- "env_logger",
- "insta",
- "itertools",
- "lasso",
- "log",
- "logos",
- "notify",
- "num-bigint",
- "num-complex",
- "num-rational",
- "num-traits",
- "once_cell",
- "rustyline",
 ]
 
 [[package]]
@@ -664,6 +620,15 @@ checksum = "523dc4f511e55ab87b694dc30d0f820d60906ef06413f93d4d7a1385599cc149"
 name = "miniml"
 version = "0.1.0"
 dependencies = [
+ "env_logger",
+ "log",
+ "miniml-syntax",
+]
+
+[[package]]
+name = "miniml-analysis"
+version = "0.1.0"
+dependencies = [
  "chumsky",
  "clap",
  "cstree",
@@ -680,6 +645,89 @@ dependencies = [
  "num-traits",
  "once_cell",
  "rustyline",
+]
+
+[[package]]
+name = "miniml-codegen"
+version = "0.1.0"
+dependencies = [
+ "chumsky",
+ "clap",
+ "cstree",
+ "env_logger",
+ "insta",
+ "itertools",
+ "lasso",
+ "log",
+ "logos",
+ "notify",
+ "num-bigint",
+ "num-complex",
+ "num-rational",
+ "num-traits",
+ "once_cell",
+ "rustyline",
+]
+
+[[package]]
+name = "miniml-common"
+version = "0.1.0"
+dependencies = [
+ "chumsky",
+ "clap",
+ "cstree",
+ "env_logger",
+ "insta",
+ "itertools",
+ "lasso",
+ "log",
+ "logos",
+ "notify",
+ "num-bigint",
+ "num-complex",
+ "num-rational",
+ "num-traits",
+ "once_cell",
+ "rustyline",
+]
+
+[[package]]
+name = "miniml-runtime"
+version = "0.1.0"
+dependencies = [
+ "chumsky",
+ "clap",
+ "cstree",
+ "env_logger",
+ "insta",
+ "itertools",
+ "lasso",
+ "log",
+ "logos",
+ "notify",
+ "num-bigint",
+ "num-complex",
+ "num-rational",
+ "num-traits",
+ "once_cell",
+ "rustyline",
+]
+
+[[package]]
+name = "miniml-syntax"
+version = "0.1.0"
+dependencies = [
+ "chumsky",
+ "cstree",
+ "env_logger",
+ "insta",
+ "itertools",
+ "logos",
+ "miniml-common",
+ "num-bigint",
+ "num-complex",
+ "num-rational",
+ "num-traits",
 ]
 
 [[package]]
@@ -916,28 +964,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c08c74e62047bb2de4ff487b251e4a92e24f48745648451635cec7d591162d9f"
 
 [[package]]
-name = "runtime"
-version = "0.1.0"
-dependencies = [
- "chumsky",
- "clap",
- "cstree",
- "env_logger",
- "insta",
- "itertools",
- "lasso",
- "log",
- "logos",
- "notify",
- "num-bigint",
- "num-complex",
- "num-rational",
- "num-traits",
- "once_cell",
- "rustyline",
-]
-
-[[package]]
 name = "rustix"
 version = "0.38.28"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1069,22 +1095,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "syntax"
-version = "0.1.0"
-dependencies = [
- "chumsky",
- "cstree",
- "env_logger",
- "insta",
- "itertools",
- "logos",
- "num-bigint",
- "num-complex",
- "num-rational",
- "num-traits",
-]
-
-[[package]]
 name = "termcolor"
 version = "1.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1151,28 +1161,6 @@ name = "utf8parse"
 version = "0.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "711b9620af191e0cdc7468a8d14e709c3dcdb115b36f838e601583af800a370a"
-
-[[package]]
-name = "utils"
-version = "0.1.0"
-dependencies = [
- "chumsky",
- "clap",
- "cstree",
- "env_logger",
- "insta",
- "itertools",
- "lasso",
- "log",
- "logos",
- "notify",
- "num-bigint",
- "num-complex",
- "num-rational",
- "num-traits",
- "once_cell",
- "rustyline",
-]
 
 [[package]]
 name = "version_check"
