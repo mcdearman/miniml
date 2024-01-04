@@ -27,6 +27,7 @@ impl Display for Token {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         use TokenKind::*;
         match &self.kind {
+            Eof => write!(f, "EOF @ {}", self.span),
             Error => write!(f, "Error @ {}", self.span),
             Whitespace => write!(f, "Whitespace @ {}", self.span),
             Comment => write!(f, "Comment @ {}", self.span),
@@ -52,6 +53,7 @@ impl Display for Token {
 
 #[derive(Logos, Debug, Copy, Clone, Default, PartialEq)]
 pub enum TokenKind {
+    Eof,
     #[default]
     Error,
     #[regex(r"[ \t\r\n\f]+", logos::skip)]
@@ -101,6 +103,7 @@ impl Display for TokenKind {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         use TokenKind::*;
         match self {
+            Eof => write!(f, "EOF"),
             Error => write!(f, "Error"),
             Whitespace => write!(f, "Whitespace"),
             Comment => write!(f, "Comment"),

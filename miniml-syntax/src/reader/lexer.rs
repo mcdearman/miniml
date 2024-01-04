@@ -14,22 +14,34 @@ impl<'src> Lexer<'src> {
         }
     }
 
-    pub fn peek(&mut self) -> Option<Token> {
-        self.logos.clone().next().map(|r| match r {
-            Ok(k) => Token::new(k, self.logos.span().into()),
-            Err(_) => Token::new(TokenKind::Error, self.logos.span().into()),
-        })
+    pub fn peek(&mut self) -> Token {
+        self.logos
+            .clone()
+            .next()
+            .map(|r| match r {
+                Ok(k) => Token::new(k, self.logos.span().into()),
+                Err(_) => Token::new(TokenKind::Error, self.logos.span().into()),
+            })
+            .unwrap_or_else(|| Token::new(TokenKind::Eof, self.logos.span().into()))
     }
-}
 
-impl Iterator for Lexer<'_> {
-    type Item = Token;
+    pub fn next(&mut self) -> Token {
+        self.logos
+            .next()
+            .map(|r| match r {
+                Ok(k) => Token::new(k, self.logos.span().into()),
+                Err(_) => Token::new(TokenKind::Error, self.logos.span().into()),
+            })
+            .unwrap_or_else(|| Token::new(TokenKind::Eof, self.logos.span().into()))
+    }
 
-    fn next(&mut self) -> Option<Self::Item> {
-        self.logos.next().map(|r| match r {
-            Ok(k) => Token::new(k, self.logos.span().into()),
-            Err(_) => Token::new(TokenKind::Error, self.logos.span().into()),
-        })
+    pub fn eat(&mut self, kind: TokenKind) -> bool {
+        if self.peek().kind() == &kind {
+            self.next();
+            true
+        } else {
+            false
+        }
     }
 }
 

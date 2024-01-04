@@ -1,6 +1,6 @@
 use self::{
-    sexpr::{Atom, Root, Sexpr},
-    token::Token,
+    sexpr::{Atom, Root, Sexpr, SexprKind},
+    token::{Token, TokenKind},
 };
 use std::fmt::Display;
 
@@ -39,17 +39,25 @@ impl<'src> Reader<'src> {
         }
     }
 
-    fn next(&mut self) -> Option<Token> {
+    fn next(&mut self) -> Token {
         self.lexer.next()
     }
 
-    fn peek(&mut self) -> Option<Token> {
+    fn peek(&mut self) -> Token {
         self.lexer.peek()
+    }
+
+    fn eat(&mut self, kind: TokenKind) -> ReadResult<()> {
+        if self.lexer.eat(kind) {
+            Ok(())
+        } else {
+            Err(vec![ReaderError::UnexpectedToken(self.lexer.peek())])
+        }
     }
 
     pub fn read(&mut self) -> ReadResult<Root> {
         let mut sexprs = Vec::new();
-        while self.peek().is_some() {
+        while *self.peek().kind() != TokenKind::Eof {
             sexprs.push(self.read_sexpr()?);
         }
         let start = sexprs.first().map(|s| s.span().start()).unwrap_or(0);
@@ -58,10 +66,61 @@ impl<'src> Reader<'src> {
     }
 
     fn read_sexpr(&mut self) -> ReadResult<Sexpr> {
+        let tok = self.peek();
+        match tok.kind() {
+            TokenKind::LParen => self.read_list(),
+            TokenKind::LBrack => self.read_vector(),
+            TokenKind::LBrace => self.read_byte_vector(),
+            TokenKind::Quote => self.read_quote(),
+            TokenKind::Backquote => self.read_quasiquote(),
+            TokenKind::Symbol(_) | TokenKind::Number(_) | TokenKind::String(_) => {
+                let atom = self.read_atom();
+                atom.map(|a| Sexpr::new(SexprKind::Atom(a.clone()), *a.span()))
+            }
+            TokenKind::Eof => Err(vec![ReaderError::UnexpectedEOF]),
+            _ => Err(vec![ReaderError::UnexpectedToken(tok.clone())]),
+        }
+    }
+
+    fn read_list(&mut self) -> ReadResult<Sexpr> {
+        let start = self.peek().span();
+        self.eat(TokenKind::LParen)?;
+        let mut sexprs = Vec::new();
+        while *self.peek().kind() != TokenKind::Eof  {
+            if let Some(tok) = self.peek() {
+                match tok.kind() {
+                    TokenKind::RParen => {
+                        self.eat(TokenKind::RParen)?;
+                        break;
+                    }
+                    _ => {
+                        let sexpr = self.read_sexpr()?;
+                        sexprs.push(sexpr);
+                    }
+                }
+            } else {
+                return Err(vec![ReaderError::UnexpectedEOF]);
+            }
+        }
+        let end = *self.peek().span();
+        Ok(Sexpr::new(SexprKind::List(sexprs), start.extend(end)))
+    }
+
+    fn read_vector(&mut self) -> ReadResult<Sexpr> {
         todo!()
     }
 
-    fn read_atom(&mut self) -> ReadResult<Atom> {
+    fn read_byte_vector(&mut self) -> ReadResult<Sexpr> {
         todo!()
     }
+
+    fn read_quote(&mut self) -> ReadResult<Sexpr> {
+        todo!()
+    }
+
+    fn read_quasiquote(&mut self) -> ReadResult<Sexpr> {
+        todo!()
+    }
+
+    fn read_atom(&mut self) -> ReadResult<Atom> {}
 }
