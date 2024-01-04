@@ -1,32 +1,37 @@
-(let x 10)
+;; immutable binding
+(def x 10)
 
-(let (gcd a b)
+;; mutable binding
+(def! y 10)
+
+;; functions are first class
+(def gcd (lambda (a b)
   (if (= b 0) 
       a
-      (gcd b (mod a b))))
+      (gcd b (mod a b)))))
 
-(let (fib n)
-  (if (<= n 1)
-      n
-      (+ (fib (- n 1)) (fib (- n 2)))))
-
-(let (((fib n) 
-         (if (<= n 1)
-             n
-             (+ (fib (- n 1)) (fib (- n 2))))))
-  (fib 10))
-
-(let (map f xs)
+(def map (lambda (f xs)
   (if (empty? xs) nil
-      (pair (f (head xs)) (map f (tail xs)))))
+      (pair (f (head xs)) (map f (tail xs))))))
 
+;; let expression
 (let ((a 10)
       (b 5))
   (+ a b))
 
+;; if expression
 (if (= 1 2) 
     (println "1 is equal to 2")
     (println "1 is not equal to 2"))
+
+;; macro
+(macro (defn name args body)
+  `(def (,name ,args) ,@body))
+
+(defn gcd (a b)
+  (if (= b 0) 
+      a
+      (gcd b (mod a b))))
 
 '(1 2 3)
 '(1 . 2)
