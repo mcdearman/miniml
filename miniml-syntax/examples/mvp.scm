@@ -1,11 +1,22 @@
-(def x 10)
+(let x 10)
 
-(def gcd (lambda (a b)
+(let (gcd a b)
   (if (= b 0) 
       a
-      (gcd b (mod a b)))))
+      (gcd b (mod a b))))
 
-(def (map f xs)
+(let (fib n)
+  (if (<= n 1)
+      n
+      (+ (fib (- n 1)) (fib (- n 2)))))
+
+(let (((fib n) 
+         (if (<= n 1)
+             n
+             (+ (fib (- n 1)) (fib (- n 2))))))
+  (fib 10))
+
+(let (map f xs)
   (if (empty? xs) nil
       (pair (f (head xs)) (map f (tail xs)))))
 
@@ -22,5 +33,8 @@
 '(1 2 . 3)
 `(1 2 ,(+ 1 2))
 `(1 2 ,@(list 3 4))
+[1 2 3]
+{ :a 1 :b 2 }
+#[1 2 3]
 
 

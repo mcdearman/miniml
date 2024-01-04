@@ -1,12 +1,32 @@
-use crate::util::intern::InternedString;
 use logos::Logos;
+use miniml_common::{interner::InternedString, span::Span};
 use num_rational::Rational64;
 use std::fmt::{Debug, Display};
 
+#[derive(Debug, Clone)]
+pub struct Token {
+    kind: TokenKind,
+    span: Span,
+}
+
+impl Token {
+    pub fn new(kind: TokenKind, span: Span) -> Self {
+        Self { kind, span }
+    }
+
+    pub fn kind(&self) -> &TokenKind {
+        &self.kind
+    }
+
+    pub fn span(&self) -> &Span {
+        &self.span
+    }
+}
+
 #[derive(Logos, Debug, Copy, Clone, Default, PartialEq)]
-pub enum Token {
+pub enum TokenKind {
     #[default]
-    Eof,
+    Error,
     #[regex(r"[ \t\r\n\f]+", logos::skip)]
     Whitespace,
     #[regex(r#";[^\n]*"#)]
@@ -50,28 +70,29 @@ pub enum Token {
     Backquote,
 }
 
-impl Display for Token {
+impl Display for TokenKind {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        use TokenKind::*;
         match self {
-            Token::Eof => write!(f, "<EOF>"),
-            Token::Whitespace => write!(f, "Whitespace"),
-            Token::Comment => write!(f, "Comment"),
-            Token::Symbol(name) => write!(f, "Symbol({})", name),
-            Token::Number(n) => write!(f, "Number({})", n),
-            Token::String(s) => write!(f, "String({:?})", s),
-            Token::LParen => write!(f, "("),
-            Token::RParen => write!(f, ")"),
-            Token::LBrack => write!(f, "["),
-            Token::RBrack => write!(f, "]"),
-            Token::LBrace => write!(f, "{{"),
-            Token::RBrace => write!(f, "}}"),
-            Token::Colon => write!(f, ":"),
-            Token::Period => write!(f, "."),
-            Token::Comma => write!(f, ","),
-            Token::CommaAt => write!(f, ",@"),
-            Token::Hash => write!(f, "#"),
-            Token::Quote => write!(f, "'"),
-            Token::Backquote => write!(f, "`"),
+            Error => write!(f, "Error"),
+            Whitespace => write!(f, "Whitespace"),
+            Comment => write!(f, "Comment"),
+            Symbol(name) => write!(f, "Symbol({})", name),
+            Number(n) => write!(f, "Number({})", n),
+            String(s) => write!(f, "String({:?})", s),
+            LParen => write!(f, "("),
+            RParen => write!(f, ")"),
+            LBrack => write!(f, "["),
+            RBrack => write!(f, "]"),
+            LBrace => write!(f, "{{"),
+            RBrace => write!(f, "}}"),
+            Colon => write!(f, ":"),
+            Period => write!(f, "."),
+            Comma => write!(f, ","),
+            CommaAt => write!(f, ",@"),
+            Hash => write!(f, "#"),
+            Quote => write!(f, "'"),
+            Backquote => write!(f, "`"),
         }
     }
 }

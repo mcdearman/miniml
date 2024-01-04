@@ -12,3 +12,18 @@ pub enum SexprKind {
     Vector(Vec<Sexpr>),
     ByteVector(Vec<u8>),
 }
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct Atom {
+    pub kind: AtomKind,
+    pub span: Span,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum AtomKind {
+    Sym(InternedString),
+    Num(Num),
+    Str(InternedString),
+    Bool(bool),
+    Char(char),
+}

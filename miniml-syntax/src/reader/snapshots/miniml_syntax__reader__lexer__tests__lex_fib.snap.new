@@ -1,0 +1,190 @@
+---
+source: miniml-syntax/src/reader/lexer.rs
+assertion_line: 42
+expression: lexer.collect_vec()
+---
+[
+    Token {
+        kind: LParen,
+        span: 13..14,
+    },
+    Token {
+        kind: Symbol(
+            InternedString(let),
+        ),
+        span: 14..17,
+    },
+    Token {
+        kind: LParen,
+        span: 18..19,
+    },
+    Token {
+        kind: Symbol(
+            InternedString(fib),
+        ),
+        span: 19..22,
+    },
+    Token {
+        kind: Symbol(
+            InternedString(n),
+        ),
+        span: 23..24,
+    },
+    Token {
+        kind: RParen,
+        span: 24..25,
+    },
+    Token {
+        kind: LParen,
+        span: 42..43,
+    },
+    Token {
+        kind: Symbol(
+            InternedString(if),
+        ),
+        span: 43..45,
+    },
+    Token {
+        kind: LParen,
+        span: 46..47,
+    },
+    Token {
+        kind: Symbol(
+            InternedString(<=),
+        ),
+        span: 47..49,
+    },
+    Token {
+        kind: Symbol(
+            InternedString(n),
+        ),
+        span: 50..51,
+    },
+    Token {
+        kind: Number(
+            Ratio {
+                numer: 1,
+                denom: 1,
+            },
+        ),
+        span: 52..53,
+    },
+    Token {
+        kind: RParen,
+        span: 53..54,
+    },
+    Token {
+        kind: Symbol(
+            InternedString(n),
+        ),
+        span: 75..76,
+    },
+    Token {
+        kind: LParen,
+        span: 97..98,
+    },
+    Token {
+        kind: Symbol(
+            InternedString(+),
+        ),
+        span: 98..99,
+    },
+    Token {
+        kind: LParen,
+        span: 100..101,
+    },
+    Token {
+        kind: Symbol(
+            InternedString(fib),
+        ),
+        span: 101..104,
+    },
+    Token {
+        kind: LParen,
+        span: 105..106,
+    },
+    Token {
+        kind: Symbol(
+            InternedString(-),
+        ),
+        span: 106..107,
+    },
+    Token {
+        kind: Symbol(
+            InternedString(n),
+        ),
+        span: 108..109,
+    },
+    Token {
+        kind: Number(
+            Ratio {
+                numer: 1,
+                denom: 1,
+            },
+        ),
+        span: 110..111,
+    },
+    Token {
+        kind: RParen,
+        span: 111..112,
+    },
+    Token {
+        kind: RParen,
+        span: 112..113,
+    },
+    Token {
+        kind: LParen,
+        span: 114..115,
+    },
+    Token {
+        kind: Symbol(
+            InternedString(fib),
+        ),
+        span: 115..118,
+    },
+    Token {
+        kind: LParen,
+        span: 119..120,
+    },
+    Token {
+        kind: Symbol(
+            InternedString(-),
+        ),
+        span: 120..121,
+    },
+    Token {
+        kind: Symbol(
+            InternedString(n),
+        ),
+        span: 122..123,
+    },
+    Token {
+        kind: Number(
+            Ratio {
+                numer: 2,
+                denom: 1,
+            },
+        ),
+        span: 124..125,
+    },
+    Token {
+        kind: RParen,
+        span: 125..126,
+    },
+    Token {
+        kind: RParen,
+        span: 126..127,
+    },
+    Token {
+        kind: RParen,
+        span: 127..128,
+    },
+    Token {
+        kind: RParen,
+        span: 128..129,
+    },
+    Token {
+        kind: RParen,
+        span: 129..130,
+    },
+]
