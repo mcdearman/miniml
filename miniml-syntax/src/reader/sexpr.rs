@@ -1,4 +1,5 @@
 use miniml_common::{interner::InternedString, num::Num, span::Span};
+use num_rational::Rational64;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Root {
@@ -74,7 +75,12 @@ impl Atom {
 #[derive(Debug, Clone, PartialEq)]
 pub enum AtomKind {
     Sym(InternedString),
-    Num(Num),
+    Lit(Lit),
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum Lit {
+    Num(Rational64),
     Str(InternedString),
     Bool(bool),
     Char(char),

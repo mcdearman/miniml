@@ -1,5 +1,5 @@
 use logos::Logos;
-use miniml_common::{interner::InternedString, span::Span};
+use miniml_common::{interner::InternedString, num::Num, span::Span};
 use num_rational::Rational64;
 use std::fmt::{Debug, Display};
 

@@ -1,5 +1,6 @@
-use super::token::{Token, TokenKind};
+use super::token::TokenKind;
 use logos::Logos;
+use miniml_common::span::Span;
 use std::fmt::Debug;
 
 #[derive(Debug, Clone)]
@@ -13,35 +14,16 @@ impl<'src> Lexer<'src> {
             logos: TokenKind::lexer(src),
         }
     }
+}
 
-    pub fn peek(&mut self) -> Token {
-        self.logos
-            .clone()
-            .next()
-            .map(|r| match r {
-                Ok(k) => Token::new(k, self.logos.span().into()),
-                Err(_) => Token::new(TokenKind::Error, self.logos.span().into()),
-            })
-            .unwrap_or_else(|| Token::new(TokenKind::Eof, self.logos.span().into()))
-    }
+impl Iterator for Lexer<'_> {
+    type Item = (TokenKind, Span);
 
-    pub fn next(&mut self) -> Token {
-        self.logos
-            .next()
-            .map(|r| match r {
-                Ok(k) => Token::new(k, self.logos.span().into()),
-                Err(_) => Token::new(TokenKind::Error, self.logos.span().into()),
-            })
-            .unwrap_or_else(|| Token::new(TokenKind::Eof, self.logos.span().into()))
-    }
-
-    pub fn eat(&mut self, kind: TokenKind) -> bool {
-        if self.peek().kind() == &kind {
-            self.next();
-            true
-        } else {
-            false
-        }
+    fn next(&mut self) -> Option<Self::Item> {
+        self.logos.next().map(|r| match r {
+            Ok(k) => (k, self.logos.span().into()),
+            Err(_) => (TokenKind::Error, self.logos.span().into()),
+        })
     }
 }
 
