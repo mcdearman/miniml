@@ -1,5 +1,5 @@
 use chumsky::container::Container;
-use miniml_common::{num::Num, span::Span, symbol::Symbol};
+use miniml_common::{list::List, num::Num, span::Span, symbol::Symbol};
 use num_rational::Rational64;
 use std::fmt::Display;
 
@@ -60,7 +60,7 @@ impl Display for Sexpr {
 #[derive(Debug, Clone, PartialEq)]
 pub enum SexprKind {
     Atom(Atom),
-    List(List),
+    List(SexprList),
     Vector(Vec<Sexpr>),
 }
 
@@ -84,42 +84,109 @@ impl Display for SexprKind {
 }
 
 #[derive(Debug, Clone, PartialEq, Default)]
-pub enum List {
-    Pair {
-        head: Sexpr,
-        tail: Box<Self>,
-    },
-    #[default]
-    Empty,
+pub struct SexprList {
+    head: List<Sexpr>,
+    span: Span,
 }
 
-impl List {
-    pub fn push_front(&mut self, item: Sexpr) {
-        *self = List::Pair {
-            head: item.clone(),
-            tail: Box::new(self.clone()),
-        }
+impl SexprList {
+    pub fn new(head: List<Sexpr>, span: Span) -> Self {
+        Self { head, span }
+    }
+
+    pub fn head(&self) -> &List<Sexpr> {
+        &self.head
+    }
+
+    pub fn span(&self) -> &Span {
+        &self.span
     }
 }
 
-impl Display for List {
+impl Display for SexprList {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            List::Pair { head, tail } => write!(f, "({} . {})", head, tail),
-            List::Empty => write!(f, "()"),
+        write!(f, "(")?;
+        for (i, s) in self.head.iter().enumerate() {
+            if i != 0 {
+                write!(f, " ")?;
+            }
+            write!(f, "{}", s)?;
         }
+        write!(f, ")")
     }
 }
 
-impl From<Vec<Sexpr>> for List {
-    fn from(value: Vec<Sexpr>) -> Self {
+impl<I> From<I> for SexprList
+where
+    I: IntoIterator<Item = Sexpr>,
+    <I as IntoIterator>::IntoIter: DoubleEndedIterator,
+{
+    fn from(value: I) -> Self {
         let mut list = List::Empty;
         for item in value.into_iter().rev() {
             list.push_front(item);
         }
-        list
+        SexprList::new(list, list.iter())
     }
 }
+
+// #[derive(Debug, Clone, PartialEq, Default)]
+// pub enum List {
+//     Pair {
+//         head: Sexpr,
+//         tail: Box<Self>,
+//     },
+//     #[default]
+//     Empty,
+// }
+
+// impl List {
+//     pub fn push_front(&mut self, item: Sexpr) {
+//         *self = List::Pair {
+//             head: item.clone(),
+//             tail: Box::new(self.clone()),
+//         }
+//     }
+
+//     pub fn pretty_print(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+//         match self {
+//             List::Pair { head, tail } => {
+//                 write!(f, "(")?;
+//                 write!(f, "{}", head)?;
+//                 let mut tail = tail;
+//                 while let List::Pair { head, tail: t } = tail {
+//                     write!(f, " {}", head)?;
+//                     tail = t;
+//                 }
+//                 if let List::Empty = tail {
+//                     write!(f, ")")
+//                 } else {
+//                     write!(f, " . {})", tail)
+//                 }
+//             }
+//             List::Empty => write!(f, "()"),
+//         }
+//     }
+// }
+
+// impl Display for List {
+//     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+//         match self {
+//             List::Pair { head, tail } => write!(f, "({} . {})", head, tail),
+//             List::Empty => write!(f, "()"),
+//         }
+//     }
+// }
+
+// impl From<Vec<Sexpr>> for List {
+//     fn from(value: Vec<Sexpr>) -> Self {
+//         let mut list = List::Empty;
+//         for item in value.into_iter().rev() {
+//             list.push_front(item);
+//         }
+//         list
+//     }
+// }
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Atom {

@@ -29,7 +29,7 @@ fn root_reader<'a, I: ValueInput<'a, Token = TokenKind, Span = Span>>(
 fn sexpr_reader<'a, I: ValueInput<'a, Token = TokenKind, Span = Span>>(
 ) -> impl Parser<'a, I, Sexpr, extra::Err<Rich<'a, TokenKind, Span>>> {
     recursive(|sexpr| {
-        let atom = symbol_reader()
+        let atom = ident_reader()
             .map(AtomKind::Sym)
             .or(lit_reader().map(AtomKind::Lit))
             .map_with_span(Atom::new)
@@ -139,10 +139,10 @@ fn sexpr_reader<'a, I: ValueInput<'a, Token = TokenKind, Span = Span>>(
     })
 }
 
-fn symbol_reader<'a, I: ValueInput<'a, Token = TokenKind, Span = Span>>(
+fn ident_reader<'a, I: ValueInput<'a, Token = TokenKind, Span = Span>>(
 ) -> impl Parser<'a, I, Symbol, extra::Err<Rich<'a, TokenKind, Span>>> {
     select! {
-        TokenKind::Symbol(name) => name,
+        TokenKind::Ident(name) => name,
     }
 }
 

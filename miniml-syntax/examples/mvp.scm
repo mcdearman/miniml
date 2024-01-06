@@ -26,12 +26,38 @@
 
 ;; macro
 (macro (fn name args body)
-  `(def (,name ,args) ,@body))
+  `(def ,name (lambda ,args) ,@body))
+
+(macro (while test body)
+  `(fn loop ()
+     (if ,test
+         (begin ,@body (loop))
+         ()
+         )))
 
 (fn gcd (a b)
   (if (= b 0) 
       a
       (gcd b (mod a b))))
+
+(fn fib (n)
+  (if (< n 2)
+      n
+      (+ (fib (- n 1)) (fib (- n 2)))))
+
+(fn map (f xs)
+  (if (empty? xs) nil
+      (pair (f (head xs)) (map f (tail xs)))))
+
+(fn fact (n)
+  (if (= n 0)
+      1
+      (* n (fact (- n 1)))))
+
+(fn ack (m n)
+  (cond ((= m 0) (+ n 1))
+        ((= n 0) (ack (- m 1) 1))
+        (t (ack (- m 1) (ack m (- n 1))))))
 
 '(1 2 3)
 `(1 2 ,(+ 1 2))
@@ -39,3 +65,6 @@
 [1 2 3]
 #{ 1 2 3 }
 { :a 1 :b 2 }
+
+;; records
+(type Person (name age))

@@ -31,7 +31,6 @@ impl Display for Token {
             Error => write!(f, "Error @ {}", self.span),
             Whitespace => write!(f, "Whitespace @ {}", self.span),
             Comment => write!(f, "Comment @ {}", self.span),
-            Symbol(name) => write!(f, "Symbol({}) @ {}", name, self.span),
             Ident(name) => write!(f, "Ident({}) @ {}", name, self.span),
             Number(n) => write!(f, "Number({}) @ {}", n, self.span),
             String(s) => write!(f, "String({}) @ {}", s, self.span),
@@ -61,8 +60,6 @@ pub enum TokenKind {
     Whitespace,
     #[regex(r#";[^\n]*"#)]
     Comment,
-    #[regex(r#"'[^[0-9]\[\]()\s,{};][^\[\]()\s,{};]+"#, |lex| Symbol::from(lex.slice()))]
-    Symbol(Symbol),
     #[regex(r#"[^'\[\]()\s,{};]+"#, |lex| Symbol::from(lex.slice()))]
     Ident(Symbol),
     #[regex(
@@ -110,7 +107,6 @@ impl Display for TokenKind {
             Error => write!(f, "Error"),
             Whitespace => write!(f, "Whitespace"),
             Comment => write!(f, "Comment"),
-            Symbol(name) => write!(f, "Symbol({})", name),
             Ident(name) => write!(f, "Ident({})", name),
             Number(n) => write!(f, "Number({})", n),
             String(s) => write!(f, "String({:?})", s),
