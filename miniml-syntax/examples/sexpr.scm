@@ -17,9 +17,14 @@
 (fn add (a b)
   (+ a b))
 
-;; expanded
-(def (add a b)
+;; type hints
+(fn add ((a : int) (b : int) : int)
   (+ a b))
+
+(fn gcd ((a : int) (b : int) : int)
+  (if (= b 0)
+      a
+      (gcd b (mod a b))))
 
 ;; Now we can define functions like this:
 (fn fib (n)
@@ -34,13 +39,18 @@
       n
       (+ (fib (- n 1)) (fib (- n 2)))))
 
+(fn ack (m n)
+  (if (= m 0)
+      (+ n 1)
+      (if (= n 0)
+          (ack (- m 1) 1)
+          (ack (- m 1) (ack m (- n 1))))))
 
 ;; Here's the same function in ML view:
 ;; let fib n =
 ;;   if n = 0 then 0
 ;;   else if n = 1 then 1
 ;;   else fib (n - 1) + fib (n - 2)
-
 
 ;; Let-in
 ;; let x = 10 in x + 1

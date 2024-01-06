@@ -1,5 +1,7 @@
-use miniml_common::{interner::InternedString, num::Num, span::Span};
+use chumsky::container::Container;
+use miniml_common::{num::Num, span::Span, symbol::Symbol};
 use num_rational::Rational64;
+use std::fmt::Display;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Root {
@@ -14,6 +16,15 @@ impl Root {
 
     pub fn sexprs(&self) -> &[Sexpr] {
         &self.sexprs
+    }
+}
+
+impl Display for Root {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        for s in &self.sexprs {
+            writeln!(f, "{}", s)?;
+        }
+        Ok(())
     }
 }
 
@@ -40,13 +51,74 @@ impl Sexpr {
     }
 }
 
+impl Display for Sexpr {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.kind)
+    }
+}
+
 #[derive(Debug, Clone, PartialEq)]
 pub enum SexprKind {
     Atom(Atom),
-    Pair { head: Sexpr, tail: Sexpr },
-    List(Vec<Sexpr>),
+    List(List),
     Vector(Vec<Sexpr>),
-    ByteVector(Vec<u8>),
+}
+
+impl Display for SexprKind {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            SexprKind::Atom(a) => write!(f, "{}", a),
+            SexprKind::List(l) => write!(f, "{}", l),
+            SexprKind::Vector(v) => {
+                write!(f, "[")?;
+                for (i, s) in v.iter().enumerate() {
+                    if i != 0 {
+                        write!(f, " ")?;
+                    }
+                    write!(f, "{}", s)?;
+                }
+                write!(f, "]")
+            }
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Default)]
+pub enum List {
+    Pair {
+        head: Sexpr,
+        tail: Box<Self>,
+    },
+    #[default]
+    Empty,
+}
+
+impl List {
+    pub fn push_front(&mut self, item: Sexpr) {
+        *self = List::Pair {
+            head: item.clone(),
+            tail: Box::new(self.clone()),
+        }
+    }
+}
+
+impl Display for List {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            List::Pair { head, tail } => write!(f, "({} . {})", head, tail),
+            List::Empty => write!(f, "()"),
+        }
+    }
+}
+
+impl From<Vec<Sexpr>> for List {
+    fn from(value: Vec<Sexpr>) -> Self {
+        let mut list = List::Empty;
+        for item in value.into_iter().rev() {
+            list.push_front(item);
+        }
+        list
+    }
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -72,16 +144,42 @@ impl Atom {
     }
 }
 
+impl Display for Atom {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.kind)
+    }
+}
+
 #[derive(Debug, Clone, PartialEq)]
 pub enum AtomKind {
-    Sym(InternedString),
+    Sym(Symbol),
     Lit(Lit),
+}
+
+impl Display for AtomKind {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            AtomKind::Sym(s) => write!(f, "{}", s),
+            AtomKind::Lit(l) => write!(f, "{}", l),
+        }
+    }
 }
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Lit {
     Num(Rational64),
-    Str(InternedString),
+    Str(Symbol),
     Bool(bool),
     Char(char),
+}
+
+impl Display for Lit {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Lit::Num(n) => write!(f, "{}", n),
+            Lit::Str(s) => write!(f, "{}", s),
+            Lit::Bool(b) => write!(f, "{}", b),
+            Lit::Char(c) => write!(f, "{}", c),
+        }
+    }
 }

@@ -25,21 +25,17 @@
     (println "1 is not equal to 2"))
 
 ;; macro
-(macro (defn name args body)
+(macro (fn name args body)
   `(def (,name ,args) ,@body))
 
-(defn gcd (a b)
+(fn gcd (a b)
   (if (= b 0) 
       a
       (gcd b (mod a b))))
 
 '(1 2 3)
-'(1 . 2)
-'(1 2 . 3)
 `(1 2 ,(+ 1 2))
 `(1 2 ,@(list 3 4))
 [1 2 3]
+#{ 1 2 3 }
 { :a 1 :b 2 }
-#[1 2 3]
-
-

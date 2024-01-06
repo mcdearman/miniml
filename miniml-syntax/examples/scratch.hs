@@ -240,7 +240,7 @@ macro begin body... =
 
 macro while cond body... =
   @(let loop () = 
-      (if $(cond) then (begin $(body); loop) else ()))
+      (if $(cond) then (begin $(body) loop) else ()))
 
 macro while cond body =
   @(if $(cond) then $(body); while $(cond) $(body) else ())

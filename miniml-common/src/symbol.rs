@@ -9,17 +9,17 @@ use std::{
 pub static mut INTERNER: Lazy<ThreadedRodeo> = Lazy::new(|| ThreadedRodeo::default());
 
 #[derive(Clone, Copy, PartialEq, Eq, Hash)]
-pub struct InternedString {
+pub struct Symbol {
     key: Spur,
 }
 
-impl From<Spur> for InternedString {
+impl From<Spur> for Symbol {
     fn from(key: Spur) -> Self {
         Self { key }
     }
 }
 
-impl From<&str> for InternedString {
+impl From<&str> for Symbol {
     fn from(name: &str) -> Self {
         Self {
             key: unsafe { INTERNER.get_or_intern(name) },
@@ -27,7 +27,7 @@ impl From<&str> for InternedString {
     }
 }
 
-impl From<String> for InternedString {
+impl From<String> for Symbol {
     fn from(name: String) -> Self {
         Self {
             key: unsafe { INTERNER.get_or_intern(name) },
@@ -35,7 +35,7 @@ impl From<String> for InternedString {
     }
 }
 
-impl Debug for InternedString {
+impl Debug for Symbol {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "InternedString({})", unsafe {
             INTERNER.resolve(&self.key)
@@ -43,19 +43,19 @@ impl Debug for InternedString {
     }
 }
 
-impl Display for InternedString {
+impl Display for Symbol {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "\"{}\"", unsafe { INTERNER.resolve(&self.key) })
     }
 }
 
-impl Borrow<str> for InternedString {
+impl Borrow<str> for Symbol {
     fn borrow(&self) -> &str {
         unsafe { INTERNER.resolve(&self.key) }
     }
 }
 
-impl Deref for InternedString {
+impl Deref for Symbol {
     type Target = str;
 
     fn deref(&self) -> &Self::Target {

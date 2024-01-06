@@ -1,0 +1,27 @@
+root = sexpr+
+
+sexpr = atom | list | dot
+
+list = "(" sexpr* ")"
+
+vector = "[" sexpr* "]"
+
+map = "{" (sexpr sexpr)* "}"
+
+set = "#{" sexpr* "}"
+
+quote = "'" sexpr
+
+quasiquote = "`" sexpr
+
+unquote = "," sexpr
+
+unquote-splice = ",@" sexpr
+
+atom = number | symbol
+
+symbol = [a-zA-Z0-9_\-]+
+
+number = int ("/" int+)?
+
+int = "-"? [1-9] [0-9]*

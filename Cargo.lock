@@ -617,33 +617,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "523dc4f511e55ab87b694dc30d0f820d60906ef06413f93d4d7a1385599cc149"
 
 [[package]]
-name = "minim-repl"
-version = "0.1.0"
-dependencies = [
- "chumsky",
- "clap",
- "cstree",
- "env_logger",
- "insta",
- "itertools",
- "lasso",
- "log",
- "logos",
- "notify",
- "num-bigint",
- "num-complex",
- "num-rational",
- "num-traits",
- "once_cell",
- "rustyline",
-]
-
-[[package]]
 name = "miniml"
 version = "0.1.0"
 dependencies = [
  "env_logger",
  "log",
+ "miniml-repl",
  "miniml-syntax",
 ]
 
@@ -670,24 +649,16 @@ dependencies = [
 ]
 
 [[package]]
-name = "miniml-runtime"
+name = "miniml-repl"
 version = "0.1.0"
 dependencies = [
- "chumsky",
  "clap",
- "cstree",
  "env_logger",
  "insta",
- "itertools",
  "lasso",
  "log",
- "logos",
+ "miniml-syntax",
  "notify",
- "num-bigint",
- "num-complex",
- "num-rational",
- "num-traits",
- "once_cell",
  "rustyline",
 ]
 
