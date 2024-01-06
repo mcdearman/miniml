@@ -68,3 +68,8 @@
 
 ;; records
 (type Person (name age))
+
+(fn gcd ((a : Int) (b : Int) : Int)
+  (if (= b 0) 
+      a 
+      (gcd b (% a b))))
