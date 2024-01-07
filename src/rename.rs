@@ -3,7 +3,10 @@
  * to the AST but with all names resolved to their unique IDs. Names
  * that shadow names from an outer scope are given a new unique ID.
  */
-use crate::utils::{InternedString, Span, UniqueId};
+use crate::{
+    parse,
+    utils::{InternedString, Span, UniqueId},
+};
 use log::trace;
 use num_rational::Rational64;
 use std::{cell::RefCell, collections::HashMap, rc::Rc};
@@ -14,7 +17,7 @@ pub struct ResError {
     pub span: Span,
 }
 
-pub type ResResult<T> = Result<T, ResError>;
+pub type ResResult<T> = Result<T, Vec<ResError>>;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Env {
@@ -154,8 +157,6 @@ pub enum ExprKind {
     Lit(Lit),
     Ident(Ident),
     Apply { fun: Expr, arg: Expr },
-    Unary { op: UnaryOp, expr: Expr },
-    Binary { op: BinaryOp, lhs: Expr, rhs: Expr },
     If { cond: Expr, then: Expr, else_: Expr },
     Let { name: Ident, expr: Expr, body: Expr },
     Lambda { param: Ident, expr: Expr },
@@ -173,108 +174,12 @@ impl Ident {
         Self { name, span }
     }
 
-    pub fn name(&self) -> &str {
+    pub fn name(&self) -> &UniqueId {
         &self.name
     }
 
     pub fn span(&self) -> &Span {
         &self.span
-    }
-}
-
-#[derive(Debug, Clone, PartialEq)]
-pub struct UnaryOp {
-    kind: UnaryOpKind,
-    span: Span,
-}
-
-impl UnaryOp {
-    pub fn new(kind: UnaryOpKind, span: Span) -> Self {
-        Self { kind, span }
-    }
-
-    pub fn kind(&self) -> &UnaryOpKind {
-        &self.kind
-    }
-
-    pub fn span(&self) -> &Span {
-        &self.span
-    }
-}
-
-#[derive(Debug, Clone, PartialEq)]
-pub enum UnaryOpKind {
-    Neg,
-    Not,
-}
-
-impl From<Token> for UnaryOpKind {
-    fn from(t: Token) -> Self {
-        match t {
-            Token::Minus => Self::Neg,
-            Token::Bang => Self::Not,
-            _ => unreachable!(),
-        }
-    }
-}
-
-#[derive(Debug, Clone, PartialEq)]
-pub struct BinaryOp {
-    kind: BinaryOpKind,
-    span: Span,
-}
-
-impl BinaryOp {
-    pub fn new(kind: BinaryOpKind, span: Span) -> Self {
-        Self { kind, span }
-    }
-
-    pub fn kind(&self) -> &BinaryOpKind {
-        &self.kind
-    }
-
-    pub fn span(&self) -> &Span {
-        &self.span
-    }
-}
-
-#[derive(Debug, Clone, PartialEq)]
-pub enum BinaryOpKind {
-    Add,
-    Sub,
-    Mul,
-    Div,
-    Rem,
-    Pow,
-    Eq,
-    Neq,
-    Lt,
-    Lte,
-    Gt,
-    Gte,
-    And,
-    Or,
-}
-
-impl From<Token> for BinaryOpKind {
-    fn from(t: Token) -> Self {
-        match t {
-            Token::Plus => Self::Add,
-            Token::Minus => Self::Sub,
-            Token::Star => Self::Mul,
-            Token::Slash => Self::Div,
-            Token::Percent => Self::Rem,
-            Token::Caret => Self::Pow,
-            Token::Eq => Self::Eq,
-            Token::Neq => Self::Neq,
-            Token::Lt => Self::Lt,
-            Token::Leq => Self::Lte,
-            Token::Gt => Self::Gt,
-            Token::Geq => Self::Gte,
-            Token::And => Self::And,
-            Token::Or => Self::Or,
-            _ => unreachable!(),
-        }
     }
 }
 
@@ -310,10 +215,7 @@ pub enum DeclKind {
     Let { name: Ident, expr: Expr },
 }
 
-pub fn resolve(
-    env: Rc<RefCell<Env>>,
-    root: &Node<ast::Root>,
-) -> (Option<Node<Root>>, Vec<ResError>) {
+pub fn resolve(env: Rc<RefCell<Env>>, root: &parse::Root) -> , Vec<ResError>) {
     let mut errors = vec![];
     let mut items = vec![];
     for item in root.inner().clone().items {
@@ -335,10 +237,10 @@ pub fn resolve(
     }
 }
 
-fn resolve_item(env: Rc<RefCell<Env>>, item: Node<ast::Item>) -> ResResult<Node<Item>> {
-    trace!("item env: {:#?}", env.borrow());
-    match &*item {
-        ast::Item::Def { pat, expr } => {
+fn resolve_decl(env: Rc<RefCell<Env>>, decl: parse::Decl) -> ResResult<Decl> {
+    trace!("decl env: {:#?}", env.borrow());
+    match decl.kind() {
+        parse::Item::Def { pat, expr } => {
             // let def_env = Env::new_with_parent(env.clone());
             let expr = resolve_expr(env.clone(), expr)?;
             let pat = resolve_pattern(env.clone(), pat)?;
