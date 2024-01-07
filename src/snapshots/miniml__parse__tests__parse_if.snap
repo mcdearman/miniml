@@ -1,0 +1,53 @@
+---
+source: src/parse.rs
+expression: root
+---
+Root {
+    decls: [
+        Decl {
+            kind: Let {
+                name: Ident {
+                    name: InternedString(a),
+                    span: 4..5,
+                },
+                expr: Expr {
+                    kind: If {
+                        cond: Expr {
+                            kind: Lit(
+                                Bool(
+                                    true,
+                                ),
+                            ),
+                            span: 11..15,
+                        },
+                        then: Expr {
+                            kind: Lit(
+                                Num(
+                                    Ratio {
+                                        numer: 1,
+                                        denom: 1,
+                                    },
+                                ),
+                            ),
+                            span: 21..22,
+                        },
+                        else_: Expr {
+                            kind: Lit(
+                                Num(
+                                    Ratio {
+                                        numer: 2,
+                                        denom: 1,
+                                    },
+                                ),
+                            ),
+                            span: 28..29,
+                        },
+                    },
+                    span: 8..29,
+                },
+            },
+            span: 0..29,
+        },
+    ],
+    span: 0..29,
+}

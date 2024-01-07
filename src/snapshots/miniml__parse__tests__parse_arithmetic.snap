@@ -1,0 +1,149 @@
+---
+source: src/parse.rs
+expression: root
+---
+Root {
+    decls: [
+        Decl {
+            kind: Let {
+                name: Ident {
+                    name: InternedString(a),
+                    span: 4..5,
+                },
+                expr: Expr {
+                    kind: Binary {
+                        op: BinaryOp {
+                            kind: Sub,
+                            span: 22..23,
+                        },
+                        lhs: Expr {
+                            kind: Binary {
+                                op: BinaryOp {
+                                    kind: Add,
+                                    span: 10..11,
+                                },
+                                lhs: Expr {
+                                    kind: Lit(
+                                        Num(
+                                            Ratio {
+                                                numer: 1,
+                                                denom: 1,
+                                            },
+                                        ),
+                                    ),
+                                    span: 8..9,
+                                },
+                                rhs: Expr {
+                                    kind: Binary {
+                                        op: BinaryOp {
+                                            kind: Mul,
+                                            span: 16..17,
+                                        },
+                                        lhs: Expr {
+                                            kind: Lit(
+                                                Num(
+                                                    Ratio {
+                                                        numer: 2,
+                                                        denom: 3,
+                                                    },
+                                                ),
+                                            ),
+                                            span: 12..15,
+                                        },
+                                        rhs: Expr {
+                                            kind: Binary {
+                                                op: BinaryOp {
+                                                    kind: Pow,
+                                                    span: 19..20,
+                                                },
+                                                lhs: Expr {
+                                                    kind: Lit(
+                                                        Num(
+                                                            Ratio {
+                                                                numer: 3,
+                                                                denom: 1,
+                                                            },
+                                                        ),
+                                                    ),
+                                                    span: 18..19,
+                                                },
+                                                rhs: Expr {
+                                                    kind: Lit(
+                                                        Num(
+                                                            Ratio {
+                                                                numer: 2,
+                                                                denom: 1,
+                                                            },
+                                                        ),
+                                                    ),
+                                                    span: 20..21,
+                                                },
+                                            },
+                                            span: 18..21,
+                                        },
+                                    },
+                                    span: 12..21,
+                                },
+                            },
+                            span: 8..21,
+                        },
+                        rhs: Expr {
+                            kind: Binary {
+                                op: BinaryOp {
+                                    kind: Rem,
+                                    span: 30..31,
+                                },
+                                lhs: Expr {
+                                    kind: Binary {
+                                        op: BinaryOp {
+                                            kind: Div,
+                                            span: 26..27,
+                                        },
+                                        lhs: Expr {
+                                            kind: Lit(
+                                                Num(
+                                                    Ratio {
+                                                        numer: 4,
+                                                        denom: 1,
+                                                    },
+                                                ),
+                                            ),
+                                            span: 24..25,
+                                        },
+                                        rhs: Expr {
+                                            kind: Lit(
+                                                Num(
+                                                    Ratio {
+                                                        numer: 5,
+                                                        denom: 1,
+                                                    },
+                                                ),
+                                            ),
+                                            span: 28..29,
+                                        },
+                                    },
+                                    span: 24..29,
+                                },
+                                rhs: Expr {
+                                    kind: Lit(
+                                        Num(
+                                            Ratio {
+                                                numer: 10,
+                                                denom: 1,
+                                            },
+                                        ),
+                                    ),
+                                    span: 32..34,
+                                },
+                            },
+                            span: 24..34,
+                        },
+                    },
+                    span: 8..34,
+                },
+            },
+            span: 0..34,
+        },
+    ],
+    span: 0..34,
+}

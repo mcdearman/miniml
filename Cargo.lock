@@ -620,16 +620,6 @@ checksum = "523dc4f511e55ab87b694dc30d0f820d60906ef06413f93d4d7a1385599cc149"
 name = "miniml"
 version = "0.1.0"
 dependencies = [
- "env_logger",
- "log",
- "miniml-repl",
- "miniml-syntax",
-]
-
-[[package]]
-name = "miniml-common"
-version = "0.1.0"
-dependencies = [
  "chumsky",
  "clap",
  "cstree",
@@ -646,38 +636,6 @@ dependencies = [
  "num-traits",
  "once_cell",
  "rustyline",
-]
-
-[[package]]
-name = "miniml-repl"
-version = "0.1.0"
-dependencies = [
- "clap",
- "env_logger",
- "insta",
- "lasso",
- "log",
- "miniml-syntax",
- "notify",
- "rustyline",
-]
-
-[[package]]
-name = "miniml-syntax"
-version = "0.1.0"
-dependencies = [
- "chumsky",
- "cstree",
- "env_logger",
- "insta",
- "itertools",
- "log",
- "logos",
- "miniml-common",
- "num-bigint",
- "num-complex",
- "num-rational",
- "num-traits",
 ]
 
 [[package]]

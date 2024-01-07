@@ -1,27 +1,47 @@
-root = sexpr+
+root = decl+
 
-sexpr = atom | list | dot
+decl = let
 
-list = "(" sexpr* ")"
+let = "let" ident+ "=" expr
 
-vector = "[" sexpr* "]"
+expr = or
 
-map = "{" (sexpr sexpr)* "}"
+or = and ("&&" and)*
 
-set = "#{" sexpr* "}"
+and = eq ("||" eq)*
 
-quote = "'" sexpr
+eq = cmp (("=" | "!=") cmp)*
 
-quasiquote = "`" sexpr
+cmp = term ((">" | ">=" | "<" | "<=") term)*
 
-unquote = "," sexpr
+term = factor (("+" | "-") factor)*
 
-unquote-splice = ",@" sexpr
+factor = pow (("*" | "/" | "%") pow)*
 
-atom = number | symbol
+pow = unary ("^" unary)*
 
-symbol = [a-zA-Z0-9_\-]+
+unary = apply | ("-" | "!") unary
 
-number = int ("/" int+)?
+apply = atom+
 
-int = "-"? [1-9] [0-9]*
+atom = ident | lit | if | lambda | letExpr | "(" expr ")"
+
+if = "if" expr "then" expr "else" expr
+
+lambda = "\\" ident+ "->" expr
+
+letExpr = "let" ident+ "=" expr "in" expr
+
+ident = [a-zA-Z_][a-zA-Z0-9_]*
+
+lit = num | str | bool
+
+num = int ("/" int)?
+
+int = 0 | "-"? [1-9][0-9]*
+
+str = "(\\.|[^"\\])*"
+
+bool = "true" | "false"
+
+

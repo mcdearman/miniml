@@ -1,0 +1,56 @@
+---
+source: src/parse.rs
+expression: root
+---
+Root {
+    decls: [
+        Decl {
+            kind: Let {
+                name: Ident {
+                    name: InternedString(a),
+                    span: 4..5,
+                },
+                expr: Expr {
+                    kind: Lambda {
+                        param: Ident {
+                            name: InternedString(x),
+                            span: 9..10,
+                        },
+                        expr: Expr {
+                            kind: Binary {
+                                op: BinaryOp {
+                                    kind: Add,
+                                    span: 16..17,
+                                },
+                                lhs: Expr {
+                                    kind: Ident(
+                                        Ident {
+                                            name: InternedString(x),
+                                            span: 14..15,
+                                        },
+                                    ),
+                                    span: 14..15,
+                                },
+                                rhs: Expr {
+                                    kind: Lit(
+                                        Num(
+                                            Ratio {
+                                                numer: 1,
+                                                denom: 1,
+                                            },
+                                        ),
+                                    ),
+                                    span: 18..19,
+                                },
+                            },
+                            span: 14..19,
+                        },
+                    },
+                    span: 9..19,
+                },
+            },
+            span: 0..19,
+        },
+    ],
+    span: 0..19,
+}

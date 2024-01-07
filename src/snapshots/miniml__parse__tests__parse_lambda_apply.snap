@@ -1,0 +1,95 @@
+---
+source: src/parse.rs
+expression: root
+---
+Root {
+    decls: [
+        Decl {
+            kind: Let {
+                name: Ident {
+                    name: InternedString(add),
+                    span: 4..7,
+                },
+                expr: Expr {
+                    kind: Apply {
+                        fun: Expr {
+                            kind: Apply {
+                                fun: Expr {
+                                    kind: Lambda {
+                                        param: Ident {
+                                            name: InternedString(x),
+                                            span: 12..13,
+                                        },
+                                        expr: Expr {
+                                            kind: Lambda {
+                                                param: Ident {
+                                                    name: InternedString(y),
+                                                    span: 14..15,
+                                                },
+                                                expr: Expr {
+                                                    kind: Binary {
+                                                        op: BinaryOp {
+                                                            kind: Add,
+                                                            span: 21..22,
+                                                        },
+                                                        lhs: Expr {
+                                                            kind: Ident(
+                                                                Ident {
+                                                                    name: InternedString(x),
+                                                                    span: 19..20,
+                                                                },
+                                                            ),
+                                                            span: 19..20,
+                                                        },
+                                                        rhs: Expr {
+                                                            kind: Ident(
+                                                                Ident {
+                                                                    name: InternedString(y),
+                                                                    span: 23..24,
+                                                                },
+                                                            ),
+                                                            span: 23..24,
+                                                        },
+                                                    },
+                                                    span: 19..24,
+                                                },
+                                            },
+                                            span: 14..24,
+                                        },
+                                    },
+                                    span: 12..24,
+                                },
+                                arg: Expr {
+                                    kind: Lit(
+                                        Num(
+                                            Ratio {
+                                                numer: 1,
+                                                denom: 1,
+                                            },
+                                        ),
+                                    ),
+                                    span: 26..27,
+                                },
+                            },
+                            span: 12..27,
+                        },
+                        arg: Expr {
+                            kind: Lit(
+                                Num(
+                                    Ratio {
+                                        numer: 2,
+                                        denom: 1,
+                                    },
+                                ),
+                            ),
+                            span: 28..29,
+                        },
+                    },
+                    span: 12..29,
+                },
+            },
+            span: 0..29,
+        },
+    ],
+    span: 0..29,
+}
