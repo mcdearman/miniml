@@ -17,7 +17,7 @@ pub struct ResError {
     pub span: Span,
 }
 
-pub type ResResult<T> = Result<T, Vec<ResError>>;
+pub type ResResult<T> = Result<T, ResError>;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Env {
@@ -215,14 +215,14 @@ pub enum DeclKind {
     Let { name: Ident, expr: Expr },
 }
 
-pub fn resolve(env: Rc<RefCell<Env>>, root: &parse::Root) -> , Vec<ResError>) {
+pub fn resolve(env: Rc<RefCell<Env>>, root: &parse::Root) -> Result<Root, Vec<ResError>> {
     let mut errors = vec![];
-    let mut items = vec![];
-    for item in root.inner().clone().items {
-        match resolve_item(env.clone(), item) {
-            Ok(i) => {
+    let mut decls = vec![];
+    for decl in root.decls() {
+        match resolve_decl(env.clone(), decl) {
+            Ok(d) => {
                 // trace!("env: {:#?}", env.borrow());
-                items.push(i);
+                decls.push(d);
             }
             Err(err) => {
                 trace!("env: {:#?}", env.borrow());
@@ -230,51 +230,49 @@ pub fn resolve(env: Rc<RefCell<Env>>, root: &parse::Root) -> , Vec<ResError>) {
             }
         }
     }
-    if items.is_empty() {
-        (None, errors)
+    if decls.is_empty() {
+        Err(errors)
     } else {
-        (Some(Node::new(Root { items }, root.span())), errors)
+        Ok(Root {
+            decls,
+            span: root.span().clone(),
+        })
     }
 }
 
-fn resolve_decl(env: Rc<RefCell<Env>>, decl: parse::Decl) -> ResResult<Decl> {
+fn resolve_decl(env: Rc<RefCell<Env>>, decl: &parse::Decl) -> ResResult<Decl> {
     trace!("decl env: {:#?}", env.borrow());
     match decl.kind() {
-        parse::Item::Def { pat, expr } => {
+        parse::DeclKind::Let { name, expr } => {
             // let def_env = Env::new_with_parent(env.clone());
             let expr = resolve_expr(env.clone(), expr)?;
-            let pat = resolve_pattern(env.clone(), pat)?;
-            trace!("def env: {:#?}", env.borrow());
-            Ok(Node::new(Item::Def { pat, expr }, item.span()))
-        }
-        ast::Item::Fn { name, params, body } => {
-            let name = Node::new(env.borrow_mut().define(name.inner().clone()), name.span());
-            let mut new_params = vec![];
-            let fn_env = Env::new_with_parent(env.clone());
-            for p in params {
-                let pat = resolve_pattern(fn_env.clone(), &p)?;
-                new_params.push(pat);
-            }
-            let body = resolve_expr(fn_env.clone(), &body)?;
-            Ok(Node::new(
-                Item::Fn {
-                    name,
-                    params: new_params,
-                    body,
-                },
-                item.span(),
-            ))
-        }
-        ast::Item::Expr(expr) => {
-            let expr = resolve_expr(env.clone(), &Node::new(expr.clone(), item.span()))?;
-            Ok(Node::new(Item::Expr(expr.inner().clone()), item.span()))
-        }
+            let name = resolve_name(env.clone())?;
+            Ok()
+            // trace!("def env: {:#?}", env.borrow());
+        } // ast::Item::Fn { name, params, body } => {
+          //     let name = Node::new(env.borrow_mut().define(name.inner().clone()), name.span());
+          //     let mut new_params = vec![];
+          //     let fn_env = Env::new_with_parent(env.clone());
+          //     for p in params {
+          //         let pat = resolve_pattern(fn_env.clone(), &p)?;
+          //         new_params.push(pat);
+          //     }
+          //     let body = resolve_expr(fn_env.clone(), &body)?;
+          //     Ok(Node::new(
+          //         Item::Fn {
+          //             name,
+          //             params: new_params,
+          //             body,
+          //         },
+          //         item.span(),
+          //     ))
+          // }
     }
 }
 
-fn resolve_expr(env: Rc<RefCell<Env>>, expr: &Node<ast::Expr>) -> ResResult<Node<Expr>> {
+fn resolve_expr(env: Rc<RefCell<Env>>, expr: &parse::Expr) -> ResResult<Expr> {
     match expr.inner() {
-        ast::Expr::Ident(ident) => {
+        parse::Expr::Ident(ident) => {
             if let Some(name) = env.borrow().find(ident) {
                 Ok(Node::new(
                     Expr::Ident(Node::new(name, expr.span())),
