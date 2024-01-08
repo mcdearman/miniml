@@ -1,0 +1,97 @@
+---
+source: src/parse.rs
+expression: root
+---
+Root {
+    decls: [
+        Decl {
+            kind: Let {
+                name: Ident {
+                    name: InternedString(f),
+                    span: 4..5,
+                },
+                expr: Expr {
+                    kind: Lambda {
+                        param: Ident {
+                            name: InternedString(x),
+                            span: 6..7,
+                        },
+                        expr: Expr {
+                            kind: Let {
+                                name: Ident {
+                                    name: InternedString(g),
+                                    span: 14..15,
+                                },
+                                expr: Expr {
+                                    kind: Lambda {
+                                        param: Ident {
+                                            name: InternedString(y),
+                                            span: 16..17,
+                                        },
+                                        expr: Expr {
+                                            kind: Binary {
+                                                op: BinaryOp {
+                                                    kind: Add,
+                                                    span: 22..23,
+                                                },
+                                                lhs: Expr {
+                                                    kind: Ident(
+                                                        Ident {
+                                                            name: InternedString(x),
+                                                            span: 20..21,
+                                                        },
+                                                    ),
+                                                    span: 20..21,
+                                                },
+                                                rhs: Expr {
+                                                    kind: Ident(
+                                                        Ident {
+                                                            name: InternedString(y),
+                                                            span: 24..25,
+                                                        },
+                                                    ),
+                                                    span: 24..25,
+                                                },
+                                            },
+                                            span: 20..25,
+                                        },
+                                    },
+                                    span: 16..25,
+                                },
+                                body: Expr {
+                                    kind: Apply {
+                                        fun: Expr {
+                                            kind: Ident(
+                                                Ident {
+                                                    name: InternedString(g),
+                                                    span: 29..30,
+                                                },
+                                            ),
+                                            span: 29..30,
+                                        },
+                                        arg: Expr {
+                                            kind: Lit(
+                                                Num(
+                                                    Ratio {
+                                                        numer: 1,
+                                                        denom: 1,
+                                                    },
+                                                ),
+                                            ),
+                                            span: 31..32,
+                                        },
+                                    },
+                                    span: 29..32,
+                                },
+                            },
+                            span: 10..32,
+                        },
+                    },
+                    span: 6..32,
+                },
+            },
+            span: 0..32,
+        },
+    ],
+    span: 0..32,
+}

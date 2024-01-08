@@ -234,7 +234,7 @@ impl Ident {
         Self { name, span }
     }
 
-    pub fn name(&self) -> &str {
+    pub fn name(&self) -> &InternedString {
         &self.name
     }
 
@@ -269,6 +269,12 @@ impl UnaryOp {
     }
 }
 
+impl From<UnaryOp> for InternedString {
+    fn from(op: UnaryOp) -> Self {
+        InternedString::from(op.kind.to_string())
+    }
+}
+
 #[derive(Debug, Clone, PartialEq)]
 pub enum UnaryOpKind {
     Neg,
@@ -281,6 +287,15 @@ impl From<Token> for UnaryOpKind {
             Token::Minus => Self::Neg,
             Token::Bang => Self::Not,
             _ => unreachable!(),
+        }
+    }
+}
+
+impl ToString for UnaryOpKind {
+    fn to_string(&self) -> String {
+        match self {
+            Self::Neg => "-".to_string(),
+            Self::Not => "!".to_string(),
         }
     }
 }
@@ -302,6 +317,12 @@ impl BinaryOp {
 
     pub fn span(&self) -> &Span {
         &self.span
+    }
+}
+
+impl From<BinaryOp> for InternedString {
+    fn from(op: BinaryOp) -> Self {
+        InternedString::from(op.kind.to_string())
     }
 }
 
@@ -341,6 +362,27 @@ impl From<Token> for BinaryOpKind {
             Token::And => Self::And,
             Token::Or => Self::Or,
             _ => unreachable!(),
+        }
+    }
+}
+
+impl ToString for BinaryOpKind {
+    fn to_string(&self) -> String {
+        match self {
+            Self::Add => "+".to_string(),
+            Self::Sub => "-".to_string(),
+            Self::Mul => "*".to_string(),
+            Self::Div => "/".to_string(),
+            Self::Rem => "%".to_string(),
+            Self::Pow => "^".to_string(),
+            Self::Eq => "==".to_string(),
+            Self::Neq => "!=".to_string(),
+            Self::Lt => "<".to_string(),
+            Self::Lte => "<=".to_string(),
+            Self::Gt => ">".to_string(),
+            Self::Gte => ">=".to_string(),
+            Self::And => "&&".to_string(),
+            Self::Or => "||".to_string(),
         }
     }
 }
@@ -778,14 +820,14 @@ mod tests {
 
     #[test]
     fn parse_let_expr() {
-        let src = "let x = let y = 1 in y + 1 in x + 1";
+        let src = "let x = let y = 1 in y + 1";
         let root = parse(src).expect("Failed to parse");
         insta::assert_debug_snapshot!(root);
     }
 
     #[test]
     fn parse_let_fn_expr() {
-        let src = "let f x = let g y = x + y in g 1 in f 2";
+        let src = "let f x = let g y = x + y in g 1";
         let root = parse(src).expect("Failed to parse");
         insta::assert_debug_snapshot!(root);
     }

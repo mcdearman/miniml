@@ -1,0 +1,29 @@
+---
+source: src/rename.rs
+expression: "test_helper(\"let x = 1\")"
+---
+Root {
+    decls: [
+        Decl {
+            kind: Let {
+                name: Ident {
+                    name: UniqueId(0),
+                    span: 4..5,
+                },
+                expr: Expr {
+                    kind: Lit(
+                        Num(
+                            Ratio {
+                                numer: 1,
+                                denom: 1,
+                            },
+                        ),
+                    ),
+                    span: 8..9,
+                },
+            },
+            span: 0..9,
+        },
+    ],
+    span: 0..9,
+}

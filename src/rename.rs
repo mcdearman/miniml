@@ -40,7 +40,7 @@ impl Env {
         }))
     }
 
-    pub fn find(&self, name: &InternedString) -> Option<UniqueId> {
+    fn find(&self, name: &InternedString) -> Option<UniqueId> {
         if let Some(id) = self.data.get(name) {
             Some(*id)
         } else if let Some(parent) = &self.parent {
@@ -50,11 +50,11 @@ impl Env {
         }
     }
 
-    pub fn find_in_scope(&self, name: &InternedString) -> Option<UniqueId> {
+    fn find_in_scope(&self, name: &InternedString) -> Option<UniqueId> {
         self.data.get(name).copied()
     }
 
-    pub fn find_in_parent(&self, name: &InternedString) -> Option<UniqueId> {
+    fn find_in_parent(&self, name: &InternedString) -> Option<UniqueId> {
         if let Some(parent) = &self.parent {
             parent.borrow().find(name)
         } else {
@@ -68,11 +68,11 @@ impl Env {
         id
     }
 
-    pub fn insert(&mut self, name: InternedString, id: UniqueId) {
-        self.data.insert(name, id);
-    }
+    // pub fn insert(&mut self, name: InternedString, id: UniqueId) {
+    //     self.data.insert(name, id);
+    // }
 
-    pub fn define_if_absent(&mut self, name: InternedString) -> UniqueId {
+    fn define_if_absent(&mut self, name: InternedString) -> UniqueId {
         if let Some(id) = self.data.get(&name) {
             *id
         } else {
@@ -215,7 +215,7 @@ pub enum DeclKind {
     Let { name: Ident, expr: Expr },
 }
 
-pub fn resolve(env: Rc<RefCell<Env>>, root: &parse::Root) -> Result<Root, Vec<ResError>> {
+pub fn resolve(env: Rc<RefCell<Env>>, root: &parse::Root) -> (Option<Root>, Vec<ResError>) {
     let mut errors = vec![];
     let mut decls = vec![];
     for decl in root.decls() {
@@ -231,233 +231,171 @@ pub fn resolve(env: Rc<RefCell<Env>>, root: &parse::Root) -> Result<Root, Vec<Re
         }
     }
     if decls.is_empty() {
-        Err(errors)
+        (None, errors)
     } else {
-        Ok(Root {
-            decls,
-            span: root.span().clone(),
-        })
+        (
+            Some(Root {
+                decls,
+                span: root.span().clone(),
+            }),
+            errors,
+        )
     }
 }
 
 fn resolve_decl(env: Rc<RefCell<Env>>, decl: &parse::Decl) -> ResResult<Decl> {
     trace!("decl env: {:#?}", env.borrow());
     match decl.kind() {
-        parse::DeclKind::Let { name, expr } => {
-            // let def_env = Env::new_with_parent(env.clone());
-            let expr = resolve_expr(env.clone(), expr)?;
-            let name = resolve_name(env.clone())?;
-            Ok()
-            // trace!("def env: {:#?}", env.borrow());
-        } // ast::Item::Fn { name, params, body } => {
-          //     let name = Node::new(env.borrow_mut().define(name.inner().clone()), name.span());
-          //     let mut new_params = vec![];
-          //     let fn_env = Env::new_with_parent(env.clone());
-          //     for p in params {
-          //         let pat = resolve_pattern(fn_env.clone(), &p)?;
-          //         new_params.push(pat);
-          //     }
-          //     let body = resolve_expr(fn_env.clone(), &body)?;
-          //     Ok(Node::new(
-          //         Item::Fn {
-          //             name,
-          //             params: new_params,
-          //             body,
-          //         },
-          //         item.span(),
-          //     ))
-          // }
+        parse::DeclKind::Let { name, expr } => match expr.kind() {
+            parse::ExprKind::Lambda { .. } => {
+                let name = Ident::new(env.borrow_mut().define(name.name().clone()), *name.span());
+                let let_env = Env::new_with_parent(env.clone());
+                let expr = resolve_expr(let_env.clone(), expr)?;
+                Ok(Decl::new(DeclKind::Let { name, expr }, decl.span().clone()))
+            }
+            _ => {
+                let let_env = Env::new_with_parent(env.clone());
+                let expr = resolve_expr(let_env.clone(), expr)?;
+                let name = Ident::new(env.borrow_mut().define(name.name().clone()), *name.span());
+                Ok(Decl::new(DeclKind::Let { name, expr }, decl.span().clone()))
+            }
+        },
     }
 }
 
 fn resolve_expr(env: Rc<RefCell<Env>>, expr: &parse::Expr) -> ResResult<Expr> {
-    match expr.inner() {
-        parse::Expr::Ident(ident) => {
-            if let Some(name) = env.borrow().find(ident) {
-                Ok(Node::new(
-                    Expr::Ident(Node::new(name, expr.span())),
-                    expr.span(),
+    match expr.kind() {
+        parse::ExprKind::Lit(l) => match l {
+            parse::Lit::Num(n) => Ok(Expr::new(ExprKind::Lit(Lit::Num(n.clone())), *expr.span())),
+            parse::Lit::Bool(b) => Ok(Expr::new(ExprKind::Lit(Lit::Bool(*b)), expr.span().clone())),
+            parse::Lit::String(s) => Ok(Expr::new(
+                ExprKind::Lit(Lit::String(s.clone())),
+                *expr.span(),
+            )),
+        },
+        parse::ExprKind::Ident(ident) => {
+            if let Some(name) = env.borrow().find(ident.name()) {
+                Ok(Expr::new(
+                    ExprKind::Ident(Ident::new(name, expr.span().clone())),
+                    expr.span().clone(),
                 ))
             } else {
                 Err(ResError {
                     msg: InternedString::from(&*format!(
                         "name '{:?}' is not defined",
-                        expr.inner()
+                        ident.name()
                     )),
-                    span: expr.span(),
+                    span: expr.span().clone(),
                 })
             }
         }
-        ast::Expr::Lit(l) => Ok(Node::new(
-            Expr::Lit(Node::new(l.clone().into(), expr.span())),
-            expr.span(),
+        parse::ExprKind::Apply { fun, arg } => Ok(Expr::new(
+            ExprKind::Apply {
+                fun: resolve_expr(env.clone(), fun)?,
+                arg: resolve_expr(env.clone(), arg)?,
+            },
+            *expr.span(),
         )),
-        ast::Expr::Let { pat, expr, body } => {
-            let let_env = Env::new_with_parent(env.clone());
-            let expr = resolve_expr(let_env.clone(), &expr.clone())?;
-            let pat = resolve_pattern(let_env.clone(), pat)?;
-            trace!("let env: {:#?}", let_env.borrow());
-            let body = resolve_expr(let_env.clone(), body)?;
-            Ok(Node::new(
-                Expr::Let {
-                    pat,
-                    expr: expr.clone(),
-                    body,
+        parse::ExprKind::Unary { op, expr } => {
+            let op = Ident::new(
+                env.borrow()
+                    .find(&op.clone().into())
+                    .expect("operator id not present"),
+                *op.span(),
+            );
+            Ok(Expr::new(
+                ExprKind::Apply {
+                    fun: Expr::new(ExprKind::Ident(op.clone()), *op.span()),
+                    arg: resolve_expr(env.clone(), expr)?,
                 },
-                expr.span(),
+                *expr.span(),
             ))
         }
-        ast::Expr::Fn {
-            name,
-            params,
-            expr,
-            body,
-        } => {
-            let name = Node::new(env.borrow_mut().define(name.inner().clone()), name.span());
-            let mut new_params = vec![];
-            let fn_env = Env::new_with_parent(env.clone());
-            for p in params {
-                let pat = resolve_pattern(fn_env.clone(), p)?;
-                new_params.push(pat);
-            }
-            let expr = resolve_expr(fn_env.clone(), expr)?;
-            let body = resolve_expr(fn_env, body)?;
-            Ok(Node::new(
-                Expr::Fn {
-                    name,
-                    params: new_params,
-                    expr: expr.clone(),
-                    body,
-                },
-                expr.span(),
-            ))
-        }
-        ast::Expr::Apply { fun, args } => {
-            let fun = resolve_expr(env.clone(), fun)?;
-            let args = args
-                .iter()
-                .map(|arg| resolve_expr(env.clone(), arg))
-                .collect::<ResResult<Vec<_>>>()?;
-            Ok(Node::new(
-                Expr::Apply {
-                    fun: fun.clone(),
-                    args,
-                },
-                expr.span(),
-            ))
-        }
-        ast::Expr::Lambda { params, body } => {
-            let mut new_params = vec![];
-            let lambda_env = Env::new_with_parent(env.clone());
-            for p in params {
-                let pat = resolve_pattern(lambda_env.clone(), p)?;
-                new_params.push(pat);
-            }
-            let body = resolve_expr(lambda_env, body)?;
-            Ok(Node::new(
-                Expr::Lambda {
-                    params: new_params,
-                    body,
-                },
-                expr.span(),
-            ))
-        }
-        ast::Expr::Match { expr, cases } => {
-            let expr = resolve_expr(env.clone(), expr)?;
-            let cases = cases
-                .iter()
-                .map(|case| {
-                    let pattern = resolve_pattern(env.clone(), &case.pattern)?;
-                    let expr = resolve_expr(env.clone(), &case.expr)?;
-                    Ok(Node::new(
-                        MatchCase {
-                            pattern: pattern.clone(),
-                            expr: expr.clone(),
+        parse::ExprKind::Binary { op, lhs, rhs } => {
+            let op = Ident::new(
+                env.borrow()
+                    .find(&op.clone().into())
+                    .expect("operator id not present"),
+                *op.span(),
+            );
+            Ok(Expr::new(
+                ExprKind::Apply {
+                    fun: Expr::new(ExprKind::Ident(op.clone()), *op.span()),
+                    arg: Expr::new(
+                        ExprKind::Apply {
+                            fun: resolve_expr(env.clone(), lhs)?,
+                            arg: resolve_expr(env.clone(), rhs)?,
                         },
-                        case.span(),
-                    ))
-                })
-                .collect::<ResResult<Vec<_>>>()?;
-            Ok(Node::new(
-                Expr::Match {
-                    expr: expr.clone(),
-                    cases,
+                        *expr.span(),
+                    ),
                 },
-                expr.span(),
+                *expr.span(),
             ))
         }
-        ast::Expr::If { cond, then, else_ } => {
-            let cond = resolve_expr(env.clone(), cond)?;
-            let then = resolve_expr(env.clone(), then)?;
-            let else_ = resolve_expr(env, else_)?;
-            Ok(Node::new(
-                Expr::If {
-                    cond: cond.clone(),
-                    then: then.clone(),
-                    else_: else_.clone(),
-                },
-                expr.span(),
-            ))
-        }
-        ast::Expr::Prefix { op, expr } => {
-            let op_id = Node::new(
-                env.borrow()
-                    .find(&InternedString::from(op.to_string()))
-                    .unwrap(),
-                op.span(),
+        parse::ExprKind::If { cond, then, else_ } => Ok(Expr::new(
+            ExprKind::If {
+                cond: resolve_expr(env.clone(), cond)?,
+                then: resolve_expr(env.clone(), then)?,
+                else_: resolve_expr(env.clone(), else_)?,
+            },
+            *expr.span(),
+        )),
+        parse::ExprKind::Let { name, expr, body } => match expr.kind() {
+            parse::ExprKind::Lambda { .. } => {
+                let name = Ident::new(env.borrow_mut().define(name.name().clone()), *name.span());
+                let let_env = Env::new_with_parent(env.clone());
+                let res_expr = resolve_expr(let_env.clone(), &expr)?;
+                let body = resolve_expr(let_env.clone(), &body)?;
+                Ok(Expr::new(
+                    ExprKind::Let {
+                        name,
+                        expr: res_expr,
+                        body,
+                    },
+                    *expr.span(),
+                ))
+            }
+            _ => {
+                let let_env = Env::new_with_parent(env.clone());
+                let res_expr = resolve_expr(let_env.clone(), expr)?;
+                let name = Ident::new(env.borrow_mut().define(name.name().clone()), *name.span());
+                let body = resolve_expr(env.clone(), body)?;
+                Ok(Expr::new(
+                    ExprKind::Let {
+                        name,
+                        expr: res_expr,
+                        body,
+                    },
+                    *expr.span(),
+                ))
+            }
+        },
+        parse::ExprKind::Lambda { param, expr } => {
+            let lambda_env = Env::new_with_parent(env.clone());
+            let param = Ident::new(
+                lambda_env.borrow_mut().define(param.name().clone()),
+                *param.span(),
             );
-            let expr = resolve_expr(env, expr)?;
-            Ok(Node::new(
-                Expr::Apply {
-                    fun: Node::new(Expr::Ident(op_id), op.span()),
-                    args: vec![expr.clone()],
+            Ok(Expr::new(
+                ExprKind::Lambda {
+                    param,
+                    expr: resolve_expr(lambda_env.clone(), expr)?,
                 },
-                expr.span(),
+                *expr.span(),
             ))
         }
-        ast::Expr::Infix { op, lhs, rhs } => {
-            let op_id = Node::new(
-                env.borrow()
-                    .find(&InternedString::from(op.to_string()))
-                    .unwrap(),
-                op.span(),
-            );
-            let lhs = resolve_expr(env.clone(), lhs)?;
-            let rhs = resolve_expr(env, rhs)?;
-            Ok(Node::new(
-                Expr::Apply {
-                    fun: Node::new(Expr::Ident(op_id), op.span()),
-                    args: vec![lhs.clone(), rhs.clone()],
-                },
-                expr.span(),
-            ))
-        }
-        ast::Expr::Unit => Ok(Node::new(Expr::Unit, expr.span())),
-    }
-}
-
-fn resolve_pattern(
-    env: Rc<RefCell<Env>>,
-    pattern: &Node<ast::Pattern>,
-) -> ResResult<Node<Pattern>> {
-    match pattern.inner() {
-        ast::Pattern::Lit(l) => Ok(Node::new(Pattern::Lit(l.clone().into()), pattern.span())),
-        ast::Pattern::Ident(ident) => {
-            let name = env.borrow_mut().define(ident.clone());
-            Ok(Node::new(Pattern::Ident(name), pattern.span()))
-        }
-        ast::Pattern::Wildcard => Ok(Node::new(Pattern::Wildcard, pattern.span())),
-        ast::Pattern::Unit => Ok(Node::new(Pattern::Unit, pattern.span())),
+        parse::ExprKind::Unit => Ok(Expr::new(ExprKind::Unit, *expr.span())),
     }
 }
 
 mod tests {
-    fn test_helper(src: &str) -> common::node::Node<super::Root> {
-        let (ast, errors) = syntax::chumsky_parser::parse(src);
-        if !errors.is_empty() {
-            panic!("parse error: {:?}", errors);
-        }
-        let (res, errors) = super::resolve(super::Env::new(), &ast.unwrap());
+    use crate::{parse::parse, rename::resolve};
+
+    use super::Env;
+
+    fn test_helper(src: &str) -> super::Root {
+        let ast = parse(src).expect("parse errors");
+        let (res, errors) = resolve(Env::new(), &ast);
         if !errors.is_empty() {
             panic!("resolve error: {:?}", errors);
         }
@@ -466,27 +404,19 @@ mod tests {
 
     #[test]
     fn res_let() {
-        insta::assert_debug_snapshot!(test_helper("let x = 1 in x"));
+        insta::assert_debug_snapshot!(test_helper("let x = 1"));
     }
 
     #[test]
-    fn res_def() {
-        insta::assert_debug_snapshot!(test_helper("x = 1"));
-    }
-
-    #[test]
-    fn res_def_error() {
-        let (ast, errors) = syntax::chumsky_parser::parse("x = x");
-        if !errors.is_empty() {
-            panic!("parse error: {:?}", errors);
-        }
-        let (_, errors) = super::resolve(super::Env::new(), &ast.unwrap());
+    fn res_let_error() {
+        let ast = parse("let x = x").expect("parse errors");
+        let (_, errors) = resolve(Env::new(), &ast);
         assert!(!errors.is_empty());
     }
 
     #[test]
     fn res_nested() {
-        insta::assert_debug_snapshot!(test_helper("let x = 1 in let y = 2 in x + y"));
+        insta::assert_debug_snapshot!(test_helper("let a = let x = 1 in let y = 2 in x + y"));
     }
 
     // #[test]

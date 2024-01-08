@@ -1,0 +1,67 @@
+---
+source: src/parse.rs
+expression: root
+---
+Root {
+    decls: [
+        Decl {
+            kind: Let {
+                name: Ident {
+                    name: InternedString(x),
+                    span: 4..5,
+                },
+                expr: Expr {
+                    kind: Let {
+                        name: Ident {
+                            name: InternedString(y),
+                            span: 12..13,
+                        },
+                        expr: Expr {
+                            kind: Lit(
+                                Num(
+                                    Ratio {
+                                        numer: 1,
+                                        denom: 1,
+                                    },
+                                ),
+                            ),
+                            span: 16..17,
+                        },
+                        body: Expr {
+                            kind: Binary {
+                                op: BinaryOp {
+                                    kind: Add,
+                                    span: 23..24,
+                                },
+                                lhs: Expr {
+                                    kind: Ident(
+                                        Ident {
+                                            name: InternedString(y),
+                                            span: 21..22,
+                                        },
+                                    ),
+                                    span: 21..22,
+                                },
+                                rhs: Expr {
+                                    kind: Lit(
+                                        Num(
+                                            Ratio {
+                                                numer: 1,
+                                                denom: 1,
+                                            },
+                                        ),
+                                    ),
+                                    span: 25..26,
+                                },
+                            },
+                            span: 21..26,
+                        },
+                    },
+                    span: 8..26,
+                },
+            },
+            span: 0..26,
+        },
+    ],
+    span: 0..26,
+}
