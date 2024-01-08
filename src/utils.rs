@@ -263,7 +263,7 @@ impl Error for ParseRatioError {
 
 pub static mut INTERNER: Lazy<ThreadedRodeo> = Lazy::new(|| ThreadedRodeo::default());
 
-#[derive(Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Clone, Copy, PartialEq, Eq, Hash, Default)]
 pub struct InternedString {
     key: Spur,
 }
@@ -317,23 +317,3 @@ impl Deref for InternedString {
         unsafe { INTERNER.resolve(&self.key) }
     }
 }
-
-// #[derive(Debug, Clone, PartialEq)]
-// pub struct Ident<T> {
-//     name: T,
-//     span: Span,
-// }
-
-// impl<T> Ident<T> {
-//     pub fn new(name: T, span: Span) -> Self {
-//         Self { name, span }
-//     }
-
-//     pub fn name(&self) -> &T {
-//         &self.name
-//     }
-
-//     pub fn span(&self) -> &Span {
-//         &self.span
-//     }
-// }

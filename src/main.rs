@@ -1,5 +1,6 @@
 use repl::repl;
 
+mod interpreter;
 mod parse;
 mod rename;
 mod repl;
