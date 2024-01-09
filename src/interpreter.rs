@@ -1,14 +1,15 @@
 use num_rational::Rational64;
-
-use crate::{utils::{InternedString, UniqueId}, parse::parse};
+use crate::{utils::{InternedString, UniqueId, Span}, rename::resolve};
 use std::{cell::RefCell, collections::HashMap, fmt::{Debug, Display}, rc::Rc};
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum RuntimeError {
+    ParseError(Vec<InternedString>),
     ArityError(usize, usize),
-    TypeError(InternedString, InternedString),
+    TypeError,
     DivisionByZero,
 }
+
 pub type RuntimeResult<T> = Result<T, RuntimeError>;
 
 #[derive(Clone, PartialEq)]
@@ -200,14 +201,14 @@ pub fn default_env(ops: HashMap<InternedString, UniqueId>) -> Rc<RefCell<Env>> {
         ops.get(&InternedString::from("+")).unwrap().clone(),
         Value::NativeFn(|args| {
             if args.len() != 2 {
-                return Err(format!("Expected 2 args, found {}", args.len()).into());
+                return Err(RuntimeError::ArityError(2, args.len()).into());
             } else {
                 match (args.get(0).unwrap(), args.get(1).unwrap()) {
                     (Value::Lit(Lit::Num(l)), Value::Lit(Lit::Num(r))) => {
                         Ok(Value::Lit(Lit::Num(l + r)))
                     }
                     _ => {
-                        return Err(format!("Expected number, found {:?}", args).into());
+                        return Err(RuntimeError::TypeError);
                     }
                 }
             }
@@ -517,8 +518,8 @@ impl Interpreter {
     }
 
     pub fn eval(&mut self, src: &str) -> RuntimeResult<()> {
-        let ast = parse(src)
-        let (res, errors) = 
+        let ast = parse(src).map_err();
+        let (res, errors) = resolve(env, root)
         Ok(())
     }
 }
