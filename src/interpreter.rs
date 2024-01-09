@@ -1,7 +1,7 @@
 use num_rational::Rational64;
 
 use crate::{utils::{InternedString, UniqueId}, parse::parse};
-use std::{cell::RefCell, collections::HashMap, fmt::Debug, rc::Rc};
+use std::{cell::RefCell, collections::HashMap, fmt::{Debug, Display}, rc::Rc};
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum RuntimeError {
@@ -440,69 +440,69 @@ pub fn default_env(ops: HashMap<InternedString, UniqueId>) -> Rc<RefCell<Env>> {
     env
 }
 
-// #[derive(Debug, Clone, PartialEq)]
-// pub enum Value {
-//     Lit(Lit),
-//     Lambda {
-//         env: Rc<RefCell<Env>>,
-//         param: Vec<>,
-//         expr: Node<Expr>,
-//     },
-//     NativeFn(fn(Vec<Value>) -> RuntimeResult<Value>),
-//     Unit,
-// }
+#[derive(Debug, Clone, PartialEq)]
+pub enum Value {
+    Lit(Lit),
+    // Lambda {
+    //     env: Rc<RefCell<Env>>,
+    //     param: Vec<>,
+    //     expr: Node<Expr>,
+    // },
+    NativeFn(fn(Vec<Value>) -> RuntimeResult<Value>),
+    Unit,
+}
 
-// impl Display for Value {
-//     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-//         match self {
-//             Value::Lit(Lit::Num(num)) => write!(f, "{}", num),
-//             Value::Lit(Lit::Bool(b)) => write!(f, "{}", b),
-//             Value::Lit(Lit::String(s)) => write!(f, "{}", s),
-//             Value::Lambda { .. } => write!(f, "<lambda>"),
-//             Value::NativeFn { .. } => write!(f, "<native fn>"),
-//             Value::Unit => write!(f, "()"),
-//         }
-//     }
-// }
+impl Display for Value {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Value::Lit(Lit::Num(num)) => write!(f, "{}", num),
+            Value::Lit(Lit::Bool(b)) => write!(f, "{}", b),
+            Value::Lit(Lit::String(s)) => write!(f, "{}", s),
+            // Value::Lambda { .. } => write!(f, "<lambda>"),
+            Value::NativeFn { .. } => write!(f, "<native fn>"),
+            Value::Unit => write!(f, "()"),
+        }
+    }
+}
 
-// #[derive(Debug, Clone, PartialEq)]
-// pub enum Lit {
-//     Num(Rational64),
-//     Bool(bool),
-//     String(InternedString),
-// }
+#[derive(Debug, Clone, PartialEq)]
+pub enum Lit {
+    Num(Rational64),
+    Bool(bool),
+    String(InternedString),
+}
 
-// impl PartialEq<infer::Lit> for Lit {
-//     fn eq(&self, other: &infer::Lit) -> bool {
-//         match (self, other) {
-//             (Lit::Num(l), infer::Lit::Num(r)) => l == r,
-//             (Lit::Bool(l), infer::Lit::Bool(r)) => l == r,
-//             (Lit::String(l), infer::Lit::String(r)) => l == r,
-//             _ => false,
-//         }
-//     }
-// }
+impl PartialEq<infer::Lit> for Lit {
+    fn eq(&self, other: &infer::Lit) -> bool {
+        match (self, other) {
+            (Lit::Num(l), infer::Lit::Num(r)) => l == r,
+            (Lit::Bool(l), infer::Lit::Bool(r)) => l == r,
+            (Lit::String(l), infer::Lit::String(r)) => l == r,
+            _ => false,
+        }
+    }
+}
 
-// impl PartialEq<Lit> for infer::Lit {
-//     fn eq(&self, other: &Lit) -> bool {
-//         match (self, other) {
-//             (infer::Lit::Num(l), Lit::Num(r)) => l == r,
-//             (infer::Lit::Bool(l), Lit::Bool(r)) => l == r,
-//             (infer::Lit::String(l), Lit::String(r)) => l == r,
-//             _ => false,
-//         }
-//     }
-// }
+impl PartialEq<Lit> for infer::Lit {
+    fn eq(&self, other: &Lit) -> bool {
+        match (self, other) {
+            (infer::Lit::Num(l), Lit::Num(r)) => l == r,
+            (infer::Lit::Bool(l), Lit::Bool(r)) => l == r,
+            (infer::Lit::String(l), Lit::String(r)) => l == r,
+            _ => false,
+        }
+    }
+}
 
-// impl Display for Lit {
-//     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-//         match self {
-//             Lit::Num(num) => write!(f, "{}", num),
-//             Lit::Bool(b) => write!(f, "{}", b),
-//             Lit::String(s) => write!(f, "{}", s),
-//         }
-//     }
-// }
+impl Display for Lit {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Lit::Num(num) => write!(f, "{}", num),
+            Lit::Bool(b) => write!(f, "{}", b),
+            Lit::String(s) => write!(f, "{}", s),
+        }
+    }
+}
 
 #[derive(Debug)]
 pub struct Interpreter {
