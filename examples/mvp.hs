@@ -4,6 +4,15 @@ let x = 1
 -- mutable binding
 var x = 1
 
+-- lists
+let xs = [1, 2, 3]
+
+-- tuples
+let t = (1, 2)
+
+-- records
+let r = { x = 1, y = 2 }
+
 -- Binary operators
 let a = 1 + 2 * 3^2 - 4 / 5 % 10
 
@@ -50,6 +59,46 @@ let fib n =
     if n = 0 then a 
     else loop (n - 1) b (a + b) 
   in loop n 0 1 
+
+-- higher order functions
+let map f xs = match xs with
+  | [] -> []
+  | _ -> f (head xs) :: map f (tail xs)
+
+let map_iter f xs = 
+  let loop f xs ys = 
+    if null xs then ys 
+    else loop f (tail xs) (ys ++ [f (head xs)]) 
+  in loop f xs []
+
+-- type hints
+let x : Int = 1
+
+-- type declarations
+-- alias
+type Foo = Int
+
+-- record
+type Point = { x : Int, y : Int }
+
+-- sum types
+type Option T = Some T | None
+
+type Expr = 
+  | Int Int
+  | Ident String
+  | Binary BinaryOp Expr Expr
+  | Unary UnaryOp Expr
+  | If Expr Expr Expr
+  | Let String Expr Expr
+
+-- product types
+type Pair a b = Pair a b
+
+-- OOP
+-- class
+class Stack T =
+  
 
 -- here's all of the mvp ideas in one program
 let foo a b =
