@@ -1,12 +1,23 @@
+use crate::{
+    db::Database,
+    parse::parse,
+    rename::{self, Expr, Resolver},
+    utils::{InternedString, Span, UniqueId},
+};
+use itertools::Itertools;
 use num_rational::Rational64;
-use crate::{utils::{InternedString, UniqueId, Span}, rename::resolve};
-use std::{cell::RefCell, collections::HashMap, fmt::{Debug, Display}, rc::Rc};
+use std::{
+    cell::RefCell,
+    collections::HashMap,
+    fmt::{Debug, Display},
+    rc::Rc,
+};
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum RuntimeError {
     ParseError(Vec<InternedString>),
     ArityError(usize, usize),
-    TypeError,
+    TypeError(InternedString),
     DivisionByZero,
 }
 
@@ -187,14 +198,6 @@ impl Debug for Env {
 //     ctx
 // }
 
-// pub fn default_res_env(prims: HashMap<InternedString, UniqueId>) -> Rc<RefCell<res::Env>> {
-//     let env = res::Env::new();
-//     for (name, id) in prims {
-//         env.borrow_mut().insert(name, id);
-//     }
-//     env
-// }
-
 pub fn default_env(ops: HashMap<InternedString, UniqueId>) -> Rc<RefCell<Env>> {
     let env = Env::new();
     env.borrow_mut().insert(
@@ -208,247 +211,250 @@ pub fn default_env(ops: HashMap<InternedString, UniqueId>) -> Rc<RefCell<Env>> {
                         Ok(Value::Lit(Lit::Num(l + r)))
                     }
                     _ => {
-                        return Err(RuntimeError::TypeError);
+                        return Err(RuntimeError::TypeError(InternedString::from(format!(
+                            "Expected numbers got {:?}",
+                            args
+                        ))));
                     }
                 }
             }
         }),
     );
-    env.borrow_mut().insert(
-        ops.get(&InternedString::from("-")).unwrap().clone(),
-        Value::NativeFn(|args| {
-            if args.len() != 2 {
-                return Err(format!("Expected 2 args, found {}", args.len()).into());
-            } else {
-                match (args.get(0).unwrap(), args.get(1).unwrap()) {
-                    (Value::Lit(Lit::Num(l)), Value::Lit(Lit::Num(r))) => {
-                        Ok(Value::Lit(Lit::Num(l - r)))
-                    }
-                    _ => {
-                        return Err(format!("Expected number, found {:?}", args).into());
-                    }
-                }
-            }
-        }),
-    );
-    env.borrow_mut().insert(
-        ops.get(&InternedString::from("*")).unwrap().clone(),
-        Value::NativeFn(|args| {
-            if args.len() != 2 {
-                return Err(format!("Expected 2 args, found {}", args.len()).into());
-            } else {
-                match (args.get(0).unwrap(), args.get(1).unwrap()) {
-                    (Value::Lit(Lit::Num(l)), Value::Lit(Lit::Num(r))) => {
-                        Ok(Value::Lit(Lit::Num(l * r)))
-                    }
-                    _ => {
-                        return Err(format!("Expected number, found {:?}", args).into());
-                    }
-                }
-            }
-        }),
-    );
-    env.borrow_mut().insert(
-        ops.get(&InternedString::from("/")).unwrap().clone(),
-        Value::NativeFn(|args| {
-            if args.len() != 2 {
-                return Err(format!("Expected 2 args, found {}", args.len()).into());
-            } else {
-                match (args.get(0).unwrap(), args.get(1).unwrap()) {
-                    (Value::Lit(Lit::Num(l)), Value::Lit(Lit::Num(r))) => {
-                        if r == &Rational64::from_integer(0) {
-                            return Err(format!("Division by zero").into());
-                        }
-                        Ok(Value::Lit(Lit::Num(l / r)))
-                    }
-                    _ => {
-                        return Err(format!("Expected number, found {:?}", args).into());
-                    }
-                }
-            }
-        }),
-    );
-    env.borrow_mut().insert(
-        ops.get(&InternedString::from("%")).unwrap().clone(),
-        Value::NativeFn(|args| {
-            if args.len() != 2 {
-                return Err(format!("Expected 2 args, found {}", args.len()).into());
-            } else {
-                match (args.get(0).unwrap(), args.get(1).unwrap()) {
-                    (Value::Lit(Lit::Num(l)), Value::Lit(Lit::Num(r))) => {
-                        Ok(Value::Lit(Lit::Num(l % r)))
-                    }
-                    _ => {
-                        return Err(format!("Expected number, found {:?}", args).into());
-                    }
-                }
-            }
-        }),
-    );
-    env.borrow_mut().insert(
-        ops.get(&InternedString::from("==")).unwrap().clone(),
-        Value::NativeFn(|args| {
-            if args.len() != 2 {
-                Err(format!("Expected 2 args, found {}", args.len()).into())
-            } else {
-                match (args.get(0).unwrap(), args.get(1).unwrap()) {
-                    (Value::Lit(l), Value::Lit(r)) => Ok(Value::Lit(Lit::Bool(l == r))),
-                    (
-                        Value::Lambda {
-                            env: _,
-                            params: p1,
-                            body: b1,
-                        },
-                        Value::Lambda {
-                            env: _,
-                            params: p2,
-                            body: b2,
-                        },
-                    ) => {
-                        if p1.len() != p2.len() {
-                            return Ok(Value::Lit(Lit::Bool(false)));
-                        } else {
-                            let mut p = true;
-                            for (p1, p2) in p1.iter().zip(p2) {
-                                p = *p1.inner() != *p2.inner();
-                                break;
-                            }
-                            Ok(Value::Lit(Lit::Bool(b1 == b2 && p)))
-                        }
-                    }
-                    (Value::Unit, Value::Unit) => Ok(Value::Lit(Lit::Bool(true))),
-                    _ => Ok(Value::Lit(Lit::Bool(false))),
-                }
-            }
-        }),
-    );
-    env.borrow_mut().insert(
-        ops.get(&InternedString::from("!=")).unwrap().clone(),
-        Value::NativeFn(|args| {
-            if args.len() != 2 {
-                Err(format!("Expected 2 args, found {}", args.len()).into())
-            } else {
-                match (args.get(0).unwrap(), args.get(1).unwrap()) {
-                    (Value::Lit(l), Value::Lit(r)) => Ok(Value::Lit(Lit::Bool(l != r))),
-                    (
-                        Value::Lambda {
-                            env: _,
-                            params: p1,
-                            body: b1,
-                        },
-                        Value::Lambda {
-                            env: _,
-                            params: p2,
-                            body: b2,
-                        },
-                    ) => {
-                        if p1.len() != p2.len() {
-                            return Ok(Value::Lit(Lit::Bool(true)));
-                        } else {
-                            let mut p = true;
-                            for (p1, p2) in p1.iter().zip(p2) {
-                                p = *p1.inner() != *p2.inner();
-                                break;
-                            }
-                            Ok(Value::Lit(Lit::Bool(b1 != b2 || p)))
-                        }
-                    }
-                    (Value::Unit, Value::Unit) => Ok(Value::Lit(Lit::Bool(false))),
-                    _ => Ok(Value::Lit(Lit::Bool(true))),
-                }
-            }
-        }),
-    );
-    env.borrow_mut().insert(
-        ops.get(&InternedString::from("<")).unwrap().clone(),
-        Value::NativeFn(|args| {
-            if args.len() != 2 {
-                Err(format!("Expected 2 args, found {}", args.len()).into())
-            } else {
-                match (args.get(0).unwrap(), args.get(1).unwrap()) {
-                    (Value::Lit(Lit::Num(l)), Value::Lit(Lit::Num(r))) => {
-                        Ok(Value::Lit(Lit::Bool(l < r)))
-                    }
-                    _ => {
-                        return Err(format!("Expected number, found {:?}", args).into());
-                    }
-                }
-            }
-        }),
-    );
-    env.borrow_mut().insert(
-        ops.get(&InternedString::from(">")).unwrap().clone(),
-        Value::NativeFn(|args| {
-            if args.len() != 2 {
-                Err(format!("Expected 2 args, found {}", args.len()).into())
-            } else {
-                match (args.get(0).unwrap(), args.get(1).unwrap()) {
-                    (Value::Lit(Lit::Num(l)), Value::Lit(Lit::Num(r))) => {
-                        Ok(Value::Lit(Lit::Bool(l > r)))
-                    }
-                    _ => {
-                        return Err(format!("Expected number, found {:?}", args).into());
-                    }
-                }
-            }
-        }),
-    );
-    env.borrow_mut().insert(
-        ops.get(&InternedString::from("<=")).unwrap().clone(),
-        Value::NativeFn(|args| {
-            if args.len() != 2 {
-                Err(format!("Expected 2 args, found {}", args.len()).into())
-            } else {
-                match (args.get(0).unwrap(), args.get(1).unwrap()) {
-                    (Value::Lit(Lit::Num(l)), Value::Lit(Lit::Num(r))) => {
-                        Ok(Value::Lit(Lit::Bool(l <= r)))
-                    }
-                    _ => {
-                        return Err(format!("Expected number, found {:?}", args).into());
-                    }
-                }
-            }
-        }),
-    );
-    env.borrow_mut().insert(
-        ops.get(&InternedString::from(">=")).unwrap().clone(),
-        Value::NativeFn(|args| {
-            if args.len() != 2 {
-                Err(format!("Expected 2 args, found {}", args.len()).into())
-            } else {
-                match (args.get(0).unwrap(), args.get(1).unwrap()) {
-                    (Value::Lit(Lit::Num(l)), Value::Lit(Lit::Num(r))) => {
-                        Ok(Value::Lit(Lit::Bool(l >= r)))
-                    }
-                    _ => {
-                        return Err(format!("Expected number, found {:?}", args).into());
-                    }
-                }
-            }
-        }),
-    );
-    env.borrow_mut().insert(
-        ops.get(&InternedString::from("print")).unwrap().clone(),
-        Value::NativeFn(|args| {
-            if args.len() != 1 {
-                Err(format!("Expected 1 arg, found {}", args.len()).into())
-            } else {
-                println!("{}", args.get(0).unwrap());
-                Ok(Value::Unit)
-            }
-        }),
-    );
+    // env.borrow_mut().insert(
+    //     ops.get(&InternedString::from("-")).unwrap().clone(),
+    //     Value::NativeFn(|args| {
+    //         if args.len() != 2 {
+    //             return Err(RuntimeError::ArityError(2, args.len()).into());
+    //         } else {
+    //             match (args.get(0).unwrap(), args.get(1).unwrap()) {
+    //                 (Value::Lit(Lit::Num(l)), Value::Lit(Lit::Num(r))) => {
+    //                     Ok(Value::Lit(Lit::Num(l - r)))
+    //                 }
+    //                 _ => {
+    //                     return Err(format!("Expected number, found {:?}", args).into());
+    //                 }
+    //             }
+    //         }
+    //     }),
+    // );
+    // env.borrow_mut().insert(
+    //     ops.get(&InternedString::from("*")).unwrap().clone(),
+    //     Value::NativeFn(|args| {
+    //         if args.len() != 2 {
+    //             return Err(format!("Expected 2 args, found {}", args.len()).into());
+    //         } else {
+    //             match (args.get(0).unwrap(), args.get(1).unwrap()) {
+    //                 (Value::Lit(Lit::Num(l)), Value::Lit(Lit::Num(r))) => {
+    //                     Ok(Value::Lit(Lit::Num(l * r)))
+    //                 }
+    //                 _ => {
+    //                     return Err(format!("Expected number, found {:?}", args).into());
+    //                 }
+    //             }
+    //         }
+    //     }),
+    // );
+    // env.borrow_mut().insert(
+    //     ops.get(&InternedString::from("/")).unwrap().clone(),
+    //     Value::NativeFn(|args| {
+    //         if args.len() != 2 {
+    //             return Err(format!("Expected 2 args, found {}", args.len()).into());
+    //         } else {
+    //             match (args.get(0).unwrap(), args.get(1).unwrap()) {
+    //                 (Value::Lit(Lit::Num(l)), Value::Lit(Lit::Num(r))) => {
+    //                     if r == &Rational64::from_integer(0) {
+    //                         return Err(format!("Division by zero").into());
+    //                     }
+    //                     Ok(Value::Lit(Lit::Num(l / r)))
+    //                 }
+    //                 _ => {
+    //                     return Err(format!("Expected number, found {:?}", args).into());
+    //                 }
+    //             }
+    //         }
+    //     }),
+    // );
+    // env.borrow_mut().insert(
+    //     ops.get(&InternedString::from("%")).unwrap().clone(),
+    //     Value::NativeFn(|args| {
+    //         if args.len() != 2 {
+    //             return Err(format!("Expected 2 args, found {}", args.len()).into());
+    //         } else {
+    //             match (args.get(0).unwrap(), args.get(1).unwrap()) {
+    //                 (Value::Lit(Lit::Num(l)), Value::Lit(Lit::Num(r))) => {
+    //                     Ok(Value::Lit(Lit::Num(l % r)))
+    //                 }
+    //                 _ => {
+    //                     return Err(format!("Expected number, found {:?}", args).into());
+    //                 }
+    //             }
+    //         }
+    //     }),
+    // );
+    // env.borrow_mut().insert(
+    //     ops.get(&InternedString::from("==")).unwrap().clone(),
+    //     Value::NativeFn(|args| {
+    //         if args.len() != 2 {
+    //             Err(format!("Expected 2 args, found {}", args.len()).into())
+    //         } else {
+    //             match (args.get(0).unwrap(), args.get(1).unwrap()) {
+    //                 (Value::Lit(l), Value::Lit(r)) => Ok(Value::Lit(Lit::Bool(l == r))),
+    //                 (
+    //                     Value::Lambda {
+    //                         env: _,
+    //                         params: p1,
+    //                         body: b1,
+    //                     },
+    //                     Value::Lambda {
+    //                         env: _,
+    //                         params: p2,
+    //                         body: b2,
+    //                     },
+    //                 ) => {
+    //                     if p1.len() != p2.len() {
+    //                         return Ok(Value::Lit(Lit::Bool(false)));
+    //                     } else {
+    //                         let mut p = true;
+    //                         for (p1, p2) in p1.iter().zip(p2) {
+    //                             p = *p1.inner() != *p2.inner();
+    //                             break;
+    //                         }
+    //                         Ok(Value::Lit(Lit::Bool(b1 == b2 && p)))
+    //                     }
+    //                 }
+    //                 (Value::Unit, Value::Unit) => Ok(Value::Lit(Lit::Bool(true))),
+    //                 _ => Ok(Value::Lit(Lit::Bool(false))),
+    //             }
+    //         }
+    //     }),
+    // );
+    // env.borrow_mut().insert(
+    //     ops.get(&InternedString::from("!=")).unwrap().clone(),
+    //     Value::NativeFn(|args| {
+    //         if args.len() != 2 {
+    //             Err(RuntimeError::ArityError(2, args.len()).into())
+    //         } else {
+    //             match (args.get(0).unwrap(), args.get(1).unwrap()) {
+    //                 (Value::Lit(l), Value::Lit(r)) => Ok(Value::Lit(Lit::Bool(l != r))),
+    //                 (
+    //                     Value::Lambda {
+    //                         env: _,
+    //                         params: p1,
+    //                         body: b1,
+    //                     },
+    //                     Value::Lambda {
+    //                         env: _,
+    //                         params: p2,
+    //                         body: b2,
+    //                     },
+    //                 ) => {
+    //                     if p1.len() != p2.len() {
+    //                         return Ok(Value::Lit(Lit::Bool(true)));
+    //                     } else {
+    //                         let mut p = true;
+    //                         for (p1, p2) in p1.iter().zip(p2) {
+    //                             p = *p1.inner() != *p2.inner();
+    //                             break;
+    //                         }
+    //                         Ok(Value::Lit(Lit::Bool(b1 != b2 || p)))
+    //                     }
+    //                 }
+    //                 (Value::Unit, Value::Unit) => Ok(Value::Lit(Lit::Bool(false))),
+    //                 _ => Ok(Value::Lit(Lit::Bool(true))),
+    //             }
+    //         }
+    //     }),
+    // );
+    // env.borrow_mut().insert(
+    //     ops.get(&InternedString::from("<")).unwrap().clone(),
+    //     Value::NativeFn(|args| {
+    //         if args.len() != 2 {
+    //             Err(format!("Expected 2 args, found {}", args.len()).into())
+    //         } else {
+    //             match (args.get(0).unwrap(), args.get(1).unwrap()) {
+    //                 (Value::Lit(Lit::Num(l)), Value::Lit(Lit::Num(r))) => {
+    //                     Ok(Value::Lit(Lit::Bool(l < r)))
+    //                 }
+    //                 _ => {
+    //                     return Err(format!("Expected number, found {:?}", args).into());
+    //                 }
+    //             }
+    //         }
+    //     }),
+    // );
+    // env.borrow_mut().insert(
+    //     ops.get(&InternedString::from(">")).unwrap().clone(),
+    //     Value::NativeFn(|args| {
+    //         if args.len() != 2 {
+    //             Err(format!("Expected 2 args, found {}", args.len()).into())
+    //         } else {
+    //             match (args.get(0).unwrap(), args.get(1).unwrap()) {
+    //                 (Value::Lit(Lit::Num(l)), Value::Lit(Lit::Num(r))) => {
+    //                     Ok(Value::Lit(Lit::Bool(l > r)))
+    //                 }
+    //                 _ => {
+    //                     return Err(format!("Expected number, found {:?}", args).into());
+    //                 }
+    //             }
+    //         }
+    //     }),
+    // );
+    // env.borrow_mut().insert(
+    //     ops.get(&InternedString::from("<=")).unwrap().clone(),
+    //     Value::NativeFn(|args| {
+    //         if args.len() != 2 {
+    //             Err(format!("Expected 2 args, found {}", args.len()).into())
+    //         } else {
+    //             match (args.get(0).unwrap(), args.get(1).unwrap()) {
+    //                 (Value::Lit(Lit::Num(l)), Value::Lit(Lit::Num(r))) => {
+    //                     Ok(Value::Lit(Lit::Bool(l <= r)))
+    //                 }
+    //                 _ => {
+    //                     return Err(format!("Expected number, found {:?}", args).into());
+    //                 }
+    //             }
+    //         }
+    //     }),
+    // );
+    // env.borrow_mut().insert(
+    //     ops.get(&InternedString::from(">=")).unwrap().clone(),
+    //     Value::NativeFn(|args| {
+    //         if args.len() != 2 {
+    //             Err(format!("Expected 2 args, found {}", args.len()).into())
+    //         } else {
+    //             match (args.get(0).unwrap(), args.get(1).unwrap()) {
+    //                 (Value::Lit(Lit::Num(l)), Value::Lit(Lit::Num(r))) => {
+    //                     Ok(Value::Lit(Lit::Bool(l >= r)))
+    //                 }
+    //                 _ => {
+    //                     return Err(format!("Expected number, found {:?}", args).into());
+    //                 }
+    //             }
+    //         }
+    //     }),
+    // );
+    // env.borrow_mut().insert(
+    //     ops.get(&InternedString::from("print")).unwrap().clone(),
+    //     Value::NativeFn(|args| {
+    //         if args.len() != 1 {
+    //             Err(format!("Expected 1 arg, found {}", args.len()).into())
+    //         } else {
+    //             println!("{}", args.get(0).unwrap());
+    //             Ok(Value::Unit)
+    //         }
+    //     }),
+    // );
     env
 }
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Value {
     Lit(Lit),
-    // Lambda {
-    //     env: Rc<RefCell<Env>>,
-    //     param: Vec<>,
-    //     expr: Node<Expr>,
-    // },
+    Lambda {
+        env: Rc<RefCell<Env>>,
+        param: Vec<UniqueId>,
+        expr: Expr,
+    },
     NativeFn(fn(Vec<Value>) -> RuntimeResult<Value>),
     Unit,
 }
@@ -459,7 +465,7 @@ impl Display for Value {
             Value::Lit(Lit::Num(num)) => write!(f, "{}", num),
             Value::Lit(Lit::Bool(b)) => write!(f, "{}", b),
             Value::Lit(Lit::String(s)) => write!(f, "{}", s),
-            // Value::Lambda { .. } => write!(f, "<lambda>"),
+            Value::Lambda { .. } => write!(f, "<lambda>"),
             Value::NativeFn { .. } => write!(f, "<native fn>"),
             Value::Unit => write!(f, "()"),
         }
@@ -473,28 +479,6 @@ pub enum Lit {
     String(InternedString),
 }
 
-impl PartialEq<infer::Lit> for Lit {
-    fn eq(&self, other: &infer::Lit) -> bool {
-        match (self, other) {
-            (Lit::Num(l), infer::Lit::Num(r)) => l == r,
-            (Lit::Bool(l), infer::Lit::Bool(r)) => l == r,
-            (Lit::String(l), infer::Lit::String(r)) => l == r,
-            _ => false,
-        }
-    }
-}
-
-impl PartialEq<Lit> for infer::Lit {
-    fn eq(&self, other: &Lit) -> bool {
-        match (self, other) {
-            (infer::Lit::Num(l), Lit::Num(r)) => l == r,
-            (infer::Lit::Bool(l), Lit::Bool(r)) => l == r,
-            (infer::Lit::String(l), Lit::String(r)) => l == r,
-            _ => false,
-        }
-    }
-}
-
 impl Display for Lit {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
@@ -505,11 +489,40 @@ impl Display for Lit {
     }
 }
 
+#[derive(Debug, Clone)]
+pub struct HashBase {
+    map: HashMap<UniqueId, InternedString>,
+}
+
+impl HashBase {
+    pub fn new() -> Self {
+        Self {
+            map: HashMap::new(),
+        }
+    }
+}
+
+impl Database for HashBase {
+    fn insert(&mut self, key: UniqueId, value: InternedString) {
+        self.map.insert(key, value);
+    }
+
+    fn get(&self, key: UniqueId) -> Option<&InternedString> {
+        self.map.get(&key)
+    }
+
+    fn remove(&mut self, key: UniqueId) -> Option<InternedString> {
+        self.map.remove(&key)
+    }
+}
+
 #[derive(Debug)]
 pub struct Interpreter {
-    env: Rc<RefCell<Env>>,
-    ops: HashMap<InternedString, UniqueId>,
     src: InternedString,
+    env: Rc<RefCell<Env>>,
+    res_env: Rc<RefCell<rename::Env>>,
+    res: Resolver,
+    db: Rc<RefCell<dyn Database>>,
 }
 
 impl Interpreter {
@@ -518,35 +531,30 @@ impl Interpreter {
     }
 
     pub fn eval(&mut self, src: &str) -> RuntimeResult<()> {
-        let ast = parse(src).map_err();
-        let (res, errors) = resolve(env, root)
+        let ast = parse(src).map_err(|errs| {
+            RuntimeError::ParseError(
+                errs.into_iter()
+                    .map(|e| format!("{}", e).into())
+                    .collect_vec(),
+            )
+        })?;
+        self.res = Resolver::new(self.res_env.clone(), self.db.clone());
+        let (res, errors) = self.res.resolve(&ast);
+        println!("res: {:#?}", res);
         Ok(())
     }
 }
 
 impl Default for Interpreter {
     fn default() -> Self {
-        let mut ops = HashMap::new();
-        ops.insert(InternedString::from("+"), UniqueId::gen());
-        ops.insert(InternedString::from("-"), UniqueId::gen());
-        ops.insert(InternedString::from("*"), UniqueId::gen());
-        ops.insert(InternedString::from("/"), UniqueId::gen());
-        ops.insert(InternedString::from("%"), UniqueId::gen());
-        ops.insert(InternedString::from("=="), UniqueId::gen());
-        ops.insert(InternedString::from("!="), UniqueId::gen());
-        ops.insert(InternedString::from("<"), UniqueId::gen());
-        ops.insert(InternedString::from(">"), UniqueId::gen());
-        ops.insert(InternedString::from("<="), UniqueId::gen());
-        ops.insert(InternedString::from(">="), UniqueId::gen());
-        ops.insert(InternedString::from("!"), UniqueId::gen());
-        ops.insert(InternedString::from("&&"), UniqueId::gen());
-        ops.insert(InternedString::from("||"), UniqueId::gen());
-        ops.insert(InternedString::from("print"), UniqueId::gen());
-        let env = default_env(ops.clone());
+        let db = Rc::new(RefCell::new(HashBase::new()));
+        let res_env = rename::Env::new();
         Self {
-            env,
-            ops,
-            src: InternedString::default(),
+            src: InternedString::from(""),
+            env: Env::new(),
+            res_env: res_env.clone(),
+            res: Resolver::new(res_env.clone(), db.clone()),
+            db,
         }
     }
 }

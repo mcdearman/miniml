@@ -25,6 +25,7 @@ pub enum Type {
     Bool,
     Str,
     Lambda(Box<Self>, Box<Self>),
+    Var(TyVar),
 }
 
 impl Display for Type {
@@ -34,7 +35,19 @@ impl Display for Type {
             Type::Bool => write!(f, "Bool"),
             Type::Str => write!(f, "Str"),
             Type::Lambda(param, ret) => write!(f, "({} -> {})", param, ret),
+            Type::Var(id) => write!(f, "{}", id),
         }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct TyVar {
+    id: UniqueId,
+}
+
+impl Display for TyVar {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "'{}", self.id.0)
     }
 }
 

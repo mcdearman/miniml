@@ -122,6 +122,12 @@ impl Debug for UniqueId {
     }
 }
 
+impl Display for UniqueId {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "#{}", self.0)
+    }
+}
+
 impl From<usize> for UniqueId {
     fn from(id: usize) -> Self {
         Self(id)

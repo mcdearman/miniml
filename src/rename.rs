@@ -4,12 +4,17 @@
  * that shadow names from an outer scope are given a new unique ID.
  */
 use crate::{
+    db::Database,
     parse,
     utils::{InternedString, Span, UniqueId},
 };
 use log::trace;
 use num_rational::Rational64;
-use std::{cell::RefCell, collections::HashMap, rc::Rc};
+use std::{
+    cell::{Ref, RefCell},
+    collections::HashMap,
+    rc::Rc,
+};
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct ResError {
@@ -215,187 +220,221 @@ pub enum DeclKind {
     Let { name: Ident, expr: Expr },
 }
 
-pub fn resolve(env: Rc<RefCell<Env>>, root: &parse::Root) -> (Option<Root>, Vec<ResError>) {
-    let mut errors = vec![];
-    let mut decls = vec![];
-    for decl in root.decls() {
-        match resolve_decl(env.clone(), decl) {
-            Ok(d) => {
-                // trace!("env: {:#?}", env.borrow());
-                decls.push(d);
-            }
-            Err(err) => {
-                trace!("env: {:#?}", env.borrow());
-                errors.push(err)
+#[derive(Debug)]
+pub struct Resolver {
+    env: Rc<RefCell<Env>>,
+    db: Rc<RefCell<dyn Database>>,
+}
+
+impl Resolver {
+    pub fn new(env: Rc<RefCell<Env>>, db: Rc<RefCell<dyn Database>>) -> Self {
+        Self { env, db }
+    }
+
+    pub fn resolve(&mut self, root: &parse::Root) -> (Option<Root>, Vec<ResError>) {
+        let mut errors = vec![];
+        let mut decls = vec![];
+        for decl in root.decls() {
+            match self.resolve_decl(decl) {
+                Ok(d) => {
+                    // trace!("env: {:#?}", env.borrow());
+                    decls.push(d);
+                }
+                Err(err) => {
+                    trace!("env: {:#?}", self.env.borrow());
+                    errors.push(err)
+                }
             }
         }
+        if decls.is_empty() {
+            (None, errors)
+        } else {
+            (
+                Some(Root {
+                    decls,
+                    span: root.span().clone(),
+                }),
+                errors,
+            )
+        }
     }
-    if decls.is_empty() {
-        (None, errors)
-    } else {
-        (
-            Some(Root {
-                decls,
-                span: root.span().clone(),
-            }),
-            errors,
-        )
-    }
-}
 
-fn resolve_decl(env: Rc<RefCell<Env>>, decl: &parse::Decl) -> ResResult<Decl> {
-    trace!("decl env: {:#?}", env.borrow());
-    match decl.kind() {
-        parse::DeclKind::Let { name, expr } => match expr.kind() {
-            parse::ExprKind::Lambda { .. } => {
-                let name = Ident::new(env.borrow_mut().define(name.name().clone()), *name.span());
-                let let_env = Env::new_with_parent(env.clone());
-                let expr = resolve_expr(let_env.clone(), expr)?;
-                Ok(Decl::new(DeclKind::Let { name, expr }, decl.span().clone()))
-            }
-            _ => {
-                let let_env = Env::new_with_parent(env.clone());
-                let expr = resolve_expr(let_env.clone(), expr)?;
-                let name = Ident::new(env.borrow_mut().define(name.name().clone()), *name.span());
-                Ok(Decl::new(DeclKind::Let { name, expr }, decl.span().clone()))
-            }
-        },
+    fn resolve_decl(&mut self, decl: &parse::Decl) -> ResResult<Decl> {
+        trace!("decl env: {:#?}", self.env.borrow());
+        match decl.kind() {
+            parse::DeclKind::Let { name, expr } => match expr.kind() {
+                parse::ExprKind::Lambda { .. } => {
+                    let name = Ident::new(
+                        self.env.borrow_mut().define(name.name().clone()),
+                        *name.span(),
+                    );
+                    self.env = Env::new_with_parent(self.env.clone());
+                    let expr = self.resolve_expr(expr)?;
+                    Ok(Decl::new(DeclKind::Let { name, expr }, decl.span().clone()))
+                }
+                _ => {
+                    self.env = Env::new_with_parent(self.env.clone());
+                    let expr = self.resolve_expr(expr)?;
+                    let name = Ident::new(
+                        self.env.borrow_mut().define(name.name().clone()),
+                        *name.span(),
+                    );
+                    Ok(Decl::new(DeclKind::Let { name, expr }, decl.span().clone()))
+                }
+            },
+        }
     }
-}
 
-fn resolve_expr(env: Rc<RefCell<Env>>, expr: &parse::Expr) -> ResResult<Expr> {
-    match expr.kind() {
-        parse::ExprKind::Lit(l) => match l {
-            parse::Lit::Num(n) => Ok(Expr::new(ExprKind::Lit(Lit::Num(n.clone())), *expr.span())),
-            parse::Lit::Bool(b) => Ok(Expr::new(ExprKind::Lit(Lit::Bool(*b)), expr.span().clone())),
-            parse::Lit::String(s) => Ok(Expr::new(
-                ExprKind::Lit(Lit::String(s.clone())),
+    fn resolve_expr(&mut self, expr: &parse::Expr) -> ResResult<Expr> {
+        match expr.kind() {
+            parse::ExprKind::Lit(l) => match l {
+                parse::Lit::Num(n) => {
+                    Ok(Expr::new(ExprKind::Lit(Lit::Num(n.clone())), *expr.span()))
+                }
+                parse::Lit::Bool(b) => {
+                    Ok(Expr::new(ExprKind::Lit(Lit::Bool(*b)), expr.span().clone()))
+                }
+                parse::Lit::String(s) => Ok(Expr::new(
+                    ExprKind::Lit(Lit::String(s.clone())),
+                    *expr.span(),
+                )),
+            },
+            parse::ExprKind::Ident(ident) => {
+                if let Some(name) = self.env.borrow().find(ident.name()) {
+                    Ok(Expr::new(
+                        ExprKind::Ident(Ident::new(name, expr.span().clone())),
+                        expr.span().clone(),
+                    ))
+                } else {
+                    Err(ResError {
+                        msg: InternedString::from(&*format!(
+                            "name '{:?}' is not defined",
+                            ident.name()
+                        )),
+                        span: expr.span().clone(),
+                    })
+                }
+            }
+            parse::ExprKind::Apply { fun, arg } => Ok(Expr::new(
+                ExprKind::Apply {
+                    fun: self.resolve_expr(fun)?,
+                    arg: self.resolve_expr(arg)?,
+                },
                 *expr.span(),
             )),
-        },
-        parse::ExprKind::Ident(ident) => {
-            if let Some(name) = env.borrow().find(ident.name()) {
+            parse::ExprKind::Unary { op, expr } => {
+                let id = self
+                    .env
+                    .borrow_mut()
+                    .define_if_absent(InternedString::from(*op));
+                let ident = Ident::new(id, *op.span());
+                self.db
+                    .borrow_mut()
+                    .insert_or_get(id, InternedString::from(*op));
                 Ok(Expr::new(
-                    ExprKind::Ident(Ident::new(name, expr.span().clone())),
-                    expr.span().clone(),
+                    ExprKind::Apply {
+                        fun: Expr::new(ExprKind::Ident(ident.clone()), *op.span()),
+                        arg: self.resolve_expr(expr)?,
+                    },
+                    *expr.span(),
                 ))
-            } else {
-                Err(ResError {
-                    msg: InternedString::from(&*format!(
-                        "name '{:?}' is not defined",
-                        ident.name()
-                    )),
-                    span: expr.span().clone(),
-                })
             }
-        }
-        parse::ExprKind::Apply { fun, arg } => Ok(Expr::new(
-            ExprKind::Apply {
-                fun: resolve_expr(env.clone(), fun)?,
-                arg: resolve_expr(env.clone(), arg)?,
-            },
-            *expr.span(),
-        )),
-        parse::ExprKind::Unary { op, expr } => {
-            let op = Ident::new(
-                env.borrow()
-                    .find(&op.clone().into())
-                    .expect("operator id not present"),
-                *op.span(),
-            );
-            Ok(Expr::new(
-                ExprKind::Apply {
-                    fun: Expr::new(ExprKind::Ident(op.clone()), *op.span()),
-                    arg: resolve_expr(env.clone(), expr)?,
+            parse::ExprKind::Binary { op, lhs, rhs } => {
+                let id = self
+                    .env
+                    .borrow_mut()
+                    .define_if_absent(InternedString::from(*op));
+                let ident = Ident::new(id, *op.span());
+                self.db
+                    .borrow_mut()
+                    .insert_or_get(id, InternedString::from(*op));
+                Ok(Expr::new(
+                    ExprKind::Apply {
+                        fun: Expr::new(ExprKind::Ident(ident.clone()), *op.span()),
+                        arg: Expr::new(
+                            ExprKind::Apply {
+                                fun: self.resolve_expr(lhs)?,
+                                arg: self.resolve_expr(rhs)?,
+                            },
+                            *expr.span(),
+                        ),
+                    },
+                    *expr.span(),
+                ))
+            }
+            parse::ExprKind::If { cond, then, else_ } => Ok(Expr::new(
+                ExprKind::If {
+                    cond: self.resolve_expr(cond)?,
+                    then: self.resolve_expr(then)?,
+                    else_: self.resolve_expr(else_)?,
                 },
                 *expr.span(),
-            ))
-        }
-        parse::ExprKind::Binary { op, lhs, rhs } => {
-            let op = Ident::new(
-                env.borrow()
-                    .find(&op.clone().into())
-                    .expect("operator id not present"),
-                *op.span(),
-            );
-            Ok(Expr::new(
-                ExprKind::Apply {
-                    fun: Expr::new(ExprKind::Ident(op.clone()), *op.span()),
-                    arg: Expr::new(
-                        ExprKind::Apply {
-                            fun: resolve_expr(env.clone(), lhs)?,
-                            arg: resolve_expr(env.clone(), rhs)?,
+            )),
+            parse::ExprKind::Let { name, expr, body } => match expr.kind() {
+                parse::ExprKind::Lambda { .. } => {
+                    let name = Ident::new(
+                        self.env.borrow_mut().define(name.name().clone()),
+                        *name.span(),
+                    );
+                    self.env = Env::new_with_parent(self.env.clone());
+                    let res_expr = self.resolve_expr(&expr)?;
+                    let body = self.resolve_expr(&body)?;
+                    Ok(Expr::new(
+                        ExprKind::Let {
+                            name,
+                            expr: res_expr,
+                            body,
                         },
                         *expr.span(),
-                    ),
-                },
-                *expr.span(),
-            ))
-        }
-        parse::ExprKind::If { cond, then, else_ } => Ok(Expr::new(
-            ExprKind::If {
-                cond: resolve_expr(env.clone(), cond)?,
-                then: resolve_expr(env.clone(), then)?,
-                else_: resolve_expr(env.clone(), else_)?,
+                    ))
+                }
+                _ => {
+                    self.env = Env::new_with_parent(self.env.clone());
+                    let res_expr = self.resolve_expr(expr)?;
+                    let name = Ident::new(
+                        self.env.borrow_mut().define(name.name().clone()),
+                        *name.span(),
+                    );
+                    let body = self.resolve_expr(body)?;
+                    Ok(Expr::new(
+                        ExprKind::Let {
+                            name,
+                            expr: res_expr,
+                            body,
+                        },
+                        *expr.span(),
+                    ))
+                }
             },
-            *expr.span(),
-        )),
-        parse::ExprKind::Let { name, expr, body } => match expr.kind() {
-            parse::ExprKind::Lambda { .. } => {
-                let name = Ident::new(env.borrow_mut().define(name.name().clone()), *name.span());
-                let let_env = Env::new_with_parent(env.clone());
-                let res_expr = resolve_expr(let_env.clone(), &expr)?;
-                let body = resolve_expr(let_env.clone(), &body)?;
+            parse::ExprKind::Lambda { param, expr } => {
+                self.env = Env::new_with_parent(self.env.clone());
+                let param = Ident::new(
+                    self.env.borrow_mut().define(param.name().clone()),
+                    *param.span(),
+                );
                 Ok(Expr::new(
-                    ExprKind::Let {
-                        name,
-                        expr: res_expr,
-                        body,
+                    ExprKind::Lambda {
+                        param,
+                        expr: self.resolve_expr(expr)?,
                     },
                     *expr.span(),
                 ))
             }
-            _ => {
-                let let_env = Env::new_with_parent(env.clone());
-                let res_expr = resolve_expr(let_env.clone(), expr)?;
-                let name = Ident::new(env.borrow_mut().define(name.name().clone()), *name.span());
-                let body = resolve_expr(env.clone(), body)?;
-                Ok(Expr::new(
-                    ExprKind::Let {
-                        name,
-                        expr: res_expr,
-                        body,
-                    },
-                    *expr.span(),
-                ))
-            }
-        },
-        parse::ExprKind::Lambda { param, expr } => {
-            let lambda_env = Env::new_with_parent(env.clone());
-            let param = Ident::new(
-                lambda_env.borrow_mut().define(param.name().clone()),
-                *param.span(),
-            );
-            Ok(Expr::new(
-                ExprKind::Lambda {
-                    param,
-                    expr: resolve_expr(lambda_env.clone(), expr)?,
-                },
-                *expr.span(),
-            ))
+            parse::ExprKind::Unit => Ok(Expr::new(ExprKind::Unit, *expr.span())),
         }
-        parse::ExprKind::Unit => Ok(Expr::new(ExprKind::Unit, *expr.span())),
     }
 }
 
 mod tests {
-    use crate::{parse::parse, rename::resolve};
-
-    use super::Env;
+    use super::{Env, Resolver};
+    use crate::{interpreter::HashBase, parse::parse};
+    use std::{cell::RefCell, rc::Rc};
 
     fn test_helper(src: &str) -> super::Root {
         let ast = parse(src).expect("parse errors");
-        let (res, errors) = resolve(Env::new(), &ast);
+        let db = Rc::new(RefCell::new(HashBase::new()));
+        let mut resolver = Resolver::new(Env::new(), db.clone());
+        let (res, errors) = resolver.resolve(&ast);
         if !errors.is_empty() {
             panic!("resolve error: {:?}", errors);
         }
@@ -410,7 +449,9 @@ mod tests {
     #[test]
     fn res_let_error() {
         let ast = parse("let x = x").expect("parse errors");
-        let (_, errors) = resolve(Env::new(), &ast);
+        let db = Rc::new(RefCell::new(HashBase::new()));
+        let mut r = Resolver::new(Env::new(), db.clone());
+        let (_, errors) = r.resolve(&ast);
         assert!(!errors.is_empty());
     }
 

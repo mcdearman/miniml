@@ -249,7 +249,7 @@ impl ToString for Ident {
     }
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub struct UnaryOp {
     kind: UnaryOpKind,
     span: Span,
@@ -275,7 +275,7 @@ impl From<UnaryOp> for InternedString {
     }
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub enum UnaryOpKind {
     Neg,
     Not,
@@ -300,7 +300,7 @@ impl ToString for UnaryOpKind {
     }
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub struct BinaryOp {
     kind: BinaryOpKind,
     span: Span,
@@ -326,7 +326,7 @@ impl From<BinaryOp> for InternedString {
     }
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub enum BinaryOpKind {
     Add,
     Sub,

@@ -1,15 +1,22 @@
 use std::io::{self, Write};
 
+use crate::interpreter::Interpreter;
+
 pub fn repl() {
     let mut src = String::new();
     // let mut compiler = Compiler::default();
     // let mut vm = Interpreter::default();
+    let mut interpreter = Interpreter::default();
     loop {
         print!("> ");
         io::stdout().flush().unwrap();
         io::stdin()
             .read_line(&mut src)
             .expect("Failed to read line");
+        match interpreter.eval(&*src) {
+            Ok(obj) => println!(""),
+            Err(err) => println!("Error: {:?}", err),
+        }
         // log::trace!("src: {:?}", src);
         // match compiler.compile(&*src) {
         //     Ok(chunk) => match vm.exec(chunk) {
