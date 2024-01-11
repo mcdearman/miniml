@@ -13,6 +13,15 @@ pub fn repl() {
         io::stdin()
             .read_line(&mut src)
             .expect("Failed to read line");
+        match src.trim() {
+            "db" => {
+                println!("db: {:?}\n", interpreter.db());
+                src.clear();
+                continue;
+            }
+            "exit" => break,
+            _ => (),
+        }
         match interpreter.eval(&*src) {
             Ok(obj) => println!(""),
             Err(err) => println!("Error: {:?}", err),

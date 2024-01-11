@@ -543,6 +543,10 @@ impl Interpreter {
         println!("res: {:#?}", res);
         Ok(())
     }
+
+    pub fn db(&self) -> Rc<RefCell<dyn Database>> {
+        self.db.clone()
+    }
 }
 
 impl Default for Interpreter {

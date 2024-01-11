@@ -10,8 +10,12 @@ let xs = [1, 2, 3]
 -- tuples
 let t = (1, 2)
 
--- records
-let r = { x = 1, y = 2 }
+-- maps
+-- the keys here are symbols
+let r = { x: 1, y: 2 }
+
+-- symbols
+let s = :foo
 
 -- Binary operators
 let a = 1 + 2 * 3^2 - 4 / 5 % 10
@@ -95,10 +99,34 @@ type Expr =
 -- product types
 type Pair a b = Pair a b
 
--- OOP
--- class
-class Stack T =
-  
+-- typeclass
+class Eq T where
+  (==) : T -> T -> Bool
+  (!=) : T -> T -> Bool = !(==)
+
+class Ord T where
+  (<) : T -> T -> Bool
+  (<=) : T -> T -> Bool
+  (>) : T -> T -> Bool
+  (>=) : T -> T -> Bool
+
+class Add T U V where
+  (+) : T -> U -> V
+
+-- class Num T where
+--   (+) : T -> T -> T
+--   (-) : T -> T -> T
+--   (*) : T -> T -> T
+--   (/) : T -> T -> T
+--   (%) : T -> T -> T
+--   (^) : T -> T -> T
+
+-- implement typeclass
+impl Eq for Int
+  (==) = prim_eq_int
+
+-- subtyping
+type Int <: Num
 
 -- here's all of the mvp ideas in one program
 let foo a b =

@@ -350,14 +350,14 @@ impl Resolver {
                     .insert_or_get(id, InternedString::from(*op));
                 Ok(Expr::new(
                     ExprKind::Apply {
-                        fun: Expr::new(ExprKind::Ident(ident.clone()), *op.span()),
-                        arg: Expr::new(
+                        fun: Expr::new(
                             ExprKind::Apply {
-                                fun: self.resolve_expr(lhs)?,
-                                arg: self.resolve_expr(rhs)?,
+                                fun: Expr::new(ExprKind::Ident(ident.clone()), *op.span()),
+                                arg: self.resolve_expr(lhs)?,
                             },
-                            *expr.span(),
+                            *op.span(),
                         ),
+                        arg: self.resolve_expr(rhs)?,
                     },
                     *expr.span(),
                 ))
