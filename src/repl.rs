@@ -19,6 +19,11 @@ pub fn repl() {
                 src.clear();
                 continue;
             }
+            "res_env" => {
+                println!("res: {:?}\n", interpreter.res_env());
+                src.clear();
+                continue;
+            }
             "exit" => break,
             _ => (),
         }

@@ -1,7 +1,7 @@
 use crate::{
     db::Database,
     parse::parse,
-    rename::{self, Expr, Resolver},
+    rename::{self, Expr, ResError, Resolver},
     utils::{InternedString, Span, UniqueId},
 };
 use itertools::Itertools;
@@ -16,9 +16,40 @@ use std::{
 #[derive(Debug, Clone, PartialEq)]
 pub enum RuntimeError {
     ParseError(Vec<InternedString>),
+    ResError(Vec<ResError>),
     ArityError(usize, usize),
     TypeError(InternedString),
     DivisionByZero,
+}
+
+impl Display for RuntimeError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            RuntimeError::ParseError(errs) => {
+                write!(f, "Parse error:\n")?;
+                for err in errs {
+                    write!(f, "{}\n", err)?;
+                }
+                Ok(())
+            }
+            RuntimeError::ResError(errs) => {
+                write!(f, "Resolve error:\n")?;
+                for err in errs {
+                    write!(f, "{}\n", err)?;
+                }
+                Ok(())
+            }
+            RuntimeError::ArityError(expected, found) => {
+                write!(
+                    f,
+                    "Arity error: expected {} args, found {}",
+                    expected, found
+                )
+            }
+            RuntimeError::TypeError(err) => write!(f, "Type error: {}", err),
+            RuntimeError::DivisionByZero => write!(f, "Division by zero"),
+        }
+    }
 }
 
 pub type RuntimeResult<T> = Result<T, RuntimeError>;
@@ -538,14 +569,30 @@ impl Interpreter {
                     .collect_vec(),
             )
         })?;
-        self.res = Resolver::new(self.res_env.clone(), self.db.clone());
-        let (res, errors) = self.res.resolve(&ast);
+        println!("res_env: {:#?}", self.res_env.borrow());
+        let mut resolver = Resolver::new(self.res_env.clone(), self.db.clone());
+        let (res, errors) = resolver.resolve(&ast);
+        if errors.len() > 0 {
+            return Err(RuntimeError::ResError(errors));
+        }
         println!("res: {:#?}", res);
         Ok(())
     }
 
     pub fn db(&self) -> Rc<RefCell<dyn Database>> {
         self.db.clone()
+    }
+
+    pub fn env(&self) -> Rc<RefCell<Env>> {
+        self.env.clone()
+    }
+
+    pub fn resolver(&self) -> &Resolver {
+        &self.res
+    }
+
+    pub fn res_env(&self) -> Rc<RefCell<rename::Env>> {
+        self.res_env.clone()
     }
 }
 

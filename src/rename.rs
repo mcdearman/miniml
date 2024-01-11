@@ -10,16 +10,47 @@ use crate::{
 };
 use log::trace;
 use num_rational::Rational64;
-use std::{
-    cell::{Ref, RefCell},
-    collections::HashMap,
-    rc::Rc,
-};
+use std::{cell::RefCell, collections::HashMap, fmt::Display, rc::Rc};
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct ResError {
-    pub msg: InternedString,
-    pub span: Span,
+    kind: ResErrorKind,
+    span: Span,
+}
+
+impl ResError {
+    pub fn new(kind: ResErrorKind, span: Span) -> Self {
+        Self { kind, span }
+    }
+
+    pub fn kind(&self) -> &ResErrorKind {
+        &self.kind
+    }
+
+    pub fn span(&self) -> &Span {
+        &self.span
+    }
+}
+
+impl Display for ResError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{:?} @ {}", self.span, self.kind)
+    }
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum ResErrorKind {
+    UnboundName(InternedString),
+}
+
+impl Display for ResErrorKind {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            ResErrorKind::UnboundName(name) => {
+                write!(f, "unbound name '{}'", name)
+            }
+        }
+    }
 }
 
 pub type ResResult<T> = Result<T, ResError>;
@@ -238,6 +269,7 @@ impl Resolver {
             match self.resolve_decl(decl) {
                 Ok(d) => {
                     // trace!("env: {:#?}", env.borrow());
+                    println!("resolver env: {:#?}", self.env.borrow());
                     decls.push(d);
                 }
                 Err(err) => {
@@ -306,13 +338,10 @@ impl Resolver {
                         expr.span().clone(),
                     ))
                 } else {
-                    Err(ResError {
-                        msg: InternedString::from(&*format!(
-                            "name '{:?}' is not defined",
-                            ident.name()
-                        )),
-                        span: expr.span().clone(),
-                    })
+                    Err(ResError::new(
+                        ResErrorKind::UnboundName(*ident.name()),
+                        *expr.span(),
+                    ))
                 }
             }
             parse::ExprKind::Apply { fun, arg } => Ok(Expr::new(
