@@ -570,8 +570,7 @@ impl Interpreter {
             )
         })?;
         println!("res_env: {:#?}", self.res_env.borrow());
-        let mut resolver = Resolver::new(self.res_env.clone(), self.db.clone());
-        let (res, errors) = resolver.resolve(&ast);
+        let (res, errors) = self.res.resolve(self.res_env.clone(), &ast);
         if errors.len() > 0 {
             return Err(RuntimeError::ResError(errors));
         }
@@ -604,7 +603,7 @@ impl Default for Interpreter {
             src: InternedString::from(""),
             env: Env::new(),
             res_env: res_env.clone(),
-            res: Resolver::new(res_env.clone(), db.clone()),
+            res: Resolver::new(db.clone()),
             db,
         }
     }

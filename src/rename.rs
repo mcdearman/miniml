@@ -10,7 +10,12 @@ use crate::{
 };
 use log::trace;
 use num_rational::Rational64;
-use std::{cell::RefCell, collections::HashMap, fmt::Display, rc::Rc};
+use std::{
+    cell::{Ref, RefCell},
+    collections::HashMap,
+    fmt::Display,
+    rc::Rc,
+};
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct ResError {
@@ -253,27 +258,30 @@ pub enum DeclKind {
 
 #[derive(Debug)]
 pub struct Resolver {
-    env: Rc<RefCell<Env>>,
     db: Rc<RefCell<dyn Database>>,
 }
 
 impl Resolver {
-    pub fn new(env: Rc<RefCell<Env>>, db: Rc<RefCell<dyn Database>>) -> Self {
-        Self { env, db }
+    pub fn new(db: Rc<RefCell<dyn Database>>) -> Self {
+        Self { db }
     }
 
-    pub fn resolve(&mut self, root: &parse::Root) -> (Option<Root>, Vec<ResError>) {
+    pub fn resolve(
+        &mut self,
+        env: Rc<RefCell<Env>>,
+        root: &parse::Root,
+    ) -> (Option<Root>, Vec<ResError>) {
         let mut errors = vec![];
         let mut decls = vec![];
         for decl in root.decls() {
-            match self.resolve_decl(decl) {
+            match self.resolve_decl(env.clone(), decl) {
                 Ok(d) => {
                     // trace!("env: {:#?}", env.borrow());
-                    println!("resolver env: {:#?}", self.env.borrow());
+                    println!("resolver env: {:#?}", env.borrow());
                     decls.push(d);
                 }
                 Err(err) => {
-                    trace!("env: {:#?}", self.env.borrow());
+                    trace!("env: {:#?}", env.borrow());
                     errors.push(err)
                 }
             }
@@ -291,33 +299,29 @@ impl Resolver {
         }
     }
 
-    fn resolve_decl(&mut self, decl: &parse::Decl) -> ResResult<Decl> {
-        trace!("decl env: {:#?}", self.env.borrow());
+    fn resolve_decl(&mut self, env: Rc<RefCell<Env>>, decl: &parse::Decl) -> ResResult<Decl> {
+        trace!("decl env: {:#?}", env.borrow());
         match decl.kind() {
             parse::DeclKind::Let { name, expr } => match expr.kind() {
                 parse::ExprKind::Lambda { .. } => {
-                    let name = Ident::new(
-                        self.env.borrow_mut().define(name.name().clone()),
-                        *name.span(),
-                    );
-                    self.env = Env::new_with_parent(self.env.clone());
-                    let expr = self.resolve_expr(expr)?;
+                    let name =
+                        Ident::new(env.borrow_mut().define(name.name().clone()), *name.span());
+                    let let_env = Env::new_with_parent(env.clone());
+                    let expr = self.resolve_expr(let_env.clone(), expr)?;
                     Ok(Decl::new(DeclKind::Let { name, expr }, decl.span().clone()))
                 }
                 _ => {
-                    self.env = Env::new_with_parent(self.env.clone());
-                    let expr = self.resolve_expr(expr)?;
-                    let name = Ident::new(
-                        self.env.borrow_mut().define(name.name().clone()),
-                        *name.span(),
-                    );
+                    let let_env = Env::new_with_parent(env.clone());
+                    let expr = self.resolve_expr(let_env.clone(), expr)?;
+                    let name =
+                        Ident::new(env.borrow_mut().define(name.name().clone()), *name.span());
                     Ok(Decl::new(DeclKind::Let { name, expr }, decl.span().clone()))
                 }
             },
         }
     }
 
-    fn resolve_expr(&mut self, expr: &parse::Expr) -> ResResult<Expr> {
+    fn resolve_expr(&mut self, env: Rc<RefCell<Env>>, expr: &parse::Expr) -> ResResult<Expr> {
         match expr.kind() {
             parse::ExprKind::Lit(l) => match l {
                 parse::Lit::Num(n) => {
@@ -332,7 +336,7 @@ impl Resolver {
                 )),
             },
             parse::ExprKind::Ident(ident) => {
-                if let Some(name) = self.env.borrow().find(ident.name()) {
+                if let Some(name) = env.borrow().find(ident.name()) {
                     Ok(Expr::new(
                         ExprKind::Ident(Ident::new(name, expr.span().clone())),
                         expr.span().clone(),
@@ -346,16 +350,13 @@ impl Resolver {
             }
             parse::ExprKind::Apply { fun, arg } => Ok(Expr::new(
                 ExprKind::Apply {
-                    fun: self.resolve_expr(fun)?,
-                    arg: self.resolve_expr(arg)?,
+                    fun: self.resolve_expr(env.clone(), fun)?,
+                    arg: self.resolve_expr(env.clone(), arg)?,
                 },
                 *expr.span(),
             )),
             parse::ExprKind::Unary { op, expr } => {
-                let id = self
-                    .env
-                    .borrow_mut()
-                    .define_if_absent(InternedString::from(*op));
+                let id = env.borrow_mut().define_if_absent(InternedString::from(*op));
                 let ident = Ident::new(id, *op.span());
                 self.db
                     .borrow_mut()
@@ -363,16 +364,13 @@ impl Resolver {
                 Ok(Expr::new(
                     ExprKind::Apply {
                         fun: Expr::new(ExprKind::Ident(ident.clone()), *op.span()),
-                        arg: self.resolve_expr(expr)?,
+                        arg: self.resolve_expr(env.clone(), expr)?,
                     },
                     *expr.span(),
                 ))
             }
             parse::ExprKind::Binary { op, lhs, rhs } => {
-                let id = self
-                    .env
-                    .borrow_mut()
-                    .define_if_absent(InternedString::from(*op));
+                let id = env.borrow_mut().define_if_absent(InternedString::from(*op));
                 let ident = Ident::new(id, *op.span());
                 self.db
                     .borrow_mut()
@@ -382,32 +380,30 @@ impl Resolver {
                         fun: Expr::new(
                             ExprKind::Apply {
                                 fun: Expr::new(ExprKind::Ident(ident.clone()), *op.span()),
-                                arg: self.resolve_expr(lhs)?,
+                                arg: self.resolve_expr(env.clone(), lhs)?,
                             },
                             *op.span(),
                         ),
-                        arg: self.resolve_expr(rhs)?,
+                        arg: self.resolve_expr(env.clone(), rhs)?,
                     },
                     *expr.span(),
                 ))
             }
             parse::ExprKind::If { cond, then, else_ } => Ok(Expr::new(
                 ExprKind::If {
-                    cond: self.resolve_expr(cond)?,
-                    then: self.resolve_expr(then)?,
-                    else_: self.resolve_expr(else_)?,
+                    cond: self.resolve_expr(env.clone(), cond)?,
+                    then: self.resolve_expr(env.clone(), then)?,
+                    else_: self.resolve_expr(env.clone(), else_)?,
                 },
                 *expr.span(),
             )),
             parse::ExprKind::Let { name, expr, body } => match expr.kind() {
                 parse::ExprKind::Lambda { .. } => {
-                    let name = Ident::new(
-                        self.env.borrow_mut().define(name.name().clone()),
-                        *name.span(),
-                    );
-                    self.env = Env::new_with_parent(self.env.clone());
-                    let res_expr = self.resolve_expr(&expr)?;
-                    let body = self.resolve_expr(&body)?;
+                    let name =
+                        Ident::new(env.borrow_mut().define(name.name().clone()), *name.span());
+                    let let_env = Env::new_with_parent(env.clone());
+                    let res_expr = self.resolve_expr(let_env.clone(), &expr)?;
+                    let body = self.resolve_expr(let_env.clone(), &body)?;
                     Ok(Expr::new(
                         ExprKind::Let {
                             name,
@@ -418,13 +414,11 @@ impl Resolver {
                     ))
                 }
                 _ => {
-                    self.env = Env::new_with_parent(self.env.clone());
-                    let res_expr = self.resolve_expr(expr)?;
-                    let name = Ident::new(
-                        self.env.borrow_mut().define(name.name().clone()),
-                        *name.span(),
-                    );
-                    let body = self.resolve_expr(body)?;
+                    let let_env = Env::new_with_parent(env.clone());
+                    let res_expr = self.resolve_expr(let_env.clone(), expr)?;
+                    let name =
+                        Ident::new(env.borrow_mut().define(name.name().clone()), *name.span());
+                    let body = self.resolve_expr(let_env.clone(), body)?;
                     Ok(Expr::new(
                         ExprKind::Let {
                             name,
@@ -436,15 +430,13 @@ impl Resolver {
                 }
             },
             parse::ExprKind::Lambda { param, expr } => {
-                self.env = Env::new_with_parent(self.env.clone());
-                let param = Ident::new(
-                    self.env.borrow_mut().define(param.name().clone()),
-                    *param.span(),
-                );
+                let lam_env = Env::new_with_parent(env.clone());
+                let param =
+                    Ident::new(env.borrow_mut().define(param.name().clone()), *param.span());
                 Ok(Expr::new(
                     ExprKind::Lambda {
                         param,
-                        expr: self.resolve_expr(expr)?,
+                        expr: self.resolve_expr(lam_env.clone(), expr)?,
                     },
                     *expr.span(),
                 ))
@@ -462,8 +454,8 @@ mod tests {
     fn test_helper(src: &str) -> super::Root {
         let ast = parse(src).expect("parse errors");
         let db = Rc::new(RefCell::new(HashBase::new()));
-        let mut resolver = Resolver::new(Env::new(), db.clone());
-        let (res, errors) = resolver.resolve(&ast);
+        let mut resolver = Resolver::new(db.clone());
+        let (res, errors) = resolver.resolve(Env::new(), &ast);
         if !errors.is_empty() {
             panic!("resolve error: {:?}", errors);
         }
@@ -479,8 +471,8 @@ mod tests {
     fn res_let_error() {
         let ast = parse("let x = x").expect("parse errors");
         let db = Rc::new(RefCell::new(HashBase::new()));
-        let mut r = Resolver::new(Env::new(), db.clone());
-        let (_, errors) = r.resolve(&ast);
+        let mut r = Resolver::new(db.clone());
+        let (_, errors) = r.resolve(Env::new(), &ast);
         assert!(!errors.is_empty());
     }
 
