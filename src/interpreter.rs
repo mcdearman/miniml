@@ -1,6 +1,6 @@
 use crate::{
     db::Database,
-    parse::parse,
+    parse::{self, parse},
     rename::{self, Expr, ResError, Resolver},
     utils::{InternedString, Span, UniqueId},
 };
@@ -520,40 +520,14 @@ impl Display for Lit {
     }
 }
 
-#[derive(Debug, Clone)]
-pub struct HashBase {
-    map: HashMap<UniqueId, InternedString>,
-}
-
-impl HashBase {
-    pub fn new() -> Self {
-        Self {
-            map: HashMap::new(),
-        }
-    }
-}
-
-impl Database for HashBase {
-    fn insert(&mut self, key: UniqueId, value: InternedString) {
-        self.map.insert(key, value);
-    }
-
-    fn get(&self, key: UniqueId) -> Option<&InternedString> {
-        self.map.get(&key)
-    }
-
-    fn remove(&mut self, key: UniqueId) -> Option<InternedString> {
-        self.map.remove(&key)
-    }
-}
-
 #[derive(Debug)]
 pub struct Interpreter {
     src: InternedString,
+    ast: Option<parse::Root>,
     env: Rc<RefCell<Env>>,
     res_env: Rc<RefCell<rename::Env>>,
     res: Resolver,
-    db: Rc<RefCell<dyn Database>>,
+    db: Rc<RefCell<Database>>,
 }
 
 impl Interpreter {
@@ -569,6 +543,7 @@ impl Interpreter {
                     .collect_vec(),
             )
         })?;
+        self.ast = Some(ast.clone());
         println!("res_env: {:#?}", self.res_env.borrow());
         let (res, errors) = self.res.resolve(self.res_env.clone(), &ast);
         if errors.len() > 0 {
@@ -578,8 +553,12 @@ impl Interpreter {
         Ok(())
     }
 
-    pub fn db(&self) -> Rc<RefCell<dyn Database>> {
+    pub fn db(&self) -> Rc<RefCell<Database>> {
         self.db.clone()
+    }
+
+    pub fn ast(&self) -> Option<parse::Root> {
+        self.ast.clone()
     }
 
     pub fn env(&self) -> Rc<RefCell<Env>> {
@@ -597,10 +576,11 @@ impl Interpreter {
 
 impl Default for Interpreter {
     fn default() -> Self {
-        let db = Rc::new(RefCell::new(HashBase::new()));
+        let db = Rc::new(RefCell::new(Database::new()));
         let res_env = rename::Env::new();
         Self {
             src: InternedString::from(""),
+            ast: None,
             env: Env::new(),
             res_env: res_env.clone(),
             res: Resolver::new(db.clone()),

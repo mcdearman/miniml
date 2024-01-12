@@ -113,9 +113,19 @@ impl Env {
     //     self.data.insert(name, id);
     // }
 
+    fn define_if_absent_in_scope(&mut self, name: InternedString) -> Option<UniqueId> {
+        if let Some(id) = self.find_in_scope(&name) {
+            Some(id)
+        } else {
+            let id = UniqueId::gen();
+            self.data.insert(name, id);
+            Some(id)
+        }
+    }
+
     fn define_if_absent(&mut self, name: InternedString) -> UniqueId {
-        if let Some(id) = self.data.get(&name) {
-            *id
+        if let Some(id) = self.find(&name) {
+            id
         } else {
             let id = UniqueId::gen();
             self.data.insert(name, id);
@@ -258,11 +268,11 @@ pub enum DeclKind {
 
 #[derive(Debug)]
 pub struct Resolver {
-    db: Rc<RefCell<dyn Database>>,
+    db: Rc<RefCell<Database>>,
 }
 
 impl Resolver {
-    pub fn new(db: Rc<RefCell<dyn Database>>) -> Self {
+    pub fn new(db: Rc<RefCell<Database>>) -> Self {
         Self { db }
     }
 
@@ -448,12 +458,12 @@ impl Resolver {
 
 mod tests {
     use super::{Env, Resolver};
-    use crate::{interpreter::HashBase, parse::parse};
+    use crate::{db::Database, parse::parse};
     use std::{cell::RefCell, rc::Rc};
 
     fn test_helper(src: &str) -> super::Root {
         let ast = parse(src).expect("parse errors");
-        let db = Rc::new(RefCell::new(HashBase::new()));
+        let db = Rc::new(RefCell::new(Database::new()));
         let mut resolver = Resolver::new(db.clone());
         let (res, errors) = resolver.resolve(Env::new(), &ast);
         if !errors.is_empty() {
@@ -470,7 +480,7 @@ mod tests {
     #[test]
     fn res_let_error() {
         let ast = parse("let x = x").expect("parse errors");
-        let db = Rc::new(RefCell::new(HashBase::new()));
+        let db = Rc::new(RefCell::new(Database::new()));
         let mut r = Resolver::new(db.clone());
         let (_, errors) = r.resolve(Env::new(), &ast);
         assert!(!errors.is_empty());
