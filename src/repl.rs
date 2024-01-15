@@ -1,6 +1,5 @@
-use std::io::{self, Write};
-
 use crate::interpreter::Interpreter;
+use std::io::{self, Write};
 
 pub fn repl() {
     let mut src = String::new();
