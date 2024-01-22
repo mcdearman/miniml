@@ -1,7 +1,7 @@
 use crate::{
     db::Database,
     parse::{self, parse},
-    rename::{self, Expr, ResError, Resolver},
+    rename::{self, Expr, ExprKind, ResError, Resolver, Root},
     utils::{InternedString, Span, UniqueId},
 };
 use itertools::Itertools;
@@ -102,132 +102,6 @@ impl Debug for Env {
         builder.finish()
     }
 }
-
-// pub fn default_ctx(ops: HashMap<InternedString, UniqueId>) -> infer::Context {
-//     let mut ctx = infer::Context::new();
-//     ctx.extend(
-//         ops.get(&InternedString::from("+")).unwrap().clone(),
-//         infer::Scheme::new(
-//             vec![],
-//             infer::Type::Lambda(
-//                 vec![infer::Type::Num, infer::Type::Num],
-//                 Box::new(infer::Type::Num),
-//             ),
-//         ),
-//     );
-//     ctx.extend(
-//         ops.get(&InternedString::from("-")).unwrap().clone(),
-//         infer::Scheme::new(
-//             vec![],
-//             infer::Type::Lambda(
-//                 vec![infer::Type::Num, infer::Type::Num],
-//                 Box::new(infer::Type::Num),
-//             ),
-//         ),
-//     );
-//     ctx.extend(
-//         ops.get(&InternedString::from("*")).unwrap().clone(),
-//         infer::Scheme::new(
-//             vec![],
-//             infer::Type::Lambda(
-//                 vec![infer::Type::Num, infer::Type::Num],
-//                 Box::new(infer::Type::Num),
-//             ),
-//         ),
-//     );
-//     ctx.extend(
-//         ops.get(&InternedString::from("/")).unwrap().clone(),
-//         infer::Scheme::new(
-//             vec![],
-//             infer::Type::Lambda(
-//                 vec![infer::Type::Num, infer::Type::Num],
-//                 Box::new(infer::Type::Num),
-//             ),
-//         ),
-//     );
-//     ctx.extend(
-//         ops.get(&InternedString::from("%")).unwrap().clone(),
-//         infer::Scheme::new(
-//             vec![],
-//             infer::Type::Lambda(
-//                 vec![infer::Type::Num, infer::Type::Num],
-//                 Box::new(infer::Type::Num),
-//             ),
-//         ),
-//     );
-//     let var = TyVar::from(0);
-//     ctx.extend(
-//         ops.get(&InternedString::from("==")).unwrap().clone(),
-//         infer::Scheme::new(
-//             vec![var],
-//             infer::Type::Lambda(
-//                 vec![infer::Type::Var(var), infer::Type::Var(var)],
-//                 Box::new(infer::Type::Bool),
-//             ),
-//         ),
-//     );
-//     ctx.extend(
-//         ops.get(&InternedString::from("!=")).unwrap().clone(),
-//         infer::Scheme::new(
-//             vec![var],
-//             infer::Type::Lambda(
-//                 vec![infer::Type::Var(var), infer::Type::Var(var)],
-//                 Box::new(infer::Type::Bool),
-//             ),
-//         ),
-//     );
-//     ctx.extend(
-//         ops.get(&InternedString::from("<")).unwrap().clone(),
-//         infer::Scheme::new(
-//             vec![var],
-//             infer::Type::Lambda(
-//                 vec![infer::Type::Var(var), infer::Type::Var(var)],
-//                 Box::new(infer::Type::Bool),
-//             ),
-//         ),
-//     );
-//     ctx.extend(
-//         ops.get(&InternedString::from(">")).unwrap().clone(),
-//         infer::Scheme::new(
-//             vec![var],
-//             infer::Type::Lambda(
-//                 vec![infer::Type::Var(var), infer::Type::Var(var)],
-//                 Box::new(infer::Type::Bool),
-//             ),
-//         ),
-//     );
-//     ctx.extend(
-//         ops.get(&InternedString::from("<=")).unwrap().clone(),
-//         infer::Scheme::new(
-//             vec![var],
-//             infer::Type::Lambda(
-//                 vec![infer::Type::Var(var), infer::Type::Var(var)],
-//                 Box::new(infer::Type::Bool),
-//             ),
-//         ),
-//     );
-//     ctx.extend(
-//         ops.get(&InternedString::from(">=")).unwrap().clone(),
-//         infer::Scheme::new(
-//             vec![var],
-//             infer::Type::Lambda(
-//                 vec![infer::Type::Var(var), infer::Type::Var(var)],
-//                 Box::new(infer::Type::Bool),
-//             ),
-//         ),
-//     );
-//     ctx.extend(
-//         ops.get(&InternedString::from("print")).unwrap().clone(),
-//         infer::Scheme::new(
-//             vec![],
-//             infer::Type::Lambda(
-//                 vec![infer::Type::Var(TyVar::from(0))],
-//                 Box::new(infer::Type::Unit),
-//             ),
-//         ),
-//     );
-//     ctx
-// }
 
 pub fn default_env(ops: HashMap<InternedString, UniqueId>) -> Rc<RefCell<Env>> {
     let env = Env::new();
@@ -520,256 +394,187 @@ impl Display for Lit {
     }
 }
 
-#[derive(Debug)]
-pub struct Interpreter {
-    src: InternedString,
-    ast: Option<parse::Root>,
+pub fn eval<'src>(
+    src: &'src str,
+    repl_src: &'src str,
     env: Rc<RefCell<Env>>,
-    res_env: Rc<RefCell<rename::Env>>,
-    res: Resolver,
-    db: Rc<RefCell<Database>>,
-}
-
-impl Interpreter {
-    pub fn new() -> Self {
-        Self::default()
-    }
-
-    pub fn eval(&mut self, src: &str) -> RuntimeResult<()> {
-        let ast = parse(src).map_err(|errs| {
-            RuntimeError::ParseError(
-                errs.into_iter()
-                    .map(|e| format!("{}", e).into())
-                    .collect_vec(),
-            )
-        })?;
-        self.ast = Some(ast.clone());
-        println!("res_env: {:#?}", self.res_env.borrow());
-        let (res, errors) = self.res.resolve(self.res_env.clone(), &ast);
-        if errors.len() > 0 {
-            return Err(RuntimeError::ResError(errors));
-        }
-        println!("res: {:#?}", res);
-        Ok(())
-    }
-
-    pub fn db(&self) -> Rc<RefCell<Database>> {
-        self.db.clone()
-    }
-
-    pub fn ast(&self) -> Option<parse::Root> {
-        self.ast.clone()
-    }
-
-    pub fn env(&self) -> Rc<RefCell<Env>> {
-        self.env.clone()
-    }
-
-    pub fn resolver(&self) -> &Resolver {
-        &self.res
-    }
-
-    pub fn res_env(&self) -> Rc<RefCell<rename::Env>> {
-        self.res_env.clone()
-    }
-}
-
-impl Default for Interpreter {
-    fn default() -> Self {
-        let db = Rc::new(RefCell::new(Database::new()));
-        let res_env = rename::Env::new();
-        Self {
-            src: InternedString::from(""),
-            ast: None,
-            env: Env::new(),
-            res_env: res_env.clone(),
-            res: Resolver::new(db.clone()),
-            db,
+    root: Root,
+) -> RuntimeResult<Value> {
+    let mut val = Value::Unit;
+    for decl in root.decls() {
+        match decl.kind() {
+            Item::Expr(expr) => {
+                val = eval_expr(src, repl_src, env.clone(), Node::new(expr, item.span()))?;
+            }
+            Item::Def { pat, expr, .. } => {
+                let value = eval_expr(src, repl_src, env.clone(), expr)?;
+                let ds = destructure_pattern(env.clone(), pat, Node::new(value, item.span()));
+                // env.borrow_mut().insert(name.inner().clone(), value);
+                val = Value::Unit;
+            }
         }
     }
+    Ok(val)
 }
 
-// pub fn eval<'src>(
-//     src: &'src str,
-//     repl_src: &'src str,
-//     env: Rc<RefCell<Env>>,
-//     root: Root,
-// ) -> RuntimeResult<Value> {
-//     let mut val = Value::Unit;
-//     for item in &root.items {
-//         match item.inner().clone() {
-//             Item::Expr(expr) => {
-//                 val = eval_expr(src, repl_src, env.clone(), Node::new(expr, item.span()))?;
-//             }
-//             Item::Def { pat, expr, .. } => {
-//                 let value = eval_expr(src, repl_src, env.clone(), expr)?;
-//                 let ds = destructure_pattern(env.clone(), pat, Node::new(value, item.span()));
-//                 // env.borrow_mut().insert(name.inner().clone(), value);
-//                 val = Value::Unit;
-//             }
-//         }
-//     }
-//     Ok(val)
-// }
+fn eval_expr<'src>(
+    src: &'src str,
+    repl_src: &'src str,
+    mut env: Rc<RefCell<Env>>,
+    mut expr: Expr,
+) -> RuntimeResult<Value> {
+    let val: Value;
+    'tco: loop {
+        val = match expr.kind() {
+            ExprKind::Lit { lit, .. } => match lit {
+                rename::Lit::Num(num) => Value::Lit(Lit::Num(num.clone())),
+                rename::Lit::Bool(b) => Value::Lit(Lit::Bool(b)),
+                rename::Lit::String(s) => Value::Lit(Lit::String(s.clone())),
+            },
+            Expr::Ident { name, .. } => {
+                if let Some(value) = env.borrow().get(&name) {
+                    value
+                } else {
+                    return Err(
+                        format!("Identifier '{}' not found", repl_src[name.span()].trim()).into(),
+                    );
+                }
+            }
+            Expr::Lambda { params, body, .. } => Value::Lambda {
+                env: env.clone(),
+                params,
+                body,
+            },
+            Expr::Apply { fun, args, .. } => {
+                let fun = eval_expr(src, repl_src, env.clone(), fun)?;
+                // println!("fun: {:?}", fun);
+                match fun {
+                    Value::Lambda {
+                        env: lam_env,
+                        params,
+                        body,
+                    } => {
+                        let arg_env = Env::new_with_parent(lam_env.clone());
+                        for (p, arg) in params.iter().zip(args) {
+                            if !destructure_pattern(
+                                arg_env.clone(),
+                                p.clone(),
+                                Node::new(
+                                    eval_expr(src, repl_src, env.clone(), arg.clone())?,
+                                    expr.span(),
+                                ),
+                            ) {
+                                return Err(format!("Could not destructure pattern").into());
+                            }
+                        }
 
-// fn eval_expr<'src>(
-//     src: &'src str,
-//     repl_src: &'src str,
-//     mut env: Rc<RefCell<Env>>,
-//     mut expr: Node<Expr>,
-// ) -> RuntimeResult<Value> {
-//     let val: Value;
-//     'tco: loop {
-//         val = match expr.inner().clone() {
-//             Expr::Lit { lit, .. } => match lit {
-//                 infer::Lit::Num(num) => Value::Lit(Lit::Num(num.clone())),
-//                 infer::Lit::Bool(b) => Value::Lit(Lit::Bool(b)),
-//                 infer::Lit::String(s) => Value::Lit(Lit::String(s.clone())),
-//             },
-//             Expr::Ident { name, .. } => {
-//                 if let Some(value) = env.borrow().get(&name) {
-//                     value
-//                 } else {
-//                     return Err(
-//                         format!("Identifier '{}' not found", repl_src[name.span()].trim()).into(),
-//                     );
-//                 }
-//             }
-//             Expr::Lambda { params, body, .. } => Value::Lambda {
-//                 env: env.clone(),
-//                 params,
-//                 body,
-//             },
-//             Expr::Apply { fun, args, .. } => {
-//                 let fun = eval_expr(src, repl_src, env.clone(), fun)?;
-//                 // println!("fun: {:?}", fun);
-//                 match fun {
-//                     Value::Lambda {
-//                         env: lam_env,
-//                         params,
-//                         body,
-//                     } => {
-//                         let arg_env = Env::new_with_parent(lam_env.clone());
-//                         for (p, arg) in params.iter().zip(args) {
-//                             if !destructure_pattern(
-//                                 arg_env.clone(),
-//                                 p.clone(),
-//                                 Node::new(
-//                                     eval_expr(src, repl_src, env.clone(), arg.clone())?,
-//                                     expr.span(),
-//                                 ),
-//                             ) {
-//                                 return Err(format!("Could not destructure pattern").into());
-//                             }
-//                         }
+                        expr = body;
+                        env = arg_env;
+                        continue 'tco;
+                    }
+                    Value::NativeFn(fun) => {
+                        let mut new_args = Vec::new();
+                        for arg in args {
+                            new_args.push(eval_expr(src, repl_src, env.clone(), arg)?);
+                        }
+                        fun(new_args)?
+                    }
+                    _ => {
+                        return Err(format!("Expected lambda, found {:?}", fun).into());
+                    }
+                }
+            }
+            Expr::Let {
+                pat,
+                expr: let_expr,
+                body,
+                ..
+            } => {
+                let value = eval_expr(src, repl_src, env.clone(), let_expr.clone())?;
+                if destructure_pattern(env.clone(), pat, Node::new(value, let_expr.span())) {
+                    expr = body;
+                    continue 'tco;
+                } else {
+                    return Err(format!("Could not destructure pattern").into());
+                }
+            }
+            Expr::Fn {
+                name,
+                params,
+                expr,
+                body,
+                ty,
+            } => {
+                let value = Value::Lambda {
+                    env: Env::new_with_parent(env.clone()),
+                    params,
+                    body: expr.clone(),
+                };
+                env.borrow_mut().insert(name.inner().clone(), value);
+                eval_expr(src, repl_src, env, body)?
+            }
+            Expr::Match {
+                expr: mexpr,
+                cases,
+                ty,
+            } => {
+                let val = eval_expr(src, repl_src, env.clone(), mexpr.clone())?;
+                let match_env = Env::new_with_parent(env.clone());
+                for case in cases {
+                    if destructure_pattern(
+                        match_env.clone(),
+                        case.pattern.clone(),
+                        Node::new(val.clone(), mexpr.span()),
+                    ) {
+                        env = match_env;
+                        expr = case.expr.clone();
+                        continue 'tco;
+                    } else {
+                        continue;
+                    }
+                }
+                return Err(format!("No matching pattern found for {:?}", val).into());
+            }
+            Expr::If {
+                cond, then, else_, ..
+            } => {
+                let cond = eval_expr(src, repl_src, env.clone(), cond)?;
+                match cond {
+                    Value::Lit(Lit::Bool(true)) => {
+                        expr = then;
+                        continue 'tco;
+                    }
+                    Value::Lit(Lit::Bool(false)) => {
+                        expr = else_;
+                        continue 'tco;
+                    }
+                    _ => {
+                        return Err(format!("Expected bool, found {:?}", cond).into());
+                    }
+                }
+            }
+            Expr::Unit => Value::Unit,
+        };
 
-//                         expr = body;
-//                         env = arg_env;
-//                         continue 'tco;
-//                     }
-//                     Value::NativeFn(fun) => {
-//                         let mut new_args = Vec::new();
-//                         for arg in args {
-//                             new_args.push(eval_expr(src, repl_src, env.clone(), arg)?);
-//                         }
-//                         fun(new_args)?
-//                     }
-//                     _ => {
-//                         return Err(format!("Expected lambda, found {:?}", fun).into());
-//                     }
-//                 }
-//             }
-//             Expr::Let {
-//                 pat,
-//                 expr: let_expr,
-//                 body,
-//                 ..
-//             } => {
-//                 let value = eval_expr(src, repl_src, env.clone(), let_expr.clone())?;
-//                 if destructure_pattern(env.clone(), pat, Node::new(value, let_expr.span())) {
-//                     expr = body;
-//                     continue 'tco;
-//                 } else {
-//                     return Err(format!("Could not destructure pattern").into());
-//                 }
-//             }
-//             Expr::Fn {
-//                 name,
-//                 params,
-//                 expr,
-//                 body,
-//                 ty,
-//             } => {
-//                 let value = Value::Lambda {
-//                     env: Env::new_with_parent(env.clone()),
-//                     params,
-//                     body: expr.clone(),
-//                 };
-//                 env.borrow_mut().insert(name.inner().clone(), value);
-//                 eval_expr(src, repl_src, env, body)?
-//             }
-//             Expr::Match {
-//                 expr: mexpr,
-//                 cases,
-//                 ty,
-//             } => {
-//                 let val = eval_expr(src, repl_src, env.clone(), mexpr.clone())?;
-//                 let match_env = Env::new_with_parent(env.clone());
-//                 for case in cases {
-//                     if destructure_pattern(
-//                         match_env.clone(),
-//                         case.pattern.clone(),
-//                         Node::new(val.clone(), mexpr.span()),
-//                     ) {
-//                         env = match_env;
-//                         expr = case.expr.clone();
-//                         continue 'tco;
-//                     } else {
-//                         continue;
-//                     }
-//                 }
-//                 return Err(format!("No matching pattern found for {:?}", val).into());
-//             }
-//             Expr::If {
-//                 cond, then, else_, ..
-//             } => {
-//                 let cond = eval_expr(src, repl_src, env.clone(), cond)?;
-//                 match cond {
-//                     Value::Lit(Lit::Bool(true)) => {
-//                         expr = then;
-//                         continue 'tco;
-//                     }
-//                     Value::Lit(Lit::Bool(false)) => {
-//                         expr = else_;
-//                         continue 'tco;
-//                     }
-//                     _ => {
-//                         return Err(format!("Expected bool, found {:?}", cond).into());
-//                     }
-//                 }
-//             }
-//             Expr::Unit => Value::Unit,
-//         };
+        break 'tco;
+    }
+    Ok(val)
+}
 
-//         break 'tco;
-//     }
-//     Ok(val)
-// }
-
-// fn destructure_pattern(env: Rc<RefCell<Env>>, pat: Node<infer::Pattern>, val: Node<Value>) -> bool {
+// fn destructure_pattern(env: Rc<RefCell<Env>>, pat: Node<rename::Pattern>, val: Node<Value>) -> bool {
 //     match pat.inner().clone() {
-//         infer::Pattern::Lit(l) => {
+//         rename::Pattern::Lit(l) => {
 //             if let Value::Lit(v) = val.inner() {
 //                 l == *v
 //             } else {
 //                 false
 //             }
 //         }
-//         infer::Pattern::Ident(name) => {
+//         rename::Pattern::Ident(name) => {
 //             env.borrow_mut().insert(name, val.inner().clone());
 //             true
 //         }
-//         infer::Pattern::Wildcard => true,
-//         infer::Pattern::Unit => Value::Unit == val.inner().clone(),
+//         rename::Pattern::Wildcard => true,
+//         rename::Pattern::Unit => Value::Unit == val.inner().clone(),
 //     }
 // }

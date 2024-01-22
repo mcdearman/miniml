@@ -84,46 +84,9 @@ type Foo = Int
 
 -- record
 type Point = { x : Int, y : Int }
-
--- sum types
-type Option T = Some T | None
-
-type Expr = 
-  | Int Int
-  | Ident String
-  | Binary BinaryOp Expr Expr
-  | Unary UnaryOp Expr
-  | If Expr Expr Expr
-  | Let String Expr Expr
-
--- product types
-type Pair a b = Pair a b
-
--- typeclass
-class Eq T where
-  (==) : T -> T -> Bool
-  (!=) : T -> T -> Bool = !(==)
-
-class Ord T where
-  (<) : T -> T -> Bool
-  (<=) : T -> T -> Bool
-  (>) : T -> T -> Bool
-  (>=) : T -> T -> Bool
-
-class Add T U V where
-  (+) : T -> U -> V
-
--- class Num T where
---   (+) : T -> T -> T
---   (-) : T -> T -> T
---   (*) : T -> T -> T
---   (/) : T -> T -> T
---   (%) : T -> T -> T
---   (^) : T -> T -> T
-
--- implement typeclass
-impl Eq for Int
-  (==) = prim_eq_int
+-- records are just maps with symbols as keys
+-- record access
+let p = { x: 1, y: 2 } in p.x
 
 -- subtyping
 type Int <: Num

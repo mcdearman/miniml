@@ -462,14 +462,17 @@ mod tests {
     use std::{cell::RefCell, rc::Rc};
 
     fn test_helper(src: &str) -> super::Root {
-        let ast = parse(src).expect("parse errors");
-        let db = Rc::new(RefCell::new(Database::new()));
-        let mut resolver = Resolver::new(db.clone());
-        let (res, errors) = resolver.resolve(Env::new(), &ast);
-        if !errors.is_empty() {
-            panic!("resolve error: {:?}", errors);
+        if let (Some(ast), errors) = parse(src) {
+            let db = Rc::new(RefCell::new(Database::new()));
+            let mut resolver = Resolver::new(db.clone());
+            let (res, errors) = resolver.resolve(Env::new(), &ast);
+            if !errors.is_empty() {
+                panic!("resolve error: {:?}", errors);
+            }
+            res.unwrap()
+        } else {
+            panic!("parse error");
         }
-        res.unwrap()
     }
 
     #[test]
@@ -479,11 +482,15 @@ mod tests {
 
     #[test]
     fn res_let_error() {
-        let ast = parse("let x = x").expect("parse errors");
-        let db = Rc::new(RefCell::new(Database::new()));
-        let mut r = Resolver::new(db.clone());
-        let (_, errors) = r.resolve(Env::new(), &ast);
-        assert!(!errors.is_empty());
+        let src = "let x = x";
+        if let (Some(ast), errors) = parse(src) {
+            let db = Rc::new(RefCell::new(Database::new()));
+            let mut r = Resolver::new(db.clone());
+            let (_, errors) = r.resolve(Env::new(), &ast);
+            assert!(!errors.is_empty());
+        } else {
+            panic!("parse error");
+        }
     }
 
     #[test]
