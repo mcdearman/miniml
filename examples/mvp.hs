@@ -55,7 +55,10 @@ f 1
 let x = 1 in let y = 2 in x + y
 
 -- recursion
-let fib n = if n < 2 then 1 else fib (n - 1) + fib (n - 2) in fib 10
+let fib n = 
+  if n < 2 then 1 
+  else fib (n - 1) + fib (n - 2) 
+in fib 10
 
 -- tail recursion
 let fib n = 
