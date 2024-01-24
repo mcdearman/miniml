@@ -2,13 +2,13 @@ root = decl+
 
 decl = let
 
-let = "let" ident+ "=" expr
+let = "let" pat "=" expr
 
 expr = or
 
-or = and ("&&" and)*
+or = and ("or" and)*
 
-and = eq ("||" eq)*
+and = eq ("and" eq)*
 
 eq = cmp (("=" | "!=") cmp)*
 
@@ -28,9 +28,20 @@ atom = ident | lit | if | lambda | letExpr | "(" expr ")"
 
 if = "if" expr "then" expr "else" expr
 
-lambda = "\\" ident+ "->" expr
+lambda = "\\" pat+ "->" expr
 
-letExpr = "let" ident+ "=" expr "in" expr
+letExpr = "let" pat "=" expr "in" expr
+
+match = "match" expr "with" "{" matchCase+ "}"
+
+matchCase = pat "->" expr
+
+pat = wildcard
+    | lit
+    | ident+
+    | "(" pat ")"
+    | "[" pat ("," pat)* "]"
+    | "{" pat ("," pat)* "}"
 
 ident = [a-zA-Z_][a-zA-Z0-9_]*
 
@@ -43,5 +54,7 @@ int = 0 | "-"? [1-9][0-9]*
 str = "(\\.|[^"\\])*"
 
 bool = "true" | "false"
+
+wildcard = "_"
 
 

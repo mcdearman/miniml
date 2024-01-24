@@ -50,12 +50,10 @@ pub enum Token {
     Percent,
     #[token("^")]
     Caret,
-    #[token("||")]
+    #[token("or")]
     Or,
-    #[token("&&")]
+    #[token("and")]
     And,
-    #[token("==")]
-    Eq,
     #[token("!=")]
     Neq,
     #[token("<")]
@@ -353,7 +351,6 @@ impl From<Token> for BinaryOpKind {
             Token::Slash => Self::Div,
             Token::Percent => Self::Rem,
             Token::Caret => Self::Pow,
-            Token::Eq => Self::Eq,
             Token::Neq => Self::Neq,
             Token::Lt => Self::Lt,
             Token::Leq => Self::Lte,
@@ -662,7 +659,7 @@ fn expr_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
             })
             .boxed();
 
-        let op = just(Token::Eq)
+        let op = just(Token::Assign)
             .map(BinaryOpKind::from)
             .or(just(Token::Neq).map(BinaryOpKind::from))
             .map_with_span(BinaryOp::new)

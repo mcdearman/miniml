@@ -1,12 +1,10 @@
 use std::io::{self, Write};
 
-use crate::db::Database;
-
 pub fn repl() {
     let mut src = String::new();
     // let mut compiler = Compiler::default();
     // let mut vm = Interpreter::default();
-    let mut db = Database::new();
+    // let mut db = Database::new();
     loop {
         print!("> ");
         io::stdout().flush().unwrap();
@@ -14,11 +12,11 @@ pub fn repl() {
             .read_line(&mut src)
             .expect("Failed to read line");
         match src.trim() {
-            "db" => {
-                println!("db: {:?}\n", db.clone());
-                src.clear();
-                continue;
-            }
+            // "db" => {
+            //     println!("db: {:?}\n", db.clone());
+            //     src.clear();
+            //     continue;
+            // }
             // "ast" => {
             //     println!("ast: {:?}\n", interpreter.ast());
             //     src.clear();

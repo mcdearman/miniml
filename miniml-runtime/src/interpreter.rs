@@ -394,172 +394,172 @@ impl Display for Lit {
     }
 }
 
-pub fn eval<'src>(
-    src: &'src str,
-    repl_src: &'src str,
-    env: Rc<RefCell<Env>>,
-    root: Root,
-) -> RuntimeResult<Value> {
-    let mut val = Value::Unit;
-    for decl in root.decls() {
-        match decl.kind() {
-            Item::Expr(expr) => {
-                val = eval_expr(src, repl_src, env.clone(), Node::new(expr, item.span()))?;
-            }
-            Item::Def { pat, expr, .. } => {
-                let value = eval_expr(src, repl_src, env.clone(), expr)?;
-                let ds = destructure_pattern(env.clone(), pat, Node::new(value, item.span()));
-                // env.borrow_mut().insert(name.inner().clone(), value);
-                val = Value::Unit;
-            }
-        }
-    }
-    Ok(val)
-}
+// pub fn eval<'src>(
+//     src: &'src str,
+//     repl_src: &'src str,
+//     env: Rc<RefCell<Env>>,
+//     root: Root,
+// ) -> RuntimeResult<Value> {
+//     let mut val = Value::Unit;
+//     for decl in root.decls() {
+//         match decl.kind() {
+//             Item::Expr(expr) => {
+//                 val = eval_expr(src, repl_src, env.clone(), Node::new(expr, item.span()))?;
+//             }
+//             Item::Def { pat, expr, .. } => {
+//                 let value = eval_expr(src, repl_src, env.clone(), expr)?;
+//                 let ds = destructure_pattern(env.clone(), pat, Node::new(value, item.span()));
+//                 // env.borrow_mut().insert(name.inner().clone(), value);
+//                 val = Value::Unit;
+//             }
+//         }
+//     }
+//     Ok(val)
+// }
 
-fn eval_expr<'src>(
-    src: &'src str,
-    repl_src: &'src str,
-    mut env: Rc<RefCell<Env>>,
-    mut expr: Expr,
-) -> RuntimeResult<Value> {
-    let val: Value;
-    'tco: loop {
-        val = match expr.kind() {
-            ExprKind::Lit { lit, .. } => match lit {
-                rename::Lit::Num(num) => Value::Lit(Lit::Num(num.clone())),
-                rename::Lit::Bool(b) => Value::Lit(Lit::Bool(b)),
-                rename::Lit::String(s) => Value::Lit(Lit::String(s.clone())),
-            },
-            Expr::Ident { name, .. } => {
-                if let Some(value) = env.borrow().get(&name) {
-                    value
-                } else {
-                    return Err(
-                        format!("Identifier '{}' not found", repl_src[name.span()].trim()).into(),
-                    );
-                }
-            }
-            Expr::Lambda { params, body, .. } => Value::Lambda {
-                env: env.clone(),
-                params,
-                body,
-            },
-            Expr::Apply { fun, args, .. } => {
-                let fun = eval_expr(src, repl_src, env.clone(), fun)?;
-                // println!("fun: {:?}", fun);
-                match fun {
-                    Value::Lambda {
-                        env: lam_env,
-                        params,
-                        body,
-                    } => {
-                        let arg_env = Env::new_with_parent(lam_env.clone());
-                        for (p, arg) in params.iter().zip(args) {
-                            if !destructure_pattern(
-                                arg_env.clone(),
-                                p.clone(),
-                                Node::new(
-                                    eval_expr(src, repl_src, env.clone(), arg.clone())?,
-                                    expr.span(),
-                                ),
-                            ) {
-                                return Err(format!("Could not destructure pattern").into());
-                            }
-                        }
+// fn eval_expr<'src>(
+//     src: &'src str,
+//     repl_src: &'src str,
+//     mut env: Rc<RefCell<Env>>,
+//     mut expr: Expr,
+// ) -> RuntimeResult<Value> {
+//     let val: Value;
+//     'tco: loop {
+//         val = match expr.kind() {
+//             ExprKind::Lit { lit, .. } => match lit {
+//                 rename::Lit::Num(num) => Value::Lit(Lit::Num(num.clone())),
+//                 rename::Lit::Bool(b) => Value::Lit(Lit::Bool(b)),
+//                 rename::Lit::String(s) => Value::Lit(Lit::String(s.clone())),
+//             },
+//             Expr::Ident { name, .. } => {
+//                 if let Some(value) = env.borrow().get(&name) {
+//                     value
+//                 } else {
+//                     return Err(
+//                         format!("Identifier '{}' not found", repl_src[name.span()].trim()).into(),
+//                     );
+//                 }
+//             }
+//             Expr::Lambda { params, body, .. } => Value::Lambda {
+//                 env: env.clone(),
+//                 params,
+//                 body,
+//             },
+//             Expr::Apply { fun, args, .. } => {
+//                 let fun = eval_expr(src, repl_src, env.clone(), fun)?;
+//                 // println!("fun: {:?}", fun);
+//                 match fun {
+//                     Value::Lambda {
+//                         env: lam_env,
+//                         params,
+//                         body,
+//                     } => {
+//                         let arg_env = Env::new_with_parent(lam_env.clone());
+//                         for (p, arg) in params.iter().zip(args) {
+//                             if !destructure_pattern(
+//                                 arg_env.clone(),
+//                                 p.clone(),
+//                                 Node::new(
+//                                     eval_expr(src, repl_src, env.clone(), arg.clone())?,
+//                                     expr.span(),
+//                                 ),
+//                             ) {
+//                                 return Err(format!("Could not destructure pattern").into());
+//                             }
+//                         }
 
-                        expr = body;
-                        env = arg_env;
-                        continue 'tco;
-                    }
-                    Value::NativeFn(fun) => {
-                        let mut new_args = Vec::new();
-                        for arg in args {
-                            new_args.push(eval_expr(src, repl_src, env.clone(), arg)?);
-                        }
-                        fun(new_args)?
-                    }
-                    _ => {
-                        return Err(format!("Expected lambda, found {:?}", fun).into());
-                    }
-                }
-            }
-            Expr::Let {
-                pat,
-                expr: let_expr,
-                body,
-                ..
-            } => {
-                let value = eval_expr(src, repl_src, env.clone(), let_expr.clone())?;
-                if destructure_pattern(env.clone(), pat, Node::new(value, let_expr.span())) {
-                    expr = body;
-                    continue 'tco;
-                } else {
-                    return Err(format!("Could not destructure pattern").into());
-                }
-            }
-            Expr::Fn {
-                name,
-                params,
-                expr,
-                body,
-                ty,
-            } => {
-                let value = Value::Lambda {
-                    env: Env::new_with_parent(env.clone()),
-                    params,
-                    body: expr.clone(),
-                };
-                env.borrow_mut().insert(name.inner().clone(), value);
-                eval_expr(src, repl_src, env, body)?
-            }
-            Expr::Match {
-                expr: mexpr,
-                cases,
-                ty,
-            } => {
-                let val = eval_expr(src, repl_src, env.clone(), mexpr.clone())?;
-                let match_env = Env::new_with_parent(env.clone());
-                for case in cases {
-                    if destructure_pattern(
-                        match_env.clone(),
-                        case.pattern.clone(),
-                        Node::new(val.clone(), mexpr.span()),
-                    ) {
-                        env = match_env;
-                        expr = case.expr.clone();
-                        continue 'tco;
-                    } else {
-                        continue;
-                    }
-                }
-                return Err(format!("No matching pattern found for {:?}", val).into());
-            }
-            Expr::If {
-                cond, then, else_, ..
-            } => {
-                let cond = eval_expr(src, repl_src, env.clone(), cond)?;
-                match cond {
-                    Value::Lit(Lit::Bool(true)) => {
-                        expr = then;
-                        continue 'tco;
-                    }
-                    Value::Lit(Lit::Bool(false)) => {
-                        expr = else_;
-                        continue 'tco;
-                    }
-                    _ => {
-                        return Err(format!("Expected bool, found {:?}", cond).into());
-                    }
-                }
-            }
-            Expr::Unit => Value::Unit,
-        };
+//                         expr = body;
+//                         env = arg_env;
+//                         continue 'tco;
+//                     }
+//                     Value::NativeFn(fun) => {
+//                         let mut new_args = Vec::new();
+//                         for arg in args {
+//                             new_args.push(eval_expr(src, repl_src, env.clone(), arg)?);
+//                         }
+//                         fun(new_args)?
+//                     }
+//                     _ => {
+//                         return Err(format!("Expected lambda, found {:?}", fun).into());
+//                     }
+//                 }
+//             }
+//             Expr::Let {
+//                 pat,
+//                 expr: let_expr,
+//                 body,
+//                 ..
+//             } => {
+//                 let value = eval_expr(src, repl_src, env.clone(), let_expr.clone())?;
+//                 if destructure_pattern(env.clone(), pat, Node::new(value, let_expr.span())) {
+//                     expr = body;
+//                     continue 'tco;
+//                 } else {
+//                     return Err(format!("Could not destructure pattern").into());
+//                 }
+//             }
+//             Expr::Fn {
+//                 name,
+//                 params,
+//                 expr,
+//                 body,
+//                 ty,
+//             } => {
+//                 let value = Value::Lambda {
+//                     env: Env::new_with_parent(env.clone()),
+//                     params,
+//                     body: expr.clone(),
+//                 };
+//                 env.borrow_mut().insert(name.inner().clone(), value);
+//                 eval_expr(src, repl_src, env, body)?
+//             }
+//             Expr::Match {
+//                 expr: mexpr,
+//                 cases,
+//                 ty,
+//             } => {
+//                 let val = eval_expr(src, repl_src, env.clone(), mexpr.clone())?;
+//                 let match_env = Env::new_with_parent(env.clone());
+//                 for case in cases {
+//                     if destructure_pattern(
+//                         match_env.clone(),
+//                         case.pattern.clone(),
+//                         Node::new(val.clone(), mexpr.span()),
+//                     ) {
+//                         env = match_env;
+//                         expr = case.expr.clone();
+//                         continue 'tco;
+//                     } else {
+//                         continue;
+//                     }
+//                 }
+//                 return Err(format!("No matching pattern found for {:?}", val).into());
+//             }
+//             Expr::If {
+//                 cond, then, else_, ..
+//             } => {
+//                 let cond = eval_expr(src, repl_src, env.clone(), cond)?;
+//                 match cond {
+//                     Value::Lit(Lit::Bool(true)) => {
+//                         expr = then;
+//                         continue 'tco;
+//                     }
+//                     Value::Lit(Lit::Bool(false)) => {
+//                         expr = else_;
+//                         continue 'tco;
+//                     }
+//                     _ => {
+//                         return Err(format!("Expected bool, found {:?}", cond).into());
+//                     }
+//                 }
+//             }
+//             Expr::Unit => Value::Unit,
+//         };
 
-        break 'tco;
-    }
-    Ok(val)
-}
+//         break 'tco;
+//     }
+//     Ok(val)
+// }
 
 // fn destructure_pattern(env: Rc<RefCell<Env>>, pat: Node<rename::Pattern>, val: Node<Value>) -> bool {
 //     match pat.inner().clone() {

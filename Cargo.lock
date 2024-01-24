@@ -620,6 +620,150 @@ checksum = "523dc4f511e55ab87b694dc30d0f820d60906ef06413f93d4d7a1385599cc149"
 name = "miniml"
 version = "0.1.0"
 dependencies = [
+ "clap",
+ "env_logger",
+ "log",
+ "miniml-repl",
+ "notify",
+ "rustyline",
+]
+
+[[package]]
+name = "miniml-compile"
+version = "0.1.0"
+dependencies = [
+ "chumsky",
+ "clap",
+ "cstree",
+ "env_logger",
+ "insta",
+ "itertools",
+ "lasso",
+ "log",
+ "logos",
+ "notify",
+ "num-bigint",
+ "num-complex",
+ "num-rational",
+ "num-traits",
+ "once_cell",
+ "rustyline",
+]
+
+[[package]]
+name = "miniml-hir"
+version = "0.1.0"
+dependencies = [
+ "chumsky",
+ "clap",
+ "cstree",
+ "env_logger",
+ "insta",
+ "itertools",
+ "lasso",
+ "log",
+ "logos",
+ "notify",
+ "num-bigint",
+ "num-complex",
+ "num-rational",
+ "num-traits",
+ "once_cell",
+ "rustyline",
+]
+
+[[package]]
+name = "miniml-rename"
+version = "0.1.0"
+dependencies = [
+ "chumsky",
+ "clap",
+ "cstree",
+ "env_logger",
+ "insta",
+ "itertools",
+ "lasso",
+ "log",
+ "logos",
+ "notify",
+ "num-bigint",
+ "num-complex",
+ "num-rational",
+ "num-traits",
+ "once_cell",
+ "rustyline",
+]
+
+[[package]]
+name = "miniml-repl"
+version = "0.1.0"
+dependencies = [
+ "chumsky",
+ "clap",
+ "cstree",
+ "env_logger",
+ "insta",
+ "itertools",
+ "lasso",
+ "log",
+ "logos",
+ "notify",
+ "num-bigint",
+ "num-complex",
+ "num-rational",
+ "num-traits",
+ "once_cell",
+ "rustyline",
+]
+
+[[package]]
+name = "miniml-runtime"
+version = "0.1.0"
+dependencies = [
+ "chumsky",
+ "clap",
+ "cstree",
+ "env_logger",
+ "insta",
+ "itertools",
+ "lasso",
+ "log",
+ "logos",
+ "notify",
+ "num-bigint",
+ "num-complex",
+ "num-rational",
+ "num-traits",
+ "once_cell",
+ "rustyline",
+]
+
+[[package]]
+name = "miniml-syntax"
+version = "0.1.0"
+dependencies = [
+ "chumsky",
+ "clap",
+ "cstree",
+ "env_logger",
+ "insta",
+ "itertools",
+ "lasso",
+ "log",
+ "logos",
+ "notify",
+ "num-bigint",
+ "num-complex",
+ "num-rational",
+ "num-traits",
+ "once_cell",
+ "rustyline",
+]
+
+[[package]]
+name = "miniml-utils"
+version = "0.1.0"
+dependencies = [
  "chumsky",
  "clap",
  "cstree",

@@ -72,27 +72,23 @@ let map f xs = match xs with
   | [] -> []
   | _ -> f (head xs) :: map f (tail xs)
 
+-- pattern matching
+let map f [] = []
+let map f (x:xs) = f x :: map f xs
+
+let fib 0 = 0
+let fib 1 = 1
+let fib n = fib (n - 1) + fib (n - 2)
+
 let map_iter f xs = 
   let loop f xs ys = 
     if null xs then ys 
     else loop f (tail xs) (ys ++ [f (head xs)]) 
   in loop f xs []
 
--- type hints
-let x : Int = 1
-
--- type declarations
--- alias
-type Foo = Int
-
 -- record
-type Point = { x : Int, y : Int }
--- records are just maps with symbols as keys
--- record access
-let p = { x: 1, y: 2 } in p.x
-
--- subtyping
-type Int <: Num
+type Point = { x, y }
+let p = Point { x: 1, y: 2 } in p.x
 
 -- here's all of the mvp ideas in one program
 let foo a b =
