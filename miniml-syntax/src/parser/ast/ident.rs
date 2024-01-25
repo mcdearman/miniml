@@ -1,4 +1,4 @@
-use miniml_utils::{intern::interned_string::InternedString, span::Span};
+use miniml_utils::{interned_string::InternedString, span::Span};
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Ident {

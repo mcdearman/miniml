@@ -1,4 +1,4 @@
-use crate::lex::Token;
+use crate::lex::token::Token;
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum BinaryOpKind {

@@ -1,5 +1,5 @@
 use super::binary_op_kind::BinaryOpKind;
-use miniml_utils::{intern::interned_string::InternedString, span::Span};
+use miniml_utils::{interned_string::InternedString, span::Span};
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct BinaryOp {

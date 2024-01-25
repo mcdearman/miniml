@@ -1,9 +1,10 @@
+use crate::lex::token::Token;
+
 use self::ast::{
     binary_op::BinaryOp, binary_op_kind::BinaryOpKind, decl::Decl, decl_kind::DeclKind, expr::Expr,
     expr_kind::ExprKind, ident::Ident, lit::Lit, root::Root, unary_op::UnaryOp,
     unary_op_kind::UnaryOpKind,
 };
-use crate::lex::Token;
 use chumsky::{
     error::Rich,
     extra,

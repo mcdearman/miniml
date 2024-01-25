@@ -1,4 +1,4 @@
-use miniml_utils::intern::interned_string::InternedString;
+use miniml_utils::interned_string::InternedString;
 use num_rational::Rational64;
 
 #[derive(Debug, Clone, PartialEq)]
