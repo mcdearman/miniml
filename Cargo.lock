@@ -673,6 +673,24 @@ dependencies = [
 ]
 
 [[package]]
+name = "miniml-infer"
+version = "0.1.0"
+dependencies = [
+ "chumsky",
+ "cstree",
+ "env_logger",
+ "insta",
+ "itertools",
+ "log",
+ "logos",
+ "miniml-utils",
+ "num-bigint",
+ "num-complex",
+ "num-rational",
+ "num-traits",
+]
+
+[[package]]
 name = "miniml-rename"
 version = "0.1.0"
 dependencies = [
@@ -707,6 +725,7 @@ dependencies = [
  "lasso",
  "log",
  "logos",
+ "miniml-syntax",
  "notify",
  "num-bigint",
  "num-complex",

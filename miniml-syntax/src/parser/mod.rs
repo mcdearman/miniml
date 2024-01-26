@@ -13,17 +13,21 @@ use chumsky::{
     select, IterParser, Parser as ChumskyParser,
 };
 use logos::Logos;
-use miniml_utils::span::Span;
+use miniml_utils::{interned_string::InternedString, span::Span};
 
 pub mod ast;
 
-pub fn parse<'src>(src: &'src str) -> (Option<Root>, Vec<Rich<'src, Token, Span>>) {
+pub fn parse<'src>(src: &'src str, repl: bool) -> (Option<Root>, Vec<Rich<'src, Token, Span>>) {
     let tokens = Token::lexer(&src).spanned().map(|(tok, span)| match tok {
         Ok(tok) => (tok, Span::from(span)),
         Err(_) => (Token::Error, Span::from(span)),
     });
     let tok_stream = Stream::from_iter(tokens).spanned(Span::from(src.len()..src.len()));
-    root_parser().parse(tok_stream).into_output_errors()
+    if repl {
+        repl_parser().parse(tok_stream).into_output_errors()
+    } else {
+        root_parser().parse(tok_stream).into_output_errors()
+    }
 }
 
 fn root_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
@@ -35,14 +39,18 @@ fn root_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
         .boxed()
 }
 
-// fn item_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
-// ) -> impl ChumskyParser<'a, I, Item, extra::Err<Rich<'a, Token, Span>>> {
-//     expr_parser()
-//         .map(ItemKind::Expr)
-//         .or(decl_parser().map(ItemKind::Decl))
-//         .map_with_span(Item::new)
-//         .boxed()
-// }
+fn repl_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
+) -> impl ChumskyParser<'a, I, Root, extra::Err<Rich<'a, Token, Span>>> {
+    expr_parser()
+        .map(|e| DeclKind::Let {
+            name: Ident::new(InternedString::from("main"), e.span().clone()),
+            expr: e,
+        })
+        .map_with_span(Decl::new)
+        .or(decl_parser())
+        .map_with_span(|decl, span| Root::new(vec![decl], span))
+        .boxed()
+}
 
 fn decl_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
 ) -> impl ChumskyParser<'a, I, Decl, extra::Err<Rich<'a, Token, Span>>> {
@@ -363,70 +371,70 @@ mod tests {
     #[test]
     fn parse_let() {
         let src = "let x = 1";
-        let (root, errors) = parse(src);
+        let (root, errors) = parse(src, false);
         insta::assert_debug_snapshot!(root);
     }
 
     #[test]
     fn parse_arithmetic() {
         let src = "let a = 1 + 2/3 * 3^2 - 4 / 5 % 10";
-        let (root, errors) = parse(src);
+        let (root, errors) = parse(src, false);
         insta::assert_debug_snapshot!(root);
     }
 
     #[test]
     fn parse_boolean_cmp() {
         let src = "let a = 1 < 2 && 3 > 4 || 5 <= 6 && 7 >= 8 && !(9 == 10 && 11 != 12)";
-        let (root, errors) = parse(src);
+        let (root, errors) = parse(src, false);
         insta::assert_debug_snapshot!(root);
     }
 
     #[test]
     fn parse_if() {
         let src = "let a = if true then 1 else 2";
-        let (root, errors) = parse(src);
+        let (root, errors) = parse(src, false);
         insta::assert_debug_snapshot!(root);
     }
 
     #[test]
     fn parse_lambda() {
         let src = "let a = \\x -> x + 1";
-        let (root, errors) = parse(src);
+        let (root, errors) = parse(src, false);
         insta::assert_debug_snapshot!(root);
     }
 
     #[test]
     fn parse_lambda_apply() {
         let src = "let add = (\\x y -> x + y) 1 2";
-        let (root, errors) = parse(src);
+        let (root, errors) = parse(src, false);
         insta::assert_debug_snapshot!(root);
     }
 
     #[test]
     fn parse_let_fn() {
         let src = "let add x y = x + y";
-        let (root, errors) = parse(src);
+        let (root, errors) = parse(src, false);
         insta::assert_debug_snapshot!(root);
     }
 
     #[test]
     fn parse_let_fn_apply() {
         let src = "let f g x = f (g x)";
-        let (root, errors) = parse(src);
+        let (root, errors) = parse(src, false);
         insta::assert_debug_snapshot!(root);
     }
 
     #[test]
     fn parse_let_expr() {
         let src = "let x = let y = 1 in y + 1";
-        let (root, errors) = parse(src);
+        let (root, errors) = parse(src, false);
         insta::assert_debug_snapshot!(root);
     }
 
     #[test]
     fn parse_let_fn_expr() {
         let src = "let f x = let g y = x + y in g 1";
-        let (root, errors) = parse(src);
+        let (root, errors) = parse(src, false);
         insta::assert_debug_snapshot!(root);
     }
 }

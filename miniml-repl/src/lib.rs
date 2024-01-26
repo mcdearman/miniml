@@ -1,5 +1,7 @@
 use std::io::{self, Write};
 
+use miniml_syntax::parser::parse;
+
 pub fn repl() {
     let mut src = String::new();
     // let mut compiler = Compiler::default();
@@ -30,6 +32,23 @@ pub fn repl() {
             "exit" => break,
             _ => (),
         }
+        let root = match parse(&src, true) {
+            (Some(root), errors) => {
+                if errors.is_empty() {
+                    root
+                } else {
+                    println!("Errors: {:#?}", errors);
+                    src.clear();
+                    continue;
+                }
+            }
+            (None, errors) => {
+                println!("Errors: {:#?}", errors);
+                src.clear();
+                continue;
+            }
+        };
+        println!("root: {:#?}\n", root);
         // let
         // match interpreter.eval(&*src) {
         //     Ok(obj) => println!(""),

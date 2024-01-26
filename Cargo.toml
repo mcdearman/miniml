@@ -3,6 +3,7 @@ members = [
     "miniml",
     "miniml-compile",
     "miniml-hir",
+    "miniml-infer",
     "miniml-rename",
     "miniml-repl",
     "miniml-runtime",
