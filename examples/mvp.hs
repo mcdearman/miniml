@@ -1,5 +1,10 @@
--- only bindings are allowed at the top level
+-- only bindings are allowed at the top level in files
 let x = 1
+
+-- In the notebook or repl, you can use expressions at the top level.
+-- You can think of this as a shorthand for `let main args = <expr>`.
+-- In files, the main function must be defined explicitly:
+let main args = 1
 
 -- mutable binding
 var x = 1
@@ -21,14 +26,18 @@ let s = :foo
 let a = 1 + 2 * 3^2 - 4 / 5 % 10
 
 -- Unary operators
-let n = -1
-let not = !true
+-1
+-- => -1
+
+not true
+-- => false
 
 -- Boolean
-let b = true && false || true
+true and false or true
+-- => true
 
 -- Comparison
-let c = 1 < 2 && 2 <= 3 && 3 > 2 && 3 >= 2 && 2 == 2 && 2 != 3
+1 < 2 && 2 <= 3 && 3 > 2 && 3 >= 2 && 2 == 2 && 2 != 3
 
 -- if-then-else
 let i = if 1 < 2 then 1 else 2
@@ -74,17 +83,16 @@ let map f xs = match xs with
 
 -- pattern matching
 let map f [] = []
-let map f (x:xs) = f x :: map f xs
+let map f x::xs = f x :: map f xs
 
 let fib 0 = 0
 let fib 1 = 1
 let fib n = fib (n - 1) + fib (n - 2)
 
-let map_iter f xs = 
-  let loop f xs ys = 
-    if null xs then ys 
-    else loop f (tail xs) (ys ++ [f (head xs)]) 
-  in loop f xs []
+let map f xs = 
+  let loop xs acc = match xs with
+    | [] -> acc
+    | x::xs -> loop xs (f x :: acc)
 
 -- record
 type Point = { x, y }
