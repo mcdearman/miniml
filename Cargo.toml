@@ -4,9 +4,10 @@ members = [
     "miniml-compile",
     "miniml-hir",
     "miniml-infer",
+    "miniml-lex",
+    "miniml-parse",
     "miniml-rename",
     "miniml-repl",
     "miniml-runtime",
-    "miniml-syntax",
     "miniml-utils",
 ]

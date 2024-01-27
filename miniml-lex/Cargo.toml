@@ -1,5 +1,5 @@
 [package]
-name = "miniml-syntax"
+name = "miniml-lex"
 version = "0.1.0"
 edition = "2021"
 

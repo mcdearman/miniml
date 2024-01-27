@@ -3,7 +3,6 @@ use self::ast::{
     expr_kind::ExprKind, ident::Ident, lit::Lit, root::Root, unary_op::UnaryOp,
     unary_op_kind::UnaryOpKind,
 };
-use crate::lex::token::Token;
 use chumsky::{
     error::Rich,
     extra,
@@ -13,6 +12,7 @@ use chumsky::{
     select, IterParser, Parser as ChumskyParser,
 };
 use logos::Logos;
+use miniml_lex::token::Token;
 use miniml_utils::{interned_string::InternedString, span::Span};
 
 pub mod ast;
@@ -366,7 +366,7 @@ fn curry_fn(params: Vec<Ident>, expr: Expr) -> Expr {
 }
 
 mod tests {
-    use crate::parser::parse;
+    use crate::parse;
 
     #[test]
     fn parse_let() {

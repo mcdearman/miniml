@@ -1,6 +1,5 @@
+use miniml_parse::parse;
 use std::io::{self, Write};
-
-use miniml_syntax::parser::parse;
 
 pub fn repl() {
     let mut src = String::new();

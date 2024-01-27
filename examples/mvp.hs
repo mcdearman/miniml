@@ -1,29 +1,23 @@
--- only bindings are allowed at the top level in files
-let x = 1
-
--- In the notebook or repl, you can use expressions at the top level.
--- You can think of this as a shorthand for `let main args = <expr>`.
--- In files, the main function must be defined explicitly:
+-- Files are composed of declarations at the top level. In the notebook 
+-- or repl, you can use expressions at the top level. You can think of 
+-- this as a shorthand for `let main args = <expr>`. In files, the main 
+-- function must be defined explicitly:
 let main args = 1
 
--- mutable binding
+-- Bindings are immutable by default.
+let x = 1
+
+-- You can use `var` to declare mutable bindings.
 var x = 1
 
 -- lists
-let xs = [1, 2, 3]
+[1, 2, 3]
 
 -- tuples
-let t = (1, 2)
-
--- maps
--- the keys here are symbols
-let r = { x: 1, y: 2 }
-
--- symbols
-let s = :foo
+(1, 2)
 
 -- Binary operators
-let a = 1 + 2 * 3^2 - 4 / 5 % 10
+1 + 2 * 3^2 - 4 / 5 % 10
 
 -- Unary operators
 -1
@@ -40,13 +34,16 @@ true and false or true
 1 < 2 && 2 <= 3 && 3 > 2 && 3 >= 2 && 2 == 2 && 2 != 3
 
 -- if-then-else
-let i = if 1 < 2 then 1 else 2
+if 1 < 2 then 1 else 2
 
 -- let-in
 let x = 1 in x + 1
 
 -- function definition
 let f x = x + 1
+
+-- this is equivalent to
+let f = \x -> x + 1
 
 -- function expression
 let f x = x + 1 in f 1
@@ -76,32 +73,32 @@ let fib n =
     else loop (n - 1) b (a + b) 
   in loop n 0 1 
 
--- higher order functions
+-- pattern matching
 let map f xs = match xs with
   | [] -> []
-  | _ -> f (head xs) :: map f (tail xs)
+  | [y::ys] -> f y :: map f ys
 
--- pattern matching
-let map f [] = []
-let map f x::xs = f x :: map f xs
-
-let fib 0 = 0
-let fib 1 = 1
-let fib n = fib (n - 1) + fib (n - 2)
-
-let map f xs = 
+let map_iter f xs = 
   let loop xs acc = match xs with
     | [] -> acc
     | x::xs -> loop xs (f x :: acc)
 
+-- pattern matching in function definition
+let map f [] = []
+  | map f [x::xs] = f x :: map f xs
+
+let fib 0 = 0
+  | fib 1 = 1
+  | fib n = fib (n - 1) + fib (n - 2)
+
 -- record
-type Point = { x, y }
+type Point = { x : Num, y : Num }
 let p = Point { x: 1, y: 2 } in p.x
 
--- here's all of the mvp ideas in one program
-let foo a b =
-  let bar = \c ->
-    if (a == b && b < 0 || b <= 1) || (a != b && b > 0 || b >= 1)
-      then -a + (b - c) * 2/3 / 3 % 4 ^ 5
-    else foo (a - 1) + foo (a - 2)
-  in bar 1
+-- product type
+type Point = Num * Num
+
+-- sum type
+type Shape 
+  = Circle Num 
+  | Rectangle Num Num
