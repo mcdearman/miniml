@@ -85,7 +85,10 @@ fn decl_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
         .then_ignore(just(Token::Assign))
         .then(expr_parser())
         .map(|((name, params), expr)| DeclKind::Let {
-            pattern,
+            pattern: Pattern::new(
+                PatternKind::Ident(name.clone()),
+                name.span().extend(*expr.span()),
+            ),
             expr: curry_fn(params, expr),
         });
 
