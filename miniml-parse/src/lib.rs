@@ -3,6 +3,10 @@ use self::ast::{
     expr_kind::ExprKind, ident::Ident, lit::Lit, root::Root, unary_op::UnaryOp,
     unary_op_kind::UnaryOpKind,
 };
+use ast::{
+    pattern::{self, Pattern},
+    pattern_kind::PatternKind,
+};
 use chumsky::{
     error::Rich,
     extra,
@@ -43,8 +47,23 @@ fn repl_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
 ) -> impl ChumskyParser<'a, I, Root, extra::Err<Rich<'a, Token, Span>>> {
     expr_parser()
         .map(|e| DeclKind::Let {
-            name: Ident::new(InternedString::from("main"), e.span().clone()),
-            expr: e,
+            pattern: Pattern::new(
+                PatternKind::Ident(Ident::new(InternedString::from("main"), e.span().clone())),
+                e.span().clone(),
+            ),
+            expr: Expr::new(
+                ExprKind::Lambda {
+                    param: Pattern::new(
+                        PatternKind::Ident(Ident::new(
+                            InternedString::from("args"),
+                            e.span().clone(),
+                        )),
+                        e.span().clone(),
+                    ),
+                    expr: e.clone(),
+                },
+                e.span().clone(),
+            ),
         })
         .map_with_span(Decl::new)
         .or(decl_parser())
@@ -55,18 +74,18 @@ fn repl_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
 fn decl_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
 ) -> impl ChumskyParser<'a, I, Decl, extra::Err<Rich<'a, Token, Span>>> {
     let let_ = just(Token::Let)
-        .ignore_then(ident_parser())
+        .ignore_then(pattern_parser())
         .then_ignore(just(Token::Assign))
         .then(expr_parser())
-        .map(|(name, expr)| DeclKind::Let { name, expr });
+        .map(|(pattern, expr)| DeclKind::Let { pattern, expr });
 
     let fn_ = just(Token::Let)
         .ignore_then(ident_parser())
-        .then(ident_parser().repeated().at_least(1).collect())
+        .then(pattern_parser().repeated().at_least(1).collect())
         .then_ignore(just(Token::Assign))
         .then(expr_parser())
         .map(|((name, params), expr)| DeclKind::Let {
-            name: name.clone(),
+            pattern,
             expr: curry_fn(params, expr),
         });
 
@@ -84,30 +103,34 @@ fn expr_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
         let lit = lit_parser().map(ExprKind::Lit).map_with_span(Expr::new);
 
         let let_ = just(Token::Let)
-            .ignore_then(ident_parser())
+            .ignore_then(pattern_parser())
             .then_ignore(just(Token::Assign))
             .then(expr.clone())
             .then_ignore(just(Token::In))
             .then(expr.clone())
-            .map(|((name, expr), body)| ExprKind::Let { name, expr, body })
+            .map(|((pattern, expr), body)| ExprKind::Let {
+                pattern,
+                expr,
+                body,
+            })
             .map_with_span(Expr::new);
 
         let fn_ = just(Token::Let)
-            .ignore_then(ident_parser())
-            .then(ident_parser().repeated().at_least(1).collect())
+            .ignore_then(pattern_parser())
+            .then(pattern_parser().repeated().at_least(1).collect())
             .then_ignore(just(Token::Assign))
             .then(expr.clone())
             .then_ignore(just(Token::In))
             .then(expr.clone())
-            .map(|(((name, params), expr), body)| ExprKind::Let {
-                name: name.clone(),
+            .map(|(((pattern, params), expr), body)| ExprKind::Let {
+                pattern,
                 expr: curry_fn(params, expr),
                 body,
             })
             .map_with_span(Expr::new);
 
         let lambda = just(Token::Backslash)
-            .ignore_then(ident_parser().repeated().at_least(1).collect())
+            .ignore_then(pattern_parser().repeated().at_least(1).collect())
             .then_ignore(just(Token::RArrow))
             .then(expr.clone())
             .map(|(params, expr)| curry_fn(params, expr));
@@ -336,6 +359,14 @@ fn expr_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
     })
 }
 
+fn pattern_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
+) -> impl ChumskyParser<'a, I, Pattern, extra::Err<Rich<'a, Token, Span>>> {
+    just(Token::Wildcard)
+        .map_with_span(|_, span| Pattern::new(PatternKind::Wildcard, span))
+        .or(ident_parser()
+            .map_with_span(|ident, span| Pattern::new(PatternKind::Ident(ident), span)))
+}
+
 fn ident_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
 ) -> impl ChumskyParser<'a, I, Ident, extra::Err<Rich<'a, Token, Span>>> {
     select! {
@@ -353,7 +384,7 @@ fn lit_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
     }
 }
 
-fn curry_fn(params: Vec<Ident>, expr: Expr) -> Expr {
+fn curry_fn(params: Vec<Pattern>, expr: Expr) -> Expr {
     params.into_iter().rev().fold(expr, |expr, param| {
         Expr::new(
             ExprKind::Lambda {

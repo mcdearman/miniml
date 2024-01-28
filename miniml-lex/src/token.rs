@@ -24,6 +24,8 @@ pub enum Token {
     Ident(InternedString),
 
     // Punctuation
+    #[token("_")]
+    Wildcard,
     #[token("\\")]
     Backslash,
     #[token("->")]
@@ -60,6 +62,12 @@ pub enum Token {
     Bang,
     #[token(",")]
     Comma,
+    #[token(":")]
+    Colon,
+    #[token("::")]
+    DoubleColon,
+    #[token(";")]
+    SemiColon,
     #[token("(")]
     LParen,
     #[token(")")]
@@ -72,6 +80,10 @@ pub enum Token {
     LBrack,
     #[token("]")]
     RBrack,
+    #[token("|")]
+    Bar,
+    #[token("|>")]
+    Pipe,
 
     // Keywords
     #[token("let")]
@@ -84,6 +96,8 @@ pub enum Token {
     Then,
     #[token("else")]
     Else,
+    #[token("type")]
+    Type,
 }
 
 impl Display for Token {
@@ -97,6 +111,7 @@ impl Display for Token {
             Bool(b) => write!(f, "Bool({})", b),
             String(s) => write!(f, "String({})", s),
             Ident(s) => write!(f, "Ident({})", s),
+            Wildcard => write!(f, "Wildcard"),
             Backslash => write!(f, "Backslash"),
             RArrow => write!(f, "RArrow"),
             Assign => write!(f, "Assign"),
@@ -108,7 +123,6 @@ impl Display for Token {
             Caret => write!(f, "Caret"),
             Or => write!(f, "Or"),
             And => write!(f, "And"),
-            Eq => write!(f, "Eq"),
             Neq => write!(f, "Neq"),
             Lt => write!(f, "Lt"),
             Gt => write!(f, "Gt"),
@@ -116,17 +130,23 @@ impl Display for Token {
             Geq => write!(f, "Geq"),
             Bang => write!(f, "Bang"),
             Comma => write!(f, "Comma"),
+            Colon => write!(f, "Colon"),
+            DoubleColon => write!(f, "DoubleColon"),
+            SemiColon => write!(f, "SemiColon"),
             LParen => write!(f, "LParen"),
             RParen => write!(f, "RParen"),
             LBrace => write!(f, "LBrace"),
             RBrace => write!(f, "RBrace"),
             LBrack => write!(f, "LBrack"),
             RBrack => write!(f, "RBrack"),
+            Bar => write!(f, "Bar"),
+            Pipe => write!(f, "Pipe"),
             Let => write!(f, "Let"),
             In => write!(f, "In"),
             If => write!(f, "If"),
             Then => write!(f, "Then"),
             Else => write!(f, "Else"),
+            Type => write!(f, "Type"),
         }
     }
 }

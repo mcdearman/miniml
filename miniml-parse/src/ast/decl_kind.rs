@@ -1,6 +1,6 @@
-use super::{expr::Expr, ident::Ident};
+use super::{expr::Expr, pattern::Pattern};
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum DeclKind {
-    Let { name: Ident, expr: Expr },
+    Let { pattern: Pattern, expr: Expr },
 }

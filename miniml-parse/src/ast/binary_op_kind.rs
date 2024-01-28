@@ -21,6 +21,7 @@ pub enum BinaryOpKind {
 impl From<Token> for BinaryOpKind {
     fn from(t: Token) -> Self {
         match t {
+            Token::Assign => Self::Eq,
             Token::Plus => Self::Add,
             Token::Minus => Self::Sub,
             Token::Star => Self::Mul,

@@ -7,6 +7,7 @@ pub mod expr_kind;
 pub mod ident;
 pub mod lit;
 pub mod pattern;
+pub mod pattern_kind;
 pub mod root;
 pub mod unary_op;
 pub mod unary_op_kind;

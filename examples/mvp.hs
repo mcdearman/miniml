@@ -91,6 +91,9 @@ let fib 0 = 0
   | fib 1 = 1
   | fib n = fib (n - 1) + fib (n - 2)
 
+let gcd a 0 = a
+  | gcd a b = gcd b (a % b)
+
 -- record
 type Point = { x : Num, y : Num }
 let p = Point { x: 1, y: 2 } in p.x
