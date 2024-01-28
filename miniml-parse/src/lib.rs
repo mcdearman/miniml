@@ -119,14 +119,17 @@ fn expr_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
             .map_with_span(Expr::new);
 
         let fn_ = just(Token::Let)
-            .ignore_then(pattern_parser())
+            .ignore_then(ident_parser())
             .then(pattern_parser().repeated().at_least(1).collect())
             .then_ignore(just(Token::Assign))
             .then(expr.clone())
             .then_ignore(just(Token::In))
             .then(expr.clone())
-            .map(|(((pattern, params), expr), body)| ExprKind::Let {
-                pattern,
+            .map(|(((name, params), expr), body)| ExprKind::Let {
+                pattern: Pattern::new(
+                    PatternKind::Ident(name.clone()),
+                    name.span().extend(*body.span()),
+                ),
                 expr: curry_fn(params, expr),
                 body,
             })
