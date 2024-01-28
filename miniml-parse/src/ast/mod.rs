@@ -5,6 +5,7 @@ pub mod decl_kind;
 pub mod expr;
 pub mod expr_kind;
 pub mod ident;
+pub mod let_arm;
 pub mod lit;
 pub mod pattern;
 pub mod pattern_kind;
