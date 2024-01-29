@@ -10,5 +10,7 @@ pub mod pattern;
 pub mod pattern_kind;
 pub mod record_def;
 pub mod root;
+pub mod type_hint;
+pub mod type_hint_kind;
 pub mod unary_op;
 pub mod unary_op_kind;
