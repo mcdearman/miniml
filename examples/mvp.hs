@@ -83,17 +83,6 @@ let map_iter f xs =
     | [] -> acc
     | x::xs -> loop xs (f x :: acc)
 
--- pattern matching in function definition
-let map f [] = []
-  | map f [x::xs] = f x :: map f xs
-
-let fib 0 = 0
-  | fib 1 = 1
-  | fib n = fib (n - 1) + fib (n - 2)
-
-let gcd a 0 = a
-  | gcd a b = gcd b (a % b)
-
 let gcd a b = if b = 0 then a else gcd b (a % b)
 
 -- record
@@ -101,7 +90,7 @@ type Point = { x : Num, y : Num }
 let p = Point { x: 1, y: 2 } in p.x
 
 -- product type
-type Point = Num * Num
+type Point = Point Num Num
 
 -- sum type
 type Shape 
