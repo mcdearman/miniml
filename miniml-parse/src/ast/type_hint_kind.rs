@@ -8,5 +8,7 @@ pub enum TypeHintKind {
     Ident(Ident),
     List(TypeHint),
     Vec(Vec<TypeHint>),
+    Tuple(Vec<TypeHint>),
+    Fn(TypeHint, TypeHint),
     Unit,
 }

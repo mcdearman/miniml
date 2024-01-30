@@ -1,11 +1,8 @@
 use self::ast::{
     binary_op::BinaryOp, binary_op_kind::BinaryOpKind, decl::Decl, decl_kind::DeclKind, expr::Expr,
-    expr_kind::ExprKind, ident::Ident, lit::Lit, root::Root, unary_op::UnaryOp,
+    expr_kind::ExprKind, ident::Ident, lit::Lit, pattern::Pattern, pattern_kind::PatternKind,
+    root::Root, type_hint::TypeHint, type_hint_kind::TypeHintKind, unary_op::UnaryOp,
     unary_op_kind::UnaryOpKind,
-};
-use ast::{
-    pattern::{self, Pattern},
-    pattern_kind::PatternKind,
 };
 use chumsky::{
     error::Rich,
@@ -371,6 +368,13 @@ fn pattern_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
         .map_with_span(|_, span| Pattern::new(PatternKind::Wildcard, span))
         .or(ident_parser()
             .map_with_span(|ident, span| Pattern::new(PatternKind::Ident(ident), span)))
+}
+
+fn type_hint_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
+) -> impl ChumskyParser<'a, I, TypeHint, extra::Err<Rich<'a, Token, Span>>> {
+    ident_parser()
+        .map(TypeHintKind::Ident)
+        .map_with_span(TypeHint::new)
 }
 
 fn ident_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(

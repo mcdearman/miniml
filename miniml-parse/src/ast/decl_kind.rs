@@ -1,7 +1,7 @@
-use super::{expr::Expr, pattern::Pattern};
+use super::{data_type::DataType, expr::Expr, pattern::Pattern};
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum DeclKind {
-    RecordDef(RecordDef),
+    DataType(DataType),
     Let { pattern: Pattern, expr: Expr },
 }
