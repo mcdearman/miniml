@@ -86,8 +86,9 @@ let map_iter f xs =
 let gcd a b = if b = 0 then a else gcd b (a % b)
 
 -- record
-type Point = { x : Num, y : Num }
-let p = Point { x: 1, y: 2 } in p.x
+type Point = Point { x : Num, y : Num }
+let p = Point { x: 1, y: 2 }
+p.x
 
 -- product type
 type Point = Point Num Num
