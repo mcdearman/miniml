@@ -731,22 +731,16 @@ dependencies = [
 name = "miniml-rename"
 version = "0.1.0"
 dependencies = [
- "chumsky",
- "clap",
- "cstree",
  "env_logger",
  "insta",
  "itertools",
- "lasso",
  "log",
- "logos",
- "notify",
+ "miniml-parse",
+ "miniml-utils",
  "num-bigint",
  "num-complex",
  "num-rational",
  "num-traits",
- "once_cell",
- "rustyline",
 ]
 
 [[package]]
