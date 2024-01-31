@@ -1,4 +1,5 @@
 use miniml_lex::token::Token;
+use miniml_utils::unique_id::UniqueId;
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum BinaryOpKind {

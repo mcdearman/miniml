@@ -1,6 +1,9 @@
+use miniml_utils::{interned_string::InternedString, unique_id::UniqueId};
+use std::collections::HashMap;
+
 #[derive(Debug)]
 pub struct Resolver {
-    db: Rc<RefCell<Database>>,
+    builtins: HashMap<UniqueId, InternedString>,
 }
 
 impl Resolver {

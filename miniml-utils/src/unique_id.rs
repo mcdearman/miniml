@@ -4,7 +4,13 @@ use std::{
 };
 
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub struct UniqueId(pub usize);
+pub struct UniqueId(usize);
+
+impl UniqueId {
+    pub fn new(id: usize) -> Self {
+        Self(id)
+    }
+}
 
 static COUNTER: AtomicUsize = AtomicUsize::new(0);
 
