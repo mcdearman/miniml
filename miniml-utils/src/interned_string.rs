@@ -6,7 +6,7 @@ use std::{
     ops::Deref,
 };
 
-#[derive(Clone, Copy, PartialEq, Eq, Hash, Default)]
+#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
 pub struct InternedString {
     key: Spur,
 }
