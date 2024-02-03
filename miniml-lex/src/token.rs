@@ -86,6 +86,12 @@ pub enum Token {
     Pipe,
 
     // Keywords
+    #[token("pub")]
+    Pub,
+    #[token("mod")]
+    Mod,
+    #[token("end")]
+    End,
     #[token("let")]
     Let,
     #[token("in")]
@@ -141,6 +147,9 @@ impl Display for Token {
             RBrack => write!(f, "RBrack"),
             Bar => write!(f, "Bar"),
             Pipe => write!(f, "Pipe"),
+            Pub => write!(f, "Pub"),
+            Mod => write!(f, "Mod"),
+            End => write!(f, "End"),
             Let => write!(f, "Let"),
             In => write!(f, "In"),
             If => write!(f, "If"),

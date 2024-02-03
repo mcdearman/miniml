@@ -36,9 +36,9 @@ dependencies = [
 
 [[package]]
 name = "anstream"
-version = "0.6.5"
+version = "0.6.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d664a92ecae85fd0a7392615844904654d1d5f5514837f471ddef4a057aba1b6"
+checksum = "6e2e1ebcb11de5c03c67de28a7df593d32191b44939c482e97702baaaa6ab6a5"
 dependencies = [
  "anstyle",
  "anstyle-parse",
@@ -50,9 +50,9 @@ dependencies = [
 
 [[package]]
 name = "anstyle"
-version = "1.0.4"
+version = "1.0.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7079075b41f533b8c61d2a4d073c4676e1f8b249ff94a393b0595db304e0dd87"
+checksum = "2faccea4cc4ab4a667ce676a30e8ec13922a692c99bb8f5b11f1502c72e04220"
 
 [[package]]
 name = "anstyle-parse"
@@ -139,9 +139,9 @@ dependencies = [
 
 [[package]]
 name = "clap"
-version = "4.4.12"
+version = "4.4.18"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "dcfab8ba68f3668e89f6ff60f5b205cea56aa7b769451a59f34b8682f51c056d"
+checksum = "1e578d6ec4194633722ccf9544794b71b1385c3c027efe0c55db226fc880865c"
 dependencies = [
  "clap_builder",
  "clap_derive",
@@ -149,9 +149,9 @@ dependencies = [
 
 [[package]]
 name = "clap_builder"
-version = "4.4.12"
+version = "4.4.18"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "fb7fb5e4e979aec3be7791562fcba452f94ad85e954da024396433e0e25a79e9"
+checksum = "4df4df40ec50c46000231c914968278b1eb05098cf8f1b3a518a95030e71d1c7"
 dependencies = [
  "anstream",
  "anstyle",
@@ -208,22 +208,18 @@ dependencies = [
 
 [[package]]
 name = "crossbeam-channel"
-version = "0.5.10"
+version = "0.5.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "82a9b73a36529d9c47029b9fb3a6f0ea3cc916a261195352ba19e770fc1748b2"
+checksum = "176dc175b78f56c0f321911d9c8eb2b77a78a4860b9c19db83835fea1a46649b"
 dependencies = [
- "cfg-if",
  "crossbeam-utils",
 ]
 
 [[package]]
 name = "crossbeam-utils"
-version = "0.8.18"
+version = "0.8.19"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c3a430a770ebd84726f584a90ee7f020d28db52c6d02138900f22341f866d39c"
-dependencies = [
- "cfg-if",
-]
+checksum = "248e3bacc7dc6baa3b21e405ee045c3047101a49145e7e9eca583ab4c2ca5345"
 
 [[package]]
 name = "cstree"
@@ -620,18 +616,6 @@ checksum = "523dc4f511e55ab87b694dc30d0f820d60906ef06413f93d4d7a1385599cc149"
 name = "miniml"
 version = "0.1.0"
 dependencies = [
- "clap",
- "env_logger",
- "log",
- "miniml-repl",
- "notify",
- "rustyline",
-]
-
-[[package]]
-name = "miniml-compile"
-version = "0.1.0"
-dependencies = [
  "chumsky",
  "clap",
  "cstree",
@@ -648,162 +632,6 @@ dependencies = [
  "num-traits",
  "once_cell",
  "rustyline",
-]
-
-[[package]]
-name = "miniml-hir"
-version = "0.1.0"
-dependencies = [
- "chumsky",
- "clap",
- "cstree",
- "env_logger",
- "insta",
- "itertools",
- "lasso",
- "log",
- "logos",
- "notify",
- "num-bigint",
- "num-complex",
- "num-rational",
- "num-traits",
- "once_cell",
- "rustyline",
-]
-
-[[package]]
-name = "miniml-infer"
-version = "0.1.0"
-dependencies = [
- "chumsky",
- "cstree",
- "env_logger",
- "insta",
- "itertools",
- "log",
- "logos",
- "miniml-utils",
- "num-bigint",
- "num-complex",
- "num-rational",
- "num-traits",
-]
-
-[[package]]
-name = "miniml-lex"
-version = "0.1.0"
-dependencies = [
- "chumsky",
- "cstree",
- "env_logger",
- "insta",
- "itertools",
- "log",
- "logos",
- "miniml-utils",
- "num-bigint",
- "num-complex",
- "num-rational",
- "num-traits",
-]
-
-[[package]]
-name = "miniml-parse"
-version = "0.1.0"
-dependencies = [
- "chumsky",
- "cstree",
- "env_logger",
- "insta",
- "itertools",
- "log",
- "logos",
- "miniml-lex",
- "miniml-utils",
- "num-bigint",
- "num-complex",
- "num-rational",
- "num-traits",
-]
-
-[[package]]
-name = "miniml-rename"
-version = "0.1.0"
-dependencies = [
- "env_logger",
- "insta",
- "itertools",
- "log",
- "miniml-parse",
- "miniml-utils",
- "num-bigint",
- "num-complex",
- "num-rational",
- "num-traits",
-]
-
-[[package]]
-name = "miniml-repl"
-version = "0.1.0"
-dependencies = [
- "chumsky",
- "clap",
- "cstree",
- "env_logger",
- "insta",
- "itertools",
- "lasso",
- "log",
- "logos",
- "miniml-lex",
- "miniml-parse",
- "notify",
- "num-bigint",
- "num-complex",
- "num-rational",
- "num-traits",
- "once_cell",
- "rustyline",
-]
-
-[[package]]
-name = "miniml-runtime"
-version = "0.1.0"
-dependencies = [
- "chumsky",
- "clap",
- "cstree",
- "env_logger",
- "insta",
- "itertools",
- "lasso",
- "log",
- "logos",
- "notify",
- "num-bigint",
- "num-complex",
- "num-rational",
- "num-traits",
- "once_cell",
- "rustyline",
-]
-
-[[package]]
-name = "miniml-utils"
-version = "0.1.0"
-dependencies = [
- "chumsky",
- "env_logger",
- "insta",
- "itertools",
- "lasso",
- "log",
- "num-bigint",
- "num-complex",
- "num-rational",
- "num-traits",
- "once_cell",
 ]
 
 [[package]]
@@ -1118,9 +946,9 @@ checksum = "32fea41aca09ee824cc9724996433064c89f7777e60762749a4170a14abbfa21"
 
 [[package]]
 name = "smallvec"
-version = "1.11.2"
+version = "1.13.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4dccd0940a2dcdf68d092b8cbab7dc0ad8fa938bf95787e1b916b0e3d0e8e970"
+checksum = "e6ecd384b10a64542d77071bd64bd7b231f4ed5940fba55e98c3de13824cf3d7"
 
 [[package]]
 name = "sptr"
