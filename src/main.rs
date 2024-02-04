@@ -381,6 +381,8 @@ mod token {
         Wildcard,
         #[token("\\")]
         Backslash,
+        #[token("<-")]
+        LArrow,
         #[token("->")]
         RArrow,
         #[token("=")]
@@ -472,6 +474,7 @@ mod token {
                 Ident(s) => write!(f, "Ident({})", s),
                 Wildcard => write!(f, "Wildcard"),
                 Backslash => write!(f, "Backslash"),
+                LArrow => write!(f, "LArrow"),
                 RArrow => write!(f, "RArrow"),
                 Assign => write!(f, "Assign"),
                 Plus => write!(f, "Plus"),
@@ -519,7 +522,7 @@ mod token {
 // ============================================================================
 
 mod ast {
-    use crate::{intern::InternedString, span::Span, token::Token};
+    use crate::{intern::InternedString, list::List, span::Span, token::Token};
     use num_rational::Rational64;
 
     #[derive(Debug, Clone, PartialEq)]
@@ -660,9 +663,26 @@ mod ast {
             expr: Expr,
             body: Expr,
         },
+        List(List<Expr>),
+        Tuple(Vec<Expr>),
+        ListComp {
+            expr: Expr,
+            pattern: Pattern,
+            list: Expr,
+            filter: Option<Expr>,
+        },
+        Range {
+            start: Expr,
+            end: Expr,
+            step: Option<Expr>,
+        },
         Lambda {
             param: Pattern,
             expr: Expr,
+        },
+        FieldAccess {
+            record: Expr,
+            field: Ident,
         },
         Unit,
     }
@@ -919,7 +939,10 @@ mod parse {
     };
     use logos::Logos;
 
-    pub fn parse<'src>(tokens: Vec<Token>, repl: bool) -> (Option<Root>, Vec<Rich<'src, Token, Span>>) {
+    pub fn parse<'src>(
+        tokens: Vec<Token>,
+        repl: bool,
+    ) -> (Option<Root>, Vec<Rich<'src, Token, Span>>) {
         // let tokens = Token::lexer(&src).spanned().map(|(tok, span)| match tok {
         //     Ok(tok) => (tok, Span::from(span)),
         //     Err(_) => (Token::Error, Span::from(span)),

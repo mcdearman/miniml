@@ -10,11 +10,53 @@ let x = 1
 -- You can use `var` to declare mutable bindings.
 var x = 1
 
+-- You can use `pub` to declare public bindings.
+pub let x = 1
+
+-- strings
+"hello, world!"
+
+-- characters
+'c'
+
+-- ints
+1
+
+-- reals
+1.0
+
+-- rationals
+1/2
+
+-- complex
+1.0 + 2.0i
+
+-- bigints
+1n
+
+-- bigrationals
+1/2n
+
+-- booleans
+true
+
 -- lists
 [1, 2, 3]
 
 -- tuples
 (1, 2)
+
+-- ranges
+1..10
+
+-- inclusive ranges
+1..=10
+
+-- range with step
+1..2..10
+
+-- list comprehension
+[x * 2 | x <- [1, 2, 3]]
 
 -- Binary operators
 1 + 2 * 3^2 - 4 / 5 % 10
@@ -26,12 +68,16 @@ var x = 1
 not true
 -- => false
 
--- Boolean
+-- Boolean operators
 true and false or true
 -- => true
 
 -- Comparison
-1 < 2 && 2 <= 3 && 3 > 2 && 3 >= 2 && 2 == 2 && 2 != 3
+1 < 2 and 2 <= 3 and 3 > 2 and 3 >= 2 and 2 = 2 and 2 != 3
+
+-- compare characters
+'a' < 'b'
+'0' < '1'
 
 -- if-then-else
 if 1 < 2 then 1 else 2
@@ -87,7 +133,7 @@ let gcd a b = if b = 0 then a else gcd b (a % b)
 
 -- record
 type Point = Point { x : Num, y : Num }
-let p = Point { x: 1, y: 2 }
+let p = Point { x = 1, y = 2 }
 p.x
 
 -- product type

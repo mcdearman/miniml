@@ -25,7 +25,7 @@ mod Span =
 
   pub let spanToLineColString span src = 
     let (line, col) = spanToLineCol span src
-    "line " ^ (Int.toString line) ^ ", column " ^ (Int.toString col)
+    f"{Int.toString line}:{Int.toString col}"
 end
 
 -- Lexer
@@ -86,7 +86,7 @@ mod Lexer =
     pos : Int,
   }
 
-  pub let initLexer src = {
+  pub let initLexer src = Lexer {
     src = src,
     pos = 0,
   }
@@ -126,7 +126,7 @@ mod Lexer =
         let end = lexer.pos + 1
         let lexer' = { lexer with pos = lexer.pos + 1 }
         match c with
-        | '+' -> { kind = Plus, span = { start, end } }
+        | '+' -> { kind = Plus, span = Span { start, end } }
         | '-' -> { kind = Minus, span = { start, end } }
         | '*' -> { kind = Star, span = { start, end } }
         | '/' -> { kind = Slash, span = { start, end } }
