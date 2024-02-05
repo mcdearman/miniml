@@ -1,5 +1,5 @@
+use crate::utils::{intern::InternedString, unique_id::UniqueId};
 use std::{cell::RefCell, collections::HashMap, rc::Rc};
-use miniml_utils::{interned_string::InternedString, unique_id::UniqueId};
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Env {
