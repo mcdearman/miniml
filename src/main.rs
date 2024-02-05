@@ -680,6 +680,9 @@ mod ast {
             param: Pattern,
             expr: Expr,
         },
+        Record {
+            fields: Vec<(Ident, Expr)>,
+        },
         FieldAccess {
             record: Expr,
             field: Ident,
