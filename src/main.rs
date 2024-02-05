@@ -928,7 +928,7 @@ mod ast {
 }
 
 mod parse {
-    use crate::{ast::*, span::Span, token::Token};
+    use crate::{ast::*, intern::InternedString, span::Span, token::Token};
     use chumsky::{
         error::Rich,
         extra,
@@ -937,17 +937,17 @@ mod parse {
         recursive::recursive,
         select, IterParser, Parser as ChumskyParser,
     };
-    use logos::Logos;
 
     pub fn parse<'src>(
-        tokens: Vec<Token>,
+        tokens: impl Iterator<Item = (Token, Span)> + Clone + 'src,
         repl: bool,
     ) -> (Option<Root>, Vec<Rich<'src, Token, Span>>) {
-        // let tokens = Token::lexer(&src).spanned().map(|(tok, span)| match tok {
-        //     Ok(tok) => (tok, Span::from(span)),
-        //     Err(_) => (Token::Error, Span::from(span)),
-        // });
-        let tok_stream = Stream::from_iter(tokens).spanned(Span::from(src.len()..src.len()));
+        let eof_span = tokens
+            .clone()
+            .last()
+            .map(|(_, span)| span)
+            .unwrap_or_default();
+        let tok_stream = Stream::from_iter(tokens).spanned(eof_span);
         if repl {
             repl_parser().parse(tok_stream).into_output_errors()
         } else {
@@ -1331,78 +1331,1055 @@ mod parse {
     }
 
     mod tests {
-        use crate::parse::parse;
+        use crate::{parse::parse, span::Span, token::Token};
+        use itertools::Itertools;
+        use logos::Logos;
+
+        fn test_helper(src: &str) {
+            let tokens = Token::lexer(src)
+                .spanned()
+                .map(|(res, s)| match res {
+                    Ok(tok) => (tok, Span::from(s)),
+                    Err(_) => panic!("lexing error"),
+                })
+                .collect_vec()
+                .into_iter();
+            let (root, errors) = parse(tokens, true);
+            if errors.len() > 0 {
+                panic!("parse errors: {:?}", errors);
+            }
+            insta::assert_debug_snapshot!(root);
+        }
 
         #[test]
         fn parse_let() {
-            let src = "let x = 1";
-            let (root, errors) = parse(src, false);
-            insta::assert_debug_snapshot!(root);
+            test_helper("let x = 1");
         }
 
         #[test]
         fn parse_arithmetic() {
-            let src = "let a = 1 + 2/3 * 3^2 - 4 / 5 % 10";
-            let (root, errors) = parse(src, false);
-            insta::assert_debug_snapshot!(root);
+            test_helper("1 + 2/3 * 3^2 - 4 / 5 % 10");
         }
 
         #[test]
         fn parse_boolean_cmp() {
-            let src = "let a = 1 < 2 && 3 > 4 || 5 <= 6 && 7 >= 8 && !(9 == 10 && 11 != 12)";
-            let (root, errors) = parse(src, false);
-            insta::assert_debug_snapshot!(root);
+            test_helper("1 < 2 and 3 > 4 or 5 <= 6 and 7 >= 8 and !(9 = 10 and 11 != 12)")
         }
 
         #[test]
         fn parse_if() {
-            let src = "let a = if true then 1 else 2";
-            let (root, errors) = parse(src, false);
-            insta::assert_debug_snapshot!(root);
+            test_helper("if true then 1 else 2");
         }
 
         #[test]
         fn parse_lambda() {
-            let src = "let a = \\x -> x + 1";
-            let (root, errors) = parse(src, false);
-            insta::assert_debug_snapshot!(root);
+            test_helper("\\x -> x + 1");
         }
 
         #[test]
         fn parse_lambda_apply() {
-            let src = "let add = (\\x y -> x + y) 1 2";
-            let (root, errors) = parse(src, false);
-            insta::assert_debug_snapshot!(root);
+            test_helper("(\\x y -> x + y) 1 2");
         }
 
         #[test]
         fn parse_let_fn() {
-            let src = "let add x y = x + y";
-            let (root, errors) = parse(src, false);
-            insta::assert_debug_snapshot!(root);
+            test_helper("let add x y = x + y");
         }
 
         #[test]
         fn parse_let_fn_apply() {
-            let src = "let f g x = f (g x)";
-            let (root, errors) = parse(src, false);
-            insta::assert_debug_snapshot!(root);
+            test_helper("let f g x = f (g x)");
         }
 
         #[test]
         fn parse_let_expr() {
-            let src = "let x = let y = 1 in y + 1";
-            let (root, errors) = parse(src, false);
-            insta::assert_debug_snapshot!(root);
+            test_helper("let x = let y = 1 in y + 1");
         }
 
         #[test]
         fn parse_let_fn_expr() {
-            let src = "let f x = let g y = x + y in g 1";
-            let (root, errors) = parse(src, false);
-            insta::assert_debug_snapshot!(root);
+            test_helper("let f x = let g y = x + y in g 1");
         }
     }
+}
+
+// ============================================================================
+//                              NAME RESOLUTION
+// ============================================================================
+
+mod rename {
+    use crate::{intern::InternedString, span::Span, unique_id::UniqueId};
+    use std::{cell::RefCell, collections::HashMap, fmt::Display, rc::Rc};
+
+    #[derive(Debug, Clone, PartialEq)]
+    pub struct ResError {
+        kind: ResErrorKind,
+        span: Span,
+    }
+
+    impl ResError {
+        pub fn new(kind: ResErrorKind, span: Span) -> Self {
+            Self { kind, span }
+        }
+
+        pub fn kind(&self) -> &ResErrorKind {
+            &self.kind
+        }
+
+        pub fn span(&self) -> &Span {
+            &self.span
+        }
+    }
+
+    impl Display for ResError {
+        fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+            write!(f, "{:?} @ {}", self.span, self.kind)
+        }
+    }
+
+    #[derive(Debug, Clone, PartialEq)]
+    pub enum ResErrorKind {
+        UnboundName(InternedString),
+    }
+
+    impl Display for ResErrorKind {
+        fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+            match self {
+                ResErrorKind::UnboundName(name) => {
+                    write!(f, "unbound name '{}'", name)
+                }
+            }
+        }
+    }
+
+    pub type ResResult<T> = Result<T, ResError>;
+
+    #[derive(Debug, Clone, PartialEq)]
+    pub struct Env {
+        parent: Option<Rc<RefCell<Env>>>,
+        data: HashMap<InternedString, UniqueId>,
+    }
+
+    impl Env {
+        pub fn new() -> Rc<RefCell<Self>> {
+            Rc::new(RefCell::new(Self {
+                parent: None,
+                data: HashMap::new(),
+            }))
+        }
+
+        pub fn new_with_parent(parent: Rc<RefCell<Self>>) -> Rc<RefCell<Self>> {
+            Rc::new(RefCell::new(Self {
+                parent: Some(parent),
+                data: HashMap::new(),
+            }))
+        }
+
+        fn find(&self, name: &InternedString) -> Option<UniqueId> {
+            if let Some(id) = self.data.get(name) {
+                Some(*id)
+            } else if let Some(parent) = &self.parent {
+                parent.borrow().find(name)
+            } else {
+                None
+            }
+        }
+
+        fn find_in_scope(&self, name: &InternedString) -> Option<UniqueId> {
+            self.data.get(name).copied()
+        }
+
+        fn find_in_parent(&self, name: &InternedString) -> Option<UniqueId> {
+            if let Some(parent) = &self.parent {
+                parent.borrow().find(name)
+            } else {
+                None
+            }
+        }
+
+        pub fn define(&mut self, name: InternedString) -> UniqueId {
+            let id = UniqueId::gen();
+            self.data.insert(name, id);
+            id
+        }
+
+        // pub fn insert(&mut self, name: InternedString, id: UniqueId) {
+        //     self.data.insert(name, id);
+        // }
+
+        fn define_if_absent_in_scope(&mut self, name: InternedString) -> Option<UniqueId> {
+            if let Some(id) = self.find_in_scope(&name) {
+                Some(id)
+            } else {
+                let id = UniqueId::gen();
+                self.data.insert(name, id);
+                Some(id)
+            }
+        }
+
+        fn define_if_absent(&mut self, name: InternedString) -> UniqueId {
+            if let Some(id) = self.find(&name) {
+                id
+            } else {
+                let id = UniqueId::gen();
+                self.data.insert(name, id);
+                id
+            }
+        }
+    }
+
+    #[derive(Debug)]
+    pub struct Resolver {
+        builtins: HashMap<UniqueId, InternedString>,
+    }
+
+    impl Resolver {
+        pub fn new(db: Rc<RefCell<Database>>) -> Self {
+            Self { db }
+        }
+
+        pub fn resolve(
+            &mut self,
+            env: Rc<RefCell<Env>>,
+            root: &parse::Root,
+        ) -> (Option<Root>, Vec<ResError>) {
+            let mut errors = vec![];
+            let mut decls = vec![];
+            for decl in root.decls() {
+                match self.resolve_decl(env.clone(), decl) {
+                    Ok(d) => {
+                        // trace!("env: {:#?}", env.borrow());
+                        println!("resolver env: {:#?}", env.borrow());
+                        decls.push(d);
+                    }
+                    Err(err) => {
+                        trace!("env: {:#?}", env.borrow());
+                        errors.push(err)
+                    }
+                }
+            }
+            if decls.is_empty() {
+                (None, errors)
+            } else {
+                (
+                    Some(Root {
+                        decls,
+                        span: root.span().clone(),
+                    }),
+                    errors,
+                )
+            }
+        }
+
+        fn resolve_decl(&mut self, env: Rc<RefCell<Env>>, decl: &parse::Decl) -> ResResult<Decl> {
+            trace!("decl env: {:#?}", env.borrow());
+            match decl.kind() {
+                parse::DeclKind::Let { name, expr } => match expr.kind() {
+                    parse::ExprKind::Lambda { .. } => {
+                        let name =
+                            Ident::new(env.borrow_mut().define(name.name().clone()), *name.span());
+                        let let_env = Env::new_with_parent(env.clone());
+                        let expr = self.resolve_expr(let_env.clone(), expr)?;
+                        Ok(Decl::new(DeclKind::Let { name, expr }, decl.span().clone()))
+                    }
+                    _ => {
+                        let let_env = Env::new_with_parent(env.clone());
+                        let expr = self.resolve_expr(let_env.clone(), expr)?;
+                        let name =
+                            Ident::new(env.borrow_mut().define(name.name().clone()), *name.span());
+                        Ok(Decl::new(DeclKind::Let { name, expr }, decl.span().clone()))
+                    }
+                },
+            }
+        }
+
+        fn resolve_expr(&mut self, env: Rc<RefCell<Env>>, expr: &parse::Expr) -> ResResult<Expr> {
+            match expr.kind() {
+                parse::ExprKind::Lit(l) => match l {
+                    parse::Lit::Num(n) => {
+                        Ok(Expr::new(ExprKind::Lit(Lit::Num(n.clone())), *expr.span()))
+                    }
+                    parse::Lit::Bool(b) => {
+                        Ok(Expr::new(ExprKind::Lit(Lit::Bool(*b)), expr.span().clone()))
+                    }
+                    parse::Lit::String(s) => Ok(Expr::new(
+                        ExprKind::Lit(Lit::String(s.clone())),
+                        *expr.span(),
+                    )),
+                },
+                parse::ExprKind::Ident(ident) => {
+                    if let Some(name) = env.borrow().find(ident.name()) {
+                        Ok(Expr::new(
+                            ExprKind::Ident(Ident::new(name, expr.span().clone())),
+                            expr.span().clone(),
+                        ))
+                    } else {
+                        Err(ResError::new(
+                            ResErrorKind::UnboundName(*ident.name()),
+                            *expr.span(),
+                        ))
+                    }
+                }
+                parse::ExprKind::Apply { fun, arg } => Ok(Expr::new(
+                    ExprKind::Apply {
+                        fun: self.resolve_expr(env.clone(), fun)?,
+                        arg: self.resolve_expr(env.clone(), arg)?,
+                    },
+                    *expr.span(),
+                )),
+                parse::ExprKind::Unary { op, expr } => {
+                    let id = env.borrow_mut().define_if_absent(InternedString::from(*op));
+                    let ident = Ident::new(id, *op.span());
+                    self.db
+                        .borrow_mut()
+                        .insert_or_get(id, InternedString::from(*op));
+                    Ok(Expr::new(
+                        ExprKind::Apply {
+                            fun: Expr::new(ExprKind::Ident(ident.clone()), *op.span()),
+                            arg: self.resolve_expr(env.clone(), expr)?,
+                        },
+                        *expr.span(),
+                    ))
+                }
+                parse::ExprKind::Binary { op, lhs, rhs } => {
+                    let id = env.borrow_mut().define_if_absent(InternedString::from(*op));
+                    let ident = Ident::new(id, *op.span());
+                    self.db
+                        .borrow_mut()
+                        .insert_or_get(id, InternedString::from(*op));
+                    Ok(Expr::new(
+                        ExprKind::Apply {
+                            fun: Expr::new(
+                                ExprKind::Apply {
+                                    fun: Expr::new(ExprKind::Ident(ident.clone()), *op.span()),
+                                    arg: self.resolve_expr(env.clone(), lhs)?,
+                                },
+                                *op.span(),
+                            ),
+                            arg: self.resolve_expr(env.clone(), rhs)?,
+                        },
+                        *expr.span(),
+                    ))
+                }
+                parse::ExprKind::If { cond, then, else_ } => Ok(Expr::new(
+                    ExprKind::If {
+                        cond: self.resolve_expr(env.clone(), cond)?,
+                        then: self.resolve_expr(env.clone(), then)?,
+                        else_: self.resolve_expr(env.clone(), else_)?,
+                    },
+                    *expr.span(),
+                )),
+                parse::ExprKind::Let { name, expr, body } => match expr.kind() {
+                    parse::ExprKind::Lambda { .. } => {
+                        let name =
+                            Ident::new(env.borrow_mut().define(name.name().clone()), *name.span());
+                        let let_env = Env::new_with_parent(env.clone());
+                        let res_expr = self.resolve_expr(let_env.clone(), &expr)?;
+                        let body = self.resolve_expr(let_env.clone(), &body)?;
+                        Ok(Expr::new(
+                            ExprKind::Let {
+                                name,
+                                expr: res_expr,
+                                body,
+                            },
+                            *expr.span(),
+                        ))
+                    }
+                    _ => {
+                        let let_env = Env::new_with_parent(env.clone());
+                        let res_expr = self.resolve_expr(let_env.clone(), expr)?;
+                        let name =
+                            Ident::new(env.borrow_mut().define(name.name().clone()), *name.span());
+                        let body = self.resolve_expr(let_env.clone(), body)?;
+                        Ok(Expr::new(
+                            ExprKind::Let {
+                                name,
+                                expr: res_expr,
+                                body,
+                            },
+                            *expr.span(),
+                        ))
+                    }
+                },
+                parse::ExprKind::Lambda { param, expr } => {
+                    let lam_env = Env::new_with_parent(env.clone());
+                    let param =
+                        Ident::new(env.borrow_mut().define(param.name().clone()), *param.span());
+                    Ok(Expr::new(
+                        ExprKind::Lambda {
+                            param,
+                            expr: self.resolve_expr(lam_env.clone(), expr)?,
+                        },
+                        *expr.span(),
+                    ))
+                }
+                parse::ExprKind::Unit => Ok(Expr::new(ExprKind::Unit, *expr.span())),
+            }
+        }
+    }
+
+    mod tests {
+        use super::{Env, Resolver};
+        use crate::{db::Database, parse::parse};
+        use std::{cell::RefCell, rc::Rc};
+
+        fn test_helper(src: &str) -> super::Root {
+            if let (Some(ast), errors) = parse(src) {
+                let db = Rc::new(RefCell::new(Database::new()));
+                let mut resolver = Resolver::new(db.clone());
+                let (res, errors) = resolver.resolve(Env::new(), &ast);
+                if !errors.is_empty() {
+                    panic!("resolve error: {:?}", errors);
+                }
+                res.unwrap()
+            } else {
+                panic!("parse error");
+            }
+        }
+
+        #[test]
+        fn res_let() {
+            insta::assert_debug_snapshot!(test_helper("let x = 1"));
+        }
+
+        #[test]
+        fn res_let_error() {
+            let src = "let x = x";
+            if let (Some(ast), errors) = parse(src) {
+                let db = Rc::new(RefCell::new(Database::new()));
+                let mut r = Resolver::new(db.clone());
+                let (_, errors) = r.resolve(Env::new(), &ast);
+                assert!(!errors.is_empty());
+            } else {
+                panic!("parse error");
+            }
+        }
+
+        #[test]
+        fn res_nested() {
+            insta::assert_debug_snapshot!(test_helper("let a = let x = 1 in let y = 2 in x + y"));
+        }
+
+        // #[test]
+        // fn res_fn_def() {
+        //     let (ast, errors) = crate::syntax::parse::parse("add x y = x + y");
+        //     if !errors.is_empty() {
+        //         panic!("parse error: {:?}", errors);
+        //     }
+        //     let (res, errors) = super::resolve(&ast.unwrap());
+        //     if !errors.is_empty() {
+        //         panic!("resolve error: {:?}", errors);
+        //     }
+        //     insta::assert_debug_snapshot!(res);
+        // }
+
+        // #[test]
+        // fn res_rec_fn_def() {
+        //     let (ast, errors) = crate::syntax::parse::parse("f x = f x");
+        //     if !errors.is_empty() {
+        //         panic!("parse error: {:?}", errors);
+        //     }
+        //     let (res, errors) = super::resolve(&ast.unwrap());
+        //     if !errors.is_empty() {
+        //         panic!("resolve error: {:?}", errors);
+        //     }
+        //     insta::assert_debug_snapshot!(res);
+        // }
+
+        // #[test]
+        // fn res_rec_let() {
+        //     let (ast, errors) = crate::syntax::parse::parse("let f x = f x in f 1");
+        //     if !errors.is_empty() {
+        //         panic!("parse error: {:?}", errors);
+        //     }
+        //     let (res, errors) = super::resolve(&ast.unwrap());
+        //     if !errors.is_empty() {
+        //         panic!("resolve error: {:?}", errors);
+        //     }
+        //     insta::assert_debug_snapshot!(res);
+        // }
+    }
+}
+
+// ============================================================================
+//                                EVALUATION
+// ============================================================================
+
+mod eval {
+    use crate::{intern::InternedString, rename::ResError, unique_id::UniqueId};
+    use num_rational::Rational64;
+    use std::{
+        cell::RefCell,
+        collections::HashMap,
+        fmt::{Debug, Display},
+        rc::Rc,
+    };
+
+    #[derive(Debug, Clone, PartialEq)]
+    pub enum RuntimeError {
+        ParseError(Vec<InternedString>),
+        ResError(Vec<ResError>),
+        ArityError(usize, usize),
+        TypeError(InternedString),
+        DivisionByZero,
+    }
+
+    impl Display for RuntimeError {
+        fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+            match self {
+                RuntimeError::ParseError(errs) => {
+                    write!(f, "Parse error:\n")?;
+                    for err in errs {
+                        write!(f, "{}\n", err)?;
+                    }
+                    Ok(())
+                }
+                RuntimeError::ResError(errs) => {
+                    write!(f, "Resolve error:\n")?;
+                    for err in errs {
+                        write!(f, "{}\n", err)?;
+                    }
+                    Ok(())
+                }
+                RuntimeError::ArityError(expected, found) => {
+                    write!(
+                        f,
+                        "Arity error: expected {} args, found {}",
+                        expected, found
+                    )
+                }
+                RuntimeError::TypeError(err) => write!(f, "Type error: {}", err),
+                RuntimeError::DivisionByZero => write!(f, "Division by zero"),
+            }
+        }
+    }
+
+    pub type RuntimeResult<T> = Result<T, RuntimeError>;
+
+    #[derive(Clone, PartialEq)]
+    pub struct Env {
+        parent: Option<Rc<RefCell<Env>>>,
+        bindings: HashMap<UniqueId, Value>,
+    }
+
+    impl Env {
+        pub fn new() -> Rc<RefCell<Self>> {
+            Rc::new(RefCell::new(Self {
+                parent: None,
+                bindings: HashMap::new(),
+            }))
+        }
+
+        pub fn new_with_parent(parent: Rc<RefCell<Env>>) -> Rc<RefCell<Self>> {
+            Rc::new(RefCell::new(Self {
+                parent: Some(parent),
+                bindings: HashMap::new(),
+            }))
+        }
+
+        pub fn insert(&mut self, id: UniqueId, value: Value) {
+            self.bindings.insert(id, value);
+        }
+
+        pub fn get(&self, id: &UniqueId) -> Option<Value> {
+            self.bindings.get(id).cloned().or(self
+                .parent
+                .as_ref()
+                .and_then(|parent| parent.borrow().get(id).clone()))
+        }
+    }
+
+    impl Debug for Env {
+        fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+            let mut builder = f.debug_struct("Env");
+            builder.field(
+                "parent",
+                if let Some(_) = &self.parent {
+                    &"Some"
+                } else {
+                    &"None"
+                },
+            );
+            builder.field("bindings", &self.bindings);
+            builder.finish()
+        }
+    }
+
+    pub fn default_env(ops: HashMap<InternedString, UniqueId>) -> Rc<RefCell<Env>> {
+        let env = Env::new();
+        env.borrow_mut().insert(
+            ops.get(&InternedString::from("+")).unwrap().clone(),
+            Value::NativeFn(|args| {
+                if args.len() != 2 {
+                    return Err(RuntimeError::ArityError(2, args.len()).into());
+                } else {
+                    match (args.get(0).unwrap(), args.get(1).unwrap()) {
+                        (Value::Lit(Lit::Num(l)), Value::Lit(Lit::Num(r))) => {
+                            Ok(Value::Lit(Lit::Num(l + r)))
+                        }
+                        _ => {
+                            return Err(RuntimeError::TypeError(InternedString::from(format!(
+                                "Expected numbers got {:?}",
+                                args
+                            ))));
+                        }
+                    }
+                }
+            }),
+        );
+        // env.borrow_mut().insert(
+        //     ops.get(&InternedString::from("-")).unwrap().clone(),
+        //     Value::NativeFn(|args| {
+        //         if args.len() != 2 {
+        //             return Err(RuntimeError::ArityError(2, args.len()).into());
+        //         } else {
+        //             match (args.get(0).unwrap(), args.get(1).unwrap()) {
+        //                 (Value::Lit(Lit::Num(l)), Value::Lit(Lit::Num(r))) => {
+        //                     Ok(Value::Lit(Lit::Num(l - r)))
+        //                 }
+        //                 _ => {
+        //                     return Err(format!("Expected number, found {:?}", args).into());
+        //                 }
+        //             }
+        //         }
+        //     }),
+        // );
+        // env.borrow_mut().insert(
+        //     ops.get(&InternedString::from("*")).unwrap().clone(),
+        //     Value::NativeFn(|args| {
+        //         if args.len() != 2 {
+        //             return Err(format!("Expected 2 args, found {}", args.len()).into());
+        //         } else {
+        //             match (args.get(0).unwrap(), args.get(1).unwrap()) {
+        //                 (Value::Lit(Lit::Num(l)), Value::Lit(Lit::Num(r))) => {
+        //                     Ok(Value::Lit(Lit::Num(l * r)))
+        //                 }
+        //                 _ => {
+        //                     return Err(format!("Expected number, found {:?}", args).into());
+        //                 }
+        //             }
+        //         }
+        //     }),
+        // );
+        // env.borrow_mut().insert(
+        //     ops.get(&InternedString::from("/")).unwrap().clone(),
+        //     Value::NativeFn(|args| {
+        //         if args.len() != 2 {
+        //             return Err(format!("Expected 2 args, found {}", args.len()).into());
+        //         } else {
+        //             match (args.get(0).unwrap(), args.get(1).unwrap()) {
+        //                 (Value::Lit(Lit::Num(l)), Value::Lit(Lit::Num(r))) => {
+        //                     if r == &Rational64::from_integer(0) {
+        //                         return Err(format!("Division by zero").into());
+        //                     }
+        //                     Ok(Value::Lit(Lit::Num(l / r)))
+        //                 }
+        //                 _ => {
+        //                     return Err(format!("Expected number, found {:?}", args).into());
+        //                 }
+        //             }
+        //         }
+        //     }),
+        // );
+        // env.borrow_mut().insert(
+        //     ops.get(&InternedString::from("%")).unwrap().clone(),
+        //     Value::NativeFn(|args| {
+        //         if args.len() != 2 {
+        //             return Err(format!("Expected 2 args, found {}", args.len()).into());
+        //         } else {
+        //             match (args.get(0).unwrap(), args.get(1).unwrap()) {
+        //                 (Value::Lit(Lit::Num(l)), Value::Lit(Lit::Num(r))) => {
+        //                     Ok(Value::Lit(Lit::Num(l % r)))
+        //                 }
+        //                 _ => {
+        //                     return Err(format!("Expected number, found {:?}", args).into());
+        //                 }
+        //             }
+        //         }
+        //     }),
+        // );
+        // env.borrow_mut().insert(
+        //     ops.get(&InternedString::from("==")).unwrap().clone(),
+        //     Value::NativeFn(|args| {
+        //         if args.len() != 2 {
+        //             Err(format!("Expected 2 args, found {}", args.len()).into())
+        //         } else {
+        //             match (args.get(0).unwrap(), args.get(1).unwrap()) {
+        //                 (Value::Lit(l), Value::Lit(r)) => Ok(Value::Lit(Lit::Bool(l == r))),
+        //                 (
+        //                     Value::Lambda {
+        //                         env: _,
+        //                         params: p1,
+        //                         body: b1,
+        //                     },
+        //                     Value::Lambda {
+        //                         env: _,
+        //                         params: p2,
+        //                         body: b2,
+        //                     },
+        //                 ) => {
+        //                     if p1.len() != p2.len() {
+        //                         return Ok(Value::Lit(Lit::Bool(false)));
+        //                     } else {
+        //                         let mut p = true;
+        //                         for (p1, p2) in p1.iter().zip(p2) {
+        //                             p = *p1.inner() != *p2.inner();
+        //                             break;
+        //                         }
+        //                         Ok(Value::Lit(Lit::Bool(b1 == b2 && p)))
+        //                     }
+        //                 }
+        //                 (Value::Unit, Value::Unit) => Ok(Value::Lit(Lit::Bool(true))),
+        //                 _ => Ok(Value::Lit(Lit::Bool(false))),
+        //             }
+        //         }
+        //     }),
+        // );
+        // env.borrow_mut().insert(
+        //     ops.get(&InternedString::from("!=")).unwrap().clone(),
+        //     Value::NativeFn(|args| {
+        //         if args.len() != 2 {
+        //             Err(RuntimeError::ArityError(2, args.len()).into())
+        //         } else {
+        //             match (args.get(0).unwrap(), args.get(1).unwrap()) {
+        //                 (Value::Lit(l), Value::Lit(r)) => Ok(Value::Lit(Lit::Bool(l != r))),
+        //                 (
+        //                     Value::Lambda {
+        //                         env: _,
+        //                         params: p1,
+        //                         body: b1,
+        //                     },
+        //                     Value::Lambda {
+        //                         env: _,
+        //                         params: p2,
+        //                         body: b2,
+        //                     },
+        //                 ) => {
+        //                     if p1.len() != p2.len() {
+        //                         return Ok(Value::Lit(Lit::Bool(true)));
+        //                     } else {
+        //                         let mut p = true;
+        //                         for (p1, p2) in p1.iter().zip(p2) {
+        //                             p = *p1.inner() != *p2.inner();
+        //                             break;
+        //                         }
+        //                         Ok(Value::Lit(Lit::Bool(b1 != b2 || p)))
+        //                     }
+        //                 }
+        //                 (Value::Unit, Value::Unit) => Ok(Value::Lit(Lit::Bool(false))),
+        //                 _ => Ok(Value::Lit(Lit::Bool(true))),
+        //             }
+        //         }
+        //     }),
+        // );
+        // env.borrow_mut().insert(
+        //     ops.get(&InternedString::from("<")).unwrap().clone(),
+        //     Value::NativeFn(|args| {
+        //         if args.len() != 2 {
+        //             Err(format!("Expected 2 args, found {}", args.len()).into())
+        //         } else {
+        //             match (args.get(0).unwrap(), args.get(1).unwrap()) {
+        //                 (Value::Lit(Lit::Num(l)), Value::Lit(Lit::Num(r))) => {
+        //                     Ok(Value::Lit(Lit::Bool(l < r)))
+        //                 }
+        //                 _ => {
+        //                     return Err(format!("Expected number, found {:?}", args).into());
+        //                 }
+        //             }
+        //         }
+        //     }),
+        // );
+        // env.borrow_mut().insert(
+        //     ops.get(&InternedString::from(">")).unwrap().clone(),
+        //     Value::NativeFn(|args| {
+        //         if args.len() != 2 {
+        //             Err(format!("Expected 2 args, found {}", args.len()).into())
+        //         } else {
+        //             match (args.get(0).unwrap(), args.get(1).unwrap()) {
+        //                 (Value::Lit(Lit::Num(l)), Value::Lit(Lit::Num(r))) => {
+        //                     Ok(Value::Lit(Lit::Bool(l > r)))
+        //                 }
+        //                 _ => {
+        //                     return Err(format!("Expected number, found {:?}", args).into());
+        //                 }
+        //             }
+        //         }
+        //     }),
+        // );
+        // env.borrow_mut().insert(
+        //     ops.get(&InternedString::from("<=")).unwrap().clone(),
+        //     Value::NativeFn(|args| {
+        //         if args.len() != 2 {
+        //             Err(format!("Expected 2 args, found {}", args.len()).into())
+        //         } else {
+        //             match (args.get(0).unwrap(), args.get(1).unwrap()) {
+        //                 (Value::Lit(Lit::Num(l)), Value::Lit(Lit::Num(r))) => {
+        //                     Ok(Value::Lit(Lit::Bool(l <= r)))
+        //                 }
+        //                 _ => {
+        //                     return Err(format!("Expected number, found {:?}", args).into());
+        //                 }
+        //             }
+        //         }
+        //     }),
+        // );
+        // env.borrow_mut().insert(
+        //     ops.get(&InternedString::from(">=")).unwrap().clone(),
+        //     Value::NativeFn(|args| {
+        //         if args.len() != 2 {
+        //             Err(format!("Expected 2 args, found {}", args.len()).into())
+        //         } else {
+        //             match (args.get(0).unwrap(), args.get(1).unwrap()) {
+        //                 (Value::Lit(Lit::Num(l)), Value::Lit(Lit::Num(r))) => {
+        //                     Ok(Value::Lit(Lit::Bool(l >= r)))
+        //                 }
+        //                 _ => {
+        //                     return Err(format!("Expected number, found {:?}", args).into());
+        //                 }
+        //             }
+        //         }
+        //     }),
+        // );
+        // env.borrow_mut().insert(
+        //     ops.get(&InternedString::from("print")).unwrap().clone(),
+        //     Value::NativeFn(|args| {
+        //         if args.len() != 1 {
+        //             Err(format!("Expected 1 arg, found {}", args.len()).into())
+        //         } else {
+        //             println!("{}", args.get(0).unwrap());
+        //             Ok(Value::Unit)
+        //         }
+        //     }),
+        // );
+        env
+    }
+
+    #[derive(Debug, Clone, PartialEq)]
+    pub enum Value {
+        Lit(Lit),
+        Lambda {
+            env: Rc<RefCell<Env>>,
+            param: Vec<UniqueId>,
+            expr: Expr,
+        },
+        NativeFn(fn(Vec<Value>) -> RuntimeResult<Value>),
+        Unit,
+    }
+
+    impl Display for Value {
+        fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+            match self {
+                Value::Lit(Lit::Num(num)) => write!(f, "{}", num),
+                Value::Lit(Lit::Bool(b)) => write!(f, "{}", b),
+                Value::Lit(Lit::String(s)) => write!(f, "{}", s),
+                Value::Lambda { .. } => write!(f, "<lambda>"),
+                Value::NativeFn { .. } => write!(f, "<native fn>"),
+                Value::Unit => write!(f, "()"),
+            }
+        }
+    }
+
+    #[derive(Debug, Clone, PartialEq)]
+    pub enum Lit {
+        Num(Rational64),
+        Bool(bool),
+        String(InternedString),
+    }
+
+    impl Display for Lit {
+        fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+            match self {
+                Lit::Num(num) => write!(f, "{}", num),
+                Lit::Bool(b) => write!(f, "{}", b),
+                Lit::String(s) => write!(f, "{}", s),
+            }
+        }
+    }
+
+    // pub fn eval<'src>(
+    //     src: &'src str,
+    //     repl_src: &'src str,
+    //     env: Rc<RefCell<Env>>,
+    //     root: Root,
+    // ) -> RuntimeResult<Value> {
+    //     let mut val = Value::Unit;
+    //     for decl in root.decls() {
+    //         match decl.kind() {
+    //             Item::Expr(expr) => {
+    //                 val = eval_expr(src, repl_src, env.clone(), Node::new(expr, item.span()))?;
+    //             }
+    //             Item::Def { pat, expr, .. } => {
+    //                 let value = eval_expr(src, repl_src, env.clone(), expr)?;
+    //                 let ds = destructure_pattern(env.clone(), pat, Node::new(value, item.span()));
+    //                 // env.borrow_mut().insert(name.inner().clone(), value);
+    //                 val = Value::Unit;
+    //             }
+    //         }
+    //     }
+    //     Ok(val)
+    // }
+
+    // fn eval_expr<'src>(
+    //     src: &'src str,
+    //     repl_src: &'src str,
+    //     mut env: Rc<RefCell<Env>>,
+    //     mut expr: Expr,
+    // ) -> RuntimeResult<Value> {
+    //     let val: Value;
+    //     'tco: loop {
+    //         val = match expr.kind() {
+    //             ExprKind::Lit { lit, .. } => match lit {
+    //                 rename::Lit::Num(num) => Value::Lit(Lit::Num(num.clone())),
+    //                 rename::Lit::Bool(b) => Value::Lit(Lit::Bool(b)),
+    //                 rename::Lit::String(s) => Value::Lit(Lit::String(s.clone())),
+    //             },
+    //             Expr::Ident { name, .. } => {
+    //                 if let Some(value) = env.borrow().get(&name) {
+    //                     value
+    //                 } else {
+    //                     return Err(
+    //                         format!("Identifier '{}' not found", repl_src[name.span()].trim()).into(),
+    //                     );
+    //                 }
+    //             }
+    //             Expr::Lambda { params, body, .. } => Value::Lambda {
+    //                 env: env.clone(),
+    //                 params,
+    //                 body,
+    //             },
+    //             Expr::Apply { fun, args, .. } => {
+    //                 let fun = eval_expr(src, repl_src, env.clone(), fun)?;
+    //                 // println!("fun: {:?}", fun);
+    //                 match fun {
+    //                     Value::Lambda {
+    //                         env: lam_env,
+    //                         params,
+    //                         body,
+    //                     } => {
+    //                         let arg_env = Env::new_with_parent(lam_env.clone());
+    //                         for (p, arg) in params.iter().zip(args) {
+    //                             if !destructure_pattern(
+    //                                 arg_env.clone(),
+    //                                 p.clone(),
+    //                                 Node::new(
+    //                                     eval_expr(src, repl_src, env.clone(), arg.clone())?,
+    //                                     expr.span(),
+    //                                 ),
+    //                             ) {
+    //                                 return Err(format!("Could not destructure pattern").into());
+    //                             }
+    //                         }
+
+    //                         expr = body;
+    //                         env = arg_env;
+    //                         continue 'tco;
+    //                     }
+    //                     Value::NativeFn(fun) => {
+    //                         let mut new_args = Vec::new();
+    //                         for arg in args {
+    //                             new_args.push(eval_expr(src, repl_src, env.clone(), arg)?);
+    //                         }
+    //                         fun(new_args)?
+    //                     }
+    //                     _ => {
+    //                         return Err(format!("Expected lambda, found {:?}", fun).into());
+    //                     }
+    //                 }
+    //             }
+    //             Expr::Let {
+    //                 pat,
+    //                 expr: let_expr,
+    //                 body,
+    //                 ..
+    //             } => {
+    //                 let value = eval_expr(src, repl_src, env.clone(), let_expr.clone())?;
+    //                 if destructure_pattern(env.clone(), pat, Node::new(value, let_expr.span())) {
+    //                     expr = body;
+    //                     continue 'tco;
+    //                 } else {
+    //                     return Err(format!("Could not destructure pattern").into());
+    //                 }
+    //             }
+    //             Expr::Fn {
+    //                 name,
+    //                 params,
+    //                 expr,
+    //                 body,
+    //                 ty,
+    //             } => {
+    //                 let value = Value::Lambda {
+    //                     env: Env::new_with_parent(env.clone()),
+    //                     params,
+    //                     body: expr.clone(),
+    //                 };
+    //                 env.borrow_mut().insert(name.inner().clone(), value);
+    //                 eval_expr(src, repl_src, env, body)?
+    //             }
+    //             Expr::Match {
+    //                 expr: mexpr,
+    //                 cases,
+    //                 ty,
+    //             } => {
+    //                 let val = eval_expr(src, repl_src, env.clone(), mexpr.clone())?;
+    //                 let match_env = Env::new_with_parent(env.clone());
+    //                 for case in cases {
+    //                     if destructure_pattern(
+    //                         match_env.clone(),
+    //                         case.pattern.clone(),
+    //                         Node::new(val.clone(), mexpr.span()),
+    //                     ) {
+    //                         env = match_env;
+    //                         expr = case.expr.clone();
+    //                         continue 'tco;
+    //                     } else {
+    //                         continue;
+    //                     }
+    //                 }
+    //                 return Err(format!("No matching pattern found for {:?}", val).into());
+    //             }
+    //             Expr::If {
+    //                 cond, then, else_, ..
+    //             } => {
+    //                 let cond = eval_expr(src, repl_src, env.clone(), cond)?;
+    //                 match cond {
+    //                     Value::Lit(Lit::Bool(true)) => {
+    //                         expr = then;
+    //                         continue 'tco;
+    //                     }
+    //                     Value::Lit(Lit::Bool(false)) => {
+    //                         expr = else_;
+    //                         continue 'tco;
+    //                     }
+    //                     _ => {
+    //                         return Err(format!("Expected bool, found {:?}", cond).into());
+    //                     }
+    //                 }
+    //             }
+    //             Expr::Unit => Value::Unit,
+    //         };
+
+    //         break 'tco;
+    //     }
+    //     Ok(val)
+    // }
+
+    // fn destructure_pattern(env: Rc<RefCell<Env>>, pat: Node<rename::Pattern>, val: Node<Value>) -> bool {
+    //     match pat.inner().clone() {
+    //         rename::Pattern::Lit(l) => {
+    //             if let Value::Lit(v) = val.inner() {
+    //                 l == *v
+    //             } else {
+    //                 false
+    //             }
+    //         }
+    //         rename::Pattern::Ident(name) => {
+    //             env.borrow_mut().insert(name, val.inner().clone());
+    //             true
+    //         }
+    //         rename::Pattern::Wildcard => true,
+    //         rename::Pattern::Unit => Value::Unit == val.inner().clone(),
+    //     }
+    // }
 }
 
 // ============================================================================
