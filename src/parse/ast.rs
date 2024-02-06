@@ -1,5 +1,10 @@
-use crate::{intern::InternedString, list::List, span::Span, token::Token};
-use num_rational::Rational64;
+use crate::{
+    lex::token::Token,
+    utils::{intern::InternedString, list::List, span::Span},
+};
+use num_bigint::BigInt;
+use num_complex::Complex64;
+use num_rational::{BigRational, Rational64};
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Root {
@@ -8,6 +13,26 @@ pub struct Root {
 }
 
 impl Root {
+    pub fn new(decls: Vec<Decl>, span: Span) -> Self {
+        Self { decls, span }
+    }
+
+    pub fn decls(&self) -> &[Decl] {
+        &self.decls
+    }
+
+    pub fn span(&self) -> &Span {
+        &self.span
+    }
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct Module {
+    decls: Vec<Decl>,
+    span: Span,
+}
+
+impl Module {
     pub fn new(decls: Vec<Decl>, span: Span) -> Self {
         Self { decls, span }
     }
@@ -118,7 +143,7 @@ pub enum ExprKind {
     Ident(Ident),
     Apply {
         fun: Expr,
-        arg: Expr,
+        args: Vec<Expr>,
     },
     Unary {
         op: UnaryOp,
@@ -153,7 +178,7 @@ pub enum ExprKind {
         step: Option<Expr>,
     },
     Lambda {
-        param: Pattern,
+        params: Vec<Pattern>,
         expr: Expr,
     },
     Record {
@@ -400,7 +425,13 @@ impl ToString for Ident {
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Lit {
-    Num(Rational64),
+    Int(i64),
+    Real(f64),
+    Rational(Rational64),
+    BigInt(BigInt),
+    BigRational(BigRational),
+    Complex(Complex64),
     Bool(bool),
     String(InternedString),
+    Char(char),
 }

@@ -1,8 +1,8 @@
-mod runtime;
 mod infer;
 mod lex;
 mod parse;
 mod rename;
+mod runtime;
 mod utils;
 
 fn main() {

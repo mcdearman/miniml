@@ -1,6 +1,8 @@
 use crate::utils::intern::InternedString;
 use logos::Logos;
-use num_rational::Rational64;
+use num_bigint::BigInt;
+use num_complex::Complex64;
+use num_rational::{BigRational, Rational64};
 use std::fmt::Display;
 
 #[derive(Logos, Debug, Clone, PartialEq)]
@@ -13,9 +15,25 @@ pub enum Token {
 
     // Literals and identifiers
     #[regex(
-        r"-?((0b[0-1]+)|(0o[0-7]+)|(0x[0-9a-fA-F]+)|([1-9]\d*|0))(/-?((0b[0-1]+)|(0o[0-7]+)|(0x[0-9a-fA-F]+)|([1-9]\d*|0)))?", 
+        r"-?((0b[0-1]+)|(0o[0-7]+)|(0x[0-9a-fA-F]+)|([1-9]\d*|0))", 
+        |lex| lex.slice().parse().ok(),
+        priority = 3
+    )]
+    Int(BigInt),
+    #[regex(
+        r"-?(\d+(\.\d*)?|\.\d+)([eE][+-]?\d+)?", 
+        |lex| lex.slice().parse().ok(),
+        priority = 2
+    )]
+    Real(f64),
+    #[regex(
+        r"-?((0b[0-1]+)|(0o[0-7]+)|(0x[0-9a-fA-F]+)|([1-9]\d*|0))(/-?((0b[0-1]+)|(0o[0-7]+)|(0x[0-9a-fA-F]+)|([1-9]\d*|0)))", 
         |lex| lex.slice().parse().ok())]
-    Num(Rational64),
+    Rational(BigRational),
+    #[regex(
+        r"-?(\d+(\.\d*)?|\.\d+)([eE][+-]?\d+)?", |lex| lex.slice().parse().ok()
+    )]
+    Complex(Complex64),
     #[regex(r"true|false", |lex| lex.slice().parse().ok())]
     Bool(bool),
     #[regex(r#""(\\.|[^"\\])*""#, |lex| InternedString::from(lex.slice()))]
@@ -115,7 +133,10 @@ impl Display for Token {
             Error => write!(f, "Error"),
             Comment => write!(f, "Comment"),
             Whitespace => write!(f, "Whitespace"),
-            Num(n) => write!(f, "Num({})", n),
+            Int(i) => write!(f, "Int({})", i),
+            Real(r) => write!(f, "Real({})", r),
+            Rational(r) => write!(f, "Rational({})", r),
+            Complex(c) => write!(f, "Complex({})", c),
             Bool(b) => write!(f, "Bool({})", b),
             String(s) => write!(f, "String({})", s),
             Ident(s) => write!(f, "Ident({})", s),
