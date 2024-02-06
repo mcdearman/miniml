@@ -19,7 +19,7 @@ pub enum Token {
         |lex| lex.slice().parse().ok(),
         priority = 3
     )]
-    Int(BigInt),
+    Int(i64),
     #[regex(
         r"-?(\d+(\.\d*)?|\.\d+)([eE][+-]?\d+)?", 
         |lex| lex.slice().parse().ok(),
@@ -29,15 +29,13 @@ pub enum Token {
     #[regex(
         r"-?((0b[0-1]+)|(0o[0-7]+)|(0x[0-9a-fA-F]+)|([1-9]\d*|0))(/-?((0b[0-1]+)|(0o[0-7]+)|(0x[0-9a-fA-F]+)|([1-9]\d*|0)))", 
         |lex| lex.slice().parse().ok())]
-    Rational(BigRational),
-    #[regex(
-        r"-?(\d+(\.\d*)?|\.\d+)([eE][+-]?\d+)?", |lex| lex.slice().parse().ok()
-    )]
-    Complex(Complex64),
+    Rational(Rational64),
     #[regex(r"true|false", |lex| lex.slice().parse().ok())]
     Bool(bool),
     #[regex(r#""(\\.|[^"\\])*""#, |lex| InternedString::from(lex.slice()))]
     String(InternedString),
+    #[regex(r"'(\\.|[^'\\])'", |lex| lex.slice().chars().nth(1))]
+    Char(char),
     #[regex(r"[a-zA-Z_][a-zA-Z0-9_]*", |lex| InternedString::from(lex.slice()))]
     Ident(InternedString),
 
@@ -112,6 +110,8 @@ pub enum Token {
     Mod,
     #[token("end")]
     End,
+    #[token("use")]
+    Use,
     #[token("let")]
     Let,
     #[token("in")]
@@ -124,6 +124,10 @@ pub enum Token {
     Else,
     #[token("type")]
     Type,
+    #[token("class")]
+    Class,
+    #[token("as")]
+    As,
 }
 
 impl Display for Token {
@@ -136,9 +140,9 @@ impl Display for Token {
             Int(i) => write!(f, "Int({})", i),
             Real(r) => write!(f, "Real({})", r),
             Rational(r) => write!(f, "Rational({})", r),
-            Complex(c) => write!(f, "Complex({})", c),
             Bool(b) => write!(f, "Bool({})", b),
             String(s) => write!(f, "String({})", s),
+            Char(c) => write!(f, "Char({})", c),
             Ident(s) => write!(f, "Ident({})", s),
             Wildcard => write!(f, "Wildcard"),
             Backslash => write!(f, "Backslash"),
@@ -174,12 +178,15 @@ impl Display for Token {
             Pub => write!(f, "Pub"),
             Mod => write!(f, "Mod"),
             End => write!(f, "End"),
+            Use => write!(f, "Use"),
             Let => write!(f, "Let"),
             In => write!(f, "In"),
             If => write!(f, "If"),
             Then => write!(f, "Then"),
             Else => write!(f, "Else"),
             Type => write!(f, "Type"),
+            Class => write!(f, "Class"),
+            As => write!(f, "As"),
         }
     }
 }

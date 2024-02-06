@@ -28,14 +28,14 @@ pub let x = 1
 -- rationals
 1/2
 
--- complex
-1.0 + 2.0i
+-- -- complex
+-- 1.0 + 2.0i
 
--- bigints
-1n
+-- -- bigints
+-- 1n
 
--- bigrationals
-1/2n
+-- -- bigrationals
+-- 1/2n
 
 -- booleans
 true
@@ -143,3 +143,21 @@ type Point = Point Num Num
 type Shape 
   = Circle Num 
   | Rectangle Num Num
+
+-- Modules are automatically defined by the file name.
+-- You can also define modules explicitly:
+module Math = 
+  let add x y = x + y
+  let sub x y = x - y
+end
+
+Math.add 1 2
+
+-- You can bring names from a module into scope with `use`:
+use Math.add
+add 1 2
+
+-- You can also use `use` to bring all names into scope:
+use Math
+add 1 2
+sub 1 2

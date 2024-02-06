@@ -50,13 +50,13 @@ fn repl_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
             ),
             expr: Expr::new(
                 ExprKind::Lambda {
-                    param: Pattern::new(
+                    params: vec![Pattern::new(
                         PatternKind::Ident(Ident::new(
                             InternedString::from("args"),
                             e.span().clone(),
                         )),
                         e.span().clone(),
-                    ),
+                    )],
                     expr: e.clone(),
                 },
                 e.span().clone(),
@@ -86,8 +86,20 @@ fn decl_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
                 PatternKind::Ident(name.clone()),
                 name.span().extend(*expr.span()),
             ),
-            expr: curry_fn(params, expr),
+            expr: Expr::new(
+                ExprKind::Lambda {
+                    params,
+                    expr: expr.clone(),
+                },
+                name.span().extend(*expr.span()),
+            ),
         });
+
+    // let datatype = just(Token::Type)
+    //     .ignore_then(ident_parser())
+    //     .then_ignore(just(Token::Assign))
+    //     .then(datatype_kind_parser())
+    //     .map(|(name, kind)| DeclKind::DataType(DataType::new(name, kind)));
 
     let_.or(fn_).map_with_span(Decl::new).boxed()
 }
@@ -127,7 +139,13 @@ fn expr_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
                     PatternKind::Ident(name.clone()),
                     name.span().extend(*body.span()),
                 ),
-                expr: curry_fn(params, expr),
+                expr: Expr::new(
+                    ExprKind::Lambda {
+                        params,
+                        expr: expr.clone(),
+                    },
+                    name.span().extend(*expr.span()),
+                ),
                 body,
             })
             .map_with_span(Expr::new);
@@ -136,7 +154,8 @@ fn expr_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
             .ignore_then(pattern_parser().repeated().at_least(1).collect())
             .then_ignore(just(Token::RArrow))
             .then(expr.clone())
-            .map(|(params, expr)| curry_fn(params, expr));
+            .map(|(params, expr)| ExprKind::Lambda { params, expr })
+            .map_with_span(Expr::new);
 
         let if_ = just(Token::If)
             .ignore_then(expr.clone())
@@ -165,18 +184,16 @@ fn expr_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
             .clone()
             .then(atom.clone().repeated().collect::<Vec<_>>())
             .map(|(fun, args)| {
-                if args.len() == 0 {
+                if args.is_empty() {
                     fun.clone()
                 } else {
-                    args.into_iter().fold(fun, |fun, arg| {
-                        Expr::new(
-                            ExprKind::Apply {
-                                fun: fun.clone(),
-                                arg: arg.clone(),
-                            },
-                            fun.span().extend(*arg.span()),
-                        )
-                    })
+                    Expr::new(
+                        ExprKind::Apply {
+                            fun: fun.clone(),
+                            args: args.clone(),
+                        },
+                        fun.span().extend(*args.last().unwrap().span()),
+                    )
                 }
             })
             .boxed();
@@ -388,25 +405,13 @@ fn ident_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
 fn lit_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
 ) -> impl ChumskyParser<'a, I, Lit, extra::Err<Rich<'a, Token, Span>>> {
     select! {
-        Token::Int(i) => match 
+        Token::Int(i) => Lit::Int(i),
         Token::Real(r) => Lit::Real(r),
         Token::Rational(r) => Lit::Rational(r),
-        Token::Complex(c) => Lit::Complex(c),
         Token::Bool(b) => Lit::Bool(b),
         Token::String(s) => Lit::String(s),
+        Token::Char(c) => Lit::Char(c),
     }
-}
-
-fn curry_fn(params: Vec<Pattern>, expr: Expr) -> Expr {
-    params.into_iter().rev().fold(expr, |expr, param| {
-        Expr::new(
-            ExprKind::Lambda {
-                param: param.clone(),
-                expr: expr.clone(),
-            },
-            param.span().extend(*expr.span()),
-        )
-    })
 }
 
 mod tests {
