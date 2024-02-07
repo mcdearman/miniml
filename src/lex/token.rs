@@ -1,8 +1,6 @@
 use crate::utils::intern::InternedString;
 use logos::Logos;
-use num_bigint::BigInt;
-use num_complex::Complex64;
-use num_rational::{BigRational, Rational64};
+use num_rational::Rational64;
 use std::fmt::Display;
 
 #[derive(Logos, Debug, Clone, PartialEq)]
@@ -80,6 +78,10 @@ pub enum Token {
     Bang,
     #[token(",")]
     Comma,
+    #[token(".")]
+    Period,
+    #[token("..")]
+    DoublePeriod,
     #[token(":")]
     Colon,
     #[token("::")]
@@ -98,6 +100,8 @@ pub enum Token {
     LBrack,
     #[token("]")]
     RBrack,
+    #[token("#[")]
+    HashLBrack,
     #[token("|")]
     Bar,
     #[token("|>")]
@@ -166,6 +170,8 @@ impl Display for Token {
             Geq => write!(f, "Geq"),
             Bang => write!(f, "Bang"),
             Comma => write!(f, "Comma"),
+            Period => write!(f, "Period"),
+            DoublePeriod => write!(f, "DoublePeriod"),
             Colon => write!(f, "Colon"),
             DoubleColon => write!(f, "DoubleColon"),
             SemiColon => write!(f, "SemiColon"),
@@ -175,6 +181,7 @@ impl Display for Token {
             RBrace => write!(f, "RBrace"),
             LBrack => write!(f, "LBrack"),
             RBrack => write!(f, "RBrack"),
+            HashLBrack => write!(f, "HashLBrack"),
             Bar => write!(f, "Bar"),
             Pipe => write!(f, "Pipe"),
             Pub => write!(f, "Pub"),

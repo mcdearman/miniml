@@ -169,11 +169,12 @@ pub enum ExprKind {
         expr: Expr,
     },
     List(Vec<Expr>),
-    Vec(Vec<Expr>),
+    Array(Vec<Expr>),
     Tuple(Vec<Expr>),
     Range {
         start: Expr,
         end: Expr,
+        inclusive: bool,
         step: Option<Expr>,
     },
     Record {

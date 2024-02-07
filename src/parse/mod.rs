@@ -116,11 +116,55 @@ fn expr_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
 
         let list = expr
             .clone()
-            .then_ignore(just(Token::Comma))
-            .repeated()
+            .separated_by(just(Token::Comma))
+            .allow_trailing()
             .collect()
             .delimited_by(just(Token::LBrack), just(Token::RBrack))
             .map(ExprKind::List)
+            .map_with_span(Expr::new);
+
+        let array = expr
+            .clone()
+            .separated_by(just(Token::Comma))
+            .allow_trailing()
+            .collect()
+            .delimited_by(just(Token::LBrack), just(Token::RBrack))
+            .map(ExprKind::Array)
+            .map_with_span(Expr::new);
+
+        let tuple = expr
+            .clone()
+            .separated_by(just(Token::Comma))
+            .allow_trailing()
+            .collect()
+            .delimited_by(just(Token::LParen), just(Token::RParen))
+            .map(ExprKind::Tuple)
+            .map_with_span(Expr::new);
+
+        let range = expr
+            .clone()
+            .then_ignore(just(Token::DoublePeriod))
+            .then(expr.clone())
+            .map(|(start, end)| ExprKind::Range {
+                start,
+                end,
+                inclusive: false,
+                step: None,
+            })
+            .map_with_span(Expr::new);
+
+        let range_with_step = expr
+            .clone()
+            .then_ignore(just(Token::DoublePeriod))
+            .then(expr.clone())
+            .then_ignore(just(Token::DoublePeriod))
+            .then(expr.clone())
+            .map(|((start, end), step)| ExprKind::Range {
+                start,
+                end,
+                inclusive: true,
+                step: Some(step),
+            })
             .map_with_span(Expr::new);
 
         let let_ = just(Token::Let)
@@ -181,6 +225,8 @@ fn expr_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
             .or(unit)
             .or(lit)
             .or(list)
+            .or(array)
+            .or(tuple)
             .or(let_)
             .or(fn_)
             .or(lambda)

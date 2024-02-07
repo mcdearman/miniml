@@ -34,7 +34,7 @@ true
 -- lists
 [1, 2, 3]
 
--- vectors
+-- arrays
 #[1, 2, 3]
 
 -- tuples
