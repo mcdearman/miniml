@@ -28,20 +28,14 @@ pub let x = 1
 -- rationals
 1/2
 
--- -- complex
--- 1.0 + 2.0i
-
--- -- bigints
--- 1n
-
--- -- bigrationals
--- 1/2n
-
 -- booleans
 true
 
 -- lists
 [1, 2, 3]
+
+-- vectors
+#[1, 2, 3]
 
 -- tuples
 (1, 2)
@@ -54,9 +48,6 @@ true
 
 -- range with step
 1..2..10
-
--- list comprehension
-[x * 2 | x <- [1, 2, 3]]
 
 -- Binary operators
 1 + 2 * 3^2 - 4 / 5 % 10
@@ -129,27 +120,32 @@ let map_iter f xs =
     | [] -> acc
     | x::xs -> loop xs (f x :: acc)
 
-let gcd a b = if b = 0 then a else gcd b (a % b)
+let gcd a b = 
+  if b = 0 then a 
+  else gcd b (a % b)
 
 -- record
-type Point = Point { x : Num, y : Num }
-let p = Point { x = 1, y = 2 }
+type Point = { x : Real, y : Real }
+let p = { x = 1, y = 2 }
 p.x
 
 -- product type
-type Point = Point Num Num
+type Point = Point Real Real
 
 -- sum type
 type Shape 
-  = Circle Num 
-  | Rectangle Num Num
+  = Circle Real 
+  | Rectangle Real Real
 
 -- Modules are automatically defined by the file name.
 -- You can also define modules explicitly:
-module Math = 
+mod Math
   let add x y = x + y
   let sub x y = x - y
 end
+-- this creates a module named Math inside the current module
+-- Note that this will create a sub-module named Math inside
+-- the module defined by the file name.
 
 Math.add 1 2
 

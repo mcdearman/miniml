@@ -114,6 +114,15 @@ fn expr_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
 
         let lit = lit_parser().map(ExprKind::Lit).map_with_span(Expr::new);
 
+        let list = expr
+            .clone()
+            .then_ignore(just(Token::Comma))
+            .repeated()
+            .collect()
+            .delimited_by(just(Token::LBrack), just(Token::RBrack))
+            .map(ExprKind::List)
+            .map_with_span(Expr::new);
+
         let let_ = just(Token::Let)
             .ignore_then(pattern_parser())
             .then_ignore(just(Token::Assign))
@@ -171,6 +180,7 @@ fn expr_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
             .map_with_span(Expr::new)
             .or(unit)
             .or(lit)
+            .or(list)
             .or(let_)
             .or(fn_)
             .or(lambda)

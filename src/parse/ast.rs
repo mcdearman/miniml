@@ -164,22 +164,17 @@ pub enum ExprKind {
         expr: Expr,
         body: Expr,
     },
-    List(List<Expr>),
-    Tuple(Vec<Expr>),
-    ListComp {
+    Lambda {
+        params: Vec<Pattern>,
         expr: Expr,
-        pattern: Pattern,
-        list: Expr,
-        filter: Option<Expr>,
     },
+    List(Vec<Expr>),
+    Vec(Vec<Expr>),
+    Tuple(Vec<Expr>),
     Range {
         start: Expr,
         end: Expr,
         step: Option<Expr>,
-    },
-    Lambda {
-        params: Vec<Pattern>,
-        expr: Expr,
     },
     Record {
         fields: Vec<(Ident, Expr)>,
@@ -216,14 +211,17 @@ impl TypeHint {
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum TypeHintKind {
-    Num,
+    Int,
+    Real,
+    Rational,
     Bool,
     String,
+    Char,
     Ident(Ident),
     List(TypeHint),
     Vec(Vec<TypeHint>),
     Tuple(Vec<TypeHint>),
-    Fn(TypeHint, TypeHint),
+    Fn(Vec<TypeHint>, TypeHint),
     Unit,
 }
 

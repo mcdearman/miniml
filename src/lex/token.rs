@@ -124,6 +124,8 @@ pub enum Token {
     Else,
     #[token("type")]
     Type,
+    #[token("alias")]
+    Alias,
     #[token("class")]
     Class,
     #[token("as")]
@@ -185,6 +187,7 @@ impl Display for Token {
             Then => write!(f, "Then"),
             Else => write!(f, "Else"),
             Type => write!(f, "Type"),
+            Alias => write!(f, "Alias"),
             Class => write!(f, "Class"),
             As => write!(f, "As"),
         }
