@@ -6,7 +6,9 @@ typeAlias = "type" "alias" ident "=" typeHint
 
 typeDef = sumType | productType | recordType
 
-sumType = "type" ident "=" ident+ "|" ident+
+sumType = "type" ident "=" sumTypeCase ("|" sumTypeCase)*
+
+sumTypeCase = ident sumTypeCaseHint
 
 productType = "type" ident "=" ident+
 
@@ -62,6 +64,8 @@ pat = wildcard
     | "(" pat ")"
     | "[" pat ("," pat)* "]"
     | "{" pat ("," pat)* "}"
+
+sumTypeCaseHint = typeHint+ | "{" ident ":" typeHint ("," ident ":" typeHint)* ","? "}"
 
 typeHint = ident
          | "(" typeHint "->" typeHint ")"

@@ -109,7 +109,37 @@ fn decl_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
             ))
         });
 
-    let_.or(fn_).or(record_def).map_with_span(Decl::new).boxed()
+    // sumType = "type" ident "=" sumTypeCase ("|" sumTypeCase)*
+    let sum_type_def = just(Token::Type)
+        .ignore_then(ident_parser())
+        .then_ignore(just(Token::Eq))
+        .then(sum_type_case_parser())
+        .then(
+            just(Token::Bar)
+                .ignore_then(sum_type_case_parser())
+                .repeated()
+                .collect::<Vec<_>>(),
+        )
+        .map(|((name, first), cases)| {
+            DeclKind::DataType(DataType::new(
+                name.clone(),
+                DataTypeKind::Sum {
+                    cases: std::iter::once(first.clone())
+                        .chain(cases.clone())
+                        .collect(),
+                },
+                name.span().extend(match &cases.last().unwrap_or(&first).1 {
+                    Some(hint) => hint.span().clone(),
+                    None => first.0.span().clone(),
+                }),
+            ))
+        });
+
+    let_.or(fn_)
+        .or(record_def)
+        .or(sum_type_def)
+        .map_with_span(Decl::new)
+        .boxed()
 }
 
 fn record_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
@@ -124,6 +154,14 @@ fn record_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
                 .collect(),
         )
         .then_ignore(just(Token::RBrace))
+}
+
+fn sum_type_case_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
+) -> impl ChumskyParser<'a, I, (Ident, Option<SumTypeCaseHint>), extra::Err<Rich<'a, Token, Span>>>
+{
+    ident_parser()
+        .then(sum_type_case_hint_parser().or_not())
+        .map(|(ident, hint)| (ident, hint))
 }
 
 fn expr_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
@@ -455,11 +493,49 @@ fn pattern_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
             .map_with_span(|ident, span| Pattern::new(PatternKind::Ident(ident), span)))
 }
 
+fn sum_type_case_hint_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
+) -> impl ChumskyParser<'a, I, SumTypeCaseHint, extra::Err<Rich<'a, Token, Span>>> {
+    type_hint_parser()
+        .repeated()
+        .at_least(2)
+        .collect()
+        .map(SumTypeCaseHintKind::Product)
+        .or(type_hint_parser().map(SumTypeCaseHintKind::TypeHint))
+        .or(just(Token::LBrace)
+            .ignore_then(
+                ident_parser()
+                    .then_ignore(just(Token::Colon))
+                    .then(type_hint_parser())
+                    .separated_by(just(Token::Comma))
+                    .allow_trailing()
+                    .collect(),
+            )
+            .then_ignore(just(Token::RBrace))
+            .map(SumTypeCaseHintKind::Record))
+        .map_with_span(SumTypeCaseHint::new)
+}
+
 fn type_hint_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
 ) -> impl ChumskyParser<'a, I, TypeHint, extra::Err<Rich<'a, Token, Span>>> {
-    ident_parser()
-        .map(TypeHintKind::Ident)
-        .map_with_span(TypeHint::new)
+    recursive(|hint| {
+        ident_parser()
+            .map(|ident| match ident.name().as_ref() {
+                "Int" => TypeHintKind::Int,
+                "Real" => TypeHintKind::Real,
+                "Rational" => TypeHintKind::Rational,
+                "Bool" => TypeHintKind::Bool,
+                "String" => TypeHintKind::String,
+                "Char" => TypeHintKind::Char,
+                "Unit" => TypeHintKind::Unit,
+                _ => TypeHintKind::Ident(ident),
+            })
+            .or(just(Token::LBrack)
+                .ignore_then(hint.clone())
+                .then_ignore(just(Token::RBrack))
+                .map(TypeHintKind::List))
+            .map_with_span(TypeHint::new)
+            .boxed()
+    })
 }
 
 fn ident_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(

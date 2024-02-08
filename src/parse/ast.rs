@@ -107,7 +107,7 @@ pub enum DataTypeKind {
         fields: Vec<(Ident, TypeHint)>,
     },
     Sum {
-        variants: Vec<(Ident, Option<TypeHint>)>,
+        cases: Vec<(Ident, Option<SumTypeCaseHint>)>,
     },
     Product {
         fields: Vec<TypeHint>,
@@ -182,6 +182,36 @@ pub enum ExprKind {
 }
 
 #[derive(Debug, Clone, PartialEq)]
+pub struct SumTypeCaseHint {
+    kind: Box<SumTypeCaseHintKind>,
+    span: Span,
+}
+
+impl SumTypeCaseHint {
+    pub fn new(kind: SumTypeCaseHintKind, span: Span) -> Self {
+        Self {
+            kind: Box::new(kind),
+            span,
+        }
+    }
+
+    pub fn kind(&self) -> &SumTypeCaseHintKind {
+        &self.kind
+    }
+
+    pub fn span(&self) -> &Span {
+        &self.span
+    }
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum SumTypeCaseHintKind {
+    Record(Vec<(Ident, TypeHint)>),
+    Product(Vec<TypeHint>),
+    TypeHint(TypeHint),
+}
+
+#[derive(Debug, Clone, PartialEq)]
 pub struct TypeHint {
     kind: Box<TypeHintKind>,
     span: Span,
@@ -214,7 +244,7 @@ pub enum TypeHintKind {
     Char,
     Ident(Ident),
     List(TypeHint),
-    Vec(Vec<TypeHint>),
+    Array(Vec<TypeHint>),
     Tuple(Vec<TypeHint>),
     Fn(Vec<TypeHint>, TypeHint),
     Unit,
