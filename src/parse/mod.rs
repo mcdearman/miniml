@@ -221,6 +221,7 @@ fn expr_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
             .clone()
             .separated_by(just(Token::Comma))
             .allow_trailing()
+            .at_least(2)
             .collect()
             .delimited_by(just(Token::LParen), just(Token::RParen))
             .map(ExprKind::Tuple)
@@ -278,6 +279,20 @@ fn expr_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
             .map(|((cond, then), else_)| ExprKind::If { cond, then, else_ })
             .map_with_span(Expr::new);
 
+        let match_ = just(Token::Match)
+            .ignore_then(expr.clone())
+            .then_ignore(just(Token::With))
+            .then(
+                just(Token::Bar)
+                    .ignore_then(pattern_parser())
+                    .then_ignore(just(Token::RArrow))
+                    .then(expr.clone())
+                    .repeated()
+                    .collect(),
+            )
+            .map(|(expr, cases)| ExprKind::Match { expr, cases })
+            .map_with_span(Expr::new);
+
         let record_field = ident_parser()
             .then_ignore(just(Token::Eq))
             .then(expr.clone());
@@ -306,6 +321,7 @@ fn expr_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
             .or(fn_)
             .or(lambda)
             .or(if_)
+            .or(match_)
             .or(expr
                 .clone()
                 .delimited_by(just(Token::LParen), just(Token::RParen)))
@@ -534,10 +550,36 @@ fn expr_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
 
 fn pattern_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
 ) -> impl ChumskyParser<'a, I, Pattern, extra::Err<Rich<'a, Token, Span>>> {
-    just(Token::Wildcard)
-        .map_with_span(|_, span| Pattern::new(PatternKind::Wildcard, span))
-        .or(ident_parser()
-            .map_with_span(|ident, span| Pattern::new(PatternKind::Ident(ident), span)))
+    recursive(|pat| {
+        just(Token::Wildcard)
+            .map(|_| PatternKind::Wildcard)
+            .or(ident_parser().map(PatternKind::Ident))
+            .or(just(Token::LParen)
+                .ignore_then(
+                    pat.clone()
+                        .separated_by(just(Token::Comma))
+                        .allow_trailing()
+                        .collect(),
+                )
+                .then_ignore(just(Token::RParen))
+                .map(PatternKind::Tuple))
+            .or(just(Token::LBrack)
+                .ignore_then(
+                    pat.clone()
+                        .separated_by(just(Token::Comma))
+                        .allow_trailing()
+                        .collect(),
+                )
+                .then_ignore(just(Token::RBrack))
+                .map(PatternKind::List))
+            .or(pat
+                .clone()
+                .then_ignore(just(Token::DoubleColon))
+                .then(pat.clone())
+                .map(PatternKind::Pair))
+            .map_with_span(Pattern::new)
+            .boxed()
+    })
 }
 
 fn sum_type_case_hint_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(

@@ -160,6 +160,10 @@ pub enum ExprKind {
         then: Expr,
         else_: Expr,
     },
+    Match {
+        expr: Expr,
+        cases: Vec<(Pattern, Expr)>,
+    },
     Let {
         pattern: Pattern,
         expr: Expr,
@@ -249,13 +253,16 @@ pub enum TypeHintKind {
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Pattern {
-    kind: PatternKind,
+    kind: Box<PatternKind>,
     span: Span,
 }
 
 impl Pattern {
     pub fn new(kind: PatternKind, span: Span) -> Self {
-        Self { kind, span }
+        Self {
+            kind: Box::new(kind),
+            span,
+        }
     }
 
     pub fn kind(&self) -> &PatternKind {
@@ -417,7 +424,7 @@ pub enum PatternKind {
     String(InternedString),
     Tuple(Vec<Pattern>),
     List(Vec<Pattern>),
-    Cons(Vec<Pattern>, Box<Pattern>),
+    Pair(Pattern, Pattern),
 }
 
 #[derive(Debug, Clone, PartialEq)]
