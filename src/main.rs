@@ -1,10 +1,9 @@
-use crate::{lex::lexer::TokenStream, parse::parse};
+use crate::{lex::token_stream::TokenStream, parse::parse};
 use std::io::{self, Write};
 
 mod infer;
 mod lex;
 mod parse;
-mod rename;
 mod runtime;
 mod utils;
 
@@ -37,6 +36,7 @@ fn main() {
             _ => (),
         }
         let ts = TokenStream::new(&src);
+        println!("tokens: {:#?}\n", ts.tokenize());
         let root = match parse(ts, true) {
             (Some(root), errors) => {
                 if errors.is_empty() {

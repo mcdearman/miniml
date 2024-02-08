@@ -14,7 +14,9 @@ recordType = "type" ident "=" "{" ident ":" typeHint ("," ident ":" typeHint)* "
 
 let = "let" pat "=" expr
 
-expr = or
+expr = range
+
+range = or (".." or)?
 
 or = and ("or" and)*
 
@@ -32,12 +34,7 @@ pow = unary ("^" unary)*
 
 unary = apply | ("-" | "!") unary
 
-
-apply = primary+
-
-primary = range | atom
-
-range = atom ".." atom
+apply = atom+
 
 atom = ident 
      | lit 

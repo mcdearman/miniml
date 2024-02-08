@@ -13,6 +13,10 @@ impl<'src> TokenStream<'src> {
             logos: Token::lexer(src),
         }
     }
+
+    pub fn tokenize(&self) -> Vec<(Token, Span)> {
+        self.clone().collect()
+    }
 }
 
 impl<'src> Iterator for TokenStream<'src> {

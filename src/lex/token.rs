@@ -19,7 +19,7 @@ pub enum Token {
     )]
     Int(i64),
     #[regex(
-        r"-?(\d+(\.\d*)?|\.\d+)([eE][+-]?\d+)?", 
+        r"([0-9]*[.])?[0-9]+", 
         |lex| lex.slice().parse().ok(),
         priority = 2
     )]

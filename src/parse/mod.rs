@@ -210,19 +210,6 @@ fn expr_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
                 .delimited_by(just(Token::LParen), just(Token::RParen)))
             .boxed();
 
-        let range = atom
-            .clone()
-            .then_ignore(just(Token::DoublePeriod))
-            .then(just(Token::Eq).or_not().map(|x| x.is_some()))
-            .then(atom.clone())
-            .map(|((start, inclusive), end)| ExprKind::Range {
-                start,
-                end,
-                inclusive,
-                step: None,
-            })
-            .map_with_span(Expr::new);
-
         let apply = atom
             .clone()
             .then(atom.clone().repeated().collect::<Vec<_>>())
@@ -418,7 +405,20 @@ fn expr_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
             )
             .boxed();
 
-        or
+        let range = or
+            .clone()
+            .then_ignore(just(Token::DoublePeriod))
+            .then(just(Token::Eq).or_not().map(|x| x.is_some()))
+            .then(or.clone())
+            .map(|((start, inclusive), end)| ExprKind::Range {
+                start,
+                end,
+                inclusive,
+                step: None,
+            })
+            .map_with_span(Expr::new);
+
+        range.or(or)
     })
 }
 
@@ -459,7 +459,7 @@ fn lit_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
 
 mod tests {
     use crate::{
-        lex::{lexer::TokenStream, token::Token},
+        lex::{token::Token, token_stream::TokenStream},
         parse::parse,
     };
     use itertools::Itertools;
