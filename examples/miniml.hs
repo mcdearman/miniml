@@ -13,15 +13,15 @@ mod Span =
     String.sub src start (end - start)
 
   pub let spanToLineCol span src = 
-    let spanToLineCol' pos line col =
+    let loop pos line col =
       if pos >= span.start then
         (line, col)
       else if src[pos] = '\n' then
-        spanToLineCol' (pos + 1) (line + 1) 0
+        loop (pos + 1) (line + 1) 0
       else
-        spanToLineCol' (pos + 1) line (col + 1)
+        loop (pos + 1) line (col + 1)
     in
-    spanToLineCol' 0 0 0
+    loop 0 0 0
 
   pub let spanToLineColString span src = 
     let (line, col) = spanToLineCol span src
@@ -96,16 +96,16 @@ mod Lexer =
   let isDigit c = c >= '0' and c <= '9'
 
   let consumeWhitespace lexer =
-    let consumeWhitespace' pos =
+    let loop pos =
       if pos < String.length lexer.src and 
         (lexer.src[pos] = ' ' or 
         lexer.src[pos] = '\t' or 
         lexer.src[pos] = '\n') then
-        consumeWhitespace' (pos + 1)
+        loop (pos + 1)
       else
         pos
     in
-    { lexer with pos = consumeWhitespace' lexer.pos }
+    { lexer with pos = loop lexer.pos }
 
   let peekChar lexer = 
     if lexer.pos < String.length lexer.src then
