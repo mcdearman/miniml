@@ -193,6 +193,21 @@ fn expr_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
             .map(|((cond, then), else_)| ExprKind::If { cond, then, else_ })
             .map_with_span(Expr::new);
 
+        let record_field = ident_parser()
+            .then_ignore(just(Token::Eq))
+            .then(expr.clone());
+
+        let record = just(Token::LBrace)
+            .ignore_then(
+                record_field
+                    .separated_by(just(Token::Comma))
+                    .allow_trailing()
+                    .collect(),
+            )
+            .then_ignore(just(Token::RBrace))
+            .map(|fields| ExprKind::Record { fields })
+            .map_with_span(Expr::new);
+
         let atom = ident_parser()
             .map(ExprKind::Ident)
             .map_with_span(Expr::new)
@@ -201,6 +216,7 @@ fn expr_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
             .or(list)
             .or(array)
             .or(tuple)
+            .or(record)
             .or(let_)
             .or(fn_)
             .or(lambda)
