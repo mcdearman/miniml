@@ -32,9 +32,9 @@ factor = pow (("*" | "/" | "%") pow)*
 
 pow = unary ("^" unary)*
 
-unary = apply | ("-" | "!") unary
+unary = dot | ("-" | "!") unary
 
-fieldAccess = apply "." ident
+dot = apply "." ident
 
 apply = atom+
 

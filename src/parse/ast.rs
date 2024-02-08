@@ -175,10 +175,6 @@ pub enum ExprKind {
     Record {
         fields: Vec<(Ident, Expr)>,
     },
-    FieldAccess {
-        record: Expr,
-        field: Ident,
-    },
     Unit,
 }
 
@@ -364,6 +360,7 @@ pub enum BinaryOpKind {
     Gte,
     And,
     Or,
+    Dot,
 }
 
 impl From<Token> for BinaryOpKind {
@@ -383,6 +380,7 @@ impl From<Token> for BinaryOpKind {
             Token::Geq => Self::Gte,
             Token::And => Self::And,
             Token::Or => Self::Or,
+            Token::Period => Self::Dot,
             _ => unreachable!(),
         }
     }
@@ -405,6 +403,7 @@ impl ToString for BinaryOpKind {
             Self::Gte => ">=".to_string(),
             Self::And => "&&".to_string(),
             Self::Or => "||".to_string(),
+            Self::Dot => ".".to_string(),
         }
     }
 }

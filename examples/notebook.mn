@@ -1,1 +1,1 @@
-type Point = Point Int Int
+let a = x.y.z

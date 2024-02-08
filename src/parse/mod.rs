@@ -1,3 +1,5 @@
+use std::fmt::Binary;
+
 use self::ast::*;
 use crate::{
     lex::token::Token,
@@ -327,6 +329,28 @@ fn expr_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
             })
             .boxed();
 
+        let op = just(Token::Period)
+            .map(BinaryOpKind::from)
+            .map_with_span(BinaryOp::new);
+
+        // dot = apply "." ident
+        let dot = apply
+            .clone()
+            .foldl(
+                op.clone().then(ident_parser()).repeated(),
+                |lhs, (op, rhs)| {
+                    Expr::new(
+                        ExprKind::Binary {
+                            op,
+                            lhs: lhs.clone(),
+                            rhs: Expr::new(ExprKind::Ident(rhs.clone()), rhs.span().clone()),
+                        },
+                        lhs.span().extend(rhs.span().clone()),
+                    )
+                },
+            )
+            .boxed();
+
         let op = just(Token::Minus)
             .map(UnaryOpKind::from)
             .or(just(Token::Bang).map(UnaryOpKind::from))
@@ -336,7 +360,7 @@ fn expr_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
         let unary = op
             .clone()
             .repeated()
-            .foldr(apply.clone(), |op, expr| {
+            .foldr(dot.clone(), |op, expr| {
                 Expr::new(
                     ExprKind::Unary {
                         op: op.clone(),
