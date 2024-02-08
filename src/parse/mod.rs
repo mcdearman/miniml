@@ -135,8 +135,31 @@ fn decl_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
             ))
         });
 
+    // productType = "type" ident "=" ident typeHint+
+    let product_type_def = just(Token::Type)
+        .ignore_then(ident_parser())
+        .then_ignore(just(Token::Eq))
+        .then(ident_parser())
+        .then(
+            type_hint_parser()
+                .repeated()
+                .at_least(1)
+                .collect::<Vec<_>>(),
+        )
+        .map(|((name, constructor), hints)| {
+            DeclKind::DataType(DataType::new(
+                name.clone(),
+                DataTypeKind::Product {
+                    constructor,
+                    fields: hints.clone(),
+                },
+                name.span().extend(*hints.last().unwrap().span()),
+            ))
+        });
+
     let_.or(fn_)
         .or(record_def)
+        .or(product_type_def)
         .or(sum_type_def)
         .map_with_span(Decl::new)
         .boxed()

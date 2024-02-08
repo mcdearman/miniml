@@ -1,7 +1,1 @@
-type Shape = Circle | Square | Triangle
-
-type Shape 
-  = Circle Int 
-  | Square Int
-  | Rectangle Int Int
-  | Triangle { base : Int, height : Int }
+type Point = Point Int Int

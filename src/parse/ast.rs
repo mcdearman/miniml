@@ -110,6 +110,7 @@ pub enum DataTypeKind {
         cases: Vec<(Ident, Option<SumTypeCaseHint>)>,
     },
     Product {
+        constructor: Ident,
         fields: Vec<TypeHint>,
     },
 }

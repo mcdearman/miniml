@@ -10,7 +10,7 @@ sumType = "type" ident "=" sumTypeCase ("|" sumTypeCase)*
 
 sumTypeCase = ident sumTypeCaseHint
 
-productType = "type" ident "=" ident+
+productType = "type" ident "=" ident typeHint+
 
 recordType = "type" ident "=" "{" ident ":" typeHint ("," ident ":" typeHint)* "}"
 
