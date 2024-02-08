@@ -1,8 +1,10 @@
-root = decl+
+root = mod+
 
-decl = let | dataType
+mod = "mod" ident decl+ "end" | decl+
 
-dataType = sumType | productType | recordType
+decl = let | typeDef | typeAlias
+
+typeDef = sumType | productType | recordType
 
 sumType = "type" ident "=" ident+ "|" ident+
 
@@ -30,9 +32,20 @@ pow = unary ("^" unary)*
 
 unary = apply | ("-" | "!") unary
 
-apply = atom+
 
-atom = ident | lit | if | lambda | letExpr | "(" expr ")"
+apply = primary+
+
+primary = range | atom
+
+range = atom ".." atom
+
+atom = ident 
+     | lit 
+     | if 
+     | lambda 
+     | letExpr 
+     | fnExpr 
+     | "(" expr ")"
 
 if = "if" expr "then" expr "else" expr
 
@@ -40,13 +53,15 @@ lambda = "\\" pat+ "->" expr
 
 letExpr = "let" pat "=" expr "in" expr
 
-match = "match" expr "with" "{" matchCase+ "}"
+fnExpr = "let" ident pat+ "=" expr "in" expr
 
-matchCase = pat "->" expr
+match = "match" expr "with" matchCase+
+
+matchCase = "|" pat "->" expr
 
 pat = wildcard
     | lit
-    | ident+
+    | ident
     | "(" pat ")"
     | "[" pat ("," pat)* "]"
     | "{" pat ("," pat)* "}"
@@ -62,13 +77,13 @@ ident = [a-zA-Z_][a-zA-Z0-9_]*
 
 lit = num | str | bool
 
-num = int ("/" int)?
+# num = int ("/" int)?
 
-int = 0 | "-"? [1-9][0-9]*
+# int = 0 | "-"? [1-9][0-9]*
 
-str = "(\\.|[^"\\])*"
+# str = "(\\.|[^"\\])*"
 
-bool = "true" | "false"
+# bool = "true" | "false"
 
 wildcard = "_"
 

@@ -72,14 +72,14 @@ fn decl_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
 ) -> impl ChumskyParser<'a, I, Decl, extra::Err<Rich<'a, Token, Span>>> {
     let let_ = just(Token::Let)
         .ignore_then(pattern_parser())
-        .then_ignore(just(Token::Assign))
+        .then_ignore(just(Token::Eq))
         .then(expr_parser())
         .map(|(pattern, expr)| DeclKind::Let { pattern, expr });
 
     let fn_ = just(Token::Let)
         .ignore_then(ident_parser())
         .then(pattern_parser().repeated().at_least(1).collect())
-        .then_ignore(just(Token::Assign))
+        .then_ignore(just(Token::Eq))
         .then(expr_parser())
         .map(|((name, params), expr)| DeclKind::Let {
             pattern: Pattern::new(
@@ -97,7 +97,7 @@ fn decl_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
 
     // let datatype = just(Token::Type)
     //     .ignore_then(ident_parser())
-    //     .then_ignore(just(Token::Assign))
+    //     .then_ignore(just(Token::Eq))
     //     .then(datatype_kind_parser())
     //     .map(|(name, kind)| DeclKind::DataType(DataType::new(name, kind)));
 
@@ -128,7 +128,7 @@ fn expr_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
             .separated_by(just(Token::Comma))
             .allow_trailing()
             .collect()
-            .delimited_by(just(Token::LBrack), just(Token::RBrack))
+            .delimited_by(just(Token::HashLBrack), just(Token::RBrack))
             .map(ExprKind::Array)
             .map_with_span(Expr::new);
 
@@ -141,35 +141,9 @@ fn expr_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
             .map(ExprKind::Tuple)
             .map_with_span(Expr::new);
 
-        let range = expr
-            .clone()
-            .then_ignore(just(Token::DoublePeriod))
-            .then(expr.clone())
-            .map(|(start, end)| ExprKind::Range {
-                start,
-                end,
-                inclusive: false,
-                step: None,
-            })
-            .map_with_span(Expr::new);
-
-        let range_with_step = expr
-            .clone()
-            .then_ignore(just(Token::DoublePeriod))
-            .then(expr.clone())
-            .then_ignore(just(Token::DoublePeriod))
-            .then(expr.clone())
-            .map(|((start, end), step)| ExprKind::Range {
-                start,
-                end,
-                inclusive: true,
-                step: Some(step),
-            })
-            .map_with_span(Expr::new);
-
         let let_ = just(Token::Let)
             .ignore_then(pattern_parser())
-            .then_ignore(just(Token::Assign))
+            .then_ignore(just(Token::Eq))
             .then(expr.clone())
             .then_ignore(just(Token::In))
             .then(expr.clone())
@@ -183,7 +157,7 @@ fn expr_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
         let fn_ = just(Token::Let)
             .ignore_then(ident_parser())
             .then(pattern_parser().repeated().at_least(1).collect())
-            .then_ignore(just(Token::Assign))
+            .then_ignore(just(Token::Eq))
             .then(expr.clone())
             .then_ignore(just(Token::In))
             .then(expr.clone())
@@ -235,6 +209,19 @@ fn expr_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
                 .clone()
                 .delimited_by(just(Token::LParen), just(Token::RParen)))
             .boxed();
+
+        let range = atom
+            .clone()
+            .then_ignore(just(Token::DoublePeriod))
+            .then(just(Token::Eq).or_not().map(|x| x.is_some()))
+            .then(atom.clone())
+            .map(|((start, inclusive), end)| ExprKind::Range {
+                start,
+                end,
+                inclusive,
+                step: None,
+            })
+            .map_with_span(Expr::new);
 
         let apply = atom
             .clone()
@@ -367,7 +354,7 @@ fn expr_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
             })
             .boxed();
 
-        let op = just(Token::Assign)
+        let op = just(Token::Eq)
             .map(BinaryOpKind::from)
             .or(just(Token::Neq).map(BinaryOpKind::from))
             .map_with_span(BinaryOp::new)

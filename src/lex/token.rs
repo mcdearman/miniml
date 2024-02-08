@@ -46,8 +46,6 @@ pub enum Token {
     LArrow,
     #[token("->")]
     RArrow,
-    #[token("=")]
-    Assign,
     #[token("+")]
     Plus,
     #[token("-")]
@@ -64,6 +62,8 @@ pub enum Token {
     Or,
     #[token("and")]
     And,
+    #[token("=")]
+    Eq,
     #[token("!=")]
     Neq,
     #[token("<")]
@@ -154,7 +154,6 @@ impl Display for Token {
             Backslash => write!(f, "Backslash"),
             LArrow => write!(f, "LArrow"),
             RArrow => write!(f, "RArrow"),
-            Assign => write!(f, "Assign"),
             Plus => write!(f, "Plus"),
             Minus => write!(f, "Minus"),
             Star => write!(f, "Star"),
@@ -163,6 +162,7 @@ impl Display for Token {
             Caret => write!(f, "Caret"),
             Or => write!(f, "Or"),
             And => write!(f, "And"),
+            Eq => write!(f, "Eq"),
             Neq => write!(f, "Neq"),
             Lt => write!(f, "Lt"),
             Gt => write!(f, "Gt"),

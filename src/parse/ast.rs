@@ -344,13 +344,13 @@ pub enum BinaryOpKind {
 impl From<Token> for BinaryOpKind {
     fn from(t: Token) -> Self {
         match t {
-            Token::Assign => Self::Eq,
             Token::Plus => Self::Add,
             Token::Minus => Self::Sub,
             Token::Star => Self::Mul,
             Token::Slash => Self::Div,
             Token::Percent => Self::Rem,
             Token::Caret => Self::Pow,
+            Token::Eq => Self::Eq,
             Token::Neq => Self::Neq,
             Token::Lt => Self::Lt,
             Token::Leq => Self::Lte,
