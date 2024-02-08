@@ -95,13 +95,35 @@ fn decl_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
             ),
         });
 
-    // let datatype = just(Token::Type)
-    //     .ignore_then(ident_parser())
-    //     .then_ignore(just(Token::Eq))
-    //     .then(datatype_kind_parser())
-    //     .map(|(name, kind)| DeclKind::DataType(DataType::new(name, kind)));
+    let record_def = just(Token::Type)
+        .ignore_then(ident_parser())
+        .then_ignore(just(Token::Eq))
+        .then(record_parser())
+        .map(|(name, fields)| {
+            DeclKind::DataType(DataType::new(
+                name.clone(),
+                DataTypeKind::Record {
+                    fields: fields.clone(),
+                },
+                name.span().extend(*fields.last().unwrap().1.span()),
+            ))
+        });
 
-    let_.or(fn_).map_with_span(Decl::new).boxed()
+    let_.or(fn_).or(record_def).map_with_span(Decl::new).boxed()
+}
+
+fn record_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
+) -> impl ChumskyParser<'a, I, Vec<(Ident, TypeHint)>, extra::Err<Rich<'a, Token, Span>>> {
+    just(Token::LBrace)
+        .ignore_then(
+            ident_parser()
+                .then_ignore(just(Token::Colon))
+                .then(type_hint_parser())
+                .separated_by(just(Token::Comma))
+                .allow_trailing()
+                .collect(),
+        )
+        .then_ignore(just(Token::RBrace))
 }
 
 fn expr_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(

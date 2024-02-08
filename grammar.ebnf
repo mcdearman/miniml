@@ -1,8 +1,8 @@
-root = mod+
-
-mod = "mod" ident decl+ "end" | decl+
+root = decl+
 
 decl = let | typeDef | typeAlias
+
+typeAlias = "type" "alias" ident "=" typeHint
 
 typeDef = sumType | productType | recordType
 
