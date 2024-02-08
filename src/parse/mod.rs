@@ -421,20 +421,7 @@ fn expr_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
             )
             .boxed();
 
-        let range = or
-            .clone()
-            .then_ignore(just(Token::DoublePeriod))
-            .then(just(Token::Eq).or_not().map(|x| x.is_some()))
-            .then(or.clone())
-            .map(|((start, inclusive), end)| ExprKind::Range {
-                start,
-                end,
-                inclusive,
-                step: None,
-            })
-            .map_with_span(Expr::new);
-
-        range.or(or)
+        or
     })
 }
 

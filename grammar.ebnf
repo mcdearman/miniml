@@ -14,9 +14,7 @@ recordType = "type" ident "=" "{" ident ":" typeHint ("," ident ":" typeHint)* "
 
 let = "let" pat "=" expr
 
-expr = range
-
-range = or (".." or)?
+expr = or
 
 or = and ("or" and)*
 
@@ -33,6 +31,8 @@ factor = pow (("*" | "/" | "%") pow)*
 pow = unary ("^" unary)*
 
 unary = apply | ("-" | "!") unary
+
+fieldAccess = apply "." ident
 
 apply = atom+
 

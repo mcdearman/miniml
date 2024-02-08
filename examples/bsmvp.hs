@@ -40,6 +40,15 @@ true
 -- tuples
 (1, 2)
 
+-- ranges
+1..10
+
+-- inclusive ranges
+1..=10
+
+-- range with step
+1..2..10
+
 -- Binary operators
 1 + 2 * 3^2 - 4 / 5 % 10
 
@@ -128,5 +137,23 @@ type Shape
   = Circle Real 
   | Rectangle Real Real
 
--- type alias
-type alias Point = (Real, Real)
+-- Modules are automatically defined by the file name.
+-- You can also define modules explicitly:
+mod Math
+  let add x y = x + y
+  let sub x y = x - y
+end
+-- this creates a module named Math inside the current module
+-- Note that this will create a sub-module named Math inside
+-- the module defined by the file name.
+
+Math.add 1 2
+
+-- You can bring names from a module into scope with `use`:
+use Math.add
+add 1 2
+
+-- You can also use `use` to bring all names into scope:
+use Math
+add 1 2
+sub 1 2
