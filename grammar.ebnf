@@ -65,7 +65,7 @@ pat = wildcard
     | ident
     | "(" pat ")"
     | "[" pat ("," pat)* "]"
-    | "{" pat ("," pat)* "}"
+    | "{" (ident "=" pat ",")+ "}"
     | pat "::" pat
 
 sumTypeCaseHint = typeHint+ | "{" ident ":" typeHint ("," ident ":" typeHint)* ","? "}"
