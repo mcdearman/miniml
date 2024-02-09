@@ -1,6 +1,6 @@
 use crate::{
     lex::token::Token,
-    utils::{intern::InternedString, span::Span},
+    utils::{intern::InternedString, span::Span, unique_id::UniqueId},
 };
 use num_rational::Rational64;
 
@@ -293,12 +293,6 @@ impl UnaryOp {
     }
 }
 
-impl From<UnaryOp> for InternedString {
-    fn from(op: UnaryOp) -> Self {
-        InternedString::from(op.kind.to_string())
-    }
-}
-
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum UnaryOpKind {
     Neg,
@@ -341,12 +335,6 @@ impl BinaryOp {
 
     pub fn span(&self) -> &Span {
         &self.span
-    }
-}
-
-impl From<BinaryOp> for InternedString {
-    fn from(op: BinaryOp) -> Self {
-        InternedString::from(op.kind.to_string())
     }
 }
 
@@ -429,27 +417,21 @@ pub enum PatternKind {
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Ident {
-    name: InternedString,
+    name: UniqueId,
     span: Span,
 }
 
 impl Ident {
-    pub fn new(name: InternedString, span: Span) -> Self {
+    pub fn new(name: UniqueId, span: Span) -> Self {
         Self { name, span }
     }
 
-    pub fn name(&self) -> &InternedString {
+    pub fn name(&self) -> &UniqueId {
         &self.name
     }
 
     pub fn span(&self) -> &Span {
         &self.span
-    }
-}
-
-impl ToString for Ident {
-    fn to_string(&self) -> String {
-        self.name.clone().to_string()
     }
 }
 

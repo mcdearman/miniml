@@ -4,6 +4,7 @@ use std::fs;
 mod infer;
 mod lex;
 mod parse;
+mod rename;
 mod runtime;
 mod utils;
 
