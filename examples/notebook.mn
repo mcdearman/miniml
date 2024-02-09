@@ -1,3 +1,5 @@
-let map f xs = match xs with
-  | [] -> []
-  | x::xs -> f x :: map f xs
+let foo = match x with
+  | 1 -> "one"
+  | (1, 2) -> "two"
+  | [1, 2, 3] -> "three"
+  | _ -> "other"

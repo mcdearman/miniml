@@ -572,6 +572,7 @@ fn pattern_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
     recursive(|pat| {
         just(Token::Wildcard)
             .map(|_| PatternKind::Wildcard)
+            .or(lit_parser().map(PatternKind::Lit))
             .or(ident_parser().map(PatternKind::Ident))
             .or(just(Token::LParen)
                 .ignore_then(

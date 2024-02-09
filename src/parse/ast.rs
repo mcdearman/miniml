@@ -421,10 +421,8 @@ impl ToString for BinaryOpKind {
 #[derive(Debug, Clone, PartialEq)]
 pub enum PatternKind {
     Wildcard,
+    Lit(Lit),
     Ident(Ident),
-    Num(Rational64),
-    Bool(bool),
-    String(InternedString),
     Tuple(Vec<Pattern>),
     List(Vec<Pattern>),
     Pair(Pattern, Pattern),
