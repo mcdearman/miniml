@@ -631,6 +631,7 @@ fn type_hint_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
         ident_parser()
             .map(|ident| match ident.name().as_ref() {
                 "Int" => TypeHintKind::Int,
+                "Byte" => TypeHintKind::Byte,
                 "Real" => TypeHintKind::Real,
                 "Rational" => TypeHintKind::Rational,
                 "Bool" => TypeHintKind::Bool,
@@ -643,6 +644,37 @@ fn type_hint_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
                 .ignore_then(hint.clone())
                 .then_ignore(just(Token::RBrack))
                 .map(TypeHintKind::List))
+            .or(just(Token::HashLBrack)
+                .ignore_then(hint.clone())
+                .then_ignore(just(Token::RBrack))
+                .map(TypeHintKind::Array))
+            .or(just(Token::LParen)
+                .ignore_then(
+                    hint.clone()
+                        .separated_by(just(Token::Comma))
+                        .allow_trailing()
+                        .collect(),
+                )
+                .then_ignore(just(Token::RParen))
+                .map(TypeHintKind::Tuple))
+            .map_with_span(TypeHint::new)
+            .then(
+                hint.clone()
+                    .repeated()
+                    .collect::<Vec<_>>()
+                    .then_ignore(just(Token::RArrow))
+                    .then(hint.clone())
+                    .or_not(),
+            )
+            .map(|(first, rest)| match rest {
+                Some((params, ret)) => TypeHintKind::Fn(
+                    std::iter::once(first.clone())
+                        .chain(params.clone())
+                        .collect(),
+                    ret.clone(),
+                ),
+                None => first.kind().clone(),
+            })
             .map_with_span(TypeHint::new)
             .boxed()
     })

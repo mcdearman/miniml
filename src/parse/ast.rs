@@ -238,6 +238,7 @@ impl TypeHint {
 #[derive(Debug, Clone, PartialEq)]
 pub enum TypeHintKind {
     Int,
+    Byte,
     Real,
     Rational,
     Bool,
@@ -245,7 +246,7 @@ pub enum TypeHintKind {
     Char,
     Ident(Ident),
     List(TypeHint),
-    Array(Vec<TypeHint>),
+    Array(TypeHint),
     Tuple(Vec<TypeHint>),
     Fn(Vec<TypeHint>, TypeHint),
     Unit,
@@ -457,6 +458,7 @@ impl ToString for Ident {
 #[derive(Debug, Clone, PartialEq)]
 pub enum Lit {
     Int(i64),
+    Byte(u8),
     Real(f64),
     Rational(Rational64),
     Bool(bool),
