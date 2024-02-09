@@ -16,7 +16,9 @@ recordType = "type" ident "=" "{" ident ":" typeHint ("," ident ":" typeHint)* "
 
 let = "let" pat "=" expr
 
-expr = or
+expr = pair
+
+pair = or "::" or
 
 or = and ("or" and)*
 

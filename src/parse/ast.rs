@@ -368,6 +368,7 @@ pub enum BinaryOpKind {
     And,
     Or,
     Dot,
+    Pair,
 }
 
 impl From<Token> for BinaryOpKind {
@@ -388,6 +389,7 @@ impl From<Token> for BinaryOpKind {
             Token::And => Self::And,
             Token::Or => Self::Or,
             Token::Period => Self::Dot,
+            Token::DoubleColon => Self::Pair,
             _ => unreachable!(),
         }
     }
@@ -411,6 +413,7 @@ impl ToString for BinaryOpKind {
             Self::And => "&&".to_string(),
             Self::Or => "||".to_string(),
             Self::Dot => ".".to_string(),
+            Self::Pair => "::".to_string(),
         }
     }
 }

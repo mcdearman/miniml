@@ -544,7 +544,28 @@ fn expr_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
             )
             .boxed();
 
-        or
+        let op = just(Token::DoubleColon)
+            .map(BinaryOpKind::from)
+            .map_with_span(BinaryOp::new)
+            .boxed();
+
+        let pair = or
+            .clone()
+            .then(op.clone().then(or.clone()).or_not())
+            .map(|(head, rhs)| match rhs {
+                Some((op, tail)) => Expr::new(
+                    ExprKind::Binary {
+                        op,
+                        lhs: head.clone(),
+                        rhs: tail.clone(),
+                    },
+                    head.span().extend(*tail.span()),
+                ),
+                None => head.clone(),
+            })
+            .boxed();
+
+        pair
     })
 }
 
@@ -576,7 +597,7 @@ fn pattern_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
                 .clone()
                 .then_ignore(just(Token::DoubleColon))
                 .then(pat.clone())
-                .map(PatternKind::Pair))
+                .map(|(head, tail)| PatternKind::Pair(head, tail)))
             .map_with_span(Pattern::new)
             .boxed()
     })
