@@ -1,5 +1,3 @@
-use std::fmt::Binary;
-
 use self::ast::*;
 use crate::{
     lex::token::Token,
@@ -593,11 +591,12 @@ fn pattern_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
                 )
                 .then_ignore(just(Token::RBrack))
                 .map(PatternKind::List))
-            .or(pat
-                .clone()
-                .then_ignore(just(Token::DoubleColon))
-                .then(pat.clone())
-                .map(|(head, tail)| PatternKind::Pair(head, tail)))
+            .map_with_span(Pattern::new)
+            .then(just(Token::DoubleColon).ignore_then(pat.clone()).or_not())
+            .map(|(head, tail)| match tail {
+                Some(tail) => PatternKind::Pair(head, tail.clone()),
+                None => head.kind().clone(),
+            })
             .map_with_span(Pattern::new)
             .boxed()
     })
