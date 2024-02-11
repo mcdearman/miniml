@@ -11,6 +11,7 @@ use chumsky::{
     recursive::recursive,
     select, IterParser, Parser as ChumskyParser,
 };
+use rustyline::hint;
 
 pub mod ast;
 
@@ -148,7 +149,7 @@ fn record_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
         .ignore_then(
             ident_parser()
                 .then_ignore(just(Token::Colon))
-                .then(type_hint_parser(base_type_hint_parser()))
+                .then(type_hint_parser())
                 .separated_by(just(Token::Comma))
                 .allow_trailing()
                 .collect(),
@@ -582,17 +583,17 @@ fn pattern_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
 
 fn sum_type_case_hint_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
 ) -> impl ChumskyParser<'a, I, SumTypeCaseHint, extra::Err<Rich<'a, Token, Span>>> {
-    type_hint_parser(base_type_hint_parser())
+    type_hint_parser()
         .repeated()
-        .at_least(2)
+        .at_least(1)
         .collect()
         .map(SumTypeCaseHintKind::Product)
-        .or(type_hint_parser(base_type_hint_parser()).map(SumTypeCaseHintKind::TypeHint))
+        .or(type_hint_parser().map(SumTypeCaseHintKind::TypeHint))
         .or(just(Token::LBrace)
             .ignore_then(
                 ident_parser()
                     .then_ignore(just(Token::Colon))
-                    .then(type_hint_parser(base_type_hint_parser()))
+                    .then(type_hint_parser())
                     .separated_by(just(Token::Comma))
                     .allow_trailing()
                     .collect(),
@@ -603,58 +604,60 @@ fn sum_type_case_hint_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
 }
 
 // typeHint = baseTypeHint | (baseTypeHint+ "->" baseTypeHint)
-fn type_hint_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
-    base: impl ChumskyParser<'a, I, TypeHint, extra::Err<Rich<'a, Token, Span>>> + 'a + Clone,
+fn type_hint_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(// base: impl ChumskyParser<'a, I, TypeHint, extra::Err<Rich<'a, Token, Span>>> + 'a + Clone,
 ) -> impl ChumskyParser<'a, I, TypeHint, extra::Err<Rich<'a, Token, Span>>> {
-    base.clone()
-        .repeated()
-        .at_least(1)
-        .collect::<Vec<_>>()
-        .then_ignore(just(Token::RArrow))
-        .then(base.clone())
-        .map(|(params, ret)| TypeHintKind::Fn(params, ret))
-        .map_with_span(TypeHint::new)
+    recursive(|hint| {
+        base_type_hint_parser(hint.clone())
+            .repeated()
+            .at_least(1)
+            .collect::<Vec<_>>()
+            .then_ignore(just(Token::RArrow))
+            .then(base_type_hint_parser(hint))
+            .map(|(params, ret)| TypeHintKind::Fn(params, ret))
+            .map_with_span(TypeHint::new)
+    })
 }
 
 fn base_type_hint_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
+    hint: impl ChumskyParser<'a, I, TypeHint, extra::Err<Rich<'a, Token, Span>>> + 'a + Clone,
 ) -> impl ChumskyParser<'a, I, TypeHint, extra::Err<Rich<'a, Token, Span>>> + Clone {
-    recursive(|hint| {
-        ident_parser()
-            .map(|ident| match ident.name().as_ref() {
-                "Int" => TypeHintKind::Int,
-                "Byte" => TypeHintKind::Byte,
-                "Real" => TypeHintKind::Real,
-                "Rational" => TypeHintKind::Rational,
-                "Bool" => TypeHintKind::Bool,
-                "String" => TypeHintKind::String,
-                "Char" => TypeHintKind::Char,
-                "Unit" => TypeHintKind::Unit,
-                _ => TypeHintKind::Ident(ident),
-            })
-            .or(just(Token::LBrack)
-                .ignore_then(hint.clone())
-                .then_ignore(just(Token::RBrack))
-                .map(TypeHintKind::List))
-            .or(just(Token::HashLBrack)
-                .ignore_then(hint.clone())
-                .then_ignore(just(Token::RBrack))
-                .map(TypeHintKind::Array))
-            .or(just(Token::LParen)
-                .ignore_then(
-                    hint.clone()
-                        .separated_by(just(Token::Comma))
-                        .at_least(2)
-                        .allow_trailing()
-                        .collect(),
-                )
-                .then_ignore(just(Token::RParen))
-                .map(TypeHintKind::Tuple))
-            .map_with_span(TypeHint::new)
-            .or(just(Token::LParen)
-                .ignore_then(type_hint_parser(hint))
-                .then_ignore(just(Token::RParen)))
-            .boxed()
-    })
+    // recursive(|hint| {
+    ident_parser()
+        .map(|ident| match ident.name().as_ref() {
+            "Int" => TypeHintKind::Int,
+            "Byte" => TypeHintKind::Byte,
+            "Real" => TypeHintKind::Real,
+            "Rational" => TypeHintKind::Rational,
+            "Bool" => TypeHintKind::Bool,
+            "String" => TypeHintKind::String,
+            "Char" => TypeHintKind::Char,
+            "Unit" => TypeHintKind::Unit,
+            _ => TypeHintKind::Ident(ident),
+        })
+        .or(just(Token::LBrack)
+            .ignore_then(hint.clone())
+            .then_ignore(just(Token::RBrack))
+            .map(TypeHintKind::List))
+        .or(just(Token::HashLBrack)
+            .ignore_then(hint.clone())
+            .then_ignore(just(Token::RBrack))
+            .map(TypeHintKind::Array))
+        .or(just(Token::LParen)
+            .ignore_then(
+                hint.clone()
+                    .separated_by(just(Token::Comma))
+                    .at_least(2)
+                    .allow_trailing()
+                    .collect(),
+            )
+            .then_ignore(just(Token::RParen))
+            .map(TypeHintKind::Tuple))
+        .map_with_span(TypeHint::new)
+        .or(just(Token::LParen)
+            .ignore_then(hint)
+            .then_ignore(just(Token::RParen)))
+        .boxed()
+    // })
 }
 
 fn ident_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
