@@ -652,12 +652,16 @@ fn type_hint_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
                 .ignore_then(
                     hint.clone()
                         .separated_by(just(Token::Comma))
+                        .at_least(2)
                         .allow_trailing()
                         .collect(),
                 )
                 .then_ignore(just(Token::RParen))
                 .map(TypeHintKind::Tuple))
             .map_with_span(TypeHint::new)
+            .or(just(Token::LParen)
+                .ignore_then(hint.clone())
+                .then_ignore(just(Token::RParen)))
             .then(
                 hint.clone()
                     .repeated()

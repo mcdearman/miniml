@@ -1,1 +1,1 @@
-type Foo = Bar (Int Int -> Int)
+type Foo = Bar ((Int, Int))

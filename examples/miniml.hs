@@ -9,22 +9,22 @@ type Span = {
 let spanToString span src = 
   let start = span.start
   let end = span.end
-  String.sub src start (end - start)
+  stringSub src start (end - start)
 
--- let spanToLineCol span src = 
---   let loop pos line col =
---     if pos >= span.start then
---       (line, col)
---     else if src[pos] = '\n' then
---       loop (pos + 1) (line + 1) 0
---     else
---       loop (pos + 1) line (col + 1)
---   in
---   loop 0 0 0
+let spanToLineCol span src = 
+  let loop pos line col =
+    if pos >= span.start then
+      (line, col)
+    else if src[pos] = '\n' then
+      loop (pos + 1) (line + 1) 0
+    else
+      loop (pos + 1) line (col + 1)
+  in
+  loop 0 0 0
 
--- let spanToLineColString span src = 
---   let (line, col) = spanToLineCol span src
---   format "{}:{}" (intToString line) (intToString col)
+let spanToLineColString span src = 
+  let (line, col) = spanToLineCol span src
+  format "{}:{}" (intToString line) (intToString col)
 
 -- Lexer
 type Token = {
@@ -83,6 +83,12 @@ let initLexer src = {
 let isWhitespace c = c = ' ' or c = '\t' or c = '\n' or c = '\r'
 
 let isDigit c = c >= '0' and c <= '9'
+
+let isAlpha c = 
+  (c >= 'a' and c <= 'z') or 
+  (c >= 'A' and c <= 'Z')
+
+let isAlphaNum c = isAlpha c or isDigit c
 
 let consumeWhitespace lexer =
   let loop pos =
