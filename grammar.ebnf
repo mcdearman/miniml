@@ -2,17 +2,17 @@ root = decl+
 
 decl = let | typeDef | typeAlias
 
-typeAlias = "type" "alias" ident "=" typeHint
+typeAlias = "type" ident "=" typeHint
 
-typeDef = sumType | productType | recordType
+typeDef = "type" ident "=" sumType | recordType
 
-sumType = "type" ident "=" sumTypeCase ("|" sumTypeCase)*
+sumType = sumTypeCase ("|" sumTypeCase)*
 
 sumTypeCase = ident sumTypeCaseHint
 
-productType = "type" ident "=" ident typeHint+
+sumTypeCaseHint = typeHint+ | "{" ident ":" typeHint ("," ident ":" typeHint)* ","? "}"
 
-recordType = "type" ident "=" "{" ident ":" typeHint ("," ident ":" typeHint)* "}"
+recordType = "{" ident ":" typeHint ("," ident ":" typeHint)* "}"
 
 let = "let" pat "=" expr
 
@@ -56,22 +56,33 @@ letExpr = "let" pat "=" expr "in" expr
 
 fnExpr = "let" ident pat+ "=" expr "in" expr
 
+recordExpr = "{" ident "=" expr ("," ident "=" expr)* "}"
+
+sumExpr = ident 
+
+listExpr = "[" expr ("," expr)* "]"
+
+tupleExpr = "(" expr ("," expr)* ")"
+
+arrayExpr = "#[" expr ("," expr)* "]"
+
 match = "match" expr "with" matchCase+
 
 matchCase = "|" pat "->" expr
 
-pat = wildcard
+pat = basePat ("::" pat)?
+
+basePat = wildcard
     | lit
     | ident
+    | "[" basePat ("," basePat)* "]"
+    | "{" (ident "=" basePat ",")+ "}"
+    | ident basePat
     | "(" pat ")"
-    | "[" pat ("," pat)* "]"
-    | "{" (ident "=" pat ",")+ "}"
-    | pat "::" pat
 
-sumTypeCaseHint = typeHint+ | "{" ident ":" typeHint ("," ident ":" typeHint)* ","? "}"
+typeHint = baseTypeHint | (baseTypeHint+ "->" baseTypeHint)
 
-typeHint = ident
-         | "(" typeHint "->" typeHint ")"
+baseTypeHint = ident
          | "(" typeHint "," typeHint ")"
          | "[" typeHint "]"
          | "(" typeHint ")"
@@ -79,7 +90,7 @@ typeHint = ident
 
 ident = [a-zA-Z_][a-zA-Z0-9_]*
 
-lit = num | str | bool
+lit = byte | int | str | bool
 
 # num = int ("/" int)?
 

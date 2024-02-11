@@ -106,10 +106,20 @@ let map f xs = match xs with
   | [] -> []
   | [y::ys] -> f y :: map f ys
 
-let map_iter f xs = 
+let mapIter f xs = 
   let loop xs acc = match xs with
     | [] -> acc
     | x::xs -> loop xs (f x :: acc)
+  in loop xs []
+
+-- this is equivalent to the following imperative code
+-- let mapIter f xs = 
+--   let acc = [];
+--   for x in xs do
+--     acc = f x :: acc;
+--   end 
+--   return acc;
+
 
 let gcd a b = 
   if b = 0 then a 
@@ -120,13 +130,16 @@ type Point = { x : Real, y : Real }
 let p = { x = 1, y = 2 }
 p.x
 
--- product type
-type Point = Point Real Real
-
 -- sum type
 type Shape 
   = Circle Real 
   | Rectangle Real Real
 
+let s1 = Circle 1
+let s2 = Rectangle 1.0 2.0
+
+-- product types are just single-constructor sum types
+type Point = Point Real Real
+
 -- type alias
-type alias Point = (Real, Real)
+type Point = (Real, Real)

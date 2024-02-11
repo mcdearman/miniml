@@ -135,31 +135,8 @@ fn decl_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
             ))
         });
 
-    // productType = "type" ident "=" ident typeHint+
-    let product_type_def = just(Token::Type)
-        .ignore_then(ident_parser())
-        .then_ignore(just(Token::Eq))
-        .then(ident_parser())
-        .then(
-            type_hint_parser()
-                .repeated()
-                .at_least(1)
-                .collect::<Vec<_>>(),
-        )
-        .map(|((name, constructor), hints)| {
-            DeclKind::DataType(DataType::new(
-                name.clone(),
-                DataTypeKind::Product {
-                    constructor,
-                    fields: hints.clone(),
-                },
-                name.span().extend(*hints.last().unwrap().span()),
-            ))
-        });
-
     let_.or(fn_)
         .or(record_def)
-        .or(product_type_def)
         .or(sum_type_def)
         .map_with_span(Decl::new)
         .boxed()
@@ -625,9 +602,27 @@ fn sum_type_case_hint_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
         .map_with_span(SumTypeCaseHint::new)
 }
 
+// fn type_hint_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
+// ) -> impl ChumskyParser<'a, I, TypeHint, extra::Err<Rich<'a, Token, Span>>> {
+//     recursive(|hint| {
+//         base_type_hint_parser()
+//             .then(just(Token::RArrow).ignore_then(hint.clone()).or_not())
+//             .map(|(first, rest)| match rest {
+//                 Some((params, ret)) => TypeHintKind::Fn(
+//                     std::iter::once(first.clone())
+//                         .chain(params.clone())
+//                         .collect(),
+//                     ret.clone(),
+//                 ),
+//                 None => first.kind().clone(),
+//             })
+//             .map_with_span(TypeHint::new)
+//     })
+// }
+
 fn type_hint_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
 ) -> impl ChumskyParser<'a, I, TypeHint, extra::Err<Rich<'a, Token, Span>>> {
-    recursive(|hint| {
+    let base = recursive(|hint| {
         ident_parser()
             .map(|ident| match ident.name().as_ref() {
                 "Int" => TypeHintKind::Int,
@@ -660,28 +655,23 @@ fn type_hint_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
                 .map(TypeHintKind::Tuple))
             .map_with_span(TypeHint::new)
             .or(just(Token::LParen)
-                .ignore_then(hint.clone())
+                .ignore_then(type_hint_parser())
                 .then_ignore(just(Token::RParen)))
-            .then(
-                hint.clone()
-                    .repeated()
-                    .collect::<Vec<_>>()
-                    .then_ignore(just(Token::RArrow))
-                    .then(hint.clone())
-                    .or_not(),
-            )
-            .map(|(first, rest)| match rest {
-                Some((params, ret)) => TypeHintKind::Fn(
-                    std::iter::once(first.clone())
-                        .chain(params.clone())
-                        .collect(),
-                    ret.clone(),
-                ),
-                None => first.kind().clone(),
-            })
-            .map_with_span(TypeHint::new)
             .boxed()
-    })
+    });
+
+    // typeHint = baseTypeHint | (baseTypeHint+ "->" baseTypeHint)
+    let full = base
+        .clone()
+        .repeated()
+        .at_least(1)
+        .collect::<Vec<_>>()
+        .then_ignore(just(Token::RArrow))
+        .then(base.clone())
+        .map(|(params, ret)| TypeHintKind::Fn(params, ret))
+        .map_with_span(TypeHint::new);
+
+    base.or(full)
 }
 
 fn ident_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(

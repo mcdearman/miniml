@@ -107,10 +107,6 @@ pub enum DataTypeKind {
     Sum {
         cases: Vec<(Ident, Option<SumTypeCaseHint>)>,
     },
-    Product {
-        constructor: Ident,
-        fields: Vec<TypeHint>,
-    },
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -176,6 +172,10 @@ pub enum ExprKind {
     Tuple(Vec<Expr>),
     Record {
         fields: Vec<(Ident, Expr)>,
+    },
+    Sum {
+        case: Ident,
+        expr: Option<Expr>,
     },
     Unit,
 }
@@ -271,6 +271,23 @@ impl Pattern {
     pub fn span(&self) -> &Span {
         &self.span
     }
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum PatternKind {
+    Wildcard,
+    Lit(Lit),
+    Ident(Ident),
+    Tuple(Vec<Pattern>),
+    List(Vec<Pattern>),
+    Pair(Pattern, Pattern),
+    Record {
+        fields: Vec<(Ident, Pattern)>,
+    },
+    Sum {
+        case: Ident,
+        pattern: Option<Pattern>,
+    },
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -415,16 +432,6 @@ impl ToString for BinaryOpKind {
             Self::Pair => "::".to_string(),
         }
     }
-}
-
-#[derive(Debug, Clone, PartialEq)]
-pub enum PatternKind {
-    Wildcard,
-    Lit(Lit),
-    Ident(Ident),
-    Tuple(Vec<Pattern>),
-    List(Vec<Pattern>),
-    Pair(Pattern, Pattern),
 }
 
 #[derive(Debug, Clone, PartialEq)]
