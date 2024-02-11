@@ -1,0 +1,113 @@
+root = decl+
+
+decl = let | typeDef | typeAlias
+
+typeAlias = "type" ident "=" typeHint
+
+typeDef = "type" ident "=" sumType | recordType
+
+sumType = sumTypeCase ("|" sumTypeCase)*
+
+sumTypeCase = ident sumTypeCaseHint
+
+sumTypeCaseHint = typeHint+ | "{" ident ":" typeHint ("," ident ":" typeHint)* ","? "}"
+
+recordType = "{" ident ":" typeHint ("," ident ":" typeHint)* "}"
+
+let = "let" pat "=" expr
+
+expr = pair
+
+pair = or "::" or
+
+or = and ("or" and)*
+
+and = eq ("and" eq)*
+
+eq = cmp (("=" | "!=") cmp)*
+
+cmp = term ((">" | ">=" | "<" | "<=") term)*
+
+term = factor (("+" | "-") factor)*
+
+factor = pow (("*" | "/" | "%") pow)*
+
+pow = unary ("^" unary)*
+
+unary = dot | ("-" | "!") unary
+
+dot = apply "." ident
+
+apply = atom+
+
+atom = ident 
+     | lit 
+     | if 
+     | lambda 
+     | letExpr 
+     | fnExpr 
+     | "(" expr ")"
+
+if = "if" expr "then" expr "else" expr
+
+lambda = "\\" pat+ "->" expr
+
+letExpr = "let" pat "=" expr "in" expr
+
+fnExpr = "let" ident pat+ "=" expr "in" expr
+
+recordExpr = "{" ident "=" expr ("," ident "=" expr)* "}"
+
+sumExpr = ident 
+
+listExpr = "[" expr ("," expr)* "]"
+
+tupleExpr = "(" expr ("," expr)* ")"
+
+arrayExpr = "#[" expr ("," expr)* "]"
+
+match = "match" expr "with" matchCase+
+
+matchCase = "|" pat "->" expr
+
+pat = basePat ("::" pat)?
+
+basePat = wildcard
+    | lit
+    | ident
+    | "[" basePat ("," basePat)* "]"
+    | "{" (ident "=" basePat ",")+ "}"
+    | ident basePat
+    | "(" pat ")"
+
+typeHint = baseTypeHint | (baseTypeHint+ "->" baseTypeHint)
+
+baseTypeHint = ident
+         | "(" typeHint "," typeHint ")"
+         | "[" typeHint "]"
+         | "(" typeHint ")"
+         | unit
+
+ident = [a-zA-Z_][a-zA-Z0-9_]*
+
+lit = byte | int | str | bool
+
+# num = int ("/" int)?
+
+# int = 0 | "-"? [1-9][0-9]*
+
+str = 
+
+<char> = "'"  "'"
+
+<alphaNum> = [a-zA-Z0-9]
+
+<alpha> = [a-zA-Z]
+
+<digit> = [0-9]
+
+<bool> = "true" | "false"
+
+<wildcard> = "_"
+
+<unit> = "()"

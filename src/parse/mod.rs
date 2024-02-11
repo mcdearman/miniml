@@ -148,7 +148,7 @@ fn record_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
         .ignore_then(
             ident_parser()
                 .then_ignore(just(Token::Colon))
-                .then(type_hint_parser())
+                .then(type_hint_parser(base_type_hint_parser()))
                 .separated_by(just(Token::Comma))
                 .allow_trailing()
                 .collect(),
@@ -582,17 +582,17 @@ fn pattern_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
 
 fn sum_type_case_hint_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
 ) -> impl ChumskyParser<'a, I, SumTypeCaseHint, extra::Err<Rich<'a, Token, Span>>> {
-    type_hint_parser()
+    type_hint_parser(base_type_hint_parser())
         .repeated()
         .at_least(2)
         .collect()
         .map(SumTypeCaseHintKind::Product)
-        .or(type_hint_parser().map(SumTypeCaseHintKind::TypeHint))
+        .or(type_hint_parser(base_type_hint_parser()).map(SumTypeCaseHintKind::TypeHint))
         .or(just(Token::LBrace)
             .ignore_then(
                 ident_parser()
                     .then_ignore(just(Token::Colon))
-                    .then(type_hint_parser())
+                    .then(type_hint_parser(base_type_hint_parser()))
                     .separated_by(just(Token::Comma))
                     .allow_trailing()
                     .collect(),
@@ -602,27 +602,23 @@ fn sum_type_case_hint_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
         .map_with_span(SumTypeCaseHint::new)
 }
 
-// fn type_hint_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
-// ) -> impl ChumskyParser<'a, I, TypeHint, extra::Err<Rich<'a, Token, Span>>> {
-//     recursive(|hint| {
-//         base_type_hint_parser()
-//             .then(just(Token::RArrow).ignore_then(hint.clone()).or_not())
-//             .map(|(first, rest)| match rest {
-//                 Some((params, ret)) => TypeHintKind::Fn(
-//                     std::iter::once(first.clone())
-//                         .chain(params.clone())
-//                         .collect(),
-//                     ret.clone(),
-//                 ),
-//                 None => first.kind().clone(),
-//             })
-//             .map_with_span(TypeHint::new)
-//     })
-// }
-
+// typeHint = baseTypeHint | (baseTypeHint+ "->" baseTypeHint)
 fn type_hint_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
+    base: impl ChumskyParser<'a, I, TypeHint, extra::Err<Rich<'a, Token, Span>>> + 'a + Clone,
 ) -> impl ChumskyParser<'a, I, TypeHint, extra::Err<Rich<'a, Token, Span>>> {
-    let base = recursive(|hint| {
+    base.clone()
+        .repeated()
+        .at_least(1)
+        .collect::<Vec<_>>()
+        .then_ignore(just(Token::RArrow))
+        .then(base.clone())
+        .map(|(params, ret)| TypeHintKind::Fn(params, ret))
+        .map_with_span(TypeHint::new)
+}
+
+fn base_type_hint_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
+) -> impl ChumskyParser<'a, I, TypeHint, extra::Err<Rich<'a, Token, Span>>> + Clone {
+    recursive(|hint| {
         ident_parser()
             .map(|ident| match ident.name().as_ref() {
                 "Int" => TypeHintKind::Int,
@@ -655,23 +651,10 @@ fn type_hint_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
                 .map(TypeHintKind::Tuple))
             .map_with_span(TypeHint::new)
             .or(just(Token::LParen)
-                .ignore_then(type_hint_parser())
+                .ignore_then(type_hint_parser(hint))
                 .then_ignore(just(Token::RParen)))
             .boxed()
-    });
-
-    // typeHint = baseTypeHint | (baseTypeHint+ "->" baseTypeHint)
-    let full = base
-        .clone()
-        .repeated()
-        .at_least(1)
-        .collect::<Vec<_>>()
-        .then_ignore(just(Token::RArrow))
-        .then(base.clone())
-        .map(|(params, ret)| TypeHintKind::Fn(params, ret))
-        .map_with_span(TypeHint::new);
-
-    base.or(full)
+    })
 }
 
 fn ident_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
