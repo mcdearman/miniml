@@ -18,25 +18,25 @@ let = "let" pat "=" expr
 
 expr = pair
 
-pair = or "::" or
+pair = or "::" or # 1
 
-or = and ("or" and)*
+or = and ("or" and)* # 2
 
-and = eq ("and" eq)*
+and = eq ("and" eq)* # 3
 
-eq = cmp (("=" | "!=") cmp)*
+eq = cmp (("=" | "!=") cmp)* # 4
 
-cmp = term ((">" | ">=" | "<" | "<=") term)*
+cmp = term ((">" | ">=" | "<" | "<=") term)* # 5
 
-term = factor (("+" | "-") factor)*
+term = factor (("+" | "-") factor)* # 6
 
-factor = pow (("*" | "/" | "%") pow)*
+factor = pow (("*" | "/" | "%") pow)* # 7
 
-pow = unary ("^" unary)*
+pow = unary ("^" unary)* # 8
 
-unary = dot | ("-" | "!") unary
+unary = dot | ("-" | "!") unary # 9
 
-dot = apply "." ident
+dot = apply "." ident # 10
 
 apply = atom+
 

@@ -4,7 +4,13 @@ use crate::{
     utils::{intern::InternedString, span::Span},
 };
 use chumsky::{
-    error::Rich, extra, input::{Input, Stream, ValueInput}, pratt::prefix, primitive::just, recursive::recursive, select, IterParser, Parser as ChumskyParser
+    error::Rich,
+    extra,
+    input::{Input, Stream, ValueInput},
+    pratt::prefix,
+    primitive::just,
+    recursive::recursive,
+    select, IterParser, Parser as ChumskyParser,
 };
 
 pub mod ast;
@@ -135,11 +141,192 @@ fn expr_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
             })
             .map_with(|kind, e| Expr::new(kind, e.span()));
 
-        let ops = atom.pratt((
-            prefix(2, just(Token::Minus).map(BinaryOp::from), fold)
-        ));
+        let op = just(Token::Minus)
+            .or(just(Token::Bang))
+            .map(UnaryOpKind::from)
+            .map_with(|op, e| UnaryOp::new(op, e.span()));
 
-        apply
+        let unary = op.clone().repeated().foldr(apply, |op, expr| {
+            Expr::new(
+                ExprKind::Unary {
+                    op: op.clone(),
+                    expr: expr.clone(),
+                },
+                op.span().extend(*expr.span()),
+            )
+        });
+
+        let op = just(Token::Caret)
+            .map(BinaryOpKind::from)
+            .map_with(|op, e| BinaryOp::new(op, e.span()));
+
+        let pow = unary
+            .clone()
+            .foldl(
+                op.clone().then(unary.clone()).repeated(),
+                |lhs: Expr, (op, rhs): (BinaryOp, Expr)| {
+                    Expr::new(
+                        ExprKind::Binary {
+                            op: op.clone(),
+                            lhs: lhs.clone(),
+                            rhs: rhs.clone(),
+                        },
+                        lhs.span().extend(*rhs.span()),
+                    )
+                },
+            )
+            .boxed();
+
+        let op = just(Token::Star)
+            .or(just(Token::Slash))
+            .or(just(Token::Percent))
+            .map(BinaryOpKind::from)
+            .map_with(|op, e| BinaryOp::new(op, e.span()));
+
+        let factor = pow
+            .clone()
+            .foldl(
+                op.clone().then(pow.clone()).repeated(),
+                |lhs: Expr, (op, rhs): (BinaryOp, Expr)| {
+                    Expr::new(
+                        ExprKind::Binary {
+                            op: op.clone(),
+                            lhs: lhs.clone(),
+                            rhs: rhs.clone(),
+                        },
+                        lhs.span().extend(*rhs.span()),
+                    )
+                },
+            )
+            .boxed();
+
+        let op = just(Token::Plus)
+            .or(just(Token::Minus))
+            .map(BinaryOpKind::from)
+            .map_with(|op, e| BinaryOp::new(op, e.span()))
+            .boxed();
+
+        let term = factor
+            .clone()
+            .foldl(
+                op.clone().then(factor.clone()).repeated(),
+                |lhs: Expr, (op, rhs): (BinaryOp, Expr)| {
+                    Expr::new(
+                        ExprKind::Binary {
+                            op: op.clone(),
+                            lhs: lhs.clone(),
+                            rhs: rhs.clone(),
+                        },
+                        lhs.span().extend(*rhs.span()),
+                    )
+                },
+            )
+            .boxed();
+
+        let op = just(Token::Lt)
+            .or(just(Token::Gt))
+            .or(just(Token::Leq))
+            .or(just(Token::Geq))
+            .map(BinaryOpKind::from)
+            .map_with(|op, e| BinaryOp::new(op, e.span()))
+            .boxed();
+
+        let cmp = term
+            .clone()
+            .then(op.clone().then(term.clone()).or_not())
+            .map(|(lhs, rhs)| match rhs {
+                Some((op, rhs)) => Expr::new(
+                    ExprKind::Binary {
+                        op,
+                        lhs: lhs.clone(),
+                        rhs: rhs.clone(),
+                    },
+                    lhs.span().extend(*rhs.span()),
+                ),
+                None => lhs.clone(),
+            })
+            .boxed();
+
+        let op = just(Token::Eq)
+            .or(just(Token::Neq))
+            .map(BinaryOpKind::from)
+            .map_with(|op, e| BinaryOp::new(op, e.span()))
+            .boxed();
+
+        let eq = cmp
+            .clone()
+            .then(op.clone().then(cmp.clone()).or_not())
+            .map(|(lhs, rhs)| match rhs {
+                Some((op, rhs)) => Expr::new(
+                    ExprKind::Binary {
+                        op,
+                        lhs: lhs.clone(),
+                        rhs: rhs.clone(),
+                    },
+                    lhs.span().extend(*rhs.span()),
+                ),
+                None => lhs.clone(),
+            })
+            .boxed();
+
+        let and = eq
+            .clone()
+            .foldl(
+                just(Token::And)
+                    .map(BinaryOpKind::from)
+                    .map_with(|op, e| BinaryOp::new(op, e.span()))
+                    .then(eq.clone())
+                    .repeated(),
+                |lhs: Expr, (op, rhs): (BinaryOp, Expr)| {
+                    Expr::new(
+                        ExprKind::Binary {
+                            op: op.clone(),
+                            lhs: lhs.clone(),
+                            rhs: rhs.clone(),
+                        },
+                        lhs.span().extend(*rhs.span()),
+                    )
+                },
+            )
+            .boxed();
+
+        let or = and
+            .clone()
+            .foldl(
+                just(Token::Or)
+                    .map(BinaryOpKind::from)
+                    .map_with(|op, e| BinaryOp::new(op, e.span()))
+                    .then(and.clone())
+                    .repeated(),
+                |lhs: Expr, (op, rhs): (BinaryOp, Expr)| {
+                    Expr::new(
+                        ExprKind::Binary {
+                            op: op.clone(),
+                            lhs: lhs.clone(),
+                            rhs: rhs.clone(),
+                        },
+                        lhs.span().extend(*rhs.span()),
+                    )
+                },
+            )
+            .boxed();
+
+        // let ops = apply
+        //     .pratt(
+        //         (
+        //             prefix(
+        //                 9,
+        //                 just(Token::Minus)
+        //                     .map(UnaryOpKind::from)
+        //                     .map_with(|op, e| UnaryOp::new(op, e.span())),
+        //                 |op, expr| ExprKind::Unary { op, expr },
+        //             )
+        //             // prefix(9, , fold)
+        //         ),
+        //     )
+        //     .map_with(|kind, e| Expr::new(kind, e.span()));
+
+        or
     })
 }
 
