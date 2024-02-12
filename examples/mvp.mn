@@ -120,7 +120,6 @@ let mapIter f xs =
 --   end 
 --   return acc;
 
-
 let gcd a b = 
   if b = 0 then a 
   else gcd b (a % b)

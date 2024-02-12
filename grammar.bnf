@@ -1,113 +1,110 @@
-root = decl+
+<root> ::= <decl> (<ws>* <decl>)*
 
-decl = let | typeDef | typeAlias
+<decl> ::= <let> | <typeDef> | <typeAlias>
 
-typeAlias = "type" ident "=" typeHint
+<typeAlias> ::= "type" <ws>+ <ident> <ws>+ "=" <ws>+ <typeHint>
 
-typeDef = "type" ident "=" sumType | recordType
+<typeDef> ::= "type" <ws>+ <ident> <ws>+ "=" <ws>+ (<sumType> | <recordType>)
 
-sumType = sumTypeCase ("|" sumTypeCase)*
+<sumType> ::= <sumTypeCase> (<ws>+ "|" <ws>+ <sumTypeCase>)*
 
-sumTypeCase = ident sumTypeCaseHint
+<sumTypeCase> ::= <ident> <ws>+ <sumTypeCaseHint>
 
-sumTypeCaseHint = typeHint+ | "{" ident ":" typeHint ("," ident ":" typeHint)* ","? "}"
+<sumTypeCaseHint> ::= <typeHint>+ 
+                    | "{" <ident> <ws>* ":" <ws>+ <typeHint> (<ws>* "," <ws>* <ident> <ws>* ":" <ws>+ <typeHint>)* ","? <ws>* "}"
 
-recordType = "{" ident ":" typeHint ("," ident ":" typeHint)* "}"
+<recordType> ::= "{" <ws>* <ident> <ws>* ":" <ws>+ <typeHint> (<ws>* "," <ident> <ws>* ":" <ws>+ <typeHint>)* <ws>* "}"
 
-let = "let" pat "=" expr
+<let> ::= "let" <ws>+ <pat> <ws>+ "=" <ws>+ <expr>
 
-expr = pair
+<expr> ::= <pair>
 
-pair = or "::" or
+<pair> ::= <or> <ws>+ "::" <ws>+ <or>
 
-or = and ("or" and)*
+<or> ::= <and> (<ws>+ "or" <ws>+ <and>)*
 
-and = eq ("and" eq)*
+<and> ::= <eq> (<ws>+ "and" <ws>+ <eq>)*
 
-eq = cmp (("=" | "!=") cmp)*
+<eq> ::= <cmp> (<ws>* ("=" | "!=") <ws>* <cmp>)*
 
-cmp = term ((">" | ">=" | "<" | "<=") term)*
+<cmp> ::= <term> (<ws>* (">" | ">=" | "<" | "<=") <ws>* <term>)*
 
-term = factor (("+" | "-") factor)*
+<term> ::= <factor> (<ws>* ("+" | "-") <ws>* <factor>)*
 
-factor = pow (("*" | "/" | "%") pow)*
+<factor> ::= <pow> (<ws>* ("*" | "/" | "%") <ws>* <pow>)*
 
-pow = unary ("^" unary)*
+<pow> ::= <unary> (<ws>* "^" <ws>* <unary>)*
 
-unary = dot | ("-" | "!") unary
+<unary> ::= <dot> | ("-" | "!") <unary>
 
-dot = apply "." ident
+<dot> ::= <apply> "." <ident>
 
-apply = atom+
+<apply> ::= <atom> (<ws> <atom>)*
 
-atom = ident 
-     | lit 
-     | if 
-     | lambda 
-     | letExpr 
-     | fnExpr 
-     | "(" expr ")"
+<atom> ::= <ident>
+     | <lit>
+     | <if>
+     | <lambda>
+     | <letExpr>
+     | <fnExpr>
+     | "(" <ws>* <expr> <ws>* ")"
 
-if = "if" expr "then" expr "else" expr
+<if> ::= "if" <ws>+ <expr> <ws>+ "then" <ws>+ <expr> <ws>+ "else" <ws>+ <expr>
 
-lambda = "\\" pat+ "->" expr
+<lambda> ::= "\\" <pat>+ <ws>+ "->" <ws>+ <expr>
 
-letExpr = "let" pat "=" expr "in" expr
+<letExpr> ::= "let" <ws>+ <pat> <ws>+ "=" <ws>+ <expr> <ws>+ "in" <ws>+ <expr>
 
-fnExpr = "let" ident pat+ "=" expr "in" expr
+<fnExpr> ::= "let" <ws>+ <ident> <ws>+ <pat>+ <ws>+ "=" <ws>+ <expr> <ws>+ "in" <ws>+ <expr>
 
-recordExpr = "{" ident "=" expr ("," ident "=" expr)* "}"
+<recordExpr> ::= "{" <ws>* <ident> "=" <expr> <ws>* ("," <ws>* <ident> "=" <expr>)* <ws>* "}"
 
-sumExpr = ident 
+<sumExpr> ::= <ident>
 
-listExpr = "[" expr ("," expr)* "]"
+<listExpr> ::= "[" <ws>* <expr> <ws>* ("," <ws>* <expr>)* <ws>* "]"
 
-tupleExpr = "(" expr ("," expr)* ")"
+<tupleExpr> ::= "(" <ws>* <expr> <ws>* ("," <ws>* <expr>)* <ws>* ")"
 
-arrayExpr = "#[" expr ("," expr)* "]"
+<arrayExpr> ::= "#[" <ws>* <expr> <ws>* ("," <ws>* <expr>)* <ws>* "]"
 
-match = "match" expr "with" matchCase+
+<match> ::= "match" <ws>+ <expr> <ws>+ "with" <ws>+ <matchCase>+
 
-matchCase = "|" pat "->" expr
+<matchCase> ::= "|" <pat> <ws>+ "->" <ws>+ <expr>
 
-pat = basePat ("::" pat)?
+<pat> ::= <basePat> <ws>* ("::" <ws>* <pat>)?
 
-basePat = wildcard
-    | lit
-    | ident
-    | "[" basePat ("," basePat)* "]"
-    | "{" (ident "=" basePat ",")+ "}"
-    | ident basePat
-    | "(" pat ")"
+<basePat> ::= <wildcard>
+    | <lit>
+    | <ident>
+    | "[" <basePat> <ws>* ("," <ws>* <basePat>)* "]"
+    | "{" (<ident> <ws>+ "=" <ws>+ <basePat> ",")+ "}"
+    | <ident> <ws>+ <basePat>
+    | "(" <pat> ")"
 
-typeHint = baseTypeHint | (baseTypeHint+ "->" baseTypeHint)
+<typeHint> ::= <baseTypeHint> | (<baseTypeHint>+ <ws>+ "->" <ws>+ <baseTypeHint>)
 
-baseTypeHint = ident
-         | "(" typeHint "," typeHint ")"
-         | "[" typeHint "]"
-         | "(" typeHint ")"
-         | unit
+<baseTypeHint> ::= <ident>
+         | "(" <ws>* <typeHint> <ws>* "," <ws>* <typeHint> <ws>* ")"
+         | "[" <ws>* <typeHint> <ws>* "]"
+         | "(" <ws>* <typeHint> <ws>* ")"
+         | <unit>
 
-ident = [a-zA-Z_][a-zA-Z0-9_]*
+<ident> ::= <alpha> <alphaNum>*
 
-lit = byte | int | str | bool
+<lit> ::= <int> | <bool>
 
-# num = int ("/" int)?
+<int> ::= "0" | [1-9] <digit>*
 
-# int = 0 | "-"? [1-9][0-9]*
+<bool> ::= "true" | "false"
 
-str = 
+<alphaNum> ::= <alpha> | <digit>
 
-<char> = "'"  "'"
+<alpha> ::= [a-z] | [A-Z]
 
-<alphaNum> = [a-zA-Z0-9]
+<digit> ::= [0-9]
 
-<alpha> = [a-zA-Z]
+<wildcard> ::= "_"
 
-<digit> = [0-9]
+<unit> ::= "()"
 
-<bool> = "true" | "false"
-
-<wildcard> = "_"
-
-<unit> = "()"
+<ws> ::= " " | "\t" | "\n" | "\r"
