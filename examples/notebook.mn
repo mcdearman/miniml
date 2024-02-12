@@ -1,1 +1,1 @@
-let x = false
+let foo = let bar = 1 in bar

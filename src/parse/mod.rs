@@ -4,12 +4,7 @@ use crate::{
     utils::{intern::InternedString, span::Span},
 };
 use chumsky::{
-    error::Rich,
-    extra,
-    input::{Input, Stream, ValueInput},
-    primitive::just,
-    recursive::recursive,
-    select, IterParser, Parser as ChumskyParser,
+    error::Rich, extra, input::{Input, Stream, ValueInput}, pratt::prefix, primitive::just, recursive::recursive, select, IterParser, Parser as ChumskyParser
 };
 
 pub mod ast;
@@ -97,13 +92,54 @@ fn expr_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
 
         let ident = ident_parser().map(|ident| ExprKind::Ident(ident));
 
+        let lambda = just(Token::Backslash)
+            .ignore_then(ident_parser().repeated().at_least(1).collect())
+            .then_ignore(just(Token::RArrow))
+            .then(expr.clone())
+            .map(|(params, expr)| ExprKind::Lambda { params, expr });
+
+        let if_ = just(Token::If)
+            .ignore_then(expr.clone())
+            .then_ignore(just(Token::Then))
+            .then(expr.clone())
+            .then_ignore(just(Token::Else))
+            .then(expr.clone())
+            .map(|((cond, then), else_)| ExprKind::If { cond, then, else_ });
+
+        let let_ = just(Token::Let)
+            .ignore_then(ident_parser())
+            .then_ignore(just(Token::Eq))
+            .then(expr.clone())
+            .then_ignore(just(Token::In))
+            .then(expr.clone())
+            .map(|((name, expr), body)| ExprKind::Let { name, expr, body });
+
         let atom = unit
             .or(lit)
             .or(ident)
+            .or(lambda)
+            .or(if_)
+            .or(let_)
             .map_with(|kind, e| Expr::new(kind, e.span()))
+            .or(just(Token::LParen)
+                .ignore_then(expr)
+                .then_ignore(just(Token::RParen)))
             .boxed();
 
-        atom
+        let apply = atom
+            .clone()
+            .then(atom.repeated().at_least(1).collect().or_not())
+            .map(|(fun, args)| match args {
+                Some(args) => ExprKind::Apply { fun, args },
+                None => fun.kind().clone(),
+            })
+            .map_with(|kind, e| Expr::new(kind, e.span()));
+
+        let ops = atom.pratt((
+            prefix(2, just(Token::Minus).map(BinaryOp::from), fold)
+        ));
+
+        apply
     })
 }
 
