@@ -25,26 +25,6 @@ impl Root {
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct Module {
-    decls: Vec<Decl>,
-    span: Span,
-}
-
-impl Module {
-    pub fn new(decls: Vec<Decl>, span: Span) -> Self {
-        Self { decls, span }
-    }
-
-    pub fn decls(&self) -> &[Decl] {
-        &self.decls
-    }
-
-    pub fn span(&self) -> &Span {
-        &self.span
-    }
-}
-
-#[derive(Debug, Clone, PartialEq)]
 pub struct Decl {
     kind: DeclKind,
     span: Span,
@@ -67,7 +47,7 @@ impl Decl {
 #[derive(Debug, Clone, PartialEq)]
 pub enum DeclKind {
     DataType(DataType),
-    Let { pattern: Pattern, expr: Expr },
+    Let { name: Ident, expr: Expr },
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -159,12 +139,12 @@ pub enum ExprKind {
         cases: Vec<(Pattern, Expr)>,
     },
     Let {
-        pattern: Pattern,
+        name: Ident,
         expr: Expr,
         body: Expr,
     },
     Lambda {
-        params: Vec<Pattern>,
+        params: Vec<Ident>,
         expr: Expr,
     },
     List(Vec<Expr>),

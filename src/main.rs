@@ -11,7 +11,7 @@ fn main() {
     env_logger::init();
     let src = fs::read_to_string("examples/notebook.mn").expect("failed to read file");
     let stream = TokenStream::new(&src);
-    // println!("TOKENS: {:#?}", stream.tokenize());
+    println!("TOKENS: {:#?}", stream.tokenize());
     let root = match parse(stream, false) {
         (Some(root), errors) => {
             if errors.is_empty() {

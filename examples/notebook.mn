@@ -1,1 +1,1 @@
-type Foo = Bar Int Int -> Int
+let x = false

@@ -7,11 +7,38 @@ let main args = 1
 -- Bindings are immutable by default.
 let x = 1
 
+-- You can use `var` to declare mutable bindings.
+var x = 1
+
+-- You can use `pub` to declare public bindings.
+pub let x = 1
+
+-- strings
+"hello, world!"
+
+-- characters
+'c'
+
 -- ints
 1
 
+-- reals
+1.0
+
+-- rationals
+1/2
+
 -- booleans
 true
+
+-- lists
+[1, 2, 3]
+
+-- arrays
+#[1, 2, 3]
+
+-- tuples
+(1, 2)
 
 -- Binary operators
 1 + 2 * 3^2 - 4 / 5 % 10
@@ -29,6 +56,10 @@ true and false or true
 
 -- Comparison
 1 < 2 and 2 <= 3 and 3 > 2 and 3 >= 2 and 2 = 2 and 2 != 3
+
+-- compare characters
+'a' < 'b'
+'0' < '1'
 
 -- if-then-else
 if 1 < 2 then 1 else 2
@@ -63,10 +94,6 @@ let fib n =
   else fib (n - 1) + fib (n - 2) 
 in fib 10
 
-let gcd a b = 
-  if b = 0 then a 
-  else gcd b (a % b)
-
 -- tail recursion
 let fib n = 
   let loop n a b = 
@@ -74,8 +101,44 @@ let fib n =
     else loop (n - 1) b (a + b) 
   in loop n 0 1 
 
+-- pattern matching
+let map f xs = match xs with
+  | [] -> []
+  | [y::ys] -> f y :: map f ys
+
+let mapIter f xs = 
+  let loop xs acc = match xs with
+    | [] -> acc
+    | x::xs -> loop xs (f x :: acc)
+  in loop xs []
+
+-- this is equivalent to the following imperative code
+-- let mapIter f xs = 
+--   let acc = [];
+--   for x in xs do
+--     acc = f x :: acc;
+--   end 
+--   return acc;
+
 let gcd a b = 
-  let loop a b acc = 
-    if b = 0 then acc 
-    else loop b (a % b) b
-  in loop a b a
+  if b = 0 then a 
+  else gcd b (a % b)
+
+-- record
+type Point = { x : Real, y : Real }
+let p = { x = 1, y = 2 }
+p.x
+
+-- sum type
+type Shape 
+  = Circle Real 
+  | Rectangle Real Real
+
+let s1 = Circle 1
+let s2 = Rectangle 1.0 2.0
+
+-- product types are just single-constructor sum types
+type Point = Point Real Real
+
+-- type alias
+type Point = (Real, Real)
