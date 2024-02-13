@@ -120,12 +120,31 @@ fn expr_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
             .then(expr.clone())
             .map(|((name, expr), body)| ExprKind::Let { name, expr, body });
 
+        let fn_ = just(Token::Let)
+            .ignore_then(ident_parser())
+            .then(ident_parser().repeated().at_least(1).collect())
+            .then_ignore(just(Token::Eq))
+            .then(expr.clone())
+            .then(just(Token::In).ignore_then(expr.clone()))
+            .map(|(((name, params), expr), body)| ExprKind::Let {
+                name: name.clone(),
+                expr: Expr::new(
+                    ExprKind::Lambda {
+                        params,
+                        expr: expr.clone(),
+                    },
+                    name.span().extend(*expr.span()),
+                ),
+                body,
+            });
+
         let atom = unit
             .or(lit)
             .or(ident)
             .or(lambda)
             .or(if_)
             .or(let_)
+            .or(fn_)
             .map_with(|kind, e| Expr::new(kind, e.span()))
             .or(just(Token::LParen)
                 .ignore_then(expr)

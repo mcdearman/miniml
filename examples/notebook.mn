@@ -1,1 +1,1 @@
-let foo = let bar = 1^2 in !bar or 1 + -b
+let a = let add x y = x + y in add 1 2
