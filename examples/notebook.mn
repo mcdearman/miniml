@@ -1,1 +1,1 @@
-let a = let add x y = x + y in add 1 2
+let a = 1 < 2 and b = 2 < 3 a or b >= 3 
