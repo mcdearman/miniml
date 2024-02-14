@@ -3,7 +3,6 @@
 -- utils
 type Span = {
   start : Int,
-  end : Int,
 }
 
 let spanToString span src = 

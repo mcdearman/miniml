@@ -46,48 +46,48 @@ impl Decl {
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum DeclKind {
-    DataType(DataType),
+    // DataType(DataType),
     Let { name: Ident, expr: Expr },
 }
 
-#[derive(Debug, Clone, PartialEq)]
-pub struct DataType {
-    name: Ident,
-    kind: Box<DataTypeKind>,
-    span: Span,
-}
+// #[derive(Debug, Clone, PartialEq)]
+// pub struct DataType {
+//     name: Ident,
+//     kind: Box<DataTypeKind>,
+//     span: Span,
+// }
 
-impl DataType {
-    pub fn new(name: Ident, kind: DataTypeKind, span: Span) -> Self {
-        Self {
-            name,
-            kind: Box::new(kind),
-            span,
-        }
-    }
+// impl DataType {
+//     pub fn new(name: Ident, kind: DataTypeKind, span: Span) -> Self {
+//         Self {
+//             name,
+//             kind: Box::new(kind),
+//             span,
+//         }
+//     }
 
-    pub fn name(&self) -> &Ident {
-        &self.name
-    }
+//     pub fn name(&self) -> &Ident {
+//         &self.name
+//     }
 
-    pub fn kind(&self) -> &DataTypeKind {
-        &self.kind
-    }
+//     pub fn kind(&self) -> &DataTypeKind {
+//         &self.kind
+//     }
 
-    pub fn span(&self) -> &Span {
-        &self.span
-    }
-}
+//     pub fn span(&self) -> &Span {
+//         &self.span
+//     }
+// }
 
-#[derive(Debug, Clone, PartialEq)]
-pub enum DataTypeKind {
-    Record {
-        fields: Vec<(Ident, TypeHint)>,
-    },
-    Sum {
-        cases: Vec<(Ident, Option<SumTypeCaseHint>)>,
-    },
-}
+// #[derive(Debug, Clone, PartialEq)]
+// pub enum DataTypeKind {
+//     Record {
+//         fields: Vec<(Ident, TypeHint)>,
+//     },
+//     Sum {
+//         cases: Vec<(Ident, Option<SumTypeCaseHint>)>,
+//     },
+// }
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Expr {
@@ -116,159 +116,138 @@ impl Expr {
 pub enum ExprKind {
     Lit(Lit),
     Ident(Ident),
-    Apply {
-        fun: Expr,
-        args: Vec<Expr>,
-    },
-    Unary {
-        op: UnaryOp,
-        expr: Expr,
-    },
-    Binary {
-        op: BinaryOp,
-        lhs: Expr,
-        rhs: Expr,
-    },
-    If {
-        cond: Expr,
-        then: Expr,
-        else_: Expr,
-    },
-    Match {
-        expr: Expr,
-        cases: Vec<(Pattern, Expr)>,
-    },
-    Let {
-        name: Ident,
-        expr: Expr,
-        body: Expr,
-    },
-    Lambda {
-        params: Vec<Ident>,
-        expr: Expr,
-    },
-    List(Vec<Expr>),
-    Array(Vec<Expr>),
-    Tuple(Vec<Expr>),
-    Record {
-        fields: Vec<(Ident, Expr)>,
-    },
-    Sum {
-        case: Ident,
-        expr: Option<Expr>,
-    },
+    Apply { fun: Expr, args: Vec<Expr> },
+    Unary { op: UnaryOp, expr: Expr },
+    Binary { op: BinaryOp, lhs: Expr, rhs: Expr },
+    If { cond: Expr, then: Expr, else_: Expr },
+    // Match {
+    //     expr: Expr,
+    //     cases: Vec<(Pattern, Expr)>,
+    // },
+    Let { name: Ident, expr: Expr, body: Expr },
+    Lambda { params: Vec<Ident>, expr: Expr },
+    // List(Vec<Expr>),
+    // Array(Vec<Expr>),
+    // Tuple(Vec<Expr>),
+    // Record {
+    //     fields: Vec<(Ident, Expr)>,
+    // },
+    // Sum {
+    //     case: Ident,
+    //     expr: Option<Expr>,
+    // },
     Unit,
 }
 
-#[derive(Debug, Clone, PartialEq)]
-pub struct SumTypeCaseHint {
-    kind: Box<SumTypeCaseHintKind>,
-    span: Span,
-}
+// #[derive(Debug, Clone, PartialEq)]
+// pub struct SumTypeCaseHint {
+//     kind: Box<SumTypeCaseHintKind>,
+//     span: Span,
+// }
 
-impl SumTypeCaseHint {
-    pub fn new(kind: SumTypeCaseHintKind, span: Span) -> Self {
-        Self {
-            kind: Box::new(kind),
-            span,
-        }
-    }
+// impl SumTypeCaseHint {
+//     pub fn new(kind: SumTypeCaseHintKind, span: Span) -> Self {
+//         Self {
+//             kind: Box::new(kind),
+//             span,
+//         }
+//     }
 
-    pub fn kind(&self) -> &SumTypeCaseHintKind {
-        &self.kind
-    }
+//     pub fn kind(&self) -> &SumTypeCaseHintKind {
+//         &self.kind
+//     }
 
-    pub fn span(&self) -> &Span {
-        &self.span
-    }
-}
+//     pub fn span(&self) -> &Span {
+//         &self.span
+//     }
+// }
 
-#[derive(Debug, Clone, PartialEq)]
-pub enum SumTypeCaseHintKind {
-    Record(Vec<(Ident, TypeHint)>),
-    Product(Vec<TypeHint>),
-    TypeHint(TypeHint),
-}
+// #[derive(Debug, Clone, PartialEq)]
+// pub enum SumTypeCaseHintKind {
+//     Record(Vec<(Ident, TypeHint)>),
+//     Product(Vec<TypeHint>),
+//     TypeHint(TypeHint),
+// }
 
-#[derive(Debug, Clone, PartialEq)]
-pub struct TypeHint {
-    kind: Box<TypeHintKind>,
-    span: Span,
-}
+// #[derive(Debug, Clone, PartialEq)]
+// pub struct TypeHint {
+//     kind: Box<TypeHintKind>,
+//     span: Span,
+// }
 
-impl TypeHint {
-    pub fn new(kind: TypeHintKind, span: Span) -> Self {
-        Self {
-            kind: Box::new(kind),
-            span,
-        }
-    }
+// impl TypeHint {
+//     pub fn new(kind: TypeHintKind, span: Span) -> Self {
+//         Self {
+//             kind: Box::new(kind),
+//             span,
+//         }
+//     }
 
-    pub fn kind(&self) -> &TypeHintKind {
-        &self.kind
-    }
+//     pub fn kind(&self) -> &TypeHintKind {
+//         &self.kind
+//     }
 
-    pub fn span(&self) -> &Span {
-        &self.span
-    }
-}
+//     pub fn span(&self) -> &Span {
+//         &self.span
+//     }
+// }
 
-#[derive(Debug, Clone, PartialEq)]
-pub enum TypeHintKind {
-    Int,
-    Byte,
-    Real,
-    Rational,
-    Bool,
-    String,
-    Char,
-    Ident(Ident),
-    List(TypeHint),
-    Array(TypeHint),
-    Tuple(Vec<TypeHint>),
-    Fn(Vec<TypeHint>, TypeHint),
-    Unit,
-}
+// #[derive(Debug, Clone, PartialEq)]
+// pub enum TypeHintKind {
+//     Int,
+//     Byte,
+//     Real,
+//     Rational,
+//     Bool,
+//     String,
+//     Char,
+//     Ident(Ident),
+//     List(TypeHint),
+//     Array(TypeHint),
+//     Tuple(Vec<TypeHint>),
+//     Fn(Vec<TypeHint>, TypeHint),
+//     Unit,
+// }
 
-#[derive(Debug, Clone, PartialEq)]
-pub struct Pattern {
-    kind: Box<PatternKind>,
-    span: Span,
-}
+// #[derive(Debug, Clone, PartialEq)]
+// pub struct Pattern {
+//     kind: Box<PatternKind>,
+//     span: Span,
+// }
 
-impl Pattern {
-    pub fn new(kind: PatternKind, span: Span) -> Self {
-        Self {
-            kind: Box::new(kind),
-            span,
-        }
-    }
+// impl Pattern {
+//     pub fn new(kind: PatternKind, span: Span) -> Self {
+//         Self {
+//             kind: Box::new(kind),
+//             span,
+//         }
+//     }
 
-    pub fn kind(&self) -> &PatternKind {
-        &self.kind
-    }
+//     pub fn kind(&self) -> &PatternKind {
+//         &self.kind
+//     }
 
-    pub fn span(&self) -> &Span {
-        &self.span
-    }
-}
+//     pub fn span(&self) -> &Span {
+//         &self.span
+//     }
+// }
 
-#[derive(Debug, Clone, PartialEq)]
-pub enum PatternKind {
-    Wildcard,
-    Lit(Lit),
-    Ident(Ident),
-    Tuple(Vec<Pattern>),
-    List(Vec<Pattern>),
-    Pair(Pattern, Pattern),
-    Record {
-        fields: Vec<(Ident, Pattern)>,
-    },
-    Sum {
-        case: Ident,
-        pattern: Option<Pattern>,
-    },
-}
+// #[derive(Debug, Clone, PartialEq)]
+// pub enum PatternKind {
+//     Wildcard,
+//     Lit(Lit),
+//     Ident(Ident),
+//     Tuple(Vec<Pattern>),
+//     List(Vec<Pattern>),
+//     Pair(Pattern, Pattern),
+//     Record {
+//         fields: Vec<(Ident, Pattern)>,
+//     },
+//     Sum {
+//         case: Ident,
+//         pattern: Option<Pattern>,
+//     },
+// }
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct UnaryOp {
@@ -394,22 +373,22 @@ impl From<Token> for BinaryOpKind {
 impl ToString for BinaryOpKind {
     fn to_string(&self) -> String {
         match self {
-            Self::Add => "+".to_string(),
-            Self::Sub => "-".to_string(),
-            Self::Mul => "*".to_string(),
-            Self::Div => "/".to_string(),
-            Self::Rem => "%".to_string(),
-            Self::Pow => "^".to_string(),
-            Self::Eq => "==".to_string(),
-            Self::Neq => "!=".to_string(),
-            Self::Lt => "<".to_string(),
-            Self::Lte => "<=".to_string(),
-            Self::Gt => ">".to_string(),
-            Self::Gte => ">=".to_string(),
-            Self::And => "&&".to_string(),
-            Self::Or => "||".to_string(),
-            Self::Dot => ".".to_string(),
-            Self::Pair => "::".to_string(),
+            Self::Add => "add".to_string(),
+            Self::Sub => "sub".to_string(),
+            Self::Mul => "mul".to_string(),
+            Self::Div => "div".to_string(),
+            Self::Rem => "rem".to_string(),
+            Self::Pow => "pow".to_string(),
+            Self::Eq => "eq".to_string(),
+            Self::Neq => "neq".to_string(),
+            Self::Lt => "lt".to_string(),
+            Self::Lte => "lte".to_string(),
+            Self::Gt => "gt".to_string(),
+            Self::Gte => "gte".to_string(),
+            Self::And => "and".to_string(),
+            Self::Or => "or".to_string(),
+            Self::Dot => "dot".to_string(),
+            Self::Pair => "pair".to_string(),
         }
     }
 }
@@ -443,10 +422,10 @@ impl ToString for Ident {
 #[derive(Debug, Clone, PartialEq)]
 pub enum Lit {
     Int(i64),
-    Byte(u8),
-    Real(f64),
-    Rational(Rational64),
+    // Byte(u8),
+    // Real(f64),
+    // Rational(Rational64),
     Bool(bool),
-    String(InternedString),
-    Char(char),
+    // String(InternedString),
+    // Char(char),
 }
