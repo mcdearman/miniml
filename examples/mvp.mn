@@ -59,9 +59,8 @@ let x = 1 in let y = 2 in x + y
 
 -- recursion
 let fib n = 
-  if n < 2 then 1 
+  if n <= 1 then n 
   else fib (n - 1) + fib (n - 2) 
-in fib 10
 
 let gcd a b = 
   if b = 0 then a 
@@ -72,10 +71,10 @@ let fib n =
   let loop a b n = 
     if n = 0 then a 
     else loop (n - 1) b (a + b) 
-  in loop n 0 1 
+  in loop 0 1 n
 
 let gcd a b = 
   let loop a b acc = 
-    if b = 0 then acc 
+    if b = 0 then acc
     else loop b (a % b) b
   in loop a b a
