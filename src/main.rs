@@ -1,6 +1,5 @@
-use rename::{nir, resolver::Resolver};
-
 use crate::{lex::token_stream::TokenStream, parse::parse};
+use rename::{nir, resolver::Resolver};
 use std::fs;
 
 mod infer;

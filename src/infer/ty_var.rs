@@ -1,9 +1,16 @@
+use crate::utils::unique_id::UniqueId;
+use std::fmt::{Debug, Display};
+
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct TyVar(UniqueId);
 
 impl TyVar {
     pub fn fresh() -> Self {
         Self(UniqueId::gen())
+    }
+
+    pub fn id(&self) -> UniqueId {
+        self.0
     }
 }
 

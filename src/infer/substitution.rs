@@ -1,3 +1,6 @@
+use super::{r#type::Type, ty_var::TyVar};
+use std::collections::HashMap;
+
 #[derive(Debug, Clone, PartialEq)]
 struct Substitution {
     map: HashMap<TyVar, Type>,
@@ -34,7 +37,7 @@ impl Substitution {
         self.union(
             other
                 .into_iter()
-                .map(|(var, ty)| (var, apply_subst(self.clone(), ty)))
+                .map(|(var, ty)| (var, ty.apply_subst(self.clone())))
                 .collect(),
         )
     }

@@ -1,3 +1,4 @@
+use super::r#type::Type;
 use crate::utils::{span::Span, unique_id::UniqueId};
 
 #[derive(Debug, Clone, PartialEq)]
@@ -53,15 +54,20 @@ pub struct Expr {
 }
 
 impl Expr {
-    pub fn new(kind: ExprKind, span: Span) -> Self {
+    pub fn new(kind: ExprKind, ty: Type, span: Span) -> Self {
         Self {
             kind: Box::new(kind),
+            ty,
             span,
         }
     }
 
     pub fn kind(&self) -> &ExprKind {
         &self.kind
+    }
+
+    pub fn ty(&self) -> &Type {
+        &self.ty
     }
 
     pub fn span(&self) -> &Span {

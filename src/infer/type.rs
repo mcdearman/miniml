@@ -1,3 +1,6 @@
+use super::ty_var::TyVar;
+use std::{collections::HashMap, fmt::Debug};
+
 #[derive(Clone, PartialEq, Eq)]
 pub enum Type {
     Num,
@@ -19,8 +22,8 @@ impl Type {
                     Self::Var(*n)
                 } else {
                     let n = vars.len();
-                    vars.insert(name, TyVar(n.into()));
-                    Self::Var(TyVar(n.into()))
+                    vars.insert(name, TyVar::from(n));
+                    Self::Var(TyVar::from(n))
                 }
             }
             Self::Lambda(params, body) => {

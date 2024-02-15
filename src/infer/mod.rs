@@ -1,183 +1,44 @@
+use self::context::Context;
 use std::{
     collections::{BTreeSet, HashMap},
     fmt::{Debug, Display},
 };
 
-fn apply_subst(subst: Substitution, ty: Type) -> Type {
-    match ty {
-        Type::Num | Type::Bool | Type::String | Type::Unit => ty.clone(),
-        Type::Var(n) => subst.get(&n).cloned().unwrap_or(ty.clone()),
-        Type::Lambda(params, body) => Type::Lambda(
-            params
-                .into_iter()
-                .map(|p| apply_subst(subst.clone(), p))
-                .collect(),
-            Box::new(apply_subst(subst.clone(), *body)),
+mod constraint;
+pub mod context;
+mod scheme;
+pub mod substitution;
+pub mod tir;
+mod ty_var;
+pub mod r#type;
+
+pub fn infer<'src>(
+    src: &'src str,
+    ctx: &mut Context,
+    nir: nir::Root,
+) -> InferResult<(Node<Root>, Context)> {
+    let mut s = Substitution::new();
+    let mut items = vec![];
+    let mut ctx_ret = Context::new();
+    for item in root.inner().items.clone() {
+        let (cs, ctx, i) = infer_item(src, ctx, item)?;
+        for c in cs {
+            match c {
+                Constraint::Eq(t1, t2) => {
+                    s = unify(apply_subst(s.clone(), t1), apply_subst(s.clone(), t2))?.compose(s);
+                }
+            }
+        }
+        ctx_ret = ctx_ret.union(ctx);
+        items.push(i);
+    }
+    Ok((
+        Node::new(
+            apply_subst_root(s.clone(), Root { items }),
+            root.span().clone(),
         ),
-    }
-}
-
-fn apply_subst_vec(subst: Substitution, tys: Vec<Type>) -> Vec<Type> {
-    tys.into_iter()
-        .map(|ty| apply_subst(subst.clone(), ty))
-        .collect()
-}
-
-fn apply_subst_scheme(mut subst: Substitution, scheme: Scheme) -> Scheme {
-    for var in &scheme.vars {
-        subst.remove(var);
-    }
-    Scheme {
-        vars: scheme.vars.clone(),
-        ty: apply_subst(subst.clone(), scheme.ty.clone()),
-    }
-}
-
-fn free_vars(ty: Type) -> BTreeSet<TyVar> {
-    match ty {
-        Type::Var(n) => vec![n.clone()].into_iter().collect(),
-        Type::Lambda(params, body) => params
-            .into_iter()
-            .fold(BTreeSet::new(), |acc, p| {
-                free_vars(p).union(&acc).cloned().collect()
-            })
-            .union(&free_vars(*body.clone()))
-            .cloned()
-            .collect(),
-        _ => BTreeSet::new(),
-    }
-}
-
-fn free_vars_scheme(scheme: Scheme) -> BTreeSet<TyVar> {
-    free_vars(scheme.ty.clone())
-        .difference(&scheme.vars.iter().cloned().collect())
-        .cloned()
-        .collect()
-}
-
-fn var_bind(var: TyVar, ty: Type) -> InferResult<Substitution> {
-    if ty.clone() == Type::Var(var.clone()) {
-        Ok(Substitution::new())
-    } else if free_vars(ty.clone()).contains(&var) {
-        Err(TypeError::from(format!(
-            "occurs check failed: {} occurs in {:?}",
-            var, ty
-        )))
-    } else {
-        let mut subst = Substitution::new();
-        subst.insert(var, ty.clone());
-        Ok(subst)
-    }
-}
-
-fn unify(t1: Type, t2: Type) -> InferResult<Substitution> {
-    // println!("unify: {:?} and {:?}", t1, t2);
-    match (t1.clone(), t2.clone()) {
-        (Type::Num, Type::Num) => Ok(Substitution::new()),
-        (Type::Bool, Type::Bool) => Ok(Substitution::new()),
-        (Type::String, Type::String) => Ok(Substitution::new()),
-        (Type::Unit, Type::Unit) => Ok(Substitution::new()),
-        (Type::Lambda(p1, b1), Type::Lambda(p2, b2)) => {
-            let s1 = p1.into_iter().zip(p2.into_iter()).fold(
-                Ok(Substitution::new()),
-                |acc: InferResult<Substitution>, (t1, t2)| {
-                    let s = acc?;
-                    let s1 = unify(apply_subst(s.clone(), t1), apply_subst(s.clone(), t2))?;
-                    Ok(s.compose(s1))
-                },
-            )?;
-            // println!("unify s1: {:?}", s1);
-            let s2 = unify(
-                apply_subst(s1.clone(), *b1.clone()),
-                apply_subst(s1.clone(), *b2.clone()),
-            )?;
-            // println!("unify s2: {:?}", s2);
-            // println!("unify s1.compose(s2): {:?}", s1.compose(s2.clone()));
-            Ok(s1.compose(s2.clone()))
-        }
-        (Type::Var(n), t) | (t, Type::Var(n)) => var_bind(n.clone(), t.clone()),
-        _ => Err(TypeError::from(format!(
-            "cannot unify {:?} and {:?}",
-            t1.lower(&mut HashMap::new()),
-            t2.lower(&mut HashMap::new())
-        ))),
-    }
-}
-
-#[derive(Debug, Clone, PartialEq)]
-pub struct Context {
-    vars: HashMap<UniqueId, Scheme>,
-}
-
-impl Context {
-    pub fn new() -> Self {
-        Self {
-            vars: HashMap::new(),
-        }
-    }
-
-    pub fn extend(&mut self, id: UniqueId, scheme: Scheme) {
-        self.vars.insert(id, scheme);
-    }
-
-    fn union(&self, other: Self) -> Self {
-        Self {
-            vars: self
-                .vars
-                .clone()
-                .into_iter()
-                .chain(other.vars.clone().into_iter())
-                .collect(),
-        }
-    }
-
-    fn apply_subst(&self, subst: Substitution) -> Self {
-        Self {
-            vars: self
-                .vars
-                .clone()
-                .into_iter()
-                .map(|(id, scheme)| (id, apply_subst_scheme(subst.clone(), scheme)))
-                .collect(),
-        }
-    }
-}
-
-// fn apply_subst_ctx(subst: Substitution, ctx: Context) -> Context {
-//     Context {
-//         vars: ctx
-//             .vars
-//             .into_iter()
-//             .map(|(name, scheme)| (name, apply_subst_scheme(subst.clone(), scheme)))
-//             .collect(),
-//     }
-// }
-
-fn free_vars_ctx(ctx: Context) -> BTreeSet<TyVar> {
-    ctx.vars
-        .into_iter()
-        .map(|(_, scheme)| free_vars_scheme(scheme))
-        .fold(BTreeSet::new(), |acc, set| {
-            acc.union(&set).cloned().collect()
-        })
-}
-
-fn generalize(ctx: Context, ty: Type) -> Scheme {
-    Scheme {
-        vars: free_vars(ty.clone())
-            .difference(&free_vars_ctx(ctx))
-            .cloned()
-            .collect(),
-        ty,
-    }
-}
-
-fn instantiate(scheme: Scheme) -> Type {
-    let mut subst = Substitution::new();
-    for var in &scheme.vars {
-        subst.insert(*var, Type::Var(TyVar::fresh()));
-    }
-    apply_subst(subst, scheme.ty)
+        ctx_ret.apply_subst(s),
+    ))
 }
 
 fn infer_item<'src>(
@@ -508,76 +369,6 @@ fn infer_expr<'src>(
     }
 }
 
-fn infer_pattern(
-    src: &str,
-    ctx: &mut Context,
-    pattern: Node<res::Pattern>,
-    def: bool,
-) -> InferResult<(Vec<Constraint>, Type, Context, Node<Pattern>)> {
-    match pattern.inner().clone() {
-        res::Pattern::Lit(lit) => match lit {
-            res::Lit::Num(n) => Ok((
-                vec![],
-                Type::Num,
-                ctx.clone(),
-                Node::new(Pattern::Lit(Lit::Num(n.clone())), pattern.span().clone()),
-            )),
-            res::Lit::Bool(b) => Ok((
-                vec![],
-                Type::Bool,
-                ctx.clone(),
-                Node::new(Pattern::Lit(Lit::Bool(b.clone())), pattern.span().clone()),
-            )),
-            res::Lit::String(s) => Ok((
-                vec![],
-                Type::String,
-                ctx.clone(),
-                Node::new(Pattern::Lit(Lit::String(s.clone())), pattern.span().clone()),
-            )),
-        },
-        res::Pattern::Ident(name) => {
-            if def {
-                ctx.extend(name, Scheme::new(vec![], Type::Var(TyVar::fresh())));
-                Ok((
-                    vec![],
-                    Type::Var(TyVar::fresh()),
-                    ctx.clone(),
-                    Node::new(Pattern::Ident(name), pattern.span().clone()),
-                ))
-            } else {
-                if let Some(scm) = ctx.clone().vars.get(&name) {
-                    let ty = instantiate(scm.clone());
-                    ctx.extend(name, Scheme::new(vec![], ty.clone()));
-                    Ok((
-                        vec![],
-                        ty.clone(),
-                        ctx.clone(),
-                        Node::new(Pattern::Ident(name), pattern.span().clone()),
-                    ))
-                } else {
-                    Err(TypeError::from(format!(
-                        "unbound variable: {:?} - \"{}\"",
-                        pattern,
-                        src[pattern.span()].to_string()
-                    )))
-                }
-            }
-        }
-        res::Pattern::Wildcard => Ok((
-            vec![],
-            Type::Var(TyVar::fresh()),
-            ctx.clone(),
-            Node::new(Pattern::Wildcard, pattern.span().clone()),
-        )),
-        res::Pattern::Unit => Ok((
-            vec![],
-            Type::Unit,
-            ctx.clone(),
-            Node::new(Pattern::Unit, pattern.span().clone()),
-        )),
-    }
-}
-
 fn apply_subst_root(subst: Substitution, root: Root) -> Root {
     Root {
         items: root
@@ -698,33 +489,123 @@ fn apply_subst_expr(subst: Substitution, expr: Node<Expr>) -> Node<Expr> {
     )
 }
 
-pub fn type_inference<'src>(
-    src: &'src str,
-    ctx: &mut Context,
-    root: Node<res::Root>,
-) -> InferResult<(Node<Root>, Context)> {
-    let mut s = Substitution::new();
-    let mut items = vec![];
-    let mut ctx_ret = Context::new();
-    for item in root.inner().items.clone() {
-        let (cs, ctx, i) = infer_item(src, ctx, item)?;
-        for c in cs {
-            match c {
-                Constraint::Eq(t1, t2) => {
-                    s = unify(apply_subst(s.clone(), t1), apply_subst(s.clone(), t2))?.compose(s);
-                }
-            }
-        }
-        ctx_ret = ctx_ret.union(ctx);
-        items.push(i);
-    }
-    Ok((
-        Node::new(
-            apply_subst_root(s.clone(), Root { items }),
-            root.span().clone(),
+fn apply_subst(subst: Substitution, ty: Type) -> Type {
+    match ty {
+        Type::Num | Type::Bool | Type::String | Type::Unit => ty.clone(),
+        Type::Var(n) => subst.get(&n).cloned().unwrap_or(ty.clone()),
+        Type::Lambda(params, body) => Type::Lambda(
+            params
+                .into_iter()
+                .map(|p| apply_subst(subst.clone(), p))
+                .collect(),
+            Box::new(apply_subst(subst.clone(), *body)),
         ),
-        ctx_ret.apply_subst(s),
-    ))
+    }
+}
+
+fn apply_subst_vec(subst: Substitution, tys: Vec<Type>) -> Vec<Type> {
+    tys.into_iter()
+        .map(|ty| apply_subst(subst.clone(), ty))
+        .collect()
+}
+
+fn apply_subst_scheme(mut subst: Substitution, scheme: Scheme) -> Scheme {
+    for var in &scheme.vars {
+        subst.remove(var);
+    }
+    Scheme {
+        vars: scheme.vars.clone(),
+        ty: apply_subst(subst.clone(), scheme.ty.clone()),
+    }
+}
+
+fn free_vars(ty: Type) -> BTreeSet<TyVar> {
+    match ty {
+        Type::Var(n) => vec![n.clone()].into_iter().collect(),
+        Type::Lambda(params, body) => params
+            .into_iter()
+            .fold(BTreeSet::new(), |acc, p| {
+                free_vars(p).union(&acc).cloned().collect()
+            })
+            .union(&free_vars(*body.clone()))
+            .cloned()
+            .collect(),
+        _ => BTreeSet::new(),
+    }
+}
+
+fn free_vars_scheme(scheme: Scheme) -> BTreeSet<TyVar> {
+    free_vars(scheme.ty.clone())
+        .difference(&scheme.vars.iter().cloned().collect())
+        .cloned()
+        .collect()
+}
+
+fn var_bind(var: TyVar, ty: Type) -> InferResult<Substitution> {
+    if ty.clone() == Type::Var(var.clone()) {
+        Ok(Substitution::new())
+    } else if free_vars(ty.clone()).contains(&var) {
+        Err(TypeError::from(format!(
+            "occurs check failed: {} occurs in {:?}",
+            var, ty
+        )))
+    } else {
+        let mut subst = Substitution::new();
+        subst.insert(var, ty.clone());
+        Ok(subst)
+    }
+}
+
+fn unify(t1: Type, t2: Type) -> InferResult<Substitution> {
+    // println!("unify: {:?} and {:?}", t1, t2);
+    match (t1.clone(), t2.clone()) {
+        (Type::Num, Type::Num) => Ok(Substitution::new()),
+        (Type::Bool, Type::Bool) => Ok(Substitution::new()),
+        (Type::String, Type::String) => Ok(Substitution::new()),
+        (Type::Unit, Type::Unit) => Ok(Substitution::new()),
+        (Type::Lambda(p1, b1), Type::Lambda(p2, b2)) => {
+            let s1 = p1.into_iter().zip(p2.into_iter()).fold(
+                Ok(Substitution::new()),
+                |acc: InferResult<Substitution>, (t1, t2)| {
+                    let s = acc?;
+                    let s1 = unify(apply_subst(s.clone(), t1), apply_subst(s.clone(), t2))?;
+                    Ok(s.compose(s1))
+                },
+            )?;
+            // println!("unify s1: {:?}", s1);
+            let s2 = unify(
+                apply_subst(s1.clone(), *b1.clone()),
+                apply_subst(s1.clone(), *b2.clone()),
+            )?;
+            // println!("unify s2: {:?}", s2);
+            // println!("unify s1.compose(s2): {:?}", s1.compose(s2.clone()));
+            Ok(s1.compose(s2.clone()))
+        }
+        (Type::Var(n), t) | (t, Type::Var(n)) => var_bind(n.clone(), t.clone()),
+        _ => Err(TypeError::from(format!(
+            "cannot unify {:?} and {:?}",
+            t1.lower(&mut HashMap::new()),
+            t2.lower(&mut HashMap::new())
+        ))),
+    }
+}
+
+fn generalize(ctx: Context, ty: Type) -> Scheme {
+    Scheme {
+        vars: free_vars(ty.clone())
+            .difference(&free_vars_ctx(ctx))
+            .cloned()
+            .collect(),
+        ty,
+    }
+}
+
+fn instantiate(scheme: Scheme) -> Type {
+    let mut subst = Substitution::new();
+    for var in &scheme.vars {
+        subst.insert(*var, Type::Var(TyVar::fresh()));
+    }
+    apply_subst(subst, scheme.ty)
 }
 
 mod tests {

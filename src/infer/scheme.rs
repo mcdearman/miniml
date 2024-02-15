@@ -1,3 +1,5 @@
+use super::{ty_var::TyVar, r#type::Type};
+
 #[derive(Debug, Clone, PartialEq)]
 pub struct Scheme {
     vars: Vec<TyVar>,
