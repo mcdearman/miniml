@@ -2,7 +2,7 @@ use self::{
     constraint::Constraint,
     context::Context,
     error::{InferResult, TypeError},
-    r#type::{Type, TypeKind},
+    r#type::Type,
     scheme::Scheme,
     substitution::Substitution,
     tir::*,
@@ -52,22 +52,21 @@ fn infer_decl<'src>(
     decl: &nir::Decl,
 ) -> InferResult<(Vec<Constraint>, Context, Decl)> {
     match decl.kind() {
-        res::Item::Def { pat, expr } => {
-            let (cs, ty, ectx, e) = infer_expr(src, ctx, expr)?;
-            let mut tmp_ctx = ectx.clone();
-            let (mut csp, tp, ctx, pat) = infer_pattern(src, &mut tmp_ctx, pat, true)?;
-            csp.push(Constraint::Eq(tp, ty.clone()));
-
+        nir::DeclKind::Let { name, expr } => {
+            let (cs, ty, ectx, expr) = infer_expr(src, ctx, expr)?;
+            // let mut tmp_ctx = ectx.clone();
+            // let (mut csp, tp, ctx, pat) = infer_pattern(src, &mut tmp_ctx, pat, true)?;
+            // cs.push(Constraint::Eq(tp, ty.clone()));
             Ok((
-                cs.into_iter().chain(csp.into_iter()).collect(),
-                ctx.union(tmp_ctx),
-                Node::new(
-                    Item::Def {
-                        pat,
-                        expr: e.clone(),
-                        ty,
+                cs,
+                ctx.union(ectx),
+                Decl::new(
+                    DeclKind::Let {
+                        name: Ident::new(*name.id(), *name.span()),
+                        expr,
                     },
-                    item.span(),
+                    ty,
+                    *decl.span(),
                 ),
             ))
         } // res::Item::Fn { name, params, body } => {
@@ -112,69 +111,73 @@ fn infer_decl<'src>(
 fn infer_expr<'src>(
     src: &'src str,
     ctx: &mut Context,
-    expr: nir::Expr,
+    expr: &nir::Expr,
 ) -> InferResult<(Vec<Constraint>, Type, Context, Expr)> {
     match expr.kind() {
         nir::ExprKind::Lit(lit) => match *lit {
-            nir::Lit::Num(n) => Ok((
+            nir::Lit::Int(n) => Ok((
                 vec![],
-                Type::Num,
+                Type::Int,
                 ctx.clone(),
-                Expr::new(ExprKind::Lit(Lit::Int(*n)), Type::Int, expr.span()),
+                Expr::new(ExprKind::Lit(Lit::Int(n)), Type::Int, *expr.span()),
             )),
             nir::Lit::Bool(b) => Ok((
                 vec![],
                 Type::Bool,
                 ctx.clone(),
-                Expr::new(ExprKind::Lit(Lit::Bool(*b)), Type::Bool, expr.span()),
+                Expr::new(ExprKind::Lit(Lit::Bool(b)), Type::Bool, *expr.span()),
             )),
         },
         nir::ExprKind::Ident(name) => {
-            if let Some(scm) = ctx.clone().vars.get(&name) {
-                let ty = instantiate(scm.clone());
+            if let Some(scm) = ctx.get(name.id()) {
+                let ty = scm.instantiate();
                 Ok((
                     vec![],
                     ty.clone(),
                     ctx.clone(),
-                    Node::new(Expr::Ident { name, ty }, expr.span()),
+                    Expr::new(
+                        ExprKind::Ident(Ident::new(*name.id(), *name.span())),
+                        ty.clone(),
+                        *expr.span(),
+                    ),
                 ))
             } else {
                 Err(TypeError::from(format!(
                     "unbound variable: {:?} - \"{}\"",
                     expr,
-                    src[name.span()].to_string()
+                    src[*name.span()].to_string()
                 )))
             }
         }
-        res::Expr::Lambda { params, body } => {
+        nir::ExprKind::Lambda { params, expr } => {
             let mut ty_binders = vec![];
             let mut tmp_ctx = ctx.clone();
             let mut new_params = vec![];
             for p in params.clone() {
                 let ty_binder = Type::Var(TyVar::fresh());
                 ty_binders.push(ty_binder.clone());
-                let (cs, ty, ctx, pat) = infer_pattern(src, ctx, p, true)?;
+                // let (cs, ty, ctx, pat) = infer_pattern(src, ctx, p, true)?;
                 tmp_ctx = ctx.union(tmp_ctx);
-                new_params.push(pat);
+                new_params.push(Ident::new(*p.id(), *p.span()));
             }
-            let (cs, t, c, e) = infer_expr(src, &mut tmp_ctx, body)?;
+            let (cs, t, c, expr) = infer_expr(src, &mut tmp_ctx, expr)?;
             let ty = Type::Lambda(ty_binders.clone(), Box::new(t.clone()));
             Ok((
                 cs,
                 ty.clone(),
                 tmp_ctx.union(c),
-                Node::new(
-                    Expr::Lambda {
+                Expr::new(
+                    ExprKind::Lambda {
                         params: new_params,
-                        body: e,
-                        ty,
+                        expr: expr.clone(),
                     },
-                    expr.span(),
+                    ty,
+                    *expr.span(),
                 ),
             ))
         }
-        res::Expr::Apply { fun, args } => {
-            let (mut cs1, t1, mut ctx1, e1) = infer_expr(src, ctx, fun)?;
+        nir::ExprKind::Apply { fun, args } => {
+            let (mut cs1, t1, mut ctx1, fun) = infer_expr(src, ctx, fun)?;
             let mut new_args = vec![];
             let mut ty_args = vec![];
             for a in args {
@@ -193,22 +196,23 @@ fn infer_expr<'src>(
                 cs1,
                 ty_ret.clone(),
                 ctx1,
-                Node::new(
-                    Expr::Apply {
-                        fun: e1,
+                Expr::new(
+                    ExprKind::Apply {
+                        fun,
                         args: new_args,
-                        ty: ty_ret,
                     },
-                    expr.span(),
+                    ty_ret,
+                    *expr.span(),
                 ),
             ))
         }
         nir::ExprKind::Let { name, expr, body } => {
-            let (cs1, t1, mut ctx1, e1) = infer_expr(src, ctx, expr.clone())?;
+            let (cs1, t1, mut ctx1, expr) = infer_expr(src, ctx, expr)?;
             let mut tmp_ctx = ctx1.clone();
             // tmp_ctx.extend(*name, scheme);
-            let (cs1, t1, mut ctx1, name) = infer_ident(src, &mut tmp_ctx, pat, true)?;
-            let (cs2, t2, ctx2, e2) = infer_expr(src, &mut tmp_ctx, body)?;
+            // let (cs1, t1, mut ctx1, name) = infer_ident(src, &mut tmp_ctx, pat, true)?;
+            let name = Ident::new(*name.id(), *name.span());
+            let (cs2, t2, ctx2, body) = infer_expr(src, &mut tmp_ctx, body)?;
             ctx1 = ctx2.union(ctx1);
             let cs = cs1.into_iter().chain(cs2.into_iter()).collect::<Vec<_>>();
             Ok((
@@ -216,61 +220,61 @@ fn infer_expr<'src>(
                 t2.clone(),
                 ctx1,
                 Expr::new(
-                    Expr::Let {
-                        pat,
-                        expr: e1,
-                        body: e2,
-                        ty: t2,
-                    },
-                    expr.span(),
-                ),
-            ))
-        }
-        res::Expr::Fn {
-            name,
-            params,
-            expr,
-            body,
-        } => {
-            let mut e_ctx = ctx.clone();
-            let f_var = Type::Var(TyVar::fresh());
-            e_ctx.extend(*name, Scheme::new(vec![], f_var.clone()));
-
-            let mut ty_binders = vec![];
-            let mut tmp_ctx = e_ctx.clone();
-            let mut new_params = vec![];
-            for p in params.clone() {
-                let ty_binder = Type::Var(TyVar::fresh());
-                ty_binders.push(ty_binder.clone());
-                let (cs, ty, ctx, new_p) = infer_pattern(src, &mut tmp_ctx, p, true)?;
-                tmp_ctx = ctx.union(tmp_ctx);
-                new_params.push(new_p);
-            }
-            let (cs1, t1, c, expr) = infer_expr(src, &mut tmp_ctx, expr)?;
-            let ty = Type::Lambda(ty_binders.clone(), Box::new(t1.clone()));
-            tmp_ctx.extend(*name, Scheme::new(vec![], ty.clone()));
-
-            let (cs2, t2, c2, e2) = infer_expr(src, &mut tmp_ctx, body)?;
-            Ok((
-                cs1.into_iter().chain(cs2.into_iter()).collect(),
-                t2.clone(),
-                tmp_ctx.union(c).union(c2),
-                Node::new(
-                    Expr::Fn {
+                    ExprKind::Let {
                         name,
-                        params: new_params,
                         expr: expr.clone(),
-                        body: e2,
-                        ty: t2,
+                        body,
                     },
-                    expr.span(),
+                    t2,
+                    *expr.span(),
                 ),
             ))
         }
+        // res::Expr::Fn {
+        //     name,
+        //     params,
+        //     expr,
+        //     body,
+        // } => {
+        //     let mut e_ctx = ctx.clone();
+        //     let f_var = Type::Var(TyVar::fresh());
+        //     e_ctx.extend(*name, Scheme::new(vec![], f_var.clone()));
+
+        //     let mut ty_binders = vec![];
+        //     let mut tmp_ctx = e_ctx.clone();
+        //     let mut new_params = vec![];
+        //     for p in params.clone() {
+        //         let ty_binder = Type::Var(TyVar::fresh());
+        //         ty_binders.push(ty_binder.clone());
+        //         let (cs, ty, ctx, new_p) = infer_pattern(src, &mut tmp_ctx, p, true)?;
+        //         tmp_ctx = ctx.union(tmp_ctx);
+        //         new_params.push(new_p);
+        //     }
+        //     let (cs1, t1, c, expr) = infer_expr(src, &mut tmp_ctx, expr)?;
+        //     let ty = Type::Lambda(ty_binders.clone(), Box::new(t1.clone()));
+        //     tmp_ctx.extend(*name, Scheme::new(vec![], ty.clone()));
+
+        //     let (cs2, t2, c2, e2) = infer_expr(src, &mut tmp_ctx, body)?;
+        //     Ok((
+        //         cs1.into_iter().chain(cs2.into_iter()).collect(),
+        //         t2.clone(),
+        //         tmp_ctx.union(c).union(c2),
+        //         Node::new(
+        //             Expr::Fn {
+        //                 name,
+        //                 params: new_params,
+        //                 expr: expr.clone(),
+        //                 body: e2,
+        //                 ty: t2,
+        //             },
+        //             expr.span(),
+        //         ),
+        //     ))
+        // }
         nir::ExprKind::If { cond, then, else_ } => {
-            let (mut cs1, t1, mut ctx1, e1) = infer_expr(src, ctx, cond)?;
-            let (cs2, t2, mut ctx2, e2) = infer_expr(src, &mut ctx1, then)?;
-            let (cs3, t3, ctx3, e3) = infer_expr(src, &mut ctx2, else_)?;
+            let (mut cs1, t1, mut ctx1, cond) = infer_expr(src, ctx, cond)?;
+            let (cs2, t2, mut ctx2, then) = infer_expr(src, &mut ctx1, then)?;
+            let (cs3, t3, ctx3, else_) = infer_expr(src, &mut ctx2, else_)?;
             ctx1 = ctx3.union(ctx2).union(ctx1);
             cs1 = cs1
                 .into_iter()
@@ -283,33 +287,25 @@ fn infer_expr<'src>(
                 cs1,
                 t2.clone(),
                 ctx1,
-                Node::new(
-                    Expr::If {
-                        cond: e1,
-                        then: e2,
-                        else_: e3,
-                        ty: t2,
-                    },
-                    expr.span(),
-                ),
+                Expr::new(ExprKind::If { cond, then, else_ }, t2, *expr.span()),
             ))
         }
-        res::Expr::Unit => Ok((
+        nir::ExprKind::Unit => Ok((
             vec![],
             Type::Unit,
             ctx.clone(),
-            Node::new(Expr::Unit, expr.span()),
+            Expr::new(ExprKind::Unit, Type::Unit, *expr.span()),
         )),
     }
 }
 
 fn unify(t1: Type, t2: Type) -> InferResult<Substitution> {
     // println!("unify: {:?} and {:?}", t1, t2);
-    match (t1.kind(), t2.kind()) {
-        (TypeKind::Int, TypeKind::Int)
-        | (TypeKind::Bool, TypeKind::Bool)
-        | (TypeKind::Unit, TypeKind::Unit) => Ok(Substitution::new()),
-        (TypeKind::Lambda(p1, b1), TypeKind::Lambda(p2, b2)) => {
+    match (t1.clone(), t2.clone()) {
+        (Type::Int, Type::Int) | (Type::Bool, Type::Bool) | (Type::Unit, Type::Unit) => {
+            Ok(Substitution::new())
+        }
+        (Type::Lambda(p1, b1), Type::Lambda(p2, b2)) => {
             let s1 = p1.into_iter().zip(p2.into_iter()).fold(
                 Ok(Substitution::new()),
                 |acc: InferResult<Substitution>, (t1, t2)| {
@@ -324,7 +320,7 @@ fn unify(t1: Type, t2: Type) -> InferResult<Substitution> {
             // println!("unify s1.compose(s2): {:?}", s1.compose(s2.clone()));
             Ok(s1.compose(s2.clone()))
         }
-        (TypeKind::Var(n), t) | (t, TypeKind::Var(n)) => var_bind(n.clone(), t1.clone()),
+        (Type::Var(n), t) | (t, Type::Var(n)) => var_bind(n.clone(), t1.clone()),
         _ => Err(TypeError::from(format!(
             "cannot unify {:?} and {:?}",
             t1.lower(&mut HashMap::new()),
@@ -333,14 +329,14 @@ fn unify(t1: Type, t2: Type) -> InferResult<Substitution> {
     }
 }
 
-fn apply_subst_vec(subst: Substitution, tys: Vec<Type>) -> Vec<Type> {
-    tys.into_iter()
-        .map(|ty| ty.apply_subst(subst.clone()))
-        .collect()
-}
+// fn apply_subst_vec(subst: Substitution, tys: Vec<Type>) -> Vec<Type> {
+//     tys.into_iter()
+//         .map(|ty| ty.apply_subst(subst.clone()))
+//         .collect()
+// }
 
 fn var_bind(var: TyVar, ty: Type) -> InferResult<Substitution> {
-    if *ty.kind() == TypeKind::Var(var.clone()) {
+    if ty.clone() == Type::Var(var.clone()) {
         Ok(Substitution::new())
     } else if ty.free_vars().contains(&var) {
         Err(TypeError::from(format!(

@@ -35,9 +35,20 @@ fn main() {
     println!("Builtins: {:#?}", builtins);
     let res_env = rename::env::Env::new_with_builtins(builtins.clone());
     let (nir, errors) = res.resolve(res_env.clone(), &root);
-    if let Some(root) = nir {
+    if let Some(root) = nir.clone() {
         println!("NIR: {:#?}", root);
     } else {
         println!("Errors: {:#?}", errors);
+    }
+
+    let mut ctx = infer::context::Context::new();
+    match infer::infer(&*src, &mut ctx, &nir.unwrap()) {
+        Ok((tir, ctx)) => {
+            println!("TIR: {:#?}", tir);
+            println!("Context: {:#?}", ctx);
+        }
+        Err(err) => {
+            println!("Error: {:#?}", err);
+        }
     }
 }

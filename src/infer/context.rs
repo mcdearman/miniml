@@ -14,6 +14,10 @@ impl Context {
         }
     }
 
+    pub fn get(&self, id: &UniqueId) -> Option<&Scheme> {
+        self.vars.get(id)
+    }
+
     pub(crate) fn extend(&mut self, id: UniqueId, scheme: Scheme) {
         self.vars.insert(id, scheme);
     }
@@ -35,13 +39,14 @@ impl Context {
                 .vars
                 .clone()
                 .into_iter()
-                .map(|(id, scheme)| (id, scheme.apply_subst(subst)))
+                .map(|(id, scheme)| (id, scheme.apply_subst(subst.clone())))
                 .collect(),
         }
     }
 
     pub(super) fn free_vars(&self) -> BTreeSet<TyVar> {
-        self.vars
+        self.clone()
+            .vars
             .into_iter()
             .map(|(_, scheme)| scheme.free_vars())
             .fold(BTreeSet::new(), |acc, set| {

@@ -4,59 +4,54 @@ use std::{
     fmt::Debug,
 };
 
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct Type {
-    kind: Box<TypeKind>,
+#[derive(Clone, PartialEq, Eq)]
+pub enum Type {
+    Int,
+    Bool,
+    // String,
+    Var(TyVar),
+    Lambda(Vec<Self>, Box<Self>),
+    Unit,
 }
 
 impl Type {
-    pub fn new(kind: TypeKind) -> Self {
-        Self {
-            kind: Box::new(kind),
-        }
-    }
-
-    pub fn kind(&self) -> &TypeKind {
-        &self.kind
-    }
-
     pub(super) fn apply_subst(&self, subst: Substitution) -> Type {
-        match self.kind() {
-            TypeKind::Int | TypeKind::Bool | TypeKind::Unit => *self,
-            TypeKind::Var(n) => subst.get(&n).cloned().unwrap_or(*self),
-            TypeKind::Lambda(params, body) => Type::new(TypeKind::Lambda(
-                params.into_iter().map(|p| p.apply_subst(subst)).collect(),
-                body.apply_subst(subst),
-            )),
+        match self {
+            Self::Int | Self::Bool | Self::Unit => self.clone(),
+            Self::Var(n) => subst.get(&n).cloned().unwrap_or(self.clone()),
+            Self::Lambda(params, body) => Self::Lambda(
+                params.into_iter().map(|p| p.apply_subst(subst.clone())).collect(),
+                Box::new(body.apply_subst(subst)),
+            ),
         }
     }
 
     pub(super) fn lower(&self, vars: &mut HashMap<TyVar, TyVar>) -> Self {
-        match *self.kind {
-            TypeKind::Int | TypeKind::Bool | TypeKind::Unit => *self,
-            TypeKind::Var(name) => {
+        match self {
+            Self::Int | Self::Bool | Self::Unit => self.clone(),
+            Self::Var(name) => {
                 if let Some(n) = vars.get(&name) {
-                    Type::new(TypeKind::Var(*n))
+                    Self::Var(*n)
                 } else {
                     let n = vars.len();
-                    vars.insert(name, TyVar::from(n));
-                    Type::new(TypeKind::Var(TyVar::from(n)))
+                    vars.insert(*name, TyVar::from(n));
+                    Self::Var(TyVar::from(n))
                 }
             }
-            TypeKind::Lambda(params, body) => {
+            Self::Lambda(params, body) => {
                 let mut lowered_params = vec![];
                 for param in params {
                     lowered_params.push(param.lower(vars));
                 }
-                Type::new(TypeKind::Lambda(lowered_params, body.lower(vars)))
+                Self::Lambda(lowered_params, Box::new(body.lower(vars)))
             }
         }
     }
 
     pub(super) fn free_vars(&self) -> BTreeSet<TyVar> {
-        match *self.kind {
-            TypeKind::Var(n) => vec![n.clone()].into_iter().collect(),
-            TypeKind::Lambda(params, body) => params
+        match self {
+            Self::Var(n) => vec![n.clone()].into_iter().collect(),
+            Self::Lambda(params, body) => params
                 .into_iter()
                 .fold(BTreeSet::new(), |acc, p| {
                     p.free_vars().union(&acc).cloned().collect()
@@ -69,25 +64,15 @@ impl Type {
     }
 }
 
-#[derive(Clone, PartialEq, Eq)]
-pub enum TypeKind {
-    Int,
-    Bool,
-    // String,
-    Var(TyVar),
-    Lambda(Vec<Type>, Type),
-    Unit,
-}
-
-impl Debug for TypeKind {
+impl Debug for Type {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self.clone() {
-            TypeKind::Int => write!(f, "Int"),
-            TypeKind::Bool => write!(f, "Bool"),
-            // TypeKind::String => write!(f, "String"),
-            TypeKind::Var(n) => write!(f, "{:?}", n),
-            TypeKind::Lambda(params, body) => write!(f, "{:?} -> {:?}", params, body),
-            TypeKind::Unit => write!(f, "()"),
+            Self::Int => write!(f, "Int"),
+            Self::Bool => write!(f, "Bool"),
+            // Self::String => write!(f, "String"),
+            Self::Var(n) => write!(f, "{:?}", n),
+            Self::Lambda(params, body) => write!(f, "{:?} -> {:?}", params, body),
+            Self::Unit => write!(f, "()"),
         }
     }
 }

@@ -1,9 +1,4 @@
-use super::{
-    context::Context,
-    r#type::{Type, TypeKind},
-    substitution::Substitution,
-    ty_var::TyVar,
-};
+use super::{context::Context, r#type::Type, substitution::Substitution, ty_var::TyVar};
 use std::collections::BTreeSet;
 
 #[derive(Debug, Clone, PartialEq)]
@@ -18,7 +13,7 @@ impl Scheme {
     }
 
     pub fn apply_subst(&self, mut subst: Substitution) -> Self {
-        for var in self.vars {
+        for var in self.clone().vars {
             subst.remove(&var);
         }
         Scheme {
@@ -29,7 +24,7 @@ impl Scheme {
     pub fn free_vars(&self) -> BTreeSet<TyVar> {
         self.ty
             .free_vars()
-            .difference(self.vars.iter().cloned().collect())
+            .difference(&self.vars.iter().cloned().collect())
             .cloned()
             .collect()
     }
@@ -47,8 +42,8 @@ impl Scheme {
 
     pub fn instantiate(&self) -> Type {
         let mut subst = Substitution::new();
-        for var in self.vars {
-            subst.insert(var, Type::new(TypeKind::Var(TyVar::fresh())));
+        for var in self.clone().vars {
+            subst.insert(var, Type::Var(TyVar::fresh()));
         }
         self.ty.apply_subst(subst)
     }

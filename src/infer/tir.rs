@@ -23,6 +23,7 @@ impl Root {
     pub fn apply_subst(&self, subst: Substitution) -> Self {
         Self {
             decls: self
+                .clone()
                 .decls
                 .into_iter()
                 .map(|d| d.apply_subst(subst.clone()))
@@ -53,11 +54,11 @@ impl Decl {
     }
 
     pub fn apply_subst(&self, subst: Substitution) -> Decl {
-        match self.kind {
+        match self.kind() {
             DeclKind::Let { name, expr } => Decl::new(
                 DeclKind::Let {
-                    name,
-                    expr: expr.apply_subst(subst),
+                    name: name.clone(),
+                    expr: expr.apply_subst(subst.clone()),
                 },
                 self.ty.apply_subst(subst),
                 self.span,
@@ -100,15 +101,21 @@ impl Expr {
     }
 
     pub fn apply_subst(&self, subst: Substitution) -> Self {
-        match *self.kind {
-            ExprKind::Lit(l) => Expr::new(ExprKind::Lit(l), self.ty.apply_subst(subst), self.span),
-            ExprKind::Ident(name) => {
-                Expr::new(ExprKind::Ident(name), self.ty.apply_subst(subst), self.span)
-            }
+        match self.kind() {
+            ExprKind::Lit(l) => Expr::new(
+                ExprKind::Lit(l.clone()),
+                self.ty.apply_subst(subst),
+                self.span,
+            ),
+            ExprKind::Ident(name) => Expr::new(
+                ExprKind::Ident(name.clone()),
+                self.ty.apply_subst(subst),
+                self.span,
+            ),
             ExprKind::Lambda { params, expr } => Expr::new(
                 ExprKind::Lambda {
-                    params,
-                    expr: expr.apply_subst(subst),
+                    params: params.clone(),
+                    expr: expr.apply_subst(subst.clone()),
                 },
                 self.ty.apply_subst(subst),
                 self.span,
@@ -126,7 +133,7 @@ impl Expr {
             ),
             ExprKind::Let { name, expr, body } => Expr::new(
                 ExprKind::Let {
-                    name,
+                    name: name.clone(),
                     expr: expr.apply_subst(subst.clone()),
                     body: body.apply_subst(subst.clone()),
                 },
@@ -142,7 +149,7 @@ impl Expr {
                 self.ty.apply_subst(subst),
                 self.span,
             ),
-            ExprKind::Unit => *self,
+            ExprKind::Unit => self.clone(),
         }
     }
 }
