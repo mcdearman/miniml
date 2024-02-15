@@ -1,52 +1,93 @@
-use super::ty_var::TyVar;
-use std::{collections::HashMap, fmt::Debug};
+use super::{substitution::Substitution, ty_var::TyVar};
+use std::{
+    collections::{BTreeSet, HashMap},
+    fmt::Debug,
+};
 
-#[derive(Clone, PartialEq, Eq)]
-pub enum Type {
-    Num,
-    Bool,
-    String,
-    Var(TyVar),
-    Lambda(Vec<Self>, Box<Self>),
-    Unit,
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Type {
+    kind: Box<TypeKind>,
 }
 
 impl Type {
-    fn lower(&self, vars: &mut HashMap<TyVar, TyVar>) -> Self {
-        match self.clone() {
-            Self::Num => Self::Num,
-            Self::Bool => Self::Bool,
-            Self::String => Self::String,
-            Self::Var(name) => {
+    pub fn new(kind: TypeKind) -> Self {
+        Self {
+            kind: Box::new(kind),
+        }
+    }
+
+    pub fn kind(&self) -> &TypeKind {
+        &self.kind
+    }
+
+    pub(super) fn apply_subst(&self, subst: Substitution) -> Type {
+        match self.kind() {
+            TypeKind::Int | TypeKind::Bool | TypeKind::Unit => *self,
+            TypeKind::Var(n) => subst.get(&n).cloned().unwrap_or(*self),
+            TypeKind::Lambda(params, body) => Type::new(TypeKind::Lambda(
+                params.into_iter().map(|p| p.apply_subst(subst)).collect(),
+                body.apply_subst(subst),
+            )),
+        }
+    }
+
+    pub(super) fn lower(&self, vars: &mut HashMap<TyVar, TyVar>) -> Self {
+        match *self.kind {
+            TypeKind::Int | TypeKind::Bool | TypeKind::Unit => *self,
+            TypeKind::Var(name) => {
                 if let Some(n) = vars.get(&name) {
-                    Self::Var(*n)
+                    Type::new(TypeKind::Var(*n))
                 } else {
                     let n = vars.len();
                     vars.insert(name, TyVar::from(n));
-                    Self::Var(TyVar::from(n))
+                    Type::new(TypeKind::Var(TyVar::from(n)))
                 }
             }
-            Self::Lambda(params, body) => {
+            TypeKind::Lambda(params, body) => {
                 let mut lowered_params = vec![];
                 for param in params {
                     lowered_params.push(param.lower(vars));
                 }
-                Self::Lambda(lowered_params, Box::new(body.lower(vars)))
+                Type::new(TypeKind::Lambda(lowered_params, body.lower(vars)))
             }
-            Self::Unit => Self::Unit,
+        }
+    }
+
+    pub(super) fn free_vars(&self) -> BTreeSet<TyVar> {
+        match *self.kind {
+            TypeKind::Var(n) => vec![n.clone()].into_iter().collect(),
+            TypeKind::Lambda(params, body) => params
+                .into_iter()
+                .fold(BTreeSet::new(), |acc, p| {
+                    p.free_vars().union(&acc).cloned().collect()
+                })
+                .union(&body.free_vars())
+                .cloned()
+                .collect(),
+            _ => BTreeSet::new(),
         }
     }
 }
 
-impl Debug for Type {
+#[derive(Clone, PartialEq, Eq)]
+pub enum TypeKind {
+    Int,
+    Bool,
+    // String,
+    Var(TyVar),
+    Lambda(Vec<Type>, Type),
+    Unit,
+}
+
+impl Debug for TypeKind {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self.clone() {
-            Self::Num => write!(f, "Num"),
-            Self::Bool => write!(f, "Bool"),
-            Self::String => write!(f, "String"),
-            Self::Var(n) => write!(f, "{:?}", n),
-            Self::Lambda(params, body) => write!(f, "{:?} -> {:?}", params, body),
-            Self::Unit => write!(f, "()"),
+            TypeKind::Int => write!(f, "Int"),
+            TypeKind::Bool => write!(f, "Bool"),
+            // TypeKind::String => write!(f, "String"),
+            TypeKind::Var(n) => write!(f, "{:?}", n),
+            TypeKind::Lambda(params, body) => write!(f, "{:?} -> {:?}", params, body),
+            TypeKind::Unit => write!(f, "()"),
         }
     }
 }

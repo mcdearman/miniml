@@ -1,4 +1,4 @@
-use super::{scheme::Scheme, ty_var::TyVar};
+use super::{scheme::Scheme, substitution::Substitution, ty_var::TyVar};
 use crate::utils::unique_id::UniqueId;
 use std::collections::{BTreeSet, HashMap};
 
@@ -14,7 +14,7 @@ impl Context {
         }
     }
 
-    pub fn extend(&mut self, id: UniqueId, scheme: Scheme) {
+    pub(crate) fn extend(&mut self, id: UniqueId, scheme: Scheme) {
         self.vars.insert(id, scheme);
     }
 
@@ -35,7 +35,7 @@ impl Context {
                 .vars
                 .clone()
                 .into_iter()
-                .map(|(id, scheme)| (id, apply_subst_scheme(subst.clone(), scheme)))
+                .map(|(id, scheme)| (id, scheme.apply_subst(subst)))
                 .collect(),
         }
     }
@@ -43,7 +43,7 @@ impl Context {
     pub(super) fn free_vars(&self) -> BTreeSet<TyVar> {
         self.vars
             .into_iter()
-            .map(|(_, scheme)| free_vars_scheme(scheme))
+            .map(|(_, scheme)| scheme.free_vars())
             .fold(BTreeSet::new(), |acc, set| {
                 acc.union(&set).cloned().collect()
             })

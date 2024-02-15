@@ -1,9 +1,15 @@
 use self::{
-    constraint::Constraint, context::Context, error::InferResult, r#type::Type,
-    substitution::Substitution, tir::*,
+    constraint::Constraint,
+    context::Context,
+    error::{InferResult, TypeError},
+    r#type::{Type, TypeKind},
+    scheme::Scheme,
+    substitution::Substitution,
+    tir::*,
+    ty_var::TyVar,
 };
 use crate::rename::nir;
-use std::collections::{BTreeSet, HashMap};
+use std::collections::HashMap;
 
 mod constraint;
 pub mod context;
@@ -17,38 +23,35 @@ pub mod r#type;
 pub fn infer<'src>(
     src: &'src str,
     ctx: &mut Context,
-    nir: nir::Root,
+    nir: &nir::Root,
 ) -> InferResult<(Root, Context)> {
     let mut s = Substitution::new();
-    let mut items = vec![];
+    let mut decls = vec![];
     let mut ctx_ret = Context::new();
-    for item in root.inner().items.clone() {
-        let (cs, ctx, i) = infer_item(src, ctx, item)?;
+    for decl in nir.decls() {
+        let (cs, ctx, d) = infer_decl(src, ctx, decl)?;
         for c in cs {
             match c {
                 Constraint::Eq(t1, t2) => {
-                    s = unify(apply_subst(s.clone(), t1), apply_subst(s.clone(), t2))?.compose(s);
+                    s = unify(t1.apply_subst(s.clone()), t2.apply_subst(s.clone()))?.compose(s);
                 }
             }
         }
         ctx_ret = ctx_ret.union(ctx);
-        items.push(i);
+        decls.push(d);
     }
     Ok((
-        Node::new(
-            apply_subst_root(s.clone(), Root { items }),
-            root.span().clone(),
-        ),
-        ctx_ret.apply_subst(s),
+        Root::new(decls, *nir.span()),
+        ctx_ret.apply_subst(s.clone()).apply_subst(s),
     ))
 }
 
 fn infer_decl<'src>(
     src: &'src str,
     ctx: &mut Context,
-    item: nir::Decl,
+    decl: &nir::Decl,
 ) -> InferResult<(Vec<Constraint>, Context, Decl)> {
-    match item.inner().clone() {
+    match decl.kind() {
         res::Item::Def { pat, expr } => {
             let (cs, ty, ectx, e) = infer_expr(src, ctx, expr)?;
             let mut tmp_ctx = ectx.clone();
@@ -67,43 +70,42 @@ fn infer_decl<'src>(
                     item.span(),
                 ),
             ))
-        }
-        res::Item::Fn { name, params, body } => {
-            let mut e_ctx = ctx.clone();
-            let f_var = Type::Var(TyVar::fresh());
-            e_ctx.extend(*name, Scheme::new(vec![], f_var.clone()));
-            let mut ty_binders = vec![];
-            let mut tmp_ctx = e_ctx.clone();
-            let mut new_params = vec![];
-            let mut cons = vec![];
-            for p in params.clone() {
-                let ty_binder = Type::Var(TyVar::fresh());
-                ty_binders.push(ty_binder.clone());
-                let (mut cs, ty, ctx, pat) = infer_pattern(src, &mut tmp_ctx, p, true)?;
-                // cons = cons.into_iter().chain(cs.into_iter()).collect_vec();
-                cons.append(&mut cs);
-                tmp_ctx = ctx.union(tmp_ctx);
-                new_params.push(pat);
-                // tmp_ctx.extend(*p, Scheme::new(vec![], ty_binder));
-            }
-            let (cs1, t1, c, body) = infer_expr(src, &mut tmp_ctx, body)?;
-            let ty = Type::Lambda(ty_binders.clone(), Box::new(t1.clone()));
-            tmp_ctx.extend(*name, Scheme::new(vec![], ty.clone()));
+        } // res::Item::Fn { name, params, body } => {
+          //     let mut e_ctx = ctx.clone();
+          //     let f_var = Type::Var(TyVar::fresh());
+          //     e_ctx.extend(*name, Scheme::new(vec![], f_var.clone()));
+          //     let mut ty_binders = vec![];
+          //     let mut tmp_ctx = e_ctx.clone();
+          //     let mut new_params = vec![];
+          //     let mut cons = vec![];
+          //     for p in params.clone() {
+          //         let ty_binder = Type::Var(TyVar::fresh());
+          //         ty_binders.push(ty_binder.clone());
+          //         let (mut cs, ty, ctx, pat) = infer_pattern(src, &mut tmp_ctx, p, true)?;
+          //         // cons = cons.into_iter().chain(cs.into_iter()).collect_vec();
+          //         cons.append(&mut cs);
+          //         tmp_ctx = ctx.union(tmp_ctx);
+          //         new_params.push(pat);
+          //         // tmp_ctx.extend(*p, Scheme::new(vec![], ty_binder));
+          //     }
+          //     let (cs1, t1, c, body) = infer_expr(src, &mut tmp_ctx, body)?;
+          //     let ty = Type::Lambda(ty_binders.clone(), Box::new(t1.clone()));
+          //     tmp_ctx.extend(*name, Scheme::new(vec![], ty.clone()));
 
-            Ok((
-                cs1.into_iter().chain(cons.into_iter()).collect(),
-                tmp_ctx.union(c),
-                Node::new(
-                    Item::Fn {
-                        name,
-                        params: new_params,
-                        body,
-                        ty,
-                    },
-                    item.span(),
-                ),
-            ))
-        }
+          //     Ok((
+          //         cs1.into_iter().chain(cons.into_iter()).collect(),
+          //         tmp_ctx.union(c),
+          //         Node::new(
+          //             Item::Fn {
+          //                 name,
+          //                 params: new_params,
+          //                 body,
+          //                 ty,
+          //             },
+          //             item.span(),
+          //         ),
+          //     ))
+          // }
     }
 }
 
@@ -112,46 +114,22 @@ fn infer_expr<'src>(
     ctx: &mut Context,
     expr: nir::Expr,
 ) -> InferResult<(Vec<Constraint>, Type, Context, Expr)> {
-    match expr.inner().clone() {
-        nir::Expr::Lit(lit) => match *lit {
+    match expr.kind() {
+        nir::ExprKind::Lit(lit) => match *lit {
             nir::Lit::Num(n) => Ok((
                 vec![],
                 Type::Num,
                 ctx.clone(),
-                Node::new(
-                    Expr::Lit {
-                        lit: Lit::Num(n.clone()),
-                        ty: Type::Num,
-                    },
-                    expr.span(),
-                ),
+                Expr::new(ExprKind::Lit(Lit::Int(*n)), Type::Int, expr.span()),
             )),
-            res::Lit::Bool(b) => Ok((
+            nir::Lit::Bool(b) => Ok((
                 vec![],
                 Type::Bool,
                 ctx.clone(),
-                Node::new(
-                    Expr::Lit {
-                        lit: Lit::Bool(b.clone()),
-                        ty: Type::Bool,
-                    },
-                    expr.span(),
-                ),
-            )),
-            res::Lit::String(s) => Ok((
-                vec![],
-                Type::String,
-                ctx.clone(),
-                Node::new(
-                    Expr::Lit {
-                        lit: Lit::String(s.clone()),
-                        ty: Type::String,
-                    },
-                    expr.span(),
-                ),
+                Expr::new(ExprKind::Lit(Lit::Bool(*b)), Type::Bool, expr.span()),
             )),
         },
-        res::Expr::Ident(name) => {
+        nir::ExprKind::Ident(name) => {
             if let Some(scm) = ctx.clone().vars.get(&name) {
                 let ty = instantiate(scm.clone());
                 Ok((
@@ -225,7 +203,7 @@ fn infer_expr<'src>(
                 ),
             ))
         }
-        nir::Expr::Let { name, expr, body } => {
+        nir::ExprKind::Let { name, expr, body } => {
             let (cs1, t1, mut ctx1, e1) = infer_expr(src, ctx, expr.clone())?;
             let mut tmp_ctx = ctx1.clone();
             // tmp_ctx.extend(*name, scheme);
@@ -289,45 +267,7 @@ fn infer_expr<'src>(
                 ),
             ))
         }
-        res::Expr::Match { expr, cases } => {
-            let (mut cs1, t1, mut ctx1, e1) = infer_expr(src, ctx, expr.clone())?;
-            let mut new_cases = vec![];
-            let ty_ret = Type::Var(TyVar::fresh());
-            for c in cases {
-                let (csp, tp, mut ctxp, p) =
-                    infer_pattern(src, &mut ctx1, c.inner().pattern.clone(), true)?;
-                let (cse, te, ctxe, e) = infer_expr(src, &mut ctxp, c.inner().expr.clone())?;
-                cs1 = cs1
-                    .into_iter()
-                    .chain(csp.into_iter())
-                    .chain(cse.into_iter())
-                    .collect();
-                cs1.push(Constraint::Eq(t1.clone(), tp));
-                cs1.push(Constraint::Eq(te, ty_ret.clone()));
-                ctx1 = ctxe.union(ctxp).union(ctx1);
-                new_cases.push(Node::new(
-                    MatchCase {
-                        pattern: p,
-                        expr: e,
-                    },
-                    c.span(),
-                ));
-            }
-            Ok((
-                cs1,
-                ty_ret.clone(),
-                ctx1,
-                Node::new(
-                    Expr::Match {
-                        expr: e1,
-                        cases: new_cases,
-                        ty: ty_ret,
-                    },
-                    expr.span(),
-                ),
-            ))
-        }
-        res::Expr::If { cond, then, else_ } => {
+        nir::ExprKind::If { cond, then, else_ } => {
             let (mut cs1, t1, mut ctx1, e1) = infer_expr(src, ctx, cond)?;
             let (cs2, t2, mut ctx2, e2) = infer_expr(src, &mut ctx1, then)?;
             let (cs3, t3, ctx3, e3) = infer_expr(src, &mut ctx2, else_)?;
@@ -363,182 +303,46 @@ fn infer_expr<'src>(
     }
 }
 
-fn apply_subst_root(subst: Substitution, root: Root) -> Root {
-    Root {
-        items: root
-            .items
-            .into_iter()
-            .map(|item| apply_subst_item(subst.clone(), item))
-            .collect(),
-    }
-}
-
-fn apply_subst_item(subst: Substitution, item: Node<Item>) -> Node<Item> {
-    Node::new(
-        match item.inner().clone() {
-            Item::Expr(expr) => Item::Expr(
-                apply_subst_expr(subst, Node::new(expr, item.span()))
-                    .inner()
-                    .clone(),
-            ),
-            Item::Def { pat, expr, ty } => Item::Def {
-                pat,
-                expr: apply_subst_expr(subst.clone(), expr),
-                ty: apply_subst(subst, ty),
-            },
-            Item::Fn {
-                name,
-                params,
-                body,
-                ty,
-            } => Item::Fn {
-                name,
-                params,
-                body: apply_subst_expr(subst.clone(), body),
-                ty: apply_subst(subst, ty),
-            },
-        },
-        item.span(),
-    )
-}
-
-fn apply_subst_expr(subst: Substitution, expr: Node<Expr>) -> Node<Expr> {
-    Node::new(
-        match expr.inner().clone() {
-            Expr::Lit { lit, ty } => Expr::Lit {
-                lit,
-                ty: apply_subst(subst, ty),
-            },
-            Expr::Ident { name, ty } => Expr::Ident {
-                name,
-                ty: apply_subst(subst, ty),
-            },
-            Expr::Lambda { params, body, ty } => Expr::Lambda {
-                params,
-                body: apply_subst_expr(subst.clone(), body),
-                ty: apply_subst(subst, ty),
-            },
-            Expr::Apply { fun, args, ty } => Expr::Apply {
-                fun: apply_subst_expr(subst.clone(), fun),
-                args: args
-                    .into_iter()
-                    .map(|arg| apply_subst_expr(subst.clone(), arg))
-                    .collect(),
-                ty: apply_subst(subst, ty),
-            },
-            Expr::Let {
-                pat,
-                expr,
-                body,
-                ty,
-            } => Expr::Let {
-                pat,
-                expr: apply_subst_expr(subst.clone(), expr),
-                body: apply_subst_expr(subst.clone(), body),
-                ty: apply_subst(subst, ty),
-            },
-            Expr::Fn {
-                name,
-                params,
-                expr,
-                body,
-                ty,
-            } => Expr::Fn {
-                name,
-                params,
-                expr: apply_subst_expr(subst.clone(), expr),
-                body: apply_subst_expr(subst.clone(), body),
-                ty: apply_subst(subst, ty),
-            },
-            Expr::Match { expr, cases, ty } => Expr::Match {
-                expr: apply_subst_expr(subst.clone(), expr),
-                cases: cases
-                    .into_iter()
-                    .map(|case| {
-                        Node::new(
-                            MatchCase {
-                                pattern: case.inner().pattern.clone(),
-                                expr: apply_subst_expr(subst.clone(), case.inner().clone().expr),
-                            },
-                            case.span(),
-                        )
-                    })
-                    .collect(),
-                ty: apply_subst(subst, ty),
-            },
-            Expr::If {
-                cond,
-                then,
-                else_,
-                ty,
-            } => Expr::If {
-                cond: apply_subst_expr(subst.clone(), cond),
-                then: apply_subst_expr(subst.clone(), then),
-                else_: apply_subst_expr(subst.clone(), else_),
-                ty: apply_subst(subst, ty),
-            },
-            Expr::Unit => Expr::Unit,
-        },
-        expr.span(),
-    )
-}
-
-fn apply_subst(subst: Substitution, ty: Type) -> Type {
-    match ty {
-        Type::Num | Type::Bool | Type::String | Type::Unit => ty.clone(),
-        Type::Var(n) => subst.get(&n).cloned().unwrap_or(ty.clone()),
-        Type::Lambda(params, body) => Type::Lambda(
-            params
-                .into_iter()
-                .map(|p| apply_subst(subst.clone(), p))
-                .collect(),
-            Box::new(apply_subst(subst.clone(), *body)),
-        ),
+fn unify(t1: Type, t2: Type) -> InferResult<Substitution> {
+    // println!("unify: {:?} and {:?}", t1, t2);
+    match (t1.kind(), t2.kind()) {
+        (TypeKind::Int, TypeKind::Int)
+        | (TypeKind::Bool, TypeKind::Bool)
+        | (TypeKind::Unit, TypeKind::Unit) => Ok(Substitution::new()),
+        (TypeKind::Lambda(p1, b1), TypeKind::Lambda(p2, b2)) => {
+            let s1 = p1.into_iter().zip(p2.into_iter()).fold(
+                Ok(Substitution::new()),
+                |acc: InferResult<Substitution>, (t1, t2)| {
+                    let s = acc?;
+                    let s1 = unify(t1.apply_subst(s.clone()), t2.apply_subst(s.clone()))?;
+                    Ok(s.compose(s1))
+                },
+            )?;
+            // println!("unify s1: {:?}", s1);
+            let s2 = unify(b1.apply_subst(s1.clone()), b2.apply_subst(s1.clone()))?;
+            // println!("unify s2: {:?}", s2);
+            // println!("unify s1.compose(s2): {:?}", s1.compose(s2.clone()));
+            Ok(s1.compose(s2.clone()))
+        }
+        (TypeKind::Var(n), t) | (t, TypeKind::Var(n)) => var_bind(n.clone(), t1.clone()),
+        _ => Err(TypeError::from(format!(
+            "cannot unify {:?} and {:?}",
+            t1.lower(&mut HashMap::new()),
+            t2.lower(&mut HashMap::new())
+        ))),
     }
 }
 
 fn apply_subst_vec(subst: Substitution, tys: Vec<Type>) -> Vec<Type> {
     tys.into_iter()
-        .map(|ty| apply_subst(subst.clone(), ty))
-        .collect()
-}
-
-fn apply_subst_scheme(mut subst: Substitution, scheme: Scheme) -> Scheme {
-    for var in &scheme.vars {
-        subst.remove(var);
-    }
-    Scheme {
-        vars: scheme.vars.clone(),
-        ty: apply_subst(subst.clone(), scheme.ty.clone()),
-    }
-}
-
-fn free_vars(ty: Type) -> BTreeSet<TyVar> {
-    match ty {
-        Type::Var(n) => vec![n.clone()].into_iter().collect(),
-        Type::Lambda(params, body) => params
-            .into_iter()
-            .fold(BTreeSet::new(), |acc, p| {
-                free_vars(p).union(&acc).cloned().collect()
-            })
-            .union(&free_vars(*body.clone()))
-            .cloned()
-            .collect(),
-        _ => BTreeSet::new(),
-    }
-}
-
-fn free_vars_scheme(scheme: Scheme) -> BTreeSet<TyVar> {
-    free_vars(scheme.ty.clone())
-        .difference(&scheme.vars.iter().cloned().collect())
-        .cloned()
+        .map(|ty| ty.apply_subst(subst.clone()))
         .collect()
 }
 
 fn var_bind(var: TyVar, ty: Type) -> InferResult<Substitution> {
-    if ty.clone() == Type::Var(var.clone()) {
+    if *ty.kind() == TypeKind::Var(var.clone()) {
         Ok(Substitution::new())
-    } else if free_vars(ty.clone()).contains(&var) {
+    } else if ty.free_vars().contains(&var) {
         Err(TypeError::from(format!(
             "occurs check failed: {} occurs in {:?}",
             var, ty
@@ -550,94 +354,42 @@ fn var_bind(var: TyVar, ty: Type) -> InferResult<Substitution> {
     }
 }
 
-fn unify(t1: Type, t2: Type) -> InferResult<Substitution> {
-    // println!("unify: {:?} and {:?}", t1, t2);
-    match (t1.clone(), t2.clone()) {
-        (Type::Num, Type::Num) => Ok(Substitution::new()),
-        (Type::Bool, Type::Bool) => Ok(Substitution::new()),
-        (Type::String, Type::String) => Ok(Substitution::new()),
-        (Type::Unit, Type::Unit) => Ok(Substitution::new()),
-        (Type::Lambda(p1, b1), Type::Lambda(p2, b2)) => {
-            let s1 = p1.into_iter().zip(p2.into_iter()).fold(
-                Ok(Substitution::new()),
-                |acc: InferResult<Substitution>, (t1, t2)| {
-                    let s = acc?;
-                    let s1 = unify(apply_subst(s.clone(), t1), apply_subst(s.clone(), t2))?;
-                    Ok(s.compose(s1))
-                },
-            )?;
-            // println!("unify s1: {:?}", s1);
-            let s2 = unify(
-                apply_subst(s1.clone(), *b1.clone()),
-                apply_subst(s1.clone(), *b2.clone()),
-            )?;
-            // println!("unify s2: {:?}", s2);
-            // println!("unify s1.compose(s2): {:?}", s1.compose(s2.clone()));
-            Ok(s1.compose(s2.clone()))
-        }
-        (Type::Var(n), t) | (t, Type::Var(n)) => var_bind(n.clone(), t.clone()),
-        _ => Err(TypeError::from(format!(
-            "cannot unify {:?} and {:?}",
-            t1.lower(&mut HashMap::new()),
-            t2.lower(&mut HashMap::new())
-        ))),
-    }
-}
-
-fn generalize(ctx: Context, ty: Type) -> Scheme {
-    Scheme {
-        vars: free_vars(ty.clone())
-            .difference(&free_vars_ctx(ctx))
-            .cloned()
-            .collect(),
-        ty,
-    }
-}
-
-fn instantiate(scheme: Scheme) -> Type {
-    let mut subst = Substitution::new();
-    for var in &scheme.vars {
-        subst.insert(*var, Type::Var(TyVar::fresh()));
-    }
-    apply_subst(subst, scheme.ty)
-}
-
 mod tests {
-    use super::{res::resolve, Context, Root};
-    use crate::res;
-    use common::node::Node;
-    use syntax::chumsky_parser::parse;
+    // use super::{res::resolve, Context, Root};
+    // use crate::res;
+    // use common::node::Node;
+    // use syntax::chumsky_parser::parse;
 
-    fn test_helper(src: &str) -> (Node<Root>, Context) {
-        let (ast, errors) = parse(src);
-        if !errors.is_empty() {
-            panic!("{:?}", errors);
-        }
+    // fn test_helper(src: &str) -> (Node<Root>, Context) {
+    //     let (ast, errors) = parse(src);
+    //     if !errors.is_empty() {
+    //         panic!("{:?}", errors);
+    //     }
 
-        let env = res::Env::new();
-        let (res, errors) = resolve(env, &ast.unwrap());
-        if !errors.is_empty() {
-            panic!("{:?}", errors);
-        }
+    //     let env = res::Env::new();
+    //     let (res, errors) = resolve(env, &ast.unwrap());
+    //     if !errors.is_empty() {
+    //         panic!("{:?}", errors);
+    //     }
 
-        let mut ctx = super::Context::new();
-        super::type_inference(src, &mut ctx, res.unwrap()).unwrap()
-    }
+    //     let mut ctx = super::Context::new();
+    //     super::type_inference(src, &mut ctx, res.unwrap()).unwrap()
+    // }
 
-    #[test]
-    fn infer_num() {
-        insta::assert_debug_snapshot!(test_helper("1"));
-    }
+    // #[test]
+    // fn infer_num() {
+    //     insta::assert_debug_snapshot!(test_helper("1"));
+    // }
 
-    #[test]
-    fn infer_bool() {
-        insta::assert_debug_snapshot!(test_helper("true"));
-    }
+    // #[test]
+    // fn infer_bool() {
+    //     insta::assert_debug_snapshot!(test_helper("true"));
+    // }
 
-    #[test]
-    fn infer_def() {
-        insta::assert_debug_snapshot!(test_helper("x = 1"));
-    }
+    // #[test]
+    // fn infer_def() {
+    //     insta::assert_debug_snapshot!(test_helper("x = 1"));
+    // }
 
     // #[test]
     // fn infer_prefix() {

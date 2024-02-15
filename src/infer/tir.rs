@@ -1,4 +1,4 @@
-use super::r#type::Type;
+use super::{r#type::Type, substitution::Substitution};
 use crate::utils::{span::Span, unique_id::UniqueId};
 
 #[derive(Debug, Clone, PartialEq)]
@@ -19,17 +19,29 @@ impl Root {
     pub fn span(&self) -> &Span {
         &self.span
     }
+
+    pub fn apply_subst(&self, subst: Substitution) -> Self {
+        Self {
+            decls: self
+                .decls
+                .into_iter()
+                .map(|d| d.apply_subst(subst.clone()))
+                .collect(),
+            span: self.span,
+        }
+    }
 }
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Decl {
     kind: DeclKind,
+    ty: Type,
     span: Span,
 }
 
 impl Decl {
-    pub fn new(kind: DeclKind, span: Span) -> Self {
-        Self { kind, span }
+    pub fn new(kind: DeclKind, ty: Type, span: Span) -> Self {
+        Self { kind, ty, span }
     }
 
     pub fn kind(&self) -> &DeclKind {
@@ -38,6 +50,19 @@ impl Decl {
 
     pub fn span(&self) -> &Span {
         &self.span
+    }
+
+    pub fn apply_subst(&self, subst: Substitution) -> Decl {
+        match self.kind {
+            DeclKind::Let { name, expr } => Decl::new(
+                DeclKind::Let {
+                    name,
+                    expr: expr.apply_subst(subst),
+                },
+                self.ty.apply_subst(subst),
+                self.span,
+            ),
+        }
     }
 }
 
@@ -72,6 +97,53 @@ impl Expr {
 
     pub fn span(&self) -> &Span {
         &self.span
+    }
+
+    pub fn apply_subst(&self, subst: Substitution) -> Self {
+        match *self.kind {
+            ExprKind::Lit(l) => Expr::new(ExprKind::Lit(l), self.ty.apply_subst(subst), self.span),
+            ExprKind::Ident(name) => {
+                Expr::new(ExprKind::Ident(name), self.ty.apply_subst(subst), self.span)
+            }
+            ExprKind::Lambda { params, expr } => Expr::new(
+                ExprKind::Lambda {
+                    params,
+                    expr: expr.apply_subst(subst),
+                },
+                self.ty.apply_subst(subst),
+                self.span,
+            ),
+            ExprKind::Apply { fun, args } => Expr::new(
+                ExprKind::Apply {
+                    fun: fun.apply_subst(subst.clone()),
+                    args: args
+                        .into_iter()
+                        .map(|arg| arg.apply_subst(subst.clone()))
+                        .collect(),
+                },
+                self.ty.apply_subst(subst),
+                self.span,
+            ),
+            ExprKind::Let { name, expr, body } => Expr::new(
+                ExprKind::Let {
+                    name,
+                    expr: expr.apply_subst(subst.clone()),
+                    body: body.apply_subst(subst.clone()),
+                },
+                self.ty.apply_subst(subst),
+                self.span,
+            ),
+            ExprKind::If { cond, then, else_ } => Expr::new(
+                ExprKind::If {
+                    cond: cond.apply_subst(subst.clone()),
+                    then: then.apply_subst(subst.clone()),
+                    else_: else_.apply_subst(subst.clone()),
+                },
+                self.ty.apply_subst(subst),
+                self.span,
+            ),
+            ExprKind::Unit => *self,
+        }
     }
 }
 
