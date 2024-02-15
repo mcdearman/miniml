@@ -1,5 +1,5 @@
 use super::{scheme::Scheme, substitution::Substitution, ty_var::TyVar};
-use crate::utils::unique_id::UniqueId;
+use crate::utils::{intern::InternedString, unique_id::UniqueId};
 use std::collections::{BTreeSet, HashMap};
 
 #[derive(Debug, Clone, PartialEq)]
@@ -12,6 +12,17 @@ impl Context {
         Self {
             vars: HashMap::new(),
         }
+    }
+
+    pub fn from_builtins(builtins: HashMap<UniqueId, InternedString>) -> Self {
+        let mut vars = HashMap::new();
+        for (id, name) in builtins {
+            match name.as_str() {
+                "neg" => vars.insert(id, Scheme::new(vec![], TyVar::new())),
+                "add"
+            }
+        }
+        Self { vars }
     }
 
     pub fn get(&self, id: &UniqueId) -> Option<&Scheme> {

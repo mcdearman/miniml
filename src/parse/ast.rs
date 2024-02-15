@@ -285,7 +285,7 @@ impl From<Token> for UnaryOpKind {
     fn from(t: Token) -> Self {
         match t {
             Token::Minus => Self::Neg,
-            Token::Bang => Self::Not,
+            Token::Not => Self::Not,
             _ => unreachable!(),
         }
     }
@@ -294,8 +294,8 @@ impl From<Token> for UnaryOpKind {
 impl ToString for UnaryOpKind {
     fn to_string(&self) -> String {
         match self {
-            Self::Neg => "-".to_string(),
-            Self::Not => "!".to_string(),
+            Self::Neg => "neg".to_string(),
+            Self::Not => "not".to_string(),
         }
     }
 }

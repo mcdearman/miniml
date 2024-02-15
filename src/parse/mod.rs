@@ -161,7 +161,7 @@ fn expr_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
             .map_with(|kind, e| Expr::new(kind, e.span()));
 
         let op = just(Token::Minus)
-            .or(just(Token::Bang))
+            .or(just(Token::Not))
             .map(UnaryOpKind::from)
             .map_with(|op, e| UnaryOp::new(op, e.span()));
 
