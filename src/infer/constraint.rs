@@ -1,4 +1,6 @@
+use super::r#type::Type;
+
 #[derive(Debug, Clone, PartialEq)]
-enum Constraint {
+pub enum Constraint {
     Eq(Type, Type),
 }

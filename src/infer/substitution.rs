@@ -2,38 +2,38 @@ use super::{r#type::Type, ty_var::TyVar};
 use std::collections::HashMap;
 
 #[derive(Debug, Clone, PartialEq)]
-struct Substitution {
+pub struct Substitution {
     map: HashMap<TyVar, Type>,
 }
 
 impl Substitution {
-    fn new() -> Self {
+    pub fn new() -> Self {
         Self {
             map: HashMap::new(),
         }
     }
 
-    fn get(&self, var: &TyVar) -> Option<&Type> {
+    pub fn get(&self, var: &TyVar) -> Option<&Type> {
         self.map.get(var)
     }
 
-    fn insert(&mut self, var: TyVar, ty: Type) {
+    pub fn insert(&mut self, var: TyVar, ty: Type) {
         self.map.insert(var, ty);
     }
 
-    fn remove(&mut self, var: &TyVar) -> Option<Type> {
+    pub fn remove(&mut self, var: &TyVar) -> Option<Type> {
         self.map.remove(var)
     }
 
     // left-biased union
-    fn union(&self, other: Self) -> Self {
+    pub fn union(&self, other: Self) -> Self {
         self.clone()
             .into_iter()
             .chain(other.clone().into_iter())
             .collect()
     }
 
-    fn compose(&self, other: Substitution) -> Self {
+    pub fn compose(&self, other: Substitution) -> Self {
         self.union(
             other
                 .into_iter()

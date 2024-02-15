@@ -1,11 +1,13 @@
-use self::context::Context;
-use std::{
-    collections::{BTreeSet, HashMap},
-    fmt::{Debug, Display},
+use self::{
+    constraint::Constraint, context::Context, error::InferResult, r#type::Type,
+    substitution::Substitution, tir::*,
 };
+use crate::rename::nir;
+use std::collections::{BTreeSet, HashMap};
 
 mod constraint;
 pub mod context;
+pub mod error;
 mod scheme;
 pub mod substitution;
 pub mod tir;
@@ -16,7 +18,7 @@ pub fn infer<'src>(
     src: &'src str,
     ctx: &mut Context,
     nir: nir::Root,
-) -> InferResult<(Node<Root>, Context)> {
+) -> InferResult<(Root, Context)> {
     let mut s = Substitution::new();
     let mut items = vec![];
     let mut ctx_ret = Context::new();
@@ -41,11 +43,11 @@ pub fn infer<'src>(
     ))
 }
 
-fn infer_item<'src>(
+fn infer_decl<'src>(
     src: &'src str,
     ctx: &mut Context,
-    item: Node<res::Item>,
-) -> InferResult<(Vec<Constraint>, Context, Node<Item>)> {
+    item: nir::Decl,
+) -> InferResult<(Vec<Constraint>, Context, Decl)> {
     match item.inner().clone() {
         res::Item::Def { pat, expr } => {
             let (cs, ty, ectx, e) = infer_expr(src, ctx, expr)?;
@@ -102,25 +104,17 @@ fn infer_item<'src>(
                 ),
             ))
         }
-        res::Item::Expr(expr) => {
-            let (cs, _, ectx, e) = infer_expr(src, ctx, Node::new(expr, item.span()))?;
-            Ok((
-                cs,
-                ectx,
-                Node::new(Item::Expr(e.inner().clone()), item.span()),
-            ))
-        }
     }
 }
 
 fn infer_expr<'src>(
     src: &'src str,
     ctx: &mut Context,
-    expr: Node<res::Expr>,
-) -> InferResult<(Vec<Constraint>, Type, Context, Node<Expr>)> {
+    expr: nir::Expr,
+) -> InferResult<(Vec<Constraint>, Type, Context, Expr)> {
     match expr.inner().clone() {
-        res::Expr::Lit(lit) => match *lit {
-            res::Lit::Num(n) => Ok((
+        nir::Expr::Lit(lit) => match *lit {
+            nir::Lit::Num(n) => Ok((
                 vec![],
                 Type::Num,
                 ctx.clone(),
@@ -231,11 +225,11 @@ fn infer_expr<'src>(
                 ),
             ))
         }
-        res::Expr::Let { pat, expr, body } => {
+        nir::Expr::Let { name, expr, body } => {
             let (cs1, t1, mut ctx1, e1) = infer_expr(src, ctx, expr.clone())?;
             let mut tmp_ctx = ctx1.clone();
             // tmp_ctx.extend(*name, scheme);
-            let (cs1, t1, mut ctx1, pat) = infer_pattern(src, &mut tmp_ctx, pat, true)?;
+            let (cs1, t1, mut ctx1, name) = infer_ident(src, &mut tmp_ctx, pat, true)?;
             let (cs2, t2, ctx2, e2) = infer_expr(src, &mut tmp_ctx, body)?;
             ctx1 = ctx2.union(ctx1);
             let cs = cs1.into_iter().chain(cs2.into_iter()).collect::<Vec<_>>();
@@ -243,7 +237,7 @@ fn infer_expr<'src>(
                 cs,
                 t2.clone(),
                 ctx1,
-                Node::new(
+                Expr::new(
                     Expr::Let {
                         pat,
                         expr: e1,
