@@ -31,7 +31,7 @@ fn main() {
     // println!("AST: {:#?}", root);
 
     let mut res = Resolver::new();
-    let builtins = res.builtins();
+    let builtins = res.builtins().clone();
     println!("Builtins: {:#?}", builtins);
     let res_env = rename::env::Env::new_with_builtins(builtins.clone());
     let (nir, errors) = res.resolve(res_env.clone(), &root);
@@ -41,11 +41,11 @@ fn main() {
         println!("Errors: {:#?}", errors);
     }
 
-    let mut ctx = infer::context::Context::new();
-    match infer::infer(&*src, &mut ctx, &nir.unwrap()) {
+    let mut ctx = infer::context::Context::from_builtins(builtins.clone());
+    match infer::infer(&*src, &mut ctx, builtins, &nir.unwrap()) {
         Ok((tir, ctx)) => {
-            println!("TIR: {:#?}", tir);
             println!("Context: {:#?}", ctx);
+            println!("TIR: {:#?}", tir);
         }
         Err(err) => {
             println!("Error: {:#?}", err);

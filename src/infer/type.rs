@@ -20,7 +20,10 @@ impl Type {
             Self::Int | Self::Bool | Self::Unit => self.clone(),
             Self::Var(n) => subst.get(&n).cloned().unwrap_or(self.clone()),
             Self::Lambda(params, body) => Self::Lambda(
-                params.into_iter().map(|p| p.apply_subst(subst.clone())).collect(),
+                params
+                    .into_iter()
+                    .map(|p| p.apply_subst(subst.clone()))
+                    .collect(),
                 Box::new(body.apply_subst(subst)),
             ),
         }

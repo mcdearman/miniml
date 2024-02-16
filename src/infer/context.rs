@@ -1,4 +1,4 @@
-use super::{scheme::Scheme, substitution::Substitution, ty_var::TyVar};
+use super::{r#type::Type, scheme::Scheme, substitution::Substitution, ty_var::TyVar};
 use crate::utils::{intern::InternedString, unique_id::UniqueId};
 use std::collections::{BTreeSet, HashMap};
 
@@ -17,9 +17,204 @@ impl Context {
     pub fn from_builtins(builtins: HashMap<UniqueId, InternedString>) -> Self {
         let mut vars = HashMap::new();
         for (id, name) in builtins {
-            match name.as_str() {
-                "neg" => vars.insert(id, Scheme::new(vec![], TyVar::new())),
-                "add"
+            match name.as_ref() {
+                "neg" => {
+                    let var = TyVar::fresh();
+                    vars.insert(
+                        id,
+                        Scheme::new(
+                            vec![var],
+                            Type::Lambda(vec![Type::Var(var)], Box::new(Type::Var(var))),
+                        ),
+                    );
+                }
+                "not" => {
+                    let var = TyVar::fresh();
+                    vars.insert(
+                        id,
+                        Scheme::new(
+                            vec![var],
+                            Type::Lambda(vec![Type::Var(var)], Box::new(Type::Var(var))),
+                        ),
+                    );
+                }
+                "add" => {
+                    let var = TyVar::fresh();
+                    vars.insert(
+                        id,
+                        Scheme::new(
+                            vec![var],
+                            Type::Lambda(
+                                vec![Type::Var(var), Type::Var(var)],
+                                Box::new(Type::Var(var)),
+                            ),
+                        ),
+                    );
+                }
+                "sub" => {
+                    let var = TyVar::fresh();
+                    vars.insert(
+                        id,
+                        Scheme::new(
+                            vec![var],
+                            Type::Lambda(
+                                vec![Type::Var(var), Type::Var(var)],
+                                Box::new(Type::Var(var)),
+                            ),
+                        ),
+                    );
+                }
+                "mul" => {
+                    let var = TyVar::fresh();
+                    vars.insert(
+                        id,
+                        Scheme::new(
+                            vec![var],
+                            Type::Lambda(
+                                vec![Type::Var(var), Type::Var(var)],
+                                Box::new(Type::Var(var)),
+                            ),
+                        ),
+                    );
+                }
+                "div" => {
+                    let var = TyVar::fresh();
+                    vars.insert(
+                        id,
+                        Scheme::new(
+                            vec![var],
+                            Type::Lambda(
+                                vec![Type::Var(var), Type::Var(var)],
+                                Box::new(Type::Var(var)),
+                            ),
+                        ),
+                    );
+                }
+                "rem" => {
+                    let var = TyVar::fresh();
+                    vars.insert(
+                        id,
+                        Scheme::new(
+                            vec![var],
+                            Type::Lambda(
+                                vec![Type::Var(var), Type::Var(var)],
+                                Box::new(Type::Var(var)),
+                            ),
+                        ),
+                    );
+                }
+                "pow" => {
+                    let var = TyVar::fresh();
+                    vars.insert(
+                        id,
+                        Scheme::new(
+                            vec![var],
+                            Type::Lambda(
+                                vec![Type::Var(var), Type::Var(var)],
+                                Box::new(Type::Var(var)),
+                            ),
+                        ),
+                    );
+                }
+                "eq" => {
+                    let var = TyVar::fresh();
+                    vars.insert(
+                        id,
+                        Scheme::new(
+                            vec![var],
+                            Type::Lambda(
+                                vec![Type::Var(var), Type::Var(var)],
+                                Box::new(Type::Bool),
+                            ),
+                        ),
+                    );
+                }
+                "neq" => {
+                    let var = TyVar::fresh();
+                    vars.insert(
+                        id,
+                        Scheme::new(
+                            vec![var],
+                            Type::Lambda(
+                                vec![Type::Var(var), Type::Var(var)],
+                                Box::new(Type::Bool),
+                            ),
+                        ),
+                    );
+                }
+                "lt" => {
+                    let var = TyVar::fresh();
+                    vars.insert(
+                        id,
+                        Scheme::new(
+                            vec![var],
+                            Type::Lambda(
+                                vec![Type::Var(var), Type::Var(var)],
+                                Box::new(Type::Bool),
+                            ),
+                        ),
+                    );
+                }
+                "lte" => {
+                    let var = TyVar::fresh();
+                    vars.insert(
+                        id,
+                        Scheme::new(
+                            vec![var],
+                            Type::Lambda(
+                                vec![Type::Var(var), Type::Var(var)],
+                                Box::new(Type::Bool),
+                            ),
+                        ),
+                    );
+                }
+                "gt" => {
+                    let var = TyVar::fresh();
+                    vars.insert(
+                        id,
+                        Scheme::new(
+                            vec![var],
+                            Type::Lambda(
+                                vec![Type::Var(var), Type::Var(var)],
+                                Box::new(Type::Bool),
+                            ),
+                        ),
+                    );
+                }
+                "gte" => {
+                    let var = TyVar::fresh();
+                    vars.insert(
+                        id,
+                        Scheme::new(
+                            vec![var],
+                            Type::Lambda(
+                                vec![Type::Var(var), Type::Var(var)],
+                                Box::new(Type::Bool),
+                            ),
+                        ),
+                    );
+                }
+                "and" => {
+                    let var = TyVar::fresh();
+                    vars.insert(
+                        id,
+                        Scheme::new(
+                            vec![var],
+                            Type::Lambda(vec![Type::Bool, Type::Bool], Box::new(Type::Bool)),
+                        ),
+                    );
+                }
+                "or" => {
+                    let var = TyVar::fresh();
+                    vars.insert(
+                        id,
+                        Scheme::new(
+                            vec![var],
+                            Type::Lambda(vec![Type::Bool, Type::Bool], Box::new(Type::Bool)),
+                        ),
+                    );
+                }
+                _ => unreachable!("unknown builtin: {}", name),
             }
         }
         Self { vars }

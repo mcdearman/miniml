@@ -12,15 +12,17 @@ impl Scheme {
         Self { vars, ty }
     }
 
-    pub fn apply_subst(&self, mut subst: Substitution) -> Self {
+    pub fn apply_subst(&self, subst: Substitution) -> Self {
+        let mut new_sub = subst.clone();
         for var in self.clone().vars {
-            subst.remove(&var);
+            new_sub.remove(&var);
         }
         Scheme {
             vars: self.vars.clone(),
-            ty: self.ty.apply_subst(subst),
+            ty: self.ty.apply_subst(new_sub),
         }
     }
+
     pub fn free_vars(&self) -> BTreeSet<TyVar> {
         self.ty
             .free_vars()
