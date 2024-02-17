@@ -25,8 +25,6 @@ pub mod tir;
 mod ty_var;
 pub mod r#type;
 
-// const ALLOWED_BUILTINS:
-
 pub fn infer<'src>(
     src: &'src str,
     ctx: &mut Context,
@@ -40,14 +38,13 @@ pub fn infer<'src>(
         let (cs, ctx, d) = infer_decl(src, ctx, builtins.clone(), decl)?;
         let mut traits = vec![];
         for c in cs {
-            println!("constraint: {:?}\n", c);
+            println!("constraint: {:?}", c);
             match c {
                 Constraint::Equal(t1, t2) => {
                     let new_sub = unify(t1.apply_subst(s.clone()), t2.apply_subst(s.clone()))?;
-                    println!("new_sub: {:?}\n", new_sub);
-                    println!("s: {:?}\n", s.clone());
+                    // println!("new_sub: {:?}", new_sub);
                     s = new_sub.compose(s);
-                    println!("s = new_sub.compose(s): {:?}\n", s);
+                    // println!("s = new_sub.compose(s): {:?}", s);
                 }
                 _ => {
                     traits.push(c);
@@ -141,16 +138,16 @@ pub fn infer<'src>(
                     }
                 },
                 Constraint::Rem(t1, t2, t3) => {
-                    println!("rem subst: {:?}", s.clone());
+                    // println!("rem subst: {:?}", s.clone());
                     let lhs = t1.apply_subst(s.clone());
                     let rhs = t2.apply_subst(s.clone());
                     let ret = t3.apply_subst(s.clone());
-                    println!("rem: {:?} {:?} {:?}", t1, t2, t3);
-                    println!("rem: {:?} {:?} {:?}", lhs, rhs, ret);
+                    // println!("rem: {:?} {:?} {:?}", t1, t2, t3);
+                    // println!("rem: {:?} {:?} {:?}", lhs, rhs, ret);
                     match (&lhs, &rhs) {
                         (Type::Int, Type::Int) => {
                             s = unify(ret, Type::Int)?.compose(s);
-                            println!("rem unify: {:?}", s);
+                            // println!("rem unify: {:?}", s);
                         }
                         _ => {
                             let m = &mut HashMap::new();
@@ -206,6 +203,9 @@ fn infer_decl<'src>(
                 _ => {}
             }
             let (cs, ty, ectx, expr) = infer_expr(src, ctx, builtins, expr)?;
+            let scheme = Scheme::generalize(ectx.clone(), ty.clone());
+            let mut tmp_ctx = ectx.clone();
+            tmp_ctx.extend(*name.id(), scheme.clone());
             Ok((
                 cs,
                 ctx.union(ectx),
@@ -246,6 +246,7 @@ fn infer_expr<'src>(
         nir::ExprKind::Ident(name) => {
             if let Some(scm) = ctx.get(name.id()) {
                 let ty = scm.instantiate();
+                println!("inst ident: {:?} {:?}", name, ty);
                 Ok((
                     vec![],
                     ty.clone(),
@@ -348,7 +349,7 @@ fn infer_expr<'src>(
                 t1.clone(),
                 Type::Lambda(ty_args, Box::new(ty_ret.clone())),
             ));
-            println!("apply constraints: {:#?}", cs1);
+            // println!("apply constraints: {:#?}", cs1);
             Ok((
                 cs1,
                 ty_ret.clone(),
@@ -398,7 +399,7 @@ fn infer_expr<'src>(
                 .collect_vec();
             cs.push(Constraint::Equal(t1, Type::Bool));
             cs.push(Constraint::Equal(t2.clone(), t3));
-            println!("if constraints: {:#?}", cs);
+            // println!("if constraints: {:#?}", cs);
             Ok((
                 cs,
                 t2.clone(),
@@ -428,19 +429,20 @@ fn unify(t1: Type, t2: Type) -> InferResult<Substitution> {
                     let s = acc?;
                     let t1 = t1.apply_subst(s.clone());
                     let t2 = t2.apply_subst(s.clone());
-                    println!("unify params: t1: {:?} t2: {:?}", t1, t2);
+                    // println!("unify params: {:?} {:?}", t1, t2);
                     let s1 = unify(t1, t2)?;
-                    println!("unify args: s: {:?} s1: {:?}", s, s1);
-                    Ok(s.compose(s1))
+                    // println!("unify args: {:?} {:?}", s, s1);
+                    Ok(s1.compose(s))
                 },
             )?;
-            println!("unify s1: {:?}", s1);
+            // println!("unify s1: {:?}", s1);
             let s2 = unify(b1.apply_subst(s1.clone()), b2.apply_subst(s1.clone()))?;
-            println!("unify s2: {:?}", s2);
-            println!("unify s1.compose(s2): {:?}", s1.compose(s2.clone()));
+            // println!("unify s2: {:?}", s2);
+            // println!("unify s1.compose(s2): {:?}", s1.compose(s2.clone()));
             Ok(s1.compose(s2.clone()))
         }
-        (t, Type::Var(n)) | (Type::Var(n), t) => var_bind(n, t),
+        (_, Type::Var(n)) => var_bind(n, t1),
+        (Type::Var(n), _) => var_bind(n, t2),
         _ => Err(TypeError::from(format!(
             "cannot unify {:?} and {:?}",
             t1.lower(&mut HashMap::new()),
