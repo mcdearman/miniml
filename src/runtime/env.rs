@@ -1,6 +1,6 @@
 use super::value::Value;
 use crate::utils::unique_id::UniqueId;
-// use std::{cell::RefCell, collections::HashMap, fmt::Debug, rc::Rc};
+use std::collections::HashMap;
 
 pub struct Env {
     bindings: HashMap<UniqueId, Value>,

@@ -6,11 +6,7 @@ use std::{cell::RefCell, fmt::Display, rc::Rc};
 #[derive(Debug, Clone, PartialEq)]
 pub enum Value {
     Lit(Lit),
-    Lambda {
-        env: Rc<RefCell<Env>>,
-        param: Vec<UniqueId>,
-        expr: Expr,
-    },
+    Lambda { param: Vec<UniqueId>, expr: Expr },
     NativeFn(fn(Vec<Value>) -> Result<Value>),
     Unit,
 }
@@ -30,17 +26,15 @@ impl Display for Value {
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Lit {
-    Num(Rational64),
+    Int(i64),
     Bool(bool),
-    String(InternedString),
 }
 
 impl Display for Lit {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Lit::Num(num) => write!(f, "{}", num),
+            Lit::Int(i) => write!(f, "{}", i),
             Lit::Bool(b) => write!(f, "{}", b),
-            Lit::String(s) => write!(f, "{}", s),
         }
     }
 }
