@@ -138,16 +138,12 @@ pub fn infer<'src>(
                     }
                 },
                 Constraint::Rem(t1, t2, t3) => {
-                    // println!("rem subst: {:?}", s.clone());
                     let lhs = t1.apply_subst(s.clone());
                     let rhs = t2.apply_subst(s.clone());
                     let ret = t3.apply_subst(s.clone());
-                    // println!("rem: {:?} {:?} {:?}", t1, t2, t3);
-                    // println!("rem: {:?} {:?} {:?}", lhs, rhs, ret);
                     match (&lhs, &rhs) {
                         (Type::Int, Type::Int) => {
                             s = unify(ret, Type::Int)?.compose(s);
-                            // println!("rem unify: {:?}", s);
                         }
                         _ => {
                             let m = &mut HashMap::new();
