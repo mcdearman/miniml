@@ -38,7 +38,7 @@ pub fn infer<'src>(
         let (cs, ctx, d) = infer_decl(src, ctx, builtins.clone(), decl)?;
         let mut traits = vec![];
         for c in cs {
-            println!("constraint: {:?}", c);
+            // println!("constraint: {:?}", c);
             match c {
                 Constraint::Equal(t1, t2) => {
                     let new_sub = unify(t1.apply_subst(s.clone()), t2.apply_subst(s.clone()))?;
@@ -242,7 +242,7 @@ fn infer_expr<'src>(
         nir::ExprKind::Ident(name) => {
             if let Some(scm) = ctx.get(name.id()) {
                 let ty = scm.instantiate();
-                println!("inst ident: {:?} {:?}", name, ty);
+                // println!("inst ident: {:?} {:?}", name, ty);
                 Ok((
                     vec![],
                     ty.clone(),

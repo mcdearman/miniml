@@ -2,42 +2,46 @@ use crate::utils::intern::InternedString;
 use std::fmt::Display;
 
 #[derive(Debug, Clone, PartialEq)]
-pub enum Error {
+pub enum RuntimeError {
     ParseError(Vec<InternedString>),
-    ResError(Vec<Error>),
+    ResError(Vec<RuntimeError>),
     ArityError(usize, usize),
     TypeError(InternedString),
+    UnboundIdent(InternedString),
+    Overflow,
     DivisionByZero,
 }
 
-impl Display for Error {
+impl Display for RuntimeError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Error::ParseError(errs) => {
+            RuntimeError::ParseError(errs) => {
                 write!(f, "Parse error:\n")?;
                 for err in errs {
                     write!(f, "{}\n", err)?;
                 }
                 Ok(())
             }
-            Error::ResError(errs) => {
+            RuntimeError::ResError(errs) => {
                 write!(f, "Resolve error:\n")?;
                 for err in errs {
                     write!(f, "{}\n", err)?;
                 }
                 Ok(())
             }
-            Error::ArityError(expected, found) => {
+            RuntimeError::ArityError(expected, found) => {
                 write!(
                     f,
                     "Arity error: expected {} args, found {}",
                     expected, found
                 )
             }
-            Error::TypeError(err) => write!(f, "Type error: {}", err),
-            Error::DivisionByZero => write!(f, "Division by zero"),
+            RuntimeError::TypeError(err) => write!(f, "Type error: {}", err),
+            RuntimeError::UnboundIdent(ident) => write!(f, "Unbound identifier: {}", ident),
+            RuntimeError::Overflow => write!(f, "Overflow"),
+            RuntimeError::DivisionByZero => write!(f, "Division by zero"),
         }
     }
 }
 
-pub type Result<T> = std::result::Result<T, Error>;
+pub type RuntimeResult<T> = std::result::Result<T, RuntimeError>;

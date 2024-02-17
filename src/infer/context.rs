@@ -228,7 +228,7 @@ impl Context {
         self.vars.insert(id, scheme);
     }
 
-    pub(super) fn union(&self, other: Self) -> Self {
+    pub fn union(&self, other: Self) -> Self {
         Self {
             vars: self
                 .vars
