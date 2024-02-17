@@ -40,14 +40,14 @@ pub fn infer<'src>(
         let (cs, ctx, d) = infer_decl(src, ctx, builtins.clone(), decl)?;
         let mut traits = vec![];
         for c in cs {
-            println!("constraint: {:?}", c);
+            println!("constraint: {:?}\n", c);
             match c {
                 Constraint::Equal(t1, t2) => {
                     let new_sub = unify(t1.apply_subst(s.clone()), t2.apply_subst(s.clone()))?;
-                    println!("new_sub: {:?}", new_sub);
-                    println!("s: {:?}", s.clone());
+                    println!("new_sub: {:?}\n", new_sub);
+                    println!("s: {:?}\n", s.clone());
                     s = new_sub.compose(s);
-                    println!("s = new_sub.compose(s): {:?}", s);
+                    println!("s = new_sub.compose(s): {:?}\n", s);
                 }
                 _ => {
                     traits.push(c);
@@ -428,9 +428,9 @@ fn unify(t1: Type, t2: Type) -> InferResult<Substitution> {
                     let s = acc?;
                     let t1 = t1.apply_subst(s.clone());
                     let t2 = t2.apply_subst(s.clone());
-                    println!("unify params: {:?} {:?}", t1, t2);
+                    println!("unify params: t1: {:?} t2: {:?}", t1, t2);
                     let s1 = unify(t1, t2)?;
-                    println!("unify args: {:?} {:?}", s, s1);
+                    println!("unify args: s: {:?} s1: {:?}", s, s1);
                     Ok(s.compose(s1))
                 },
             )?;
@@ -440,8 +440,7 @@ fn unify(t1: Type, t2: Type) -> InferResult<Substitution> {
             println!("unify s1.compose(s2): {:?}", s1.compose(s2.clone()));
             Ok(s1.compose(s2.clone()))
         }
-        (_, Type::Var(n)) => var_bind(n, t1),
-        (Type::Var(n), _) => var_bind(n, t2),
+        (t, Type::Var(n)) | (Type::Var(n), t) => var_bind(n, t),
         _ => Err(TypeError::from(format!(
             "cannot unify {:?} and {:?}",
             t1.lower(&mut HashMap::new()),

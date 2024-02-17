@@ -27,18 +27,23 @@ impl Substitution {
 
     // left-biased union
     fn union(&self, other: Self) -> Self {
-        self.clone()
+        other
+            .clone()
             .into_iter()
-            .chain(other.clone().into_iter())
+            .chain(self.clone().into_iter())
             .collect()
     }
 
+    // composeSubst s1 s2 = Map.union (Map.map (applySubst s1) s2) s1
     pub fn compose(&self, other: Self) -> Self {
-        other
+        println!("\ncompose: {:?} {:?}", self, other);
+        let subst = other
+            .clone()
             .into_iter()
             .map(|(var, ty)| (var, ty.apply_subst(self.clone())))
-            .collect::<Self>()
-            .union(self.clone())
+            .collect();
+        println!("subst: {:?}", subst);
+        self.union(subst)
     }
 }
 

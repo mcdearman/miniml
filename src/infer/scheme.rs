@@ -14,8 +14,8 @@ impl Scheme {
 
     pub fn apply_subst(&self, subst: Substitution) -> Self {
         let mut new_sub = subst.clone();
-        for var in self.clone().vars {
-            new_sub.remove(&var);
+        for var in &self.vars {
+            new_sub.remove(var);
         }
         Scheme {
             vars: self.vars.clone(),
