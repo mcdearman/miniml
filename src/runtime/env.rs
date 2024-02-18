@@ -3,25 +3,40 @@ use crate::utils::unique_id::UniqueId;
 use std::collections::HashMap;
 
 pub struct Env {
-    bindings: HashMap<UniqueId, Value>,
+    frames: Vec<HashMap<UniqueId, Value>>,
 }
 
 impl Env {
     pub fn new() -> Self {
         Self {
-            bindings: HashMap::new(),
+            frames: vec![HashMap::new()],
         }
     }
 
+    pub fn push(&mut self) {
+        self.frames.push(HashMap::new());
+    }
+
     pub fn def(&mut self, id: UniqueId, value: Value) {
-        self.bindings.insert(id, value);
+        if let Some(frame) = self.frames.last_mut() {
+            frame.insert(id, value);
+        } else {
+            let mut frame = HashMap::new();
+            frame.insert(id, value);
+            self.frames.push(frame);
+        }
     }
 
     pub fn get(&self, id: &UniqueId) -> Option<Value> {
-        self.bindings.get(id).cloned()
+        for frame in self.frames.iter().rev() {
+            if let Some(value) = frame.get(id) {
+                return Some(value.clone());
+            }
+        }
+        None
     }
 
-    pub fn del(&mut self, id: &UniqueId) -> Option<Value> {
-        self.bindings.remove(id)
+    pub fn pop(&mut self) {
+        self.frames.pop();
     }
 }
