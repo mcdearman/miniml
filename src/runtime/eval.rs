@@ -12,8 +12,21 @@ pub fn eval<'src>(src: &'src str, env: &mut Env, tir: Root) -> RuntimeResult<Val
         match decl.kind() {
             DeclKind::Let { name, expr, .. } => {
                 let value = eval_expr(src, env, expr.clone())?;
-                env.def(*name.id(), value);
-                val = Value::Unit;
+                env.def(*name.id(), value.clone());
+                if src[*name.span()].trim() == "main" {
+                    match value {
+                        Value::Lambda { params, expr } => {
+                            val = eval_expr(src, env, expr)?;
+                        }
+                        _ => {
+                            return Err(RuntimeError::TypeError(
+                                format!("Expected lambda, found {:?}", value).into(),
+                            ));
+                        }
+                    }
+                } else {
+                    val = Value::Unit;
+                }
             }
         }
     }
