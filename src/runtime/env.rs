@@ -2,6 +2,7 @@ use super::value::Value;
 use crate::utils::unique_id::UniqueId;
 use std::collections::HashMap;
 
+#[derive(Debug, Clone)]
 pub struct Env {
     frames: Vec<HashMap<UniqueId, Value>>,
 }

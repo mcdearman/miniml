@@ -33,89 +33,103 @@ pub fn eval<'src>(src: &'src str, env: &mut Env, tir: Root) -> RuntimeResult<Val
     Ok(val)
 }
 
-fn eval_expr<'src>(src: &'src str, env: &mut Env, mut expr: Expr) -> RuntimeResult<Value> {
-    let val: Value;
-    'tco: loop {
-        val = match expr.kind().clone() {
-            ExprKind::Lit(lit) => match lit {
-                tir::Lit::Int(i) => Value::Lit(Lit::Int(i)),
-                tir::Lit::Bool(b) => Value::Lit(Lit::Bool(b)),
-            },
-            ExprKind::Ident(name) => {
-                if let Some(value) = env.get(name.id()) {
-                    value
-                } else {
-                    return Err(RuntimeError::UnboundIdent(src[*name.span()].trim().into()));
+fn eval_expr<'src>(src: &'src str, env: &mut Env, expr: Expr) -> RuntimeResult<Value> {
+    // let val: Value;
+    // 'tco: loop {
+    match expr.kind().clone() {
+        ExprKind::Lit(lit) => match lit {
+            tir::Lit::Int(i) => Ok(Value::Lit(Lit::Int(i))),
+            tir::Lit::Bool(b) => Ok(Value::Lit(Lit::Bool(b))),
+        },
+        ExprKind::Ident(name) => {
+            if let Some(value) = env.get(name.id()) {
+                Ok(value)
+            } else {
+                return Err(RuntimeError::UnboundIdent(src[*name.span()].trim().into()));
+            }
+        }
+        ExprKind::Lambda { params, expr } => Ok(Value::Lambda {
+            params: params.iter().map(|p| *p.id()).collect_vec(),
+            expr,
+        }),
+        ExprKind::Apply { fun, args } => {
+            match eval_expr(src, env, fun)? {
+                Value::Lambda {
+                    params,
+                    expr: lam_expr,
+                } => {
+                    let vargs = args
+                        .into_iter()
+                        .map(|arg| eval_expr(src, env, arg))
+                        .collect::<RuntimeResult<Vec<Value>>>()?;
+                    env.push();
+                    vargs.iter().zip(params.iter()).for_each(|(arg, p)| {
+                        env.def(*p, arg.clone());
+                    });
+                    // println!("enva: {:#?}", env);
+                    // expr = lam_expr;
+                    // continue 'tco;
+                    let val = eval_expr(src, env, lam_expr);
+                    env.pop();
+                    val
+                }
+                Value::NativeFn(fun) => {
+                    let mut new_args = Vec::new();
+                    for arg in args {
+                        new_args.push(eval_expr(src, env, arg)?);
+                    }
+                    let val = fun(new_args);
+                    // println!("val: {:?}", val);
+                    val
+                }
+                f => {
+                    return Err(RuntimeError::TypeError(
+                        format!("Expected lambda, found {:?}", f).into(),
+                    ));
                 }
             }
-            ExprKind::Lambda { params, expr } => Value::Lambda {
-                params: params.iter().map(|p| *p.id()).collect_vec(),
-                expr,
-            },
-            ExprKind::Apply { fun, args } => {
-                let fun = eval_expr(src, env, fun)?;
-                // println!("fun: {:?}", fun);
-                match fun {
-                    Value::Lambda {
-                        params,
-                        expr: lam_expr,
-                    } => {
-                        for (&p, arg) in params.iter().zip(args) {
-                            let arg = eval_expr(src, env, arg)?;
-                            env.def(p, arg);
-                        }
-                        expr = lam_expr;
-                        continue 'tco;
-                    }
-                    Value::NativeFn(fun) => {
-                        let mut new_args = Vec::new();
-                        for arg in args {
-                            new_args.push(eval_expr(src, env, arg)?);
-                        }
-                        fun(new_args)?
-                    }
-                    _ => {
-                        return Err(RuntimeError::TypeError(
-                            format!("Expected lambda, found {:?}", fun).into(),
-                        ));
-                    }
+        }
+        ExprKind::Let {
+            name,
+            expr: let_expr,
+            body,
+        } => {
+            let value = eval_expr(src, env, let_expr)?;
+            env.push();
+            env.def(*name.id(), value);
+            let val = eval_expr(src, env, body);
+            env.pop();
+            val
+        }
+        ExprKind::If {
+            cond, then, else_, ..
+        } => {
+            // println!("cond: {:?}", cond);
+            let cond = eval_expr(src, env, cond)?;
+            match cond {
+                Value::Lit(Lit::Bool(true)) => {
+                    // println!("then: {:?}", then);
+                    // expr = then;
+                    // continue 'tco;
+                    eval_expr(src, env, then)
+                }
+                Value::Lit(Lit::Bool(false)) => {
+                    // println!("else: {:?}", else_);
+                    // expr = else_;
+                    // continue 'tco;
+                    eval_expr(src, env, else_)
+                }
+                _ => {
+                    return Err(RuntimeError::TypeError(
+                        format!("Expected bool, found {:?}", cond).into(),
+                    ));
                 }
             }
-            ExprKind::Let {
-                name,
-                expr: let_expr,
-                body,
-            } => {
-                let value = eval_expr(src, env, let_expr)?;
-                env.def(*name.id(), value);
-                let val = eval_expr(src, env, body)?;
-                env.del(name.id());
-                val
-            }
-            ExprKind::If {
-                cond, then, else_, ..
-            } => {
-                let cond = eval_expr(src, env, cond)?;
-                match cond {
-                    Value::Lit(Lit::Bool(true)) => {
-                        expr = then;
-                        continue 'tco;
-                    }
-                    Value::Lit(Lit::Bool(false)) => {
-                        expr = else_;
-                        continue 'tco;
-                    }
-                    _ => {
-                        return Err(RuntimeError::TypeError(
-                            format!("Expected bool, found {:?}", cond).into(),
-                        ));
-                    }
-                }
-            }
-            ExprKind::Unit => Value::Unit,
-        };
-
-        break 'tco;
+        }
+        ExprKind::Unit => Ok(Value::Unit),
     }
-    Ok(val)
+
+    // break 'tco;
+    // }
+    // Ok(val)
 }
