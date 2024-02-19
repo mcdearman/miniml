@@ -154,6 +154,7 @@ pub enum ExprKind {
     Fn {
         name: Ident,
         params: Vec<Ident>,
+        expr: Expr,
         body: Expr,
     },
     Lambda {

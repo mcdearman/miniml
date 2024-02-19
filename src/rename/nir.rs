@@ -42,7 +42,15 @@ impl Decl {
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum DeclKind {
-    Let { name: Ident, expr: Expr },
+    Let {
+        name: Ident,
+        expr: Expr,
+    },
+    Fn {
+        name: Ident,
+        params: Vec<Ident>,
+        expr: Expr,
+    },
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -72,10 +80,30 @@ impl Expr {
 pub enum ExprKind {
     Lit(Lit),
     Ident(Ident),
-    Apply { fun: Expr, args: Vec<Expr> },
-    If { cond: Expr, then: Expr, else_: Expr },
-    Let { name: Ident, expr: Expr, body: Expr },
-    Lambda { params: Vec<Ident>, expr: Expr },
+    Apply {
+        fun: Expr,
+        args: Vec<Expr>,
+    },
+    If {
+        cond: Expr,
+        then: Expr,
+        else_: Expr,
+    },
+    Let {
+        name: Ident,
+        expr: Expr,
+        body: Expr,
+    },
+    Fn {
+        name: Ident,
+        params: Vec<Ident>,
+        expr: Expr,
+        body: Expr,
+    },
+    Lambda {
+        params: Vec<Ident>,
+        expr: Expr,
+    },
     Unit,
 }
 

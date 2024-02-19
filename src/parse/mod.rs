@@ -73,16 +73,7 @@ fn decl_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
         .then(ident_parser().repeated().at_least(1).collect())
         .then_ignore(just(Token::Eq))
         .then(expr_parser())
-        .map(|((name, params), expr)| DeclKind::Let {
-            name: name.clone(),
-            expr: Expr::new(
-                ExprKind::Lambda {
-                    params,
-                    expr: expr.clone(),
-                },
-                name.span().extend(*expr.span()),
-            ),
-        });
+        .map(|((name, params), expr)| DeclKind::Fn { name, params, expr });
 
     let_.or(fn_).map_with(|kind, e| Decl::new(kind, e.span()))
 }
@@ -126,15 +117,10 @@ fn expr_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
             .then_ignore(just(Token::Eq))
             .then(expr.clone())
             .then(just(Token::In).ignore_then(expr.clone()))
-            .map(|(((name, params), expr), body)| ExprKind::Let {
-                name: name.clone(),
-                expr: Expr::new(
-                    ExprKind::Lambda {
-                        params,
-                        expr: expr.clone(),
-                    },
-                    name.span().extend(*expr.span()),
-                ),
+            .map(|(((name, params), expr), body)| ExprKind::Fn {
+                name,
+                params,
+                expr,
                 body,
             });
 
