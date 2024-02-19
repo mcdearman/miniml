@@ -50,8 +50,8 @@ fn main() {
                 panic!("Inference error: {:#?}", err);
             }
         };
-        let mut env = default_env(builtins);
-        match eval(&*src, &mut env, tir) {
+        let env = default_env(builtins);
+        match eval(&*src, env.clone(), tir) {
             Ok(val) => {
                 println!("{}", val);
             }

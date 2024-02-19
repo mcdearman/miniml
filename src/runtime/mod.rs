@@ -4,19 +4,19 @@ use self::{
     value::{Lit, Value},
 };
 use crate::utils::{intern::InternedString, unique_id::UniqueId};
-use std::collections::HashMap;
+use std::{cell::RefCell, collections::HashMap, rc::Rc};
 
 pub mod env;
 pub mod error;
 pub mod eval;
 pub mod value;
 
-pub fn default_env(builtins: HashMap<UniqueId, InternedString>) -> Env {
-    let mut env = Env::new();
+pub fn default_env(builtins: HashMap<UniqueId, InternedString>) -> Rc<RefCell<Env>> {
+    let env = Env::new();
     for (id, name) in builtins {
         match name.as_ref() {
             "println" => {
-                env.def(
+                env.borrow_mut().insert(
                     id,
                     Value::NativeFn(|args| {
                         if let Some(arg) = args.get(0) {
@@ -29,7 +29,7 @@ pub fn default_env(builtins: HashMap<UniqueId, InternedString>) -> Env {
                 );
             }
             "neg" => {
-                env.def(
+                env.borrow_mut().insert(
                     id,
                     Value::NativeFn(|args| {
                         if args.len() != 1 {
@@ -47,7 +47,7 @@ pub fn default_env(builtins: HashMap<UniqueId, InternedString>) -> Env {
                 );
             }
             "not" => {
-                env.def(
+                env.borrow_mut().insert(
                     id,
                     Value::NativeFn(|args| {
                         if args.len() != 1 {
@@ -65,7 +65,7 @@ pub fn default_env(builtins: HashMap<UniqueId, InternedString>) -> Env {
                 );
             }
             "add" => {
-                env.def(
+                env.borrow_mut().insert(
                     id,
                     Value::NativeFn(|args| {
                         if args.len() != 2 {
@@ -86,7 +86,7 @@ pub fn default_env(builtins: HashMap<UniqueId, InternedString>) -> Env {
                 );
             }
             "sub" => {
-                env.def(
+                env.borrow_mut().insert(
                     id,
                     Value::NativeFn(|args| {
                         if args.len() != 2 {
@@ -107,7 +107,7 @@ pub fn default_env(builtins: HashMap<UniqueId, InternedString>) -> Env {
                 );
             }
             "mul" => {
-                env.def(
+                env.borrow_mut().insert(
                     id,
                     Value::NativeFn(|args| {
                         if args.len() != 2 {
@@ -128,7 +128,7 @@ pub fn default_env(builtins: HashMap<UniqueId, InternedString>) -> Env {
                 );
             }
             "div" => {
-                env.def(
+                env.borrow_mut().insert(
                     id,
                     Value::NativeFn(|args| {
                         if args.len() != 2 {
@@ -152,7 +152,7 @@ pub fn default_env(builtins: HashMap<UniqueId, InternedString>) -> Env {
                 );
             }
             "rem" => {
-                env.def(
+                env.borrow_mut().insert(
                     id,
                     Value::NativeFn(|args| {
                         if args.len() != 2 {
@@ -173,7 +173,7 @@ pub fn default_env(builtins: HashMap<UniqueId, InternedString>) -> Env {
                 );
             }
             "pow" => {
-                env.def(
+                env.borrow_mut().insert(
                     id,
                     Value::NativeFn(|args| {
                         if args.len() != 2 {
@@ -200,7 +200,7 @@ pub fn default_env(builtins: HashMap<UniqueId, InternedString>) -> Env {
                 );
             }
             "eq" => {
-                env.def(
+                env.borrow_mut().insert(
                     id,
                     Value::NativeFn(|args| {
                         if args.len() != 2 {
@@ -214,7 +214,7 @@ pub fn default_env(builtins: HashMap<UniqueId, InternedString>) -> Env {
                 );
             }
             "neq" => {
-                env.def(
+                env.borrow_mut().insert(
                     id,
                     Value::NativeFn(|args| {
                         if args.len() != 2 {
@@ -228,7 +228,7 @@ pub fn default_env(builtins: HashMap<UniqueId, InternedString>) -> Env {
                 );
             }
             "lt" => {
-                env.def(
+                env.borrow_mut().insert(
                     id,
                     Value::NativeFn(|args| {
                         if args.len() != 2 {
@@ -249,7 +249,7 @@ pub fn default_env(builtins: HashMap<UniqueId, InternedString>) -> Env {
                 );
             }
             "lte" => {
-                env.def(
+                env.borrow_mut().insert(
                     id,
                     Value::NativeFn(|args| {
                         if args.len() != 2 {
@@ -270,7 +270,7 @@ pub fn default_env(builtins: HashMap<UniqueId, InternedString>) -> Env {
                 );
             }
             "gt" => {
-                env.def(
+                env.borrow_mut().insert(
                     id,
                     Value::NativeFn(|args| {
                         if args.len() != 2 {
@@ -291,7 +291,7 @@ pub fn default_env(builtins: HashMap<UniqueId, InternedString>) -> Env {
                 );
             }
             "gte" => {
-                env.def(
+                env.borrow_mut().insert(
                     id,
                     Value::NativeFn(|args| {
                         if args.len() != 2 {
@@ -312,7 +312,7 @@ pub fn default_env(builtins: HashMap<UniqueId, InternedString>) -> Env {
                 );
             }
             "and" => {
-                env.def(
+                env.borrow_mut().insert(
                     id,
                     Value::NativeFn(|args| {
                         if args.len() != 2 {
@@ -333,7 +333,7 @@ pub fn default_env(builtins: HashMap<UniqueId, InternedString>) -> Env {
                 );
             }
             "or" => {
-                env.def(
+                env.borrow_mut().insert(
                     id,
                     Value::NativeFn(|args| {
                         if args.len() != 2 {

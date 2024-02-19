@@ -1,11 +1,15 @@
-use super::error::RuntimeResult;
+use super::{env::Env, error::RuntimeResult};
 use crate::{infer::tir::Expr, utils::unique_id::UniqueId};
-use std::fmt::Display;
+use std::{cell::RefCell, fmt::Display, rc::Rc};
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Value {
     Lit(Lit),
-    Lambda { params: Vec<UniqueId>, expr: Expr },
+    Lambda {
+        env: Rc<RefCell<Env>>,
+        params: Vec<UniqueId>,
+        expr: Expr,
+    },
     NativeFn(fn(Vec<Value>) -> RuntimeResult<Value>),
     Unit,
 }
