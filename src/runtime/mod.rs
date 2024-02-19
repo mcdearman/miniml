@@ -15,6 +15,19 @@ pub fn default_env(builtins: HashMap<UniqueId, InternedString>) -> Env {
     let mut env = Env::new();
     for (id, name) in builtins {
         match name.as_ref() {
+            "println" => {
+                env.def(
+                    id,
+                    Value::NativeFn(|args| {
+                        if let Some(arg) = args.get(0) {
+                            println!("{}", arg);
+                        } else {
+                            return Err(RuntimeError::ArityError(1, args.len()));
+                        }
+                        Ok(Value::Unit)
+                    }),
+                );
+            }
             "neg" => {
                 env.def(
                     id,

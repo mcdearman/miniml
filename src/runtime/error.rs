@@ -1,4 +1,4 @@
-use crate::utils::intern::InternedString;
+use crate::utils::{intern::InternedString, span::Span};
 use std::fmt::Display;
 
 #[derive(Debug, Clone, PartialEq)]
@@ -7,7 +7,7 @@ pub enum RuntimeError {
     ResError(Vec<RuntimeError>),
     ArityError(usize, usize),
     TypeError(InternedString),
-    UnboundIdent(InternedString),
+    UnboundIdent(InternedString, Span),
     Overflow,
     DivisionByZero,
 }
@@ -37,7 +37,9 @@ impl Display for RuntimeError {
                 )
             }
             RuntimeError::TypeError(err) => write!(f, "Type error: {}", err),
-            RuntimeError::UnboundIdent(ident) => write!(f, "Unbound identifier: {}", ident),
+            RuntimeError::UnboundIdent(ident, span) => {
+                write!(f, "Unbound identifier: {} @ {}", ident, span)
+            }
             RuntimeError::Overflow => write!(f, "Overflow"),
             RuntimeError::DivisionByZero => write!(f, "Division by zero"),
         }

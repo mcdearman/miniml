@@ -29,7 +29,7 @@ fn main() {
             return;
         }
     };
-    // println!("AST: {:#?}", root);
+    println!("AST: {:#?}", root);
 
     let mut res = Resolver::new();
     let builtins = res.builtins().clone();
@@ -53,7 +53,7 @@ fn main() {
         let mut env = default_env(builtins);
         match eval(&*src, &mut env, tir) {
             Ok(val) => {
-                println!("{:#?}", val);
+                println!("{}", val);
             }
             Err(err) => {
                 println!("Error: {:#?}", err);

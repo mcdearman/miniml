@@ -191,17 +191,21 @@ fn infer_decl<'src>(
 ) -> InferResult<(Vec<Constraint>, Context, Decl)> {
     match decl.kind() {
         nir::DeclKind::Let { name, expr } => {
-            match expr.kind() {
+            let (cs, ty, ectx, expr) = match expr.kind() {
                 nir::ExprKind::Lambda { .. } => {
                     let ty = Type::Var(TyVar::fresh());
-                    ctx.extend(*name.id(), Scheme::new(vec![], ty.clone()));
+                    let scheme = Scheme::generalize(ctx.clone(), ty.clone());
+                    ctx.extend(*name.id(), scheme.clone());
+                    infer_expr(src, ctx, builtins, expr)?
                 }
-                _ => {}
-            }
-            let (cs, ty, ectx, expr) = infer_expr(src, ctx, builtins, expr)?;
-            let scheme = Scheme::generalize(ectx.clone(), ty.clone());
-            let mut tmp_ctx = ectx.clone();
-            tmp_ctx.extend(*name.id(), scheme.clone());
+                _ => {
+                    let (cs, ty, ectx, expr) = infer_expr(src, ctx, builtins, expr)?;
+                    let scheme = Scheme::generalize(ectx.clone(), ty.clone());
+                    let mut tmp_ctx = ectx.clone();
+                    tmp_ctx.extend(*name.id(), scheme.clone());
+                    (cs, ty, tmp_ctx, expr)
+                }
+            };
             Ok((
                 cs,
                 ctx.union(ectx),
@@ -361,24 +365,38 @@ fn infer_expr<'src>(
             ))
         }
         nir::ExprKind::Let { name, expr, body } => {
-            let (cs1, t1, mut ctx1, expr) = infer_expr(src, ctx, builtins.clone(), expr)?;
-            let mut tmp_ctx = ctx1.clone();
-            // tmp_ctx.extend(*name, scheme);
-            let name = Ident::new(*name.id(), *name.span());
-            let (cs2, t2, ctx2, body) = infer_expr(src, &mut tmp_ctx, builtins, body)?;
-            ctx1 = ctx2.union(ctx1);
-            let cs = cs1.into_iter().chain(cs2.into_iter()).collect::<Vec<_>>();
+            let (cs, ty, mut ctx, expr) = match expr.kind() {
+                nir::ExprKind::Lambda { .. } => {
+                    let ty = Type::Var(TyVar::fresh());
+                    let scheme = Scheme::generalize(ctx.clone(), ty.clone());
+                    ctx.extend(*name.id(), scheme);
+                    infer_expr(src, ctx, builtins.clone(), body)?
+                }
+                _ => {
+                    let (cs, ty, ectx, expr) = infer_expr(src, ctx, builtins.clone(), expr)?;
+                    let scheme = Scheme::generalize(ectx.clone(), ty.clone());
+                    let mut tmp_ctx = ectx.clone();
+                    tmp_ctx.extend(*name.id(), scheme);
+                    (cs, ty, tmp_ctx, expr)
+                }
+            };
+            let (cs_body, ty_body, ctx_body, body) = infer_expr(src, &mut ctx, builtins, body)?;
+            ctx = ctx_body.union(ctx);
+            let cs = cs
+                .into_iter()
+                .chain(cs_body.into_iter())
+                .collect::<Vec<_>>();
             Ok((
                 cs,
-                t2.clone(),
-                ctx1,
+                ty_body.clone(),
+                ctx,
                 Expr::new(
                     ExprKind::Let {
-                        name,
+                        name: Ident::new(*name.id(), *name.span()),
                         expr: expr.clone(),
                         body,
                     },
-                    t2,
+                    ty_body,
                     *expr.span(),
                 ),
             ))

@@ -45,7 +45,7 @@ fn eval_expr<'src>(src: &'src str, env: &mut Env, expr: Expr) -> RuntimeResult<V
             if let Some(value) = env.get(name.id()) {
                 Ok(value)
             } else {
-                return Err(RuntimeError::UnboundIdent(src[*name.span()].trim().into()));
+                return Err(RuntimeError::UnboundIdent(src[*name.span()].trim().into(), *name.span()));
             }
         }
         ExprKind::Lambda { params, expr } => Ok(Value::Lambda {
@@ -78,6 +78,7 @@ fn eval_expr<'src>(src: &'src str, env: &mut Env, expr: Expr) -> RuntimeResult<V
                     for arg in args {
                         new_args.push(eval_expr(src, env, arg)?);
                     }
+                    println!("new_args: {:#?}", new_args);
                     let val = fun(new_args);
                     // println!("val: {:?}", val);
                     val
@@ -94,6 +95,18 @@ fn eval_expr<'src>(src: &'src str, env: &mut Env, expr: Expr) -> RuntimeResult<V
             expr: let_expr,
             body,
         } => {
+            let value = match let_expr.kind() {
+                ExprKind::Lambda { params, expr } => {
+                    env.def(
+                        *name.id(),
+                        Value::Lambda {
+                            params: params.iter().map(|p| *p.id()).collect_vec(),
+                            expr: expr.clone(),
+                        },
+                    );
+                }
+                _ => {}
+            };
             let value = eval_expr(src, env, let_expr)?;
             env.push();
             env.def(*name.id(), value);

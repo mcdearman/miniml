@@ -7,7 +7,6 @@ use crate::{
     parse::ast,
     utils::{intern::InternedString, unique_id::UniqueId},
 };
-use itertools::Itertools;
 use log::trace;
 use std::{cell::RefCell, collections::HashMap, rc::Rc};
 
@@ -24,6 +23,7 @@ impl Resolver {
             "mul", "div", "rem", "pow",
             "eq", "neq", "lt", "lte", 
             "gt", "gte", "and", "or",
+            "println",
         ];
         let mut builtins = HashMap::new();
         for n in names {

@@ -214,6 +214,16 @@ impl Context {
                         ),
                     );
                 }
+                "println" => {
+                    let var = TyVar::fresh();
+                    vars.insert(
+                        id,
+                        Scheme::new(
+                            vec![var],
+                            Type::Lambda(vec![Type::Var(var)], Box::new(Type::Unit)),
+                        ),
+                    );
+                }
                 _ => unreachable!("unknown builtin: {}", name),
             }
         }
