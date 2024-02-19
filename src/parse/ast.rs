@@ -47,7 +47,15 @@ impl Decl {
 #[derive(Debug, Clone, PartialEq)]
 pub enum DeclKind {
     // DataType(DataType),
-    Let { name: Ident, expr: Expr },
+    Let {
+        name: Ident,
+        expr: Expr,
+    },
+    Fn {
+        name: Ident,
+        params: Vec<Ident>,
+        expr: Expr,
+    },
 }
 
 // #[derive(Debug, Clone, PartialEq)]
@@ -116,16 +124,42 @@ impl Expr {
 pub enum ExprKind {
     Lit(Lit),
     Ident(Ident),
-    Apply { fun: Expr, args: Vec<Expr> },
-    Unary { op: UnaryOp, expr: Expr },
-    Binary { op: BinaryOp, lhs: Expr, rhs: Expr },
-    If { cond: Expr, then: Expr, else_: Expr },
+    Apply {
+        fun: Expr,
+        args: Vec<Expr>,
+    },
+    Unary {
+        op: UnaryOp,
+        expr: Expr,
+    },
+    Binary {
+        op: BinaryOp,
+        lhs: Expr,
+        rhs: Expr,
+    },
+    If {
+        cond: Expr,
+        then: Expr,
+        else_: Expr,
+    },
     // Match {
     //     expr: Expr,
     //     cases: Vec<(Pattern, Expr)>,
     // },
-    Let { name: Ident, expr: Expr, body: Expr },
-    Lambda { params: Vec<Ident>, expr: Expr },
+    Let {
+        name: Ident,
+        expr: Expr,
+        body: Expr,
+    },
+    Fn {
+        name: Ident,
+        params: Vec<Ident>,
+        body: Expr,
+    },
+    Lambda {
+        params: Vec<Ident>,
+        expr: Expr,
+    },
     // List(Vec<Expr>),
     // Array(Vec<Expr>),
     // Tuple(Vec<Expr>),

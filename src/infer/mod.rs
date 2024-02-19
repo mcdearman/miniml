@@ -366,11 +366,11 @@ fn infer_expr<'src>(
         }
         nir::ExprKind::Let { name, expr, body } => {
             let (cs, ty, mut ctx, expr) = match expr.kind() {
-                nir::ExprKind::Lambda { .. } => {
+                nir::ExprKind::Lambda { expr, .. } => {
                     let ty = Type::Var(TyVar::fresh());
                     let scheme = Scheme::generalize(ctx.clone(), ty.clone());
                     ctx.extend(*name.id(), scheme);
-                    infer_expr(src, ctx, builtins.clone(), body)?
+                    infer_expr(src, ctx, builtins.clone(), expr)?
                 }
                 _ => {
                     let (cs, ty, ectx, expr) = infer_expr(src, ctx, builtins.clone(), expr)?;
