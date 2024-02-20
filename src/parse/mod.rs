@@ -351,7 +351,7 @@ fn lit_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
         // Token::Real(r) => Lit::Real(r),
         // Token::Rational(r) => Lit::Rational(r),
         Token::Bool(b) => Lit::Bool(b),
-        // Token::String(s) => Lit::String(s),
+        Token::String(s) => Lit::String(s),
         // Token::Char(c) => Lit::Char(c),
     }
 }

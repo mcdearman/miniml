@@ -131,6 +131,12 @@ fn infer_expr<'src>(
                 ctx.clone(),
                 Expr::new(ExprKind::Lit(Lit::Bool(b)), Type::Bool, *expr.span()),
             )),
+            nir::Lit::String(s) => Ok((
+                vec![],
+                Type::String,
+                ctx.clone(),
+                Expr::new(ExprKind::Lit(Lit::String(s)), Type::String, *expr.span()),
+            )),
         },
         nir::ExprKind::Ident(name) => {
             if let Some(scm) = ctx.get(name.id()) {

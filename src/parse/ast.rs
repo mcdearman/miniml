@@ -461,6 +461,6 @@ pub enum Lit {
     // Real(f64),
     // Rational(Rational64),
     Bool(bool),
-    // String(InternedString),
+    String(InternedString),
     // Char(char),
 }

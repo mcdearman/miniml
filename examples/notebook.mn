@@ -2,14 +2,21 @@ let fib n =
   if n <= 1 then n
   else fib (n - 1) + fib (n - 2)
 
-let main args = 
-  -- eval fib 1 through 10
-  let loop n =
-    if n <= 30 then
-      let a = println (fib n) in
-      loop (n + 1)
-    else
-      0
-  in loop 1
+let fib_iter n =
+  let loop i a b =
+    if i = n then a
+    else loop (i + 1) b (a + b)
+  in loop 0 0 1
+
+let ack m n =
+  if m = 0 then n + 1
+  else if n = 0 then ack (m - 1) 1
+  else ack (m - 1) (ack m (n - 1))
+
+let gcd a b =
+  if b = 0 then a
+  else gcd b (a % b)
+
+let main args = "Hello, World!"
 
     

@@ -8,7 +8,7 @@ use std::{
 pub enum Type {
     Int,
     Bool,
-    // String,
+    String,
     Var(TyVar),
     Lambda(Vec<Self>, Box<Self>),
     Unit,
@@ -17,7 +17,7 @@ pub enum Type {
 impl Type {
     pub(super) fn apply_subst(&self, subst: Substitution) -> Type {
         match self {
-            Self::Int | Self::Bool | Self::Unit => self.clone(),
+            Self::Int | Self::Bool | Self::String | Self::Unit => self.clone(),
             Self::Var(n) => subst.get(&n).cloned().unwrap_or(self.clone()),
             Self::Lambda(params, body) => Self::Lambda(
                 params
@@ -31,7 +31,7 @@ impl Type {
 
     pub(super) fn lower(&self, vars: &mut HashMap<TyVar, TyVar>) -> Self {
         match self {
-            Self::Int | Self::Bool | Self::Unit => self.clone(),
+            Self::Int | Self::Bool | Self::String | Self::Unit => self.clone(),
             Self::Var(name) => {
                 if let Some(n) = vars.get(&name) {
                     Self::Var(*n)
@@ -72,7 +72,7 @@ impl Debug for Type {
         match self.clone() {
             Self::Int => write!(f, "Int"),
             Self::Bool => write!(f, "Bool"),
-            // Self::String => write!(f, "String"),
+            Self::String => write!(f, "String"),
             Self::Var(n) => write!(f, "{:?}", n),
             Self::Lambda(params, body) => write!(f, "{:?} -> {:?}", params, body),
             Self::Unit => write!(f, "()"),

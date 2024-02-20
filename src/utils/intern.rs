@@ -45,7 +45,7 @@ impl Debug for InternedString {
 
 impl Display for InternedString {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "\"{}\"", unsafe { INTERNER.resolve(&self.key) })
+        write!(f, "{}", unsafe { INTERNER.resolve(&self.key) })
     }
 }
 

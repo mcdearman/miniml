@@ -1,5 +1,5 @@
 use super::{r#type::Type, substitution::Substitution};
-use crate::utils::{span::Span, unique_id::UniqueId};
+use crate::utils::{intern::InternedString, span::Span, unique_id::UniqueId};
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Root {
@@ -241,4 +241,5 @@ impl Ident {
 pub enum Lit {
     Int(i64),
     Bool(bool),
+    String(InternedString),
 }

@@ -105,6 +105,10 @@ impl Resolver {
                 ast::Lit::Bool(b) => {
                     Ok(Expr::new(ExprKind::Lit(Lit::Bool(*b)), expr.span().clone()))
                 }
+                ast::Lit::String(s) => Ok(Expr::new(
+                    ExprKind::Lit(Lit::String(s.clone())),
+                    expr.span().clone(),
+                )),
             },
             ast::ExprKind::Ident(ident) => {
                 if let Some(name) = env.borrow().find(ident.name()) {

@@ -44,6 +44,7 @@ fn eval_expr<'src>(
             ExprKind::Lit(lit) => match lit {
                 tir::Lit::Int(i) => Value::Lit(Lit::Int(i)),
                 tir::Lit::Bool(b) => Value::Lit(Lit::Bool(b)),
+                tir::Lit::String(s) => Value::Lit(Lit::String(s)),
             },
             ExprKind::Ident(name) => {
                 if let Some(value) = env.borrow().get(name.id()) {
@@ -103,13 +104,9 @@ fn eval_expr<'src>(
                 expr: let_expr,
                 body,
             } => {
-                // println!("name: {:#?}", name);
-                // println!("let_expr: {:#?}", let_expr);
-                // println!("body: {:#?}", body);
                 let value = eval_expr(src, env.clone(), let_expr)?;
                 let let_env = Env::new_with_parent(env.clone());
                 let_env.borrow_mut().insert(*name.id(), value);
-                // println!("let_env: {:#?}", let_env);
                 expr = body;
                 env = let_env;
                 continue 'tco;
@@ -128,7 +125,7 @@ fn eval_expr<'src>(
                 };
                 env.borrow_mut().insert(*name.id(), value);
                 expr = body;
-                env = lam_env.clone();
+                env = lam_env;
                 continue 'tco;
             }
             ExprKind::If {
