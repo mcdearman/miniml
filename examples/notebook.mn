@@ -5,7 +5,7 @@ let fib n =
 let main args = 
   -- eval fib 1 through 10
   let loop n =
-    if n <= 10 then
+    if n <= 30 then
       let a = println (fib n) in
       loop (n + 1)
     else

@@ -75,12 +75,12 @@ fn eval_expr<'src>(
                             .into_iter()
                             .map(|arg| eval_expr(src, env.clone(), arg))
                             .collect::<RuntimeResult<Vec<Value>>>()?;
-                        // let arg_env = Env::new_with_parent(lam_env.clone());
+                        let arg_env = Env::new_with_parent(lam_env.clone());
                         vargs.iter().zip(params.iter()).for_each(|(arg, p)| {
-                            lam_env.borrow_mut().insert(*p, arg.clone());
+                            arg_env.borrow_mut().insert(*p, arg.clone());
                         });
                         expr = lam_expr;
-                        env = lam_env.clone();
+                        env = arg_env;
                         continue 'tco;
                     }
                     Value::NativeFn(fun) => {
