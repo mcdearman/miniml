@@ -123,7 +123,7 @@ fn infer_decl<'src>(
             tmp_ctx.extend(*name.id(), scheme.clone());
             Ok((
                 cs,
-                ctx.union(ectx),
+                ctx.union(tmp_ctx),
                 Decl::new(
                     DeclKind::Let {
                         name: Ident::new(*name.id(), *name.span()),

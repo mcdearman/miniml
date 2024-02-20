@@ -17,18 +17,20 @@
 --   if b = 0 then a
 --   else gcd b (a % b)
 
-type Point = { x : Int, y : Int }
+-- type Point = { x : Int, y : Int }
+-- type Foo = { a : Int, b : Point }
 
-type Foo = { a : Int, b : Point }
+let x = 1
 
--- let main args = 
---   -- print fib 1 through fib 30
---   let loop n =
---     if n <= 30 then
---       let a = println (fib_iter n) 
---       in loop (n + 1)
---     else 0
---    in loop 1
+let main args = x + 1
+
+  -- print fib 1 through fib 30
+  -- let loop n =
+  --   if n <= 30 then
+  --     let a = println (fib_iter n) 
+  --     in loop (n + 1)
+  --   else 0
+  --  in loop 1
   
 
     
