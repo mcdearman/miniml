@@ -104,6 +104,7 @@ pub enum ExprKind {
         params: Vec<Ident>,
         expr: Expr,
     },
+    List(Vec<Expr>),
     Unit,
 }
 

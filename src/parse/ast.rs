@@ -161,7 +161,7 @@ pub enum ExprKind {
         params: Vec<Ident>,
         expr: Expr,
     },
-    // List(Vec<Expr>),
+    List(Vec<Expr>),
     // Array(Vec<Expr>),
     // Tuple(Vec<Expr>),
     // Record {

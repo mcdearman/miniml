@@ -1,5 +1,5 @@
 use super::{r#type::Type, substitution::Substitution};
-use crate::utils::{intern::InternedString, span::Span, unique_id::UniqueId};
+use crate::utils::{intern::InternedString, list::List, span::Span, unique_id::UniqueId};
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Root {
@@ -129,14 +129,6 @@ impl Expr {
                 self.ty.apply_subst(subst),
                 self.span,
             ),
-            ExprKind::Lambda { params, expr } => Expr::new(
-                ExprKind::Lambda {
-                    params: params.clone(),
-                    expr: expr.apply_subst(subst.clone()),
-                },
-                self.ty.apply_subst(subst),
-                self.span,
-            ),
             ExprKind::Apply { fun, args } => Expr::new(
                 ExprKind::Apply {
                     fun: fun.apply_subst(subst.clone()),
@@ -181,6 +173,19 @@ impl Expr {
                 self.ty.apply_subst(subst),
                 self.span,
             ),
+            ExprKind::Lambda { params, expr } => Expr::new(
+                ExprKind::Lambda {
+                    params: params.clone(),
+                    expr: expr.apply_subst(subst.clone()),
+                },
+                self.ty.apply_subst(subst),
+                self.span,
+            ),
+            ExprKind::List(l) => Expr::new(
+                ExprKind::List(l.clone()),
+                self.ty.apply_subst(subst),
+                self.span,
+            ),
             ExprKind::Unit => self.clone(),
         }
     }
@@ -214,6 +219,7 @@ pub enum ExprKind {
         params: Vec<Ident>,
         expr: Expr,
     },
+    List(List<Expr>),
     Unit,
 }
 

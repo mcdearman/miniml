@@ -1,4 +1,3 @@
-
 use std::fmt::Display;
 
 #[derive(Debug, Clone, PartialEq, Default)]
@@ -6,7 +5,7 @@ pub enum List<T> {
     #[default]
     Empty,
     Pair {
-        head: T,
+        head: Box<T>,
         tail: Box<Self>,
     },
 }
@@ -29,7 +28,7 @@ impl<T> List<T> {
     pub fn push_front(&mut self, head: T) {
         let tail = std::mem::replace(self, Self::Empty);
         *self = Self::Pair {
-            head,
+            head: Box::new(head),
             tail: Box::new(tail),
         };
     }
@@ -40,7 +39,7 @@ impl<T> List<T> {
             match tail {
                 Self::Empty => {
                     *tail = Self::Pair {
-                        head,
+                        head: Box::new(head),
                         tail: Box::new(Self::Empty),
                     };
                     break;
@@ -62,14 +61,14 @@ where
     T: Display,
 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "(")?;
+        write!(f, "[")?;
         for (i, s) in self.iter().enumerate() {
             if i != 0 {
                 write!(f, " ")?;
             }
             write!(f, "{}", s)?;
         }
-        write!(f, ")")
+        write!(f, "]")
     }
 }
 

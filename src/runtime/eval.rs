@@ -3,7 +3,7 @@ use super::{
     error::{RuntimeError, RuntimeResult},
     value::{Lit, Value},
 };
-use crate::infer::tir::{self, Decl, DeclKind, Expr, ExprKind, Root};
+use crate::infer::tir::{self, DeclKind, Expr, ExprKind, Root};
 use itertools::Itertools;
 use std::{cell::RefCell, rc::Rc};
 
@@ -50,55 +50,43 @@ fn eval_expr<'src>(
                 if let Some(value) = env.borrow().get(name.id()) {
                     value
                 } else {
-                    // println!("env: {:#?}", env);
                     return Err(RuntimeError::UnboundIdent(
                         src[*name.span()].trim().into(),
                         *name.span(),
                     ));
                 }
             }
-            ExprKind::Lambda {
-                params,
-                expr: lam_expr,
-            } => Value::Lambda {
-                env: Env::new_with_parent(env.clone()),
-                params: params.iter().map(|p| *p.id()).collect_vec(),
-                expr: lam_expr,
-            },
-            ExprKind::Apply { fun, args } => {
-                match eval_expr(src, env.clone(), fun)? {
-                    Value::Lambda {
-                        env: lam_env,
-                        params,
-                        expr: lam_expr,
-                    } => {
-                        let vargs = args
-                            .into_iter()
-                            .map(|arg| eval_expr(src, env.clone(), arg))
-                            .collect::<RuntimeResult<Vec<Value>>>()?;
-                        let arg_env = Env::new_with_parent(lam_env.clone());
-                        vargs.iter().zip(params.iter()).for_each(|(arg, p)| {
-                            arg_env.borrow_mut().insert(*p, arg.clone());
-                        });
-                        expr = lam_expr;
-                        env = arg_env;
-                        continue 'tco;
-                    }
-                    Value::NativeFn(fun) => {
-                        let mut new_args = Vec::new();
-                        for arg in args {
-                            new_args.push(eval_expr(src, env.clone(), arg)?);
-                        }
-                        // println!("new_args: {:#?}", new_args);
-                        fun(new_args)?
-                    }
-                    f => {
-                        return Err(RuntimeError::TypeError(
-                            format!("Expected lambda, found {:?}", f).into(),
-                        ));
-                    }
+            ExprKind::Apply { fun, args } => match eval_expr(src, env.clone(), fun)? {
+                Value::Lambda {
+                    env: lam_env,
+                    params,
+                    expr: lam_expr,
+                } => {
+                    let vargs = args
+                        .into_iter()
+                        .map(|arg| eval_expr(src, env.clone(), arg))
+                        .collect::<RuntimeResult<Vec<Value>>>()?;
+                    let arg_env = Env::new_with_parent(lam_env.clone());
+                    vargs.iter().zip(params.iter()).for_each(|(arg, p)| {
+                        arg_env.borrow_mut().insert(*p, arg.clone());
+                    });
+                    expr = lam_expr;
+                    env = arg_env;
+                    continue 'tco;
                 }
-            }
+                Value::NativeFn(fun) => {
+                    let mut new_args = Vec::new();
+                    for arg in args {
+                        new_args.push(eval_expr(src, env.clone(), arg)?);
+                    }
+                    fun(new_args)?
+                }
+                f => {
+                    return Err(RuntimeError::TypeError(
+                        format!("Expected lambda, found {:?}", f).into(),
+                    ));
+                }
+            },
             ExprKind::Let {
                 name,
                 expr: let_expr,
@@ -147,6 +135,21 @@ fn eval_expr<'src>(
                         ));
                     }
                 }
+            }
+            ExprKind::Lambda {
+                params,
+                expr: lam_expr,
+            } => Value::Lambda {
+                env: Env::new_with_parent(env.clone()),
+                params: params.iter().map(|p| *p.id()).collect_vec(),
+                expr: lam_expr,
+            },
+            ExprKind::List(exprs) => {
+                let mut list = Vec::new();
+                for expr in exprs.iter() {
+                    list.push(eval_expr(src, env.clone(), expr.clone())?);
+                }
+                Value::List(list.into())
             }
             ExprKind::Unit => Value::Unit,
         };

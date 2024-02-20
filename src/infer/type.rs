@@ -11,6 +11,7 @@ pub enum Type {
     String,
     Var(TyVar),
     Lambda(Vec<Self>, Box<Self>),
+    List(Box<Self>),
     Unit,
 }
 
@@ -26,6 +27,7 @@ impl Type {
                     .collect(),
                 Box::new(body.apply_subst(subst)),
             ),
+            Self::List(ty) => Self::List(Box::new(ty.apply_subst(subst))),
         }
     }
 
@@ -48,6 +50,7 @@ impl Type {
                 }
                 Self::Lambda(lowered_params, Box::new(body.lower(vars)))
             }
+            Self::List(ty) => Self::List(Box::new(ty.lower(vars))),
         }
     }
 
@@ -75,6 +78,7 @@ impl Debug for Type {
             Self::String => write!(f, "String"),
             Self::Var(n) => write!(f, "{:?}", n),
             Self::Lambda(params, body) => write!(f, "{:?} -> {:?}", params, body),
+            Self::List(ty) => write!(f, "[{:?}]", ty),
             Self::Unit => write!(f, "()"),
         }
     }

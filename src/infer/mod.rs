@@ -12,7 +12,7 @@ use self::{
 };
 use crate::{
     rename::nir,
-    utils::{intern::InternedString, unique_id::UniqueId},
+    utils::{intern::InternedString, list::List, unique_id::UniqueId},
 };
 use std::collections::HashMap;
 
@@ -161,33 +161,6 @@ fn infer_expr<'src>(
                 )))
             }
         }
-        nir::ExprKind::Lambda { params, expr } => {
-            let mut ty_binders = vec![];
-            let mut tmp_ctx = ctx.clone();
-            let mut new_params = vec![];
-            for p in params.clone() {
-                let ty_binder = Type::Var(TyVar::fresh());
-                ty_binders.push(ty_binder.clone());
-                tmp_ctx = ctx.union(tmp_ctx);
-                tmp_ctx.extend(*p.id(), Scheme::new(vec![], ty_binder.clone()));
-                new_params.push(Ident::new(*p.id(), *p.span()));
-            }
-            let (cs, t, c, expr) = infer_expr(src, &mut tmp_ctx, builtins, expr)?;
-            let ty = Type::Lambda(ty_binders.clone(), Box::new(t.clone()));
-            Ok((
-                cs,
-                ty.clone(),
-                tmp_ctx.union(c),
-                Expr::new(
-                    ExprKind::Lambda {
-                        params: new_params,
-                        expr: expr.clone(),
-                    },
-                    ty,
-                    *expr.span(),
-                ),
-            ))
-        }
         nir::ExprKind::Apply { fun, args } => {
             let (mut cs1, t1, mut ctx1, fun) = infer_expr(src, ctx, builtins.clone(), fun)?;
             let mut new_args = vec![];
@@ -308,6 +281,55 @@ fn infer_expr<'src>(
             ctx.clone(),
             Expr::new(ExprKind::Unit, Type::Unit, *expr.span()),
         )),
+        nir::ExprKind::Lambda { params, expr } => {
+            let mut ty_binders = vec![];
+            let mut tmp_ctx = ctx.clone();
+            let mut new_params = vec![];
+            for p in params.clone() {
+                let ty_binder = Type::Var(TyVar::fresh());
+                ty_binders.push(ty_binder.clone());
+                tmp_ctx = ctx.union(tmp_ctx);
+                tmp_ctx.extend(*p.id(), Scheme::new(vec![], ty_binder.clone()));
+                new_params.push(Ident::new(*p.id(), *p.span()));
+            }
+            let (cs, t, c, expr) = infer_expr(src, &mut tmp_ctx, builtins, expr)?;
+            let ty = Type::Lambda(ty_binders.clone(), Box::new(t.clone()));
+            Ok((
+                cs,
+                ty.clone(),
+                tmp_ctx.union(c),
+                Expr::new(
+                    ExprKind::Lambda {
+                        params: new_params,
+                        expr: expr.clone(),
+                    },
+                    ty,
+                    *expr.span(),
+                ),
+            ))
+        }
+        nir::ExprKind::List(exprs) => {
+            let mut cs = vec![];
+            let mut ty_args = vec![];
+            let mut new_exprs = vec![];
+            for e in exprs {
+                let (cs2, t2, ctx2, e2) = infer_expr(src, ctx, builtins.clone(), e)?;
+                *ctx = ctx2.union(ctx.clone());
+                cs = cs.into_iter().chain(cs2.into_iter()).collect();
+                new_exprs.push(e2);
+                ty_args.push(t2);
+            }
+            let ty = Type::List(Box::new(ty_args.clone()[0].clone()));
+            for t in ty_args.clone() {
+                cs.push(Constraint::Equal(t, ty_args[0].clone()));
+            }
+            Ok((
+                cs,
+                ty.clone(),
+                ctx.clone(),
+                Expr::new(ExprKind::List(List::from(new_exprs)), ty, *expr.span()),
+            ))
+        }
     }
 }
 

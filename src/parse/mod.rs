@@ -124,6 +124,14 @@ fn expr_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
                 body,
             });
 
+        let list = expr
+            .clone()
+            .separated_by(just(Token::Comma))
+            .allow_trailing()
+            .collect()
+            .delimited_by(just(Token::LBrack), just(Token::RBrack))
+            .map(|exprs| ExprKind::List(exprs));
+
         let atom = unit
             .or(lit)
             .or(ident)
@@ -131,6 +139,7 @@ fn expr_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
             .or(if_)
             .or(let_)
             .or(fn_)
+            .or(list)
             .map_with(|kind, e| Expr::new(kind, e.span()))
             .or(just(Token::LParen)
                 .ignore_then(expr)

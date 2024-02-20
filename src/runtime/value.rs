@@ -1,7 +1,7 @@
 use super::{env::Env, error::RuntimeResult};
 use crate::{
     infer::tir::Expr,
-    utils::{intern::InternedString, unique_id::UniqueId},
+    utils::{intern::InternedString, list::List, unique_id::UniqueId},
 };
 use std::{cell::RefCell, fmt::Display, rc::Rc};
 
@@ -14,6 +14,7 @@ pub enum Value {
         expr: Expr,
     },
     NativeFn(fn(Vec<Value>) -> RuntimeResult<Value>),
+    List(List<Value>),
     Unit,
 }
 
@@ -25,6 +26,7 @@ impl Display for Value {
             Value::Lit(Lit::String(s)) => write!(f, "{}", s),
             Value::Lambda { .. } => write!(f, "<lambda>"),
             Value::NativeFn { .. } => write!(f, "<native fn>"),
+            Value::List(list) => write!(f, "{}", list),
             Value::Unit => write!(f, "()"),
         }
     }
