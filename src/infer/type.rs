@@ -13,7 +13,7 @@ pub enum Type {
     Var(TyVar),
     Lambda(Vec<Self>, Box<Self>),
     List(Box<Self>),
-    Record(HashMap<UniqueId, Self>),
+    Record(UniqueId, HashMap<UniqueId, Self>),
     Unit,
 }
 
@@ -30,7 +30,8 @@ impl Type {
                 Box::new(body.apply_subst(subst)),
             ),
             Self::List(ty) => Self::List(Box::new(ty.apply_subst(subst))),
-            Self::Record(fields) => Self::Record(
+            Self::Record(name, fields) => Self::Record(
+                *name,
                 fields
                     .iter()
                     .map(|(k, v)| (k.clone(), v.apply_subst(subst.clone())))
@@ -59,12 +60,12 @@ impl Type {
                 Self::Lambda(lowered_params, Box::new(body.lower(vars)))
             }
             Self::List(ty) => Self::List(Box::new(ty.lower(vars))),
-            Self::Record(fields) => {
+            Self::Record(name, fields) => {
                 let mut lowered_fields = HashMap::new();
                 for (k, v) in fields {
                     lowered_fields.insert(k.clone(), v.lower(vars));
                 }
-                Self::Record(lowered_fields)
+                Self::Record(*name, lowered_fields)
             }
         }
     }
@@ -94,7 +95,7 @@ impl Debug for Type {
             Self::Var(n) => write!(f, "{:?}", n),
             Self::Lambda(params, body) => write!(f, "{:?} -> {:?}", params, body),
             Self::List(ty) => write!(f, "[{:?}]", ty),
-            Self::Record(fields) => write!(f, "{{{:?}}}", fields),
+            Self::Record(name, fields) => write!(f, "{:?} = {:?}", name, fields),
             Self::Unit => write!(f, "()"),
         }
     }

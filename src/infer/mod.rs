@@ -1,5 +1,3 @@
-use itertools::Itertools;
-
 use self::{
     constraint::Constraint,
     context::Context,
@@ -14,6 +12,7 @@ use crate::{
     rename::nir,
     utils::{intern::InternedString, list::List, unique_id::UniqueId},
 };
+use itertools::Itertools;
 use std::collections::HashMap;
 
 mod constraint;
@@ -64,15 +63,23 @@ fn infer_decl<'src>(
     match decl.kind() {
         nir::DeclKind::DataType(dt) => match dt.kind() {
             nir::DataTypeKind::Record { fields } => {
-                let mut ty_binders = vec![];
+                let mut field_types = HashMap::new();
                 let mut tmp_ctx = ctx.clone();
-                for f in fields {
-                    let ty_binder = Type::Var(TyVar::fresh());
-                    ty_binders.push((f.0.id().clone(), ty_binder.clone()));
+                for (name, hint) in fields {
+                    let field_type = match hint.kind() {
+                        nir::TypeHintKind::Int => Type::Int,
+                        nir::TypeHintKind::Bool => Type::Bool,
+                        nir::TypeHintKind::String => Type::String,
+                        nir::TypeHintKind::Ident(_) => todo!(),
+                        nir::TypeHintKind::List(_) => todo!(),
+                        nir::TypeHintKind::Fn(_, _) => todo!(),
+                        nir::TypeHintKind::Unit => todo!(),
+                    };
+                    field_types.insert(name.id().clone(), field_type.clone());
                     tmp_ctx = ctx.union(tmp_ctx);
-                    tmp_ctx.extend(*f.0.id(), Scheme::new(vec![], ty_binder.clone()));
+                    tmp_ctx.extend(*name.id(), Scheme::new(vec![], field_type.clone()));
                 }
-                let ty = Type::Record(HashMap::from_iter(ty_binders.clone().into_iter()));
+                let ty = Type::Record(*dt.name().id(), HashMap::from_iter(field_types));
                 Ok((
                     vec![],
                     tmp_ctx,

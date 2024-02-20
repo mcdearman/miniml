@@ -63,18 +63,18 @@ fn repl_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
 fn decl_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
 ) -> impl ChumskyParser<'a, I, Decl, extra::Err<Rich<'a, Token, Span>>> {
     let record = just(Token::Type)
-        .then(ident_parser())
+        .ignore_then(ident_parser())
         .then_ignore(just(Token::Eq))
         .then(
             ident_parser()
                 .then_ignore(just(Token::Colon))
                 .then(type_hint_parser())
                 .separated_by(just(Token::Comma))
-                .at_Lest(1)
+                .at_least(1)
                 .collect()
                 .delimited_by(just(Token::LBrace), just(Token::RBrace)),
         )
-        .map_with(|((name, fields), e)| {
+        .map_with(|(name, fields), e| {
             DeclKind::DataType(DataType::new(
                 name,
                 DataTypeKind::Record { fields },
@@ -95,7 +95,9 @@ fn decl_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
         .then(expr_parser())
         .map(|((name, params), expr)| DeclKind::Fn { name, params, expr });
 
-    let_.or(fn_).map_with(|kind, e| Decl::new(kind, e.span()))
+    let_.or(fn_)
+        .or(record)
+        .map_with(|kind, e| Decl::new(kind, e.span()))
 }
 
 fn expr_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
@@ -364,13 +366,24 @@ fn expr_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
     })
 }
 
+fn type_hint_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
+) -> impl ChumskyParser<'a, I, TypeHint, extra::Err<Rich<'a, Token, Span>>> {
+    ident_parser()
+        .map(|ident| match ident.name().as_ref() {
+            "Int" => TypeHintKind::Int,
+            "Bool" => TypeHintKind::Bool,
+            "String" => TypeHintKind::String,
+            _ => TypeHintKind::Ident(ident),
+        })
+        .map_with(|kind, e| TypeHint::new(kind, e.span()))
+}
+
 fn ident_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
 ) -> impl ChumskyParser<'a, I, Ident, extra::Err<Rich<'a, Token, Span>>> {
     select! {
         Token::Ident(name) => name
     }
     .map_with(|name, e| Ident::new(name, e.span()))
-    // .map_with_span(|name, span| Ident::new(name, span))
 }
 
 fn lit_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
