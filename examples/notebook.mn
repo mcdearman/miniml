@@ -19,6 +19,8 @@
 
 type Point = { x : Int, y : Int }
 
+type Foo = { a : Int, b : Point }
+
 -- let main args = 
 --   -- print fib 1 through fib 30
 --   let loop n =

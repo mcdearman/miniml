@@ -13,7 +13,7 @@ use crate::{
     utils::{intern::InternedString, list::List, unique_id::UniqueId},
 };
 use itertools::Itertools;
-use std::collections::HashMap;
+use std::{collections::HashMap, vec};
 
 mod constraint;
 pub mod context;
@@ -63,40 +63,50 @@ fn infer_decl<'src>(
     match decl.kind() {
         nir::DeclKind::DataType(dt) => match dt.kind() {
             nir::DataTypeKind::Record { fields } => {
-                let mut field_types = HashMap::new();
+                let mut constraints = vec![];
+                let mut new_fields = HashMap::new();
                 let mut tmp_ctx = ctx.clone();
                 for (name, hint) in fields {
+                    let var = Type::Var(TyVar::fresh());
                     let field_type = match hint.kind() {
                         nir::TypeHintKind::Int => Type::Int,
                         nir::TypeHintKind::Bool => Type::Bool,
                         nir::TypeHintKind::String => Type::String,
-                        nir::TypeHintKind::Ident(_) => todo!(),
+                        nir::TypeHintKind::Ident(ident) => {
+                            if let Some(scm) = ctx.get(ident.id()) {
+                                scm.instantiate()
+                            } else {
+                                return Err(TypeError::from(format!(
+                                    "unbound type: {:?} - \"{}\"",
+                                    ident,
+                                    src[*ident.span()].to_string()
+                                )));
+                            }
+                        }
                         nir::TypeHintKind::List(_) => todo!(),
                         nir::TypeHintKind::Fn(_, _) => todo!(),
-                        nir::TypeHintKind::Unit => todo!(),
+                        nir::TypeHintKind::Unit => Type::Unit,
                     };
-                    field_types.insert(name.id().clone(), field_type.clone());
+                    constraints.push(Constraint::Equal(var.clone(), field_type.clone()));
+                    new_fields.insert(Ident::new(*name.id(), *name.span()), var.clone());
                     tmp_ctx = ctx.union(tmp_ctx);
                     tmp_ctx.extend(*name.id(), Scheme::new(vec![], field_type.clone()));
                 }
-                let ty = Type::Record(*dt.name().id(), HashMap::from_iter(field_types));
+                let ty = Type::Record(
+                    *dt.name().id(),
+                    new_fields
+                        .iter()
+                        .map(|(k, v)| (*k.id(), v.clone()))
+                        .collect(),
+                );
+                tmp_ctx.extend(*dt.name().id(), Scheme::new(vec![], ty.clone()));
                 Ok((
-                    vec![],
+                    constraints,
                     tmp_ctx,
                     Decl::new(
                         DeclKind::DataType(DataType::new(
                             Ident::new(*dt.name().id(), *dt.name().span()),
-                            DataTypeKind::Record {
-                                fields: fields
-                                    .iter()
-                                    .map(|f| {
-                                        (
-                                            Ident::new(*f.0.id(), f.0.span().clone()),
-                                            Type::Var(TyVar::fresh()),
-                                        )
-                                    })
-                                    .collect(),
-                            },
+                            DataTypeKind::Record { fields: new_fields },
                             ty.clone(),
                             *decl.span(),
                         )),

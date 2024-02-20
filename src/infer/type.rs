@@ -1,5 +1,5 @@
 use super::{substitution::Substitution, ty_var::TyVar};
-use crate::utils::{intern::InternedString, unique_id::UniqueId};
+use crate::utils::unique_id::UniqueId;
 use std::{
     collections::{BTreeSet, HashMap},
     fmt::Debug,

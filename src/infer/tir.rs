@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use super::{r#type::Type, substitution::Substitution};
 use crate::utils::{intern::InternedString, list::List, span::Span, unique_id::UniqueId};
 
@@ -144,7 +146,7 @@ impl DataType {
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum DataTypeKind {
-    Record { fields: Vec<(Ident, Type)> },
+    Record { fields: HashMap<Ident, Type> },
     // Sum {
     //     cases: Vec<(Ident, Option<SumTypeCaseHint>)>,
     // },
@@ -284,7 +286,7 @@ pub enum ExprKind {
     Unit,
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct Ident {
     id: UniqueId,
     span: Span,
