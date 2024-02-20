@@ -68,13 +68,19 @@ fn decl_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
         .then(
             ident_parser()
                 .then_ignore(just(Token::Colon))
-                .then(type_parser())
+                .then(type_hint_parser())
                 .separated_by(just(Token::Comma))
                 .at_Lest(1)
                 .collect()
                 .delimited_by(just(Token::LBrace), just(Token::RBrace)),
         )
-        .map(|(name, fields)| DeclKind::DataType(DataType::new(name, fields)));
+        .map_with(|((name, fields), e)| {
+            DeclKind::DataType(DataType::new(
+                name,
+                DataTypeKind::Record { fields },
+                e.span(),
+            ))
+        });
 
     let let_ = just(Token::Let)
         .ignore_then(ident_parser())
