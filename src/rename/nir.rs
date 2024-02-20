@@ -42,6 +42,7 @@ impl Decl {
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum DeclKind {
+    DataType(DataType),
     Let {
         name: Ident,
         expr: Expr,
@@ -51,6 +52,43 @@ pub enum DeclKind {
         params: Vec<Ident>,
         expr: Expr,
     },
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct DataType {
+    name: Ident,
+    kind: Box<DataTypeKind>,
+    span: Span,
+}
+
+impl DataType {
+    pub fn new(name: Ident, kind: DataTypeKind, span: Span) -> Self {
+        Self {
+            name,
+            kind: Box::new(kind),
+            span,
+        }
+    }
+
+    pub fn name(&self) -> &Ident {
+        &self.name
+    }
+
+    pub fn kind(&self) -> &DataTypeKind {
+        &self.kind
+    }
+
+    pub fn span(&self) -> &Span {
+        &self.span
+    }
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum DataTypeKind {
+    Record { fields: Vec<(Ident, TypeHint)> },
+    // Sum {
+    //     cases: Vec<(Ident, Option<SumTypeCaseHint>)>,
+    // },
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -105,6 +143,46 @@ pub enum ExprKind {
         expr: Expr,
     },
     List(Vec<Expr>),
+    Unit,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct TypeHint {
+    kind: Box<TypeHintKind>,
+    span: Span,
+}
+
+impl TypeHint {
+    pub fn new(kind: TypeHintKind, span: Span) -> Self {
+        Self {
+            kind: Box::new(kind),
+            span,
+        }
+    }
+
+    pub fn kind(&self) -> &TypeHintKind {
+        &self.kind
+    }
+
+    pub fn span(&self) -> &Span {
+        &self.span
+    }
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum TypeHintKind {
+    Int,
+    // Byte,
+    // Real,
+    // Rational,
+    Bool,
+    String,
+    // Char,
+    Ident(Ident),
+    List(TypeHint),
+    // Array(TypeHint),
+    // Tuple(Vec<TypeHint>),
+    Fn(Vec<TypeHint>, TypeHint),
     Unit,
 }
 

@@ -76,6 +76,32 @@ impl Resolver {
     fn resolve_decl(&mut self, env: Rc<RefCell<Env>>, decl: &ast::Decl) -> ResResult<Decl> {
         trace!("decl env: {:#?}", env.borrow());
         match decl.kind() {
+            ast::DeclKind::DataType(dt) => {
+                let name = Ident::new(
+                    env.borrow_mut().define(dt.name().name().clone()),
+                    *dt.span(),
+                );
+                match dt.kind() {
+                    ast::DataTypeKind::Record { fields } => {
+                        let fields = fields
+                            .iter()
+                            .map(|(name, ty)| {
+                                let name = Ident::new(
+                                    env.borrow_mut().define(name.name().clone()),
+                                    *name.span(),
+                                );
+                                let ty = self.resolve_type(env.clone(), ty)?;
+                                Ok((name, ty))
+                            })
+                            .collect::<ResResult<Vec<(Ident, Type)>>>()?;
+                        Ok(Decl::new(DeclKind::DataType(DataType::new(
+                            name,
+                            DataTypeKind::Record(fields),
+                            decl.span().clone(),
+                        ))))
+                    }
+                }
+            }
             ast::DeclKind::Let { name, expr } => {
                 let let_env = Env::new_with_parent(env.clone());
                 let expr = self.resolve_expr(let_env.clone(), expr)?;
@@ -241,6 +267,43 @@ impl Resolver {
                 *expr.span(),
             )),
             ast::ExprKind::Unit => Ok(Expr::new(ExprKind::Unit, *expr.span())),
+        }
+    }
+
+    fn resolve_type(&mut self, env: Rc<RefCell<Env>>, ty: &ast::TypeHint) -> ResResult<TypeHint> {
+        match ty.kind() {
+            ast::TypeHintKind::Ident(ident) => {
+                if let Some(name) = env.borrow().find(ident.name()) {
+                    Ok(TypeHint::new(
+                        TypeHintKind::Ident(Ident::new(name, *ident.span())),
+                        *ty.span(),
+                    ))
+                } else {
+                    Err(ResError::new(
+                        ResErrorKind::UnboundName(*ident.name()),
+                        *ident.span(),
+                    ))
+                }
+            }
+            ast::TypeKind::Apply { name, args } => {
+                if let Some(name) = env.borrow().find(name.name()) {
+                    Ok(Type::new(
+                        TypeKind::Apply {
+                            name: Ident::new(name, *name.span()),
+                            args: args
+                                .iter()
+                                .map(|a| self.resolve_type(env.clone(), a))
+                                .collect::<ResResult<Vec<Type>>>()?,
+                        },
+                        *ty.span(),
+                    ))
+                } else {
+                    Err(ResError::new(
+                        ResErrorKind::UnboundName(*name.name()),
+                        *name.span(),
+                    ))
+                }
+            }
         }
     }
 }

@@ -2,7 +2,6 @@ use crate::{
     lex::token::Token,
     utils::{intern::InternedString, span::Span},
 };
-use num_rational::Rational64;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Root {
@@ -46,7 +45,7 @@ impl Decl {
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum DeclKind {
-    // DataType(DataType),
+    DataType(DataType),
     Let {
         name: Ident,
         expr: Expr,
@@ -58,44 +57,42 @@ pub enum DeclKind {
     },
 }
 
-// #[derive(Debug, Clone, PartialEq)]
-// pub struct DataType {
-//     name: Ident,
-//     kind: Box<DataTypeKind>,
-//     span: Span,
-// }
+#[derive(Debug, Clone, PartialEq)]
+pub struct DataType {
+    name: Ident,
+    kind: Box<DataTypeKind>,
+    span: Span,
+}
 
-// impl DataType {
-//     pub fn new(name: Ident, kind: DataTypeKind, span: Span) -> Self {
-//         Self {
-//             name,
-//             kind: Box::new(kind),
-//             span,
-//         }
-//     }
+impl DataType {
+    pub fn new(name: Ident, kind: DataTypeKind, span: Span) -> Self {
+        Self {
+            name,
+            kind: Box::new(kind),
+            span,
+        }
+    }
 
-//     pub fn name(&self) -> &Ident {
-//         &self.name
-//     }
+    pub fn name(&self) -> &Ident {
+        &self.name
+    }
 
-//     pub fn kind(&self) -> &DataTypeKind {
-//         &self.kind
-//     }
+    pub fn kind(&self) -> &DataTypeKind {
+        &self.kind
+    }
 
-//     pub fn span(&self) -> &Span {
-//         &self.span
-//     }
-// }
+    pub fn span(&self) -> &Span {
+        &self.span
+    }
+}
 
-// #[derive(Debug, Clone, PartialEq)]
-// pub enum DataTypeKind {
-//     Record {
-//         fields: Vec<(Ident, TypeHint)>,
-//     },
-//     Sum {
-//         cases: Vec<(Ident, Option<SumTypeCaseHint>)>,
-//     },
-// }
+#[derive(Debug, Clone, PartialEq)]
+pub enum DataTypeKind {
+    Record { fields: Vec<(Ident, TypeHint)> },
+    // Sum {
+    //     cases: Vec<(Ident, Option<SumTypeCaseHint>)>,
+    // },
+}
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Expr {
@@ -204,45 +201,45 @@ pub enum ExprKind {
 //     TypeHint(TypeHint),
 // }
 
-// #[derive(Debug, Clone, PartialEq)]
-// pub struct TypeHint {
-//     kind: Box<TypeHintKind>,
-//     span: Span,
-// }
+#[derive(Debug, Clone, PartialEq)]
+pub struct TypeHint {
+    kind: Box<TypeHintKind>,
+    span: Span,
+}
 
-// impl TypeHint {
-//     pub fn new(kind: TypeHintKind, span: Span) -> Self {
-//         Self {
-//             kind: Box::new(kind),
-//             span,
-//         }
-//     }
+impl TypeHint {
+    pub fn new(kind: TypeHintKind, span: Span) -> Self {
+        Self {
+            kind: Box::new(kind),
+            span,
+        }
+    }
 
-//     pub fn kind(&self) -> &TypeHintKind {
-//         &self.kind
-//     }
+    pub fn kind(&self) -> &TypeHintKind {
+        &self.kind
+    }
 
-//     pub fn span(&self) -> &Span {
-//         &self.span
-//     }
-// }
+    pub fn span(&self) -> &Span {
+        &self.span
+    }
+}
 
-// #[derive(Debug, Clone, PartialEq)]
-// pub enum TypeHintKind {
-//     Int,
-//     Byte,
-//     Real,
-//     Rational,
-//     Bool,
-//     String,
-//     Char,
-//     Ident(Ident),
-//     List(TypeHint),
-//     Array(TypeHint),
-//     Tuple(Vec<TypeHint>),
-//     Fn(Vec<TypeHint>, TypeHint),
-//     Unit,
-// }
+#[derive(Debug, Clone, PartialEq)]
+pub enum TypeHintKind {
+    Int,
+    // Byte,
+    // Real,
+    // Rational,
+    Bool,
+    String,
+    // Char,
+    Ident(Ident),
+    List(TypeHint),
+    // Array(TypeHint),
+    // Tuple(Vec<TypeHint>),
+    Fn(Vec<TypeHint>, TypeHint),
+    Unit,
+}
 
 // #[derive(Debug, Clone, PartialEq)]
 // pub struct Pattern {
