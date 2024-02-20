@@ -147,7 +147,11 @@ fn infer_decl<'src>(
             }
             let ty = Type::Var(TyVar::fresh());
             tmp_ctx.extend(*name.id(), Scheme::new(vec![], ty.clone()));
-            let (cs, t, c, expr) = infer_expr(src, &mut tmp_ctx, builtins, expr)?;
+            let (mut cs, t, c, expr) = infer_expr(src, &mut tmp_ctx, builtins, expr)?;
+            cs.push(Constraint::Equal(
+                ty.clone(),
+                Type::Lambda(ty_binders.clone(), Box::new(t.clone())),
+            ));
             Ok((
                 cs,
                 tmp_ctx.union(c),
