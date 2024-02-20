@@ -33,153 +33,25 @@ pub fn infer<'src>(
 ) -> InferResult<(Root, Context)> {
     let mut s = Substitution::new();
     let mut decls = vec![];
-    let mut ctx_ret = Context::new();
+    // let mut ctx_ret = Context::new();
     for decl in nir.decls() {
-        let (cs, ctx, d) = infer_decl(src, ctx, builtins.clone(), decl)?;
-        let mut traits = vec![];
+        let (cs, ctx_ret, d) = infer_decl(src, ctx, builtins.clone(), decl)?;
         for c in cs {
-            // println!("constraint: {:?}", c);
             match c {
                 Constraint::Equal(t1, t2) => {
                     let new_sub = unify(t1.apply_subst(s.clone()), t2.apply_subst(s.clone()))?;
-                    // println!("new_sub: {:?}", new_sub);
                     s = new_sub.compose(s);
-                    // println!("s = new_sub.compose(s): {:?}", s);
-                }
-                _ => {
-                    traits.push(c);
                 }
             }
         }
-        for t in traits {
-            match t {
-                Constraint::Neg(t1, t2) => {
-                    match (t1.apply_subst(s.clone()), t2.apply_subst(s.clone())) {
-                        (Type::Int, Type::Int) => {}
-                        _ => {
-                            return Err(TypeError::from(format!(
-                                "expected Neg : (Int -> Int), found ({:?} -> {:?})",
-                                t1.lower(&mut HashMap::new()),
-                                t2.lower(&mut HashMap::new())
-                            )))
-                        }
-                    }
-                }
-                Constraint::Not(t1, t2) => {
-                    match (t1.apply_subst(s.clone()), t2.apply_subst(s.clone())) {
-                        (Type::Bool, Type::Bool) => {}
-                        _ => {
-                            return Err(TypeError::from(format!(
-                                "expected Not : (Bool -> Bool), found ({:?} -> {:?})",
-                                t1.lower(&mut HashMap::new()),
-                                t2.lower(&mut HashMap::new())
-                            )))
-                        }
-                    }
-                }
-                Constraint::Add(t1, t2, t3) => match (
-                    t1.apply_subst(s.clone()),
-                    t2.apply_subst(s.clone()),
-                    t3.apply_subst(s.clone()),
-                ) {
-                    (Type::Int, Type::Int, Type::Int) => {}
-                    _ => {
-                        return Err(TypeError::from(format!(
-                            "expected Add : (Int Int -> Int), found ({:?} {:?} -> {:?})",
-                            t1.lower(&mut HashMap::new()),
-                            t2.lower(&mut HashMap::new()),
-                            t3.lower(&mut HashMap::new())
-                        )))
-                    }
-                },
-                Constraint::Sub(t1, t2, t3) => match (
-                    t1.apply_subst(s.clone()),
-                    t2.apply_subst(s.clone()),
-                    t3.apply_subst(s.clone()),
-                ) {
-                    (Type::Int, Type::Int, Type::Int) => {}
-                    _ => {
-                        return Err(TypeError::from(format!(
-                            "expected Sub : (Int Int -> Int), found ({:?} {:?} -> {:?})",
-                            t1.lower(&mut HashMap::new()),
-                            t2.lower(&mut HashMap::new()),
-                            t3.lower(&mut HashMap::new())
-                        )))
-                    }
-                },
-                Constraint::Mul(t1, t2, t3) => match (
-                    t1.apply_subst(s.clone()),
-                    t2.apply_subst(s.clone()),
-                    t3.apply_subst(s.clone()),
-                ) {
-                    (Type::Int, Type::Int, Type::Int) => {}
-                    _ => {
-                        return Err(TypeError::from(format!(
-                            "expected Mul : (Int Int -> Int), found ({:?} {:?} -> {:?})",
-                            t1.lower(&mut HashMap::new()),
-                            t2.lower(&mut HashMap::new()),
-                            t3.lower(&mut HashMap::new())
-                        )))
-                    }
-                },
-                Constraint::Div(t1, t2, t3) => match (
-                    t1.apply_subst(s.clone()),
-                    t2.apply_subst(s.clone()),
-                    t3.apply_subst(s.clone()),
-                ) {
-                    (Type::Int, Type::Int, Type::Int) => {}
-                    _ => {
-                        return Err(TypeError::from(format!(
-                            "expected Div : (Int Int -> Int), found ({:?} {:?} -> {:?})",
-                            t1.lower(&mut HashMap::new()),
-                            t2.lower(&mut HashMap::new()),
-                            t3.lower(&mut HashMap::new())
-                        )))
-                    }
-                },
-                Constraint::Rem(t1, t2, t3) => {
-                    let lhs = t1.apply_subst(s.clone());
-                    let rhs = t2.apply_subst(s.clone());
-                    let ret = t3.apply_subst(s.clone());
-                    match (&lhs, &rhs) {
-                        (Type::Int, Type::Int) => {
-                            s = unify(ret, Type::Int)?.compose(s);
-                        }
-                        _ => {
-                            let m = &mut HashMap::new();
-                            return Err(TypeError::from(format!(
-                                "expected Rem : (Int Int -> Int), found ({:?} {:?} -> {:?})",
-                                lhs.lower(m),
-                                rhs.lower(m),
-                                ret.lower(m)
-                            )));
-                        }
-                    }
-                }
-                Constraint::Pow(t1, t2, t3) => match (
-                    t1.apply_subst(s.clone()),
-                    t2.apply_subst(s.clone()),
-                    t3.apply_subst(s.clone()),
-                ) {
-                    (Type::Int, Type::Int, Type::Int) => {}
-                    _ => {
-                        return Err(TypeError::from(format!(
-                            "expected Pow : (Int Int -> Int), found ({:?} {:?} -> {:?})",
-                            t1.lower(&mut HashMap::new()),
-                            t2.lower(&mut HashMap::new()),
-                            t3.lower(&mut HashMap::new())
-                        )))
-                    }
-                },
-                _ => {}
-            }
-        }
-        ctx_ret = ctx_ret.union(ctx);
-        decls.push(d);
+        *ctx = ctx_ret.union(ctx.clone());
+        // println!("ctx updated: {:#?}", ctx_ret);
+        decls.push(d.clone());
+        // println!("infer decl: {:#?}", d);
     }
     Ok((
         Root::new(decls, *nir.span()).apply_subst(s.clone()),
-        ctx_ret.apply_subst(s.clone()).apply_subst(s),
+        ctx.apply_subst(s.clone()).apply_subst(s),
     ))
 }
 
@@ -191,27 +63,44 @@ fn infer_decl<'src>(
 ) -> InferResult<(Vec<Constraint>, Context, Decl)> {
     match decl.kind() {
         nir::DeclKind::Let { name, expr } => {
-            let (cs, ty, ectx, expr) = match expr.kind() {
-                nir::ExprKind::Lambda { .. } => {
-                    let ty = Type::Var(TyVar::fresh());
-                    let scheme = Scheme::generalize(ctx.clone(), ty.clone());
-                    ctx.extend(*name.id(), scheme.clone());
-                    infer_expr(src, ctx, builtins, expr)?
-                }
-                _ => {
-                    let (cs, ty, ectx, expr) = infer_expr(src, ctx, builtins, expr)?;
-                    let scheme = Scheme::generalize(ectx.clone(), ty.clone());
-                    let mut tmp_ctx = ectx.clone();
-                    tmp_ctx.extend(*name.id(), scheme.clone());
-                    (cs, ty, tmp_ctx, expr)
-                }
-            };
+            let (cs, ty, ectx, expr) = infer_expr(src, ctx, builtins, expr)?;
+            let scheme = Scheme::generalize(ectx.clone(), ty.clone());
+            let mut tmp_ctx = ectx.clone();
+            tmp_ctx.extend(*name.id(), scheme.clone());
             Ok((
                 cs,
                 ctx.union(ectx),
                 Decl::new(
                     DeclKind::Let {
                         name: Ident::new(*name.id(), *name.span()),
+                        expr,
+                    },
+                    ty,
+                    *decl.span(),
+                ),
+            ))
+        }
+        nir::DeclKind::Fn { name, params, expr } => {
+            let mut ty_binders = vec![];
+            let mut tmp_ctx = ctx.clone();
+            let mut new_params = vec![];
+            for p in params.clone() {
+                let ty_binder = Type::Var(TyVar::fresh());
+                ty_binders.push(ty_binder.clone());
+                tmp_ctx = ctx.union(tmp_ctx);
+                tmp_ctx.extend(*p.id(), Scheme::new(vec![], ty_binder.clone()));
+                new_params.push(Ident::new(*p.id(), *p.span()));
+            }
+            let ty = Type::Var(TyVar::fresh());
+            tmp_ctx.extend(*name.id(), Scheme::new(vec![], ty.clone()));
+            let (cs, t, c, expr) = infer_expr(src, &mut tmp_ctx, builtins, expr)?;
+            Ok((
+                cs,
+                tmp_ctx.union(c),
+                Decl::new(
+                    DeclKind::Fn {
+                        name: Ident::new(*name.id(), *name.span()),
+                        params: new_params,
                         expr,
                     },
                     ty,
@@ -258,6 +147,7 @@ fn infer_expr<'src>(
                     ),
                 ))
             } else {
+                // println!("{:#?}", ctx);
                 Err(TypeError::from(format!(
                     "unbound variable: {:?} - \"{}\"",
                     expr,
@@ -304,47 +194,6 @@ fn infer_expr<'src>(
                 ty_args.push(t2);
             }
             let ty_ret = Type::Var(TyVar::fresh());
-            match fun.kind() {
-                ExprKind::Ident(name) => match builtins.get(name.id()) {
-                    Some(builtin) => match builtin.as_ref() {
-                        "neg" => cs1.push(Constraint::Neg(ty_args[0].clone(), ty_ret.clone())),
-                        "not" => cs1.push(Constraint::Not(ty_args[0].clone(), ty_ret.clone())),
-                        "add" => cs1.push(Constraint::Add(
-                            ty_args[0].clone(),
-                            ty_args[1].clone(),
-                            ty_ret.clone(),
-                        )),
-                        "sub" => cs1.push(Constraint::Sub(
-                            ty_args[0].clone(),
-                            ty_args[1].clone(),
-                            ty_ret.clone(),
-                        )),
-                        "mul" => cs1.push(Constraint::Mul(
-                            ty_args[0].clone(),
-                            ty_args[1].clone(),
-                            ty_ret.clone(),
-                        )),
-                        "div" => cs1.push(Constraint::Div(
-                            ty_args[0].clone(),
-                            ty_args[1].clone(),
-                            ty_ret.clone(),
-                        )),
-                        "rem" => cs1.push(Constraint::Rem(
-                            ty_args[0].clone(),
-                            ty_args[1].clone(),
-                            ty_ret.clone(),
-                        )),
-                        "pow" => cs1.push(Constraint::Pow(
-                            ty_args[0].clone(),
-                            ty_args[1].clone(),
-                            ty_ret.clone(),
-                        )),
-                        _ => {}
-                    },
-                    _ => {}
-                },
-                _ => {}
-            }
             cs1.push(Constraint::Equal(
                 t1.clone(),
                 Type::Lambda(ty_args, Box::new(ty_ret.clone())),
@@ -365,23 +214,48 @@ fn infer_expr<'src>(
             ))
         }
         nir::ExprKind::Let { name, expr, body } => {
-            let (cs, ty, mut ctx, expr) = match expr.kind() {
-                nir::ExprKind::Lambda { expr, .. } => {
-                    let ty = Type::Var(TyVar::fresh());
-                    let scheme = Scheme::generalize(ctx.clone(), ty.clone());
-                    ctx.extend(*name.id(), scheme);
-                    infer_expr(src, ctx, builtins.clone(), expr)?
-                }
-                _ => {
-                    let (cs, ty, ectx, expr) = infer_expr(src, ctx, builtins.clone(), expr)?;
-                    let scheme = Scheme::generalize(ectx.clone(), ty.clone());
-                    let mut tmp_ctx = ectx.clone();
-                    tmp_ctx.extend(*name.id(), scheme);
-                    (cs, ty, tmp_ctx, expr)
-                }
-            };
-            let (cs_body, ty_body, ctx_body, body) = infer_expr(src, &mut ctx, builtins, body)?;
-            ctx = ctx_body.union(ctx);
+            let (cs1, t1, mut ctx1, expr) = infer_expr(src, ctx, builtins.clone(), expr)?;
+            let scheme = Scheme::generalize(ctx1.clone(), t1.clone());
+            ctx1.extend(*name.id(), scheme);
+            let (cs2, t2, ctx2, body) = infer_expr(src, &mut ctx1, builtins, body)?;
+            let ctx = ctx2.union(ctx1);
+            let cs = cs1.into_iter().chain(cs2.into_iter()).collect::<Vec<_>>();
+            Ok((
+                cs,
+                t2.clone(),
+                ctx,
+                Expr::new(
+                    ExprKind::Let {
+                        name: Ident::new(*name.id(), *name.span()),
+                        expr: expr.clone(),
+                        body,
+                    },
+                    t2,
+                    *expr.span(),
+                ),
+            ))
+        }
+        nir::ExprKind::Fn {
+            name,
+            params,
+            expr,
+            body,
+        } => {
+            let mut ty_binders = vec![];
+            let mut tmp_ctx = ctx.clone();
+            let mut new_params = vec![];
+            for p in params.clone() {
+                let ty_binder = Type::Var(TyVar::fresh());
+                ty_binders.push(ty_binder.clone());
+                tmp_ctx = ctx.union(tmp_ctx);
+                tmp_ctx.extend(*p.id(), Scheme::new(vec![], ty_binder.clone()));
+                new_params.push(Ident::new(*p.id(), *p.span()));
+            }
+            let ty = Type::Var(TyVar::fresh());
+            tmp_ctx.extend(*name.id(), Scheme::new(vec![], ty.clone()));
+            let (cs, t, c, expr) = infer_expr(src, &mut tmp_ctx, builtins.clone(), expr)?;
+            // let ty = Type::Lambda(ty_binders.clone(), Box::new(t.clone()));
+            let (cs_body, ty_body, ctx_body, body) = infer_expr(src, &mut tmp_ctx, builtins, body)?;
             let cs = cs
                 .into_iter()
                 .chain(cs_body.into_iter())
@@ -389,10 +263,11 @@ fn infer_expr<'src>(
             Ok((
                 cs,
                 ty_body.clone(),
-                ctx,
+                ctx_body.union(tmp_ctx),
                 Expr::new(
-                    ExprKind::Let {
+                    ExprKind::Fn {
                         name: Ident::new(*name.id(), *name.span()),
+                        params: new_params,
                         expr: expr.clone(),
                         body,
                     },

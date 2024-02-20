@@ -29,7 +29,7 @@ fn main() {
             return;
         }
     };
-    println!("AST: {:#?}", root);
+    // println!("AST: {:#?}", root);
 
     let mut res = Resolver::new();
     let builtins = res.builtins().clone();
@@ -42,7 +42,7 @@ fn main() {
         let tir = match infer::infer(&*src, &mut ctx, builtins.clone(), &nir.unwrap()) {
             Ok((tir, new_ctx)) => {
                 // println!("Context: {:#?}", ctx);
-                println!("TIR: {:#?}", tir);
+                // println!("TIR: {:#?}", tir);
                 // ctx = ctx.union(new_ctx);
                 tir
             }

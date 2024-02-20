@@ -2,7 +2,7 @@ use crate::utils::intern::InternedString;
 
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub struct TypeError {
-    pub msg: InternedString,
+    msg: InternedString,
 }
 
 impl TypeError {

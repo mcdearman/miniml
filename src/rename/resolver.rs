@@ -58,6 +58,7 @@ impl Resolver {
                 Ok(d) => {
                     trace!("env: {:#?}", env.borrow());
                     decls.push(d);
+                    // println!("decls: {:#?}", decls);
                 }
                 Err(err) => {
                     trace!("env: {:#?}", env.borrow());
@@ -76,27 +77,14 @@ impl Resolver {
         trace!("decl env: {:#?}", env.borrow());
         match decl.kind() {
             ast::DeclKind::Let { name, expr } => {
-                // match expr.kind() {
-                // ast::ExprKind::Lambda { .. } => {
-                //     let name =
-                //         Ident::new(env.borrow_mut().define(name.name().clone()), *name.span());
-                //     let let_env = Env::new_with_parent(env.clone());
-                //     let expr = self.resolve_expr(let_env.clone(), expr)?;
-                //     Ok(Decl::new(DeclKind::Let { name, expr }, decl.span().clone()))
-                // }
-                // _ => {
                 let let_env = Env::new_with_parent(env.clone());
                 let expr = self.resolve_expr(let_env.clone(), expr)?;
                 let name = Ident::new(env.borrow_mut().define(name.name().clone()), *name.span());
                 Ok(Decl::new(DeclKind::Let { name, expr }, decl.span().clone()))
-                // }
             }
             ast::DeclKind::Fn { name, params, expr } => {
                 let fn_env = Env::new_with_parent(env.clone());
-                let name = Ident::new(
-                    fn_env.borrow_mut().define(name.name().clone()),
-                    *name.span(),
-                );
+                let name = Ident::new(env.borrow_mut().define(name.name().clone()), *name.span());
                 let params = params
                     .iter()
                     .map(|p| Ident::new(fn_env.borrow_mut().define(p.name().clone()), *p.span()))
@@ -185,22 +173,6 @@ impl Resolver {
                 *expr.span(),
             )),
             ast::ExprKind::Let { name, expr, body } => {
-                // match expr.kind() {
-                // ast::ExprKind::Lambda { .. } => {
-                //     let name =
-                //         Ident::new(env.borrow_mut().define(name.name().clone()), *name.span());
-                //     let let_env = Env::new_with_parent(env.clone());
-                //     let res_expr = self.resolve_expr(let_env.clone(), &expr)?;
-                //     let body = self.resolve_expr(let_env.clone(), &body)?;
-                //     Ok(Expr::new(
-                //         ExprKind::Let {
-                //             name,
-                //             expr: res_expr,
-                //             body,
-                //         },
-                //         *expr.span(),
-                //     ))
-                // }
                 let let_env = Env::new_with_parent(env.clone());
                 let res_expr = self.resolve_expr(let_env.clone(), expr)?;
                 let name = Ident::new(env.borrow_mut().define(name.name().clone()), *name.span());

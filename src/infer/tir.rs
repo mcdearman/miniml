@@ -63,13 +63,30 @@ impl Decl {
                 self.ty.apply_subst(subst),
                 self.span,
             ),
+            DeclKind::Fn { name, params, expr } => Decl::new(
+                DeclKind::Fn {
+                    name: name.clone(),
+                    params: params.clone(),
+                    expr: expr.apply_subst(subst.clone()),
+                },
+                self.ty.apply_subst(subst),
+                self.span,
+            ),
         }
     }
 }
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum DeclKind {
-    Let { name: Ident, expr: Expr },
+    Let {
+        name: Ident,
+        expr: Expr,
+    },
+    Fn {
+        name: Ident,
+        params: Vec<Ident>,
+        expr: Expr,
+    },
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -140,6 +157,21 @@ impl Expr {
                 self.ty.apply_subst(subst),
                 self.span,
             ),
+            ExprKind::Fn {
+                name,
+                params,
+                expr,
+                body,
+            } => Expr::new(
+                ExprKind::Fn {
+                    name: name.clone(),
+                    params: params.clone(),
+                    expr: expr.apply_subst(subst.clone()),
+                    body: body.apply_subst(subst.clone()),
+                },
+                self.ty.apply_subst(subst),
+                self.span,
+            ),
             ExprKind::If { cond, then, else_ } => Expr::new(
                 ExprKind::If {
                     cond: cond.apply_subst(subst.clone()),
@@ -158,10 +190,30 @@ impl Expr {
 pub enum ExprKind {
     Lit(Lit),
     Ident(Ident),
-    Apply { fun: Expr, args: Vec<Expr> },
-    If { cond: Expr, then: Expr, else_: Expr },
-    Let { name: Ident, expr: Expr, body: Expr },
-    Lambda { params: Vec<Ident>, expr: Expr },
+    Apply {
+        fun: Expr,
+        args: Vec<Expr>,
+    },
+    If {
+        cond: Expr,
+        then: Expr,
+        else_: Expr,
+    },
+    Let {
+        name: Ident,
+        expr: Expr,
+        body: Expr,
+    },
+    Fn {
+        name: Ident,
+        params: Vec<Ident>,
+        expr: Expr,
+        body: Expr,
+    },
+    Lambda {
+        params: Vec<Ident>,
+        expr: Expr,
+    },
     Unit,
 }
 
