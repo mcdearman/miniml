@@ -1,5 +1,5 @@
 use super::{substitution::Substitution, ty_var::TyVar};
-use crate::utils::intern::InternedString;
+use crate::utils::{intern::InternedString, unique_id::UniqueId};
 use std::{
     collections::{BTreeSet, HashMap},
     fmt::Debug,
@@ -13,7 +13,7 @@ pub enum Type {
     Var(TyVar),
     Lambda(Vec<Self>, Box<Self>),
     List(Box<Self>),
-    Record(HashMap<InternedString, Self>),
+    Record(HashMap<UniqueId, Self>),
     Unit,
 }
 

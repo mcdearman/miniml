@@ -15,6 +15,7 @@ pub enum Value {
     },
     NativeFn(fn(Vec<Value>) -> RuntimeResult<Value>),
     List(List<Value>),
+    Record(Record),
     Unit,
 }
 
@@ -27,12 +28,31 @@ impl Display for Value {
             Value::Lambda { .. } => write!(f, "<lambda>"),
             Value::NativeFn { .. } => write!(f, "<native fn>"),
             Value::List(list) => write!(f, "{}", list),
+            Value::Record(record) => write!(f, "{}", record),
             Value::Unit => write!(f, "()"),
         }
     }
 }
 
 impl Eq for Value {}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct Record {
+    fields: Vec<(UniqueId, Value)>,
+}
+
+impl Display for Record {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{{")?;
+        for (i, (k, v)) in self.fields.iter().enumerate() {
+            if i > 0 {
+                write!(f, ", ")?;
+            }
+            write!(f, "{}: {}", k, v)?;
+        }
+        write!(f, "}}")
+    }
+}
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Lit {

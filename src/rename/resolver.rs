@@ -93,12 +93,15 @@ impl Resolver {
                                 let ty = self.resolve_type(env.clone(), ty)?;
                                 Ok((name, ty))
                             })
-                            .collect::<ResResult<Vec<(Ident, Type)>>>()?;
-                        Ok(Decl::new(DeclKind::DataType(DataType::new(
-                            name,
-                            DataTypeKind::Record(fields),
+                            .collect::<ResResult<Vec<(Ident, TypeHint)>>>()?;
+                        Ok(Decl::new(
+                            DeclKind::DataType(DataType::new(
+                                name,
+                                DataTypeKind::Record { fields },
+                                decl.span().clone(),
+                            )),
                             decl.span().clone(),
-                        ))))
+                        ))
                     }
                 }
             }
@@ -272,6 +275,9 @@ impl Resolver {
 
     fn resolve_type(&mut self, env: Rc<RefCell<Env>>, ty: &ast::TypeHint) -> ResResult<TypeHint> {
         match ty.kind() {
+            ast::TypeHintKind::Int => Ok(TypeHint::new(TypeHintKind::Int, *ty.span())),
+            ast::TypeHintKind::Bool => Ok(TypeHint::new(TypeHintKind::Bool, *ty.span())),
+            ast::TypeHintKind::String => Ok(TypeHint::new(TypeHintKind::String, *ty.span())),
             ast::TypeHintKind::Ident(ident) => {
                 if let Some(name) = env.borrow().find(ident.name()) {
                     Ok(TypeHint::new(
@@ -285,25 +291,20 @@ impl Resolver {
                     ))
                 }
             }
-            ast::TypeKind::Apply { name, args } => {
-                if let Some(name) = env.borrow().find(name.name()) {
-                    Ok(Type::new(
-                        TypeKind::Apply {
-                            name: Ident::new(name, *name.span()),
-                            args: args
-                                .iter()
-                                .map(|a| self.resolve_type(env.clone(), a))
-                                .collect::<ResResult<Vec<Type>>>()?,
-                        },
-                        *ty.span(),
-                    ))
-                } else {
-                    Err(ResError::new(
-                        ResErrorKind::UnboundName(*name.name()),
-                        *name.span(),
-                    ))
-                }
-            }
+            ast::TypeHintKind::List(ty) => Ok(TypeHint::new(
+                TypeHintKind::List(self.resolve_type(env.clone(), ty)?),
+                *ty.span(),
+            )),
+            ast::TypeHintKind::Fn(args, ret) => Ok(TypeHint::new(
+                TypeHintKind::Fn(
+                    args.iter()
+                        .map(|a| self.resolve_type(env.clone(), a))
+                        .collect::<ResResult<Vec<TypeHint>>>()?,
+                    self.resolve_type(env.clone(), ret)?,
+                ),
+                *ty.span(),
+            )),
+            ast::TypeHintKind::Unit => Ok(TypeHint::new(TypeHintKind::Unit, *ty.span())),
         }
     }
 }

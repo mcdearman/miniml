@@ -62,6 +62,20 @@ fn repl_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
 
 fn decl_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
 ) -> impl ChumskyParser<'a, I, Decl, extra::Err<Rich<'a, Token, Span>>> {
+    let record = just(Token::Type)
+        .then(ident_parser())
+        .then_ignore(just(Token::Eq))
+        .then(
+            ident_parser()
+                .then_ignore(just(Token::Colon))
+                .then(type_parser())
+                .separated_by(just(Token::Comma))
+                .at_Lest(1)
+                .collect()
+                .delimited_by(just(Token::LBrace), just(Token::RBrace)),
+        )
+        .map(|(name, fields)| DeclKind::DataType(DataType::new(name, fields)));
+
     let let_ = just(Token::Let)
         .ignore_then(ident_parser())
         .then_ignore(just(Token::Eq))

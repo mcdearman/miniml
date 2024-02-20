@@ -62,6 +62,43 @@ fn infer_decl<'src>(
     decl: &nir::Decl,
 ) -> InferResult<(Vec<Constraint>, Context, Decl)> {
     match decl.kind() {
+        nir::DeclKind::DataType(dt) => match dt.kind() {
+            nir::DataTypeKind::Record { fields } => {
+                let mut ty_binders = vec![];
+                let mut tmp_ctx = ctx.clone();
+                for f in fields {
+                    let ty_binder = Type::Var(TyVar::fresh());
+                    ty_binders.push((f.0.id().clone(), ty_binder.clone()));
+                    tmp_ctx = ctx.union(tmp_ctx);
+                    tmp_ctx.extend(*f.0.id(), Scheme::new(vec![], ty_binder.clone()));
+                }
+                let ty = Type::Record(HashMap::from_iter(ty_binders.clone().into_iter()));
+                Ok((
+                    vec![],
+                    tmp_ctx,
+                    Decl::new(
+                        DeclKind::DataType(DataType::new(
+                            Ident::new(*dt.name().id(), *dt.name().span()),
+                            DataTypeKind::Record {
+                                fields: fields
+                                    .iter()
+                                    .map(|f| {
+                                        (
+                                            Ident::new(*f.0.id(), f.0.span().clone()),
+                                            Type::Var(TyVar::fresh()),
+                                        )
+                                    })
+                                    .collect(),
+                            },
+                            ty.clone(),
+                            *decl.span(),
+                        )),
+                        ty,
+                        *decl.span(),
+                    ),
+                ))
+            }
+        },
         nir::DeclKind::Let { name, expr } => {
             let (cs, ty, ectx, expr) = infer_expr(src, ctx, builtins, expr)?;
             let scheme = Scheme::generalize(ectx.clone(), ty.clone());

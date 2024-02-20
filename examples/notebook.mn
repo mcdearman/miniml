@@ -19,6 +19,14 @@ let gcd a b =
 
 type Point = { x : Int, y : Int }
 
-let main args = [1, 2, 3]
+let main args = 
+  -- print fib 1 through fib 30
+  let loop n =
+    if n <= 30 then
+      let a = print (fib n) 
+      in loop (n + 1)
+    else ()
+   in loop 1
+  
 
     

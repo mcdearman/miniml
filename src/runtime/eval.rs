@@ -5,12 +5,16 @@ use super::{
 };
 use crate::infer::tir::{self, DeclKind, Expr, ExprKind, Root};
 use itertools::Itertools;
-use std::{cell::RefCell, rc::Rc};
+use std::{cell::RefCell, collections::HashMap, rc::Rc};
 
 pub fn eval<'src>(src: &'src str, env: Rc<RefCell<Env>>, tir: Root) -> RuntimeResult<Value> {
+    let mut types = HashMap::new();
     let mut val = Value::Unit;
     for decl in tir.decls() {
         match decl.kind() {
+            DeclKind::DataType(dt) => {
+                types.insert(*dt.name().id(), dt.kind().clone());
+            }
             DeclKind::Let { name, expr, .. } => {
                 val = eval_expr(src, env.clone(), expr.clone())?;
                 env.borrow_mut().insert(*name.id(), val.clone());

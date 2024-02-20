@@ -55,6 +55,23 @@ impl Decl {
 
     pub fn apply_subst(&self, subst: Substitution) -> Decl {
         match self.kind() {
+            DeclKind::DataType(dt) => match dt.kind() {
+                DataTypeKind::Record { fields } => Decl::new(
+                    DeclKind::DataType(DataType::new(
+                        dt.name().clone(),
+                        DataTypeKind::Record {
+                            fields: fields
+                                .iter()
+                                .map(|(name, ty)| (name.clone(), ty.apply_subst(subst.clone())))
+                                .collect(),
+                        },
+                        dt.ty().apply_subst(subst.clone()),
+                        self.span,
+                    )),
+                    self.ty.apply_subst(subst),
+                    self.span,
+                ),
+            },
             DeclKind::Let { name, expr } => Decl::new(
                 DeclKind::Let {
                     name: name.clone(),
@@ -78,6 +95,7 @@ impl Decl {
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum DeclKind {
+    DataType(DataType),
     Let {
         name: Ident,
         expr: Expr,
@@ -87,6 +105,49 @@ pub enum DeclKind {
         params: Vec<Ident>,
         expr: Expr,
     },
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct DataType {
+    name: Ident,
+    kind: Box<DataTypeKind>,
+    ty: Type,
+    span: Span,
+}
+
+impl DataType {
+    pub fn new(name: Ident, kind: DataTypeKind, ty: Type, span: Span) -> Self {
+        Self {
+            name,
+            kind: Box::new(kind),
+            ty,
+            span,
+        }
+    }
+
+    pub fn name(&self) -> &Ident {
+        &self.name
+    }
+
+    pub fn kind(&self) -> &DataTypeKind {
+        &self.kind
+    }
+
+    pub fn ty(&self) -> &Type {
+        &self.ty
+    }
+
+    pub fn span(&self) -> &Span {
+        &self.span
+    }
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum DataTypeKind {
+    Record { fields: Vec<(Ident, Type)> },
+    // Sum {
+    //     cases: Vec<(Ident, Option<SumTypeCaseHint>)>,
+    // },
 }
 
 #[derive(Debug, Clone, PartialEq)]
