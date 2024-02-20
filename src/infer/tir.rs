@@ -99,26 +99,26 @@ impl Decl {
 pub enum DeclKind {
     DataType(DataType),
     Let {
-        name: Ident,
+        name: UniqueIdent,
         expr: Expr,
     },
     Fn {
-        name: Ident,
-        params: Vec<Ident>,
+        name: UniqueIdent,
+        params: Vec<UniqueIdent>,
         expr: Expr,
     },
 }
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct DataType {
-    name: Ident,
+    name: UniqueIdent,
     kind: Box<DataTypeKind>,
     ty: Type,
     span: Span,
 }
 
 impl DataType {
-    pub fn new(name: Ident, kind: DataTypeKind, ty: Type, span: Span) -> Self {
+    pub fn new(name: UniqueIdent, kind: DataTypeKind, ty: Type, span: Span) -> Self {
         Self {
             name,
             kind: Box::new(kind),
@@ -127,7 +127,7 @@ impl DataType {
         }
     }
 
-    pub fn name(&self) -> &Ident {
+    pub fn name(&self) -> &UniqueIdent {
         &self.name
     }
 
@@ -146,7 +146,7 @@ impl DataType {
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum DataTypeKind {
-    Record { fields: HashMap<Ident, Type> },
+    Record { fields: Vec<(Ident, Type)> },
     // Sum {
     //     cases: Vec<(Ident, Option<SumTypeCaseHint>)>,
     // },
@@ -249,6 +249,17 @@ impl Expr {
                 self.ty.apply_subst(subst),
                 self.span,
             ),
+            ExprKind::Record { name, fields } => Expr::new(
+                ExprKind::Record {
+                    name: name.clone(),
+                    fields: fields
+                        .into_iter()
+                        .map(|(k, v)| (k.clone(), v.apply_subst(subst.clone())))
+                        .collect(),
+                },
+                self.ty.apply_subst(subst),
+                self.span,
+            ),
             ExprKind::Unit => self.clone(),
         }
     }
@@ -257,7 +268,7 @@ impl Expr {
 #[derive(Debug, Clone, PartialEq)]
 pub enum ExprKind {
     Lit(Lit),
-    Ident(Ident),
+    Ident(UniqueIdent),
     Apply {
         fun: Expr,
         args: Vec<Expr>,
@@ -268,31 +279,55 @@ pub enum ExprKind {
         else_: Expr,
     },
     Let {
-        name: Ident,
+        name: UniqueIdent,
         expr: Expr,
         body: Expr,
     },
     Fn {
-        name: Ident,
-        params: Vec<Ident>,
+        name: UniqueIdent,
+        params: Vec<UniqueIdent>,
         expr: Expr,
         body: Expr,
     },
     Lambda {
-        params: Vec<Ident>,
+        params: Vec<UniqueIdent>,
         expr: Expr,
     },
     List(List<Expr>),
+    Record {
+        name: UniqueIdent,
+        fields: Vec<(Ident, Expr)>,
+    },
     Unit,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Ident {
-    id: UniqueId,
+    name: InternedString,
     span: Span,
 }
 
 impl Ident {
+    pub fn new(name: InternedString, span: Span) -> Self {
+        Self { name, span }
+    }
+
+    pub fn name(&self) -> &InternedString {
+        &self.name
+    }
+
+    pub fn span(&self) -> &Span {
+        &self.span
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct UniqueIdent {
+    id: UniqueId,
+    span: Span,
+}
+
+impl UniqueIdent {
     pub fn new(id: UniqueId, span: Span) -> Self {
         Self { id, span }
     }

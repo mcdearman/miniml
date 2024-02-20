@@ -161,9 +161,10 @@ pub enum ExprKind {
     List(Vec<Expr>),
     // Array(Vec<Expr>),
     // Tuple(Vec<Expr>),
-    // Record {
-    //     fields: Vec<(Ident, Expr)>,
-    // },
+    Record {
+        name: Option<Ident>,
+        fields: Vec<(Ident, Expr)>,
+    },
     // Sum {
     //     case: Ident,
     //     expr: Option<Expr>,

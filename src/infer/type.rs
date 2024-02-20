@@ -1,5 +1,5 @@
 use super::{substitution::Substitution, ty_var::TyVar};
-use crate::utils::unique_id::UniqueId;
+use crate::utils::{intern::InternedString, unique_id::UniqueId};
 use std::{
     collections::{BTreeSet, HashMap},
     fmt::Debug,
@@ -13,7 +13,7 @@ pub enum Type {
     Var(TyVar),
     Lambda(Vec<Self>, Box<Self>),
     List(Box<Self>),
-    Record(UniqueId, HashMap<UniqueId, Self>),
+    Record(UniqueId, Vec<(InternedString, Self)>),
     Unit,
 }
 
@@ -61,9 +61,9 @@ impl Type {
             }
             Self::List(ty) => Self::List(Box::new(ty.lower(vars))),
             Self::Record(name, fields) => {
-                let mut lowered_fields = HashMap::new();
+                let mut lowered_fields = vec![];
                 for (k, v) in fields {
-                    lowered_fields.insert(k.clone(), v.lower(vars));
+                    lowered_fields.push((k.clone(), v.lower(vars)));
                 }
                 Self::Record(*name, lowered_fields)
             }

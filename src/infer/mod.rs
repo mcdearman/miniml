@@ -13,7 +13,7 @@ use crate::{
     utils::{intern::InternedString, list::List, unique_id::UniqueId},
 };
 use itertools::Itertools;
-use std::{collections::HashMap, vec};
+use std::collections::HashMap;
 
 mod constraint;
 pub mod context;
@@ -64,9 +64,9 @@ fn infer_decl<'src>(
         nir::DeclKind::DataType(dt) => match dt.kind() {
             nir::DataTypeKind::Record { fields } => {
                 let mut constraints = vec![];
-                let mut new_fields = HashMap::new();
+                let mut new_fields = vec![];
                 let mut tmp_ctx = ctx.clone();
-                for (name, hint) in fields {
+                for (field, hint) in fields {
                     let var = Type::Var(TyVar::fresh());
                     let field_type = match hint.kind() {
                         nir::TypeHintKind::Int => Type::Int,
@@ -88,15 +88,15 @@ fn infer_decl<'src>(
                         nir::TypeHintKind::Unit => Type::Unit,
                     };
                     constraints.push(Constraint::Equal(var.clone(), field_type.clone()));
-                    new_fields.insert(Ident::new(*name.id(), *name.span()), var.clone());
+                    new_fields.push((Ident::new(*field.name(), *field.span()), var.clone()));
                     tmp_ctx = ctx.union(tmp_ctx);
-                    tmp_ctx.extend(*name.id(), Scheme::new(vec![], field_type.clone()));
+                    // tmp_ctx.extend(*field.name(), Scheme::new(vec![], field_type.clone()));
                 }
                 let ty = Type::Record(
                     *dt.name().id(),
                     new_fields
                         .iter()
-                        .map(|(k, v)| (*k.id(), v.clone()))
+                        .map(|(k, v)| (*k.name(), v.clone()))
                         .collect(),
                 );
                 tmp_ctx.extend(*dt.name().id(), Scheme::new(vec![], ty.clone()));
@@ -105,7 +105,7 @@ fn infer_decl<'src>(
                     tmp_ctx,
                     Decl::new(
                         DeclKind::DataType(DataType::new(
-                            Ident::new(*dt.name().id(), *dt.name().span()),
+                            UniqueIdent::new(*dt.name().id(), *dt.name().span()),
                             DataTypeKind::Record { fields: new_fields },
                             ty.clone(),
                             *decl.span(),
@@ -126,7 +126,7 @@ fn infer_decl<'src>(
                 ctx.union(tmp_ctx),
                 Decl::new(
                     DeclKind::Let {
-                        name: Ident::new(*name.id(), *name.span()),
+                        name: UniqueIdent::new(*name.id(), *name.span()),
                         expr,
                     },
                     ty,
@@ -143,7 +143,7 @@ fn infer_decl<'src>(
                 ty_binders.push(ty_binder.clone());
                 tmp_ctx = ctx.union(tmp_ctx);
                 tmp_ctx.extend(*p.id(), Scheme::new(vec![], ty_binder.clone()));
-                new_params.push(Ident::new(*p.id(), *p.span()));
+                new_params.push(UniqueIdent::new(*p.id(), *p.span()));
             }
             let ty = Type::Var(TyVar::fresh());
             tmp_ctx.extend(*name.id(), Scheme::new(vec![], ty.clone()));
@@ -157,7 +157,7 @@ fn infer_decl<'src>(
                 tmp_ctx.union(c),
                 Decl::new(
                     DeclKind::Fn {
-                        name: Ident::new(*name.id(), *name.span()),
+                        name: UniqueIdent::new(*name.id(), *name.span()),
                         params: new_params,
                         expr,
                     },
@@ -205,7 +205,7 @@ fn infer_expr<'src>(
                     ty.clone(),
                     ctx.clone(),
                     Expr::new(
-                        ExprKind::Ident(Ident::new(*name.id(), *name.span())),
+                        ExprKind::Ident(UniqueIdent::new(*name.id(), *name.span())),
                         ty.clone(),
                         *expr.span(),
                     ),
@@ -263,7 +263,7 @@ fn infer_expr<'src>(
                 ctx,
                 Expr::new(
                     ExprKind::Let {
-                        name: Ident::new(*name.id(), *name.span()),
+                        name: UniqueIdent::new(*name.id(), *name.span()),
                         expr: expr.clone(),
                         body,
                     },
@@ -286,7 +286,7 @@ fn infer_expr<'src>(
                 ty_binders.push(ty_binder.clone());
                 tmp_ctx = ctx.union(tmp_ctx);
                 tmp_ctx.extend(*p.id(), Scheme::new(vec![], ty_binder.clone()));
-                new_params.push(Ident::new(*p.id(), *p.span()));
+                new_params.push(UniqueIdent::new(*p.id(), *p.span()));
             }
             let ty = Type::Var(TyVar::fresh());
             tmp_ctx.extend(*name.id(), Scheme::new(vec![], ty.clone()));
@@ -303,7 +303,7 @@ fn infer_expr<'src>(
                 ctx_body.union(tmp_ctx),
                 Expr::new(
                     ExprKind::Fn {
-                        name: Ident::new(*name.id(), *name.span()),
+                        name: UniqueIdent::new(*name.id(), *name.span()),
                         params: new_params,
                         expr: expr.clone(),
                         body,
@@ -348,7 +348,7 @@ fn infer_expr<'src>(
                 ty_binders.push(ty_binder.clone());
                 tmp_ctx = ctx.union(tmp_ctx);
                 tmp_ctx.extend(*p.id(), Scheme::new(vec![], ty_binder.clone()));
-                new_params.push(Ident::new(*p.id(), *p.span()));
+                new_params.push(UniqueIdent::new(*p.id(), *p.span()));
             }
             let (cs, t, c, expr) = infer_expr(src, &mut tmp_ctx, builtins, expr)?;
             let ty = Type::Lambda(ty_binders.clone(), Box::new(t.clone()));
@@ -388,6 +388,21 @@ fn infer_expr<'src>(
                 Expr::new(ExprKind::List(List::from(new_exprs)), ty, *expr.span()),
             ))
         }
+        nir::ExprKind::Record { name, fields } => {
+            if let Some(ident) = name {
+                if let Some(scm) = ctx.get(ident.id()) {
+                    todo!()
+                } else {
+                    return Err(TypeError::from(format!(
+                        "unbound type: {:?} - \"{}\"",
+                        ident,
+                        src[*ident.span()].to_string()
+                    )));
+                }
+            }
+            todo!()
+        }
+        _ => todo!(),
     }
 }
 

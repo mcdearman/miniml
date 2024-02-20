@@ -70,6 +70,7 @@ fn decl_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
                 .then_ignore(just(Token::Colon))
                 .then(type_hint_parser())
                 .separated_by(just(Token::Comma))
+                .allow_trailing()
                 .at_least(1)
                 .collect()
                 .delimited_by(just(Token::LBrace), just(Token::RBrace)),
@@ -154,6 +155,19 @@ fn expr_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
             .delimited_by(just(Token::LBrack), just(Token::RBrack))
             .map(|exprs| ExprKind::List(exprs));
 
+        let record = ident_parser()
+            .or_not()
+            .then(
+                ident_parser()
+                    .then_ignore(just(Token::Eq))
+                    .then(expr.clone())
+                    .separated_by(just(Token::Comma))
+                    .allow_trailing()
+                    .collect()
+                    .delimited_by(just(Token::LBrace), just(Token::RBrace)),
+            )
+            .map(|(name, fields)| ExprKind::Record { name, fields });
+
         let atom = unit
             .or(lit)
             .or(ident)
@@ -162,6 +176,7 @@ fn expr_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
             .or(let_)
             .or(fn_)
             .or(list)
+            .or(record)
             .map_with(|kind, e| Expr::new(kind, e.span()))
             .or(just(Token::LParen)
                 .ignore_then(expr)

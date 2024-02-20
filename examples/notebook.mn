@@ -2,11 +2,11 @@
 --   if n <= 1 then n
 --   else fib (n - 1) + fib (n - 2)
 
-let fib_iter n =
-  let loop i a b =
-    if i = n then a
-    else loop (i + 1) b (a + b)
-  in loop 0 0 1
+-- let fib_iter n =
+--   let loop i a b =
+--     if i = n then a
+--     else loop (i + 1) b (a + b)
+--   in loop 0 0 1
 
 -- let ack m n =
 --   if m = 0 then n + 1
@@ -17,16 +17,18 @@ let fib_iter n =
 --   if b = 0 then a
 --   else gcd b (a % b)
 
--- type Point = { x : Int, y : Int }
+type Point = { x : Int, y : Int }
 -- type Foo = { a : Int, b : Point }
 
-let main args = 
-  let loop n =
-    if n <= 30 then
-      let a = println (fib_iter n) 
-      in loop (n + 1)
-    else ()
-   in loop 1
+let main args = { x = 1, y = 2 }
+
+-- let main args = 
+--   let loop n =
+--     if n <= 30 then
+--       let a = println (fib_iter n) 
+--       in loop (n + 1)
+--     else ()
+--    in loop 1
   
 
     
