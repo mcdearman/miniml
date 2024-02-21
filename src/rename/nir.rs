@@ -144,8 +144,8 @@ pub enum ExprKind {
     },
     List(Vec<Expr>),
     Record {
-        name: Option<UniqueIdent>,
-        fields: Vec<(UniqueIdent, Expr)>,
+        name: Option<Ident>,
+        fields: Vec<(Ident, Expr)>,
     },
     Unit,
 }

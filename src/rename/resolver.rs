@@ -284,20 +284,15 @@ impl Resolver {
             ast::ExprKind::Record { name, fields } => {
                 let fields = fields
                     .iter()
-                    .map(|(name, expr)| {
-                        let name = UniqueIdent::new(
-                            env.borrow_mut().define(name.name().clone()),
-                            *name.span(),
-                        );
+                    .map(|(ident, expr)| {
+                        let new_ident = Ident::new(ident.name().clone(), *ident.span());
                         let expr = self.resolve_expr(env.clone(), expr)?;
-                        Ok((name, expr))
+                        Ok((new_ident, expr))
                     })
-                    .collect::<ResResult<Vec<(UniqueIdent, Expr)>>>()?;
+                    .collect::<ResResult<Vec<(Ident, Expr)>>>()?;
                 Ok(Expr::new(
                     ExprKind::Record {
-                        name: name
-                            .as_ref()
-                            .map(|n| UniqueIdent::new(UniqueId::gen(), *n.span())),
+                        name: name.map(|n| Ident::new(*n.name(), *n.span())),
                         fields,
                     },
                     *expr.span(),

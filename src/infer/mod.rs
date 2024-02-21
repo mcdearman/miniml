@@ -333,12 +333,6 @@ fn infer_expr<'src>(
                 Expr::new(ExprKind::If { cond, then, else_ }, t2, *expr.span()),
             ))
         }
-        nir::ExprKind::Unit => Ok((
-            vec![],
-            Type::Unit,
-            ctx.clone(),
-            Expr::new(ExprKind::Unit, Type::Unit, *expr.span()),
-        )),
         nir::ExprKind::Lambda { params, expr } => {
             let mut ty_binders = vec![];
             let mut tmp_ctx = ctx.clone();
@@ -402,6 +396,12 @@ fn infer_expr<'src>(
             }
             todo!()
         }
+        nir::ExprKind::Unit => Ok((
+            vec![],
+            Type::Unit,
+            ctx.clone(),
+            Expr::new(ExprKind::Unit, Type::Unit, *expr.span()),
+        )),
         _ => todo!(),
     }
 }
