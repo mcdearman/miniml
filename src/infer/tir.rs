@@ -22,13 +22,13 @@ impl Root {
         &self.span
     }
 
-    pub fn apply_subst(&self, subst: Substitution) -> Self {
+    pub fn apply_subst(&self, subst: &Substitution) -> Self {
         Self {
             decls: self
                 .clone()
                 .decls
                 .into_iter()
-                .map(|d| d.apply_subst(subst.clone()))
+                .map(|d| d.apply_subst(subst))
                 .collect(),
             span: self.span,
         }
@@ -55,7 +55,7 @@ impl Decl {
         &self.span
     }
 
-    pub fn apply_subst(&self, subst: Substitution) -> Decl {
+    pub fn apply_subst(&self, subst: &Substitution) -> Decl {
         match self.kind() {
             DeclKind::DataType(dt) => match dt.kind() {
                 DataTypeKind::Record { fields } => Decl::new(
@@ -64,10 +64,10 @@ impl Decl {
                         DataTypeKind::Record {
                             fields: fields
                                 .iter()
-                                .map(|(name, ty)| (name.clone(), ty.apply_subst(subst.clone())))
+                                .map(|(name, ty)| (name.clone(), ty.apply_subst(subst)))
                                 .collect(),
                         },
-                        dt.ty().apply_subst(subst.clone()),
+                        dt.ty().apply_subst(subst),
                         self.span,
                     )),
                     self.ty.apply_subst(subst),
@@ -77,7 +77,7 @@ impl Decl {
             DeclKind::Let { name, expr } => Decl::new(
                 DeclKind::Let {
                     name: name.clone(),
-                    expr: expr.apply_subst(subst.clone()),
+                    expr: expr.apply_subst(subst),
                 },
                 self.ty.apply_subst(subst),
                 self.span,
@@ -86,7 +86,7 @@ impl Decl {
                 DeclKind::Fn {
                     name: name.clone(),
                     params: params.clone(),
-                    expr: expr.apply_subst(subst.clone()),
+                    expr: expr.apply_subst(subst),
                 },
                 self.ty.apply_subst(subst),
                 self.span,
@@ -180,7 +180,7 @@ impl Expr {
         &self.span
     }
 
-    pub fn apply_subst(&self, subst: Substitution) -> Self {
+    pub fn apply_subst(&self, subst: &Substitution) -> Self {
         match self.kind() {
             ExprKind::Lit(l) => Expr::new(
                 ExprKind::Lit(l.clone()),
@@ -194,11 +194,8 @@ impl Expr {
             ),
             ExprKind::Apply { fun, args } => Expr::new(
                 ExprKind::Apply {
-                    fun: fun.apply_subst(subst.clone()),
-                    args: args
-                        .into_iter()
-                        .map(|arg| arg.apply_subst(subst.clone()))
-                        .collect(),
+                    fun: fun.apply_subst(subst),
+                    args: args.into_iter().map(|arg| arg.apply_subst(subst)).collect(),
                 },
                 self.ty.apply_subst(subst),
                 self.span,
@@ -206,8 +203,8 @@ impl Expr {
             ExprKind::Let { name, expr, body } => Expr::new(
                 ExprKind::Let {
                     name: name.clone(),
-                    expr: expr.apply_subst(subst.clone()),
-                    body: body.apply_subst(subst.clone()),
+                    expr: expr.apply_subst(subst),
+                    body: body.apply_subst(subst),
                 },
                 self.ty.apply_subst(subst),
                 self.span,
@@ -221,17 +218,17 @@ impl Expr {
                 ExprKind::Fn {
                     name: name.clone(),
                     params: params.clone(),
-                    expr: expr.apply_subst(subst.clone()),
-                    body: body.apply_subst(subst.clone()),
+                    expr: expr.apply_subst(subst),
+                    body: body.apply_subst(subst),
                 },
                 self.ty.apply_subst(subst),
                 self.span,
             ),
             ExprKind::If { cond, then, else_ } => Expr::new(
                 ExprKind::If {
-                    cond: cond.apply_subst(subst.clone()),
-                    then: then.apply_subst(subst.clone()),
-                    else_: else_.apply_subst(subst.clone()),
+                    cond: cond.apply_subst(subst),
+                    then: then.apply_subst(subst),
+                    else_: else_.apply_subst(subst),
                 },
                 self.ty.apply_subst(subst),
                 self.span,
@@ -239,7 +236,7 @@ impl Expr {
             ExprKind::Lambda { params, expr } => Expr::new(
                 ExprKind::Lambda {
                     params: params.clone(),
-                    expr: expr.apply_subst(subst.clone()),
+                    expr: expr.apply_subst(subst),
                 },
                 self.ty.apply_subst(subst),
                 self.span,
@@ -254,7 +251,7 @@ impl Expr {
                     name: name.clone(),
                     fields: fields
                         .into_iter()
-                        .map(|(k, v)| (k.clone(), v.apply_subst(subst.clone())))
+                        .map(|(k, v)| (k.clone(), v.apply_subst(subst)))
                         .collect(),
                 },
                 self.ty.apply_subst(subst),

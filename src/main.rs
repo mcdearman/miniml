@@ -1,4 +1,5 @@
 use crate::{lex::token_stream::TokenStream, parse::parse};
+use infer::TypeSolver;
 use rename::{nir, resolver::Resolver};
 use runtime::{default_env, eval::eval};
 use std::fs;
@@ -41,12 +42,11 @@ fn main() {
             panic!("{:#?}", errors);
         }
         // println!("NIR: {:#?}", root);
-        let mut ctx = infer::context::Context::from_builtins(builtins.clone());
-        let tir = match infer::infer(&*src, &mut ctx, builtins.clone(), &root) {
-            Ok((tir, new_ctx)) => {
-                // println!("Context: {:#?}", ctx);
+
+        let mut solver = TypeSolver::new(&*src, root, builtins);
+        let tir = match solver.solve() {
+            Ok(tir) => {
                 println!("TIR: {:#?}", tir);
-                // ctx = ctx.union(new_ctx);
                 tir
             }
             Err(err) => {

@@ -35,12 +35,12 @@ impl Substitution {
     }
 
     // composeSubst s1 s2 = Map.union (Map.map (applySubst s1) s2) s1
-    pub fn compose(&self, other: Self) -> Self {
+    pub fn compose(&self, other: &Self) -> Self {
         self.union(
             other
                 .clone()
                 .into_iter()
-                .map(|(var, ty)| (var, ty.apply_subst(self.clone())))
+                .map(|(var, ty)| (var, ty.apply_subst(self)))
                 .collect(),
         )
     }

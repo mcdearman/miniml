@@ -1,4 +1,8 @@
-use super::{substitution::Substitution, ty_var::TyVar};
+use super::{
+    error::{InferResult, TypeError},
+    substitution::Substitution,
+    ty_var::TyVar,
+};
 use crate::utils::{intern::InternedString, unique_id::UniqueId};
 use std::{
     collections::{BTreeSet, HashMap},
@@ -18,15 +22,12 @@ pub enum Type {
 }
 
 impl Type {
-    pub(super) fn apply_subst(&self, subst: Substitution) -> Type {
+    pub(super) fn apply_subst(&self, subst: &Substitution) -> Type {
         match self {
             Self::Int | Self::Bool | Self::String | Self::Unit => self.clone(),
             Self::Var(n) => subst.get(&n).cloned().unwrap_or(self.clone()),
             Self::Lambda(params, body) => Self::Lambda(
-                params
-                    .into_iter()
-                    .map(|p| p.apply_subst(subst.clone()))
-                    .collect(),
+                params.into_iter().map(|p| p.apply_subst(subst)).collect(),
                 Box::new(body.apply_subst(subst)),
             ),
             Self::List(ty) => Self::List(Box::new(ty.apply_subst(subst))),
@@ -34,9 +35,39 @@ impl Type {
                 *name,
                 fields
                     .iter()
-                    .map(|(k, v)| (k.clone(), v.apply_subst(subst.clone())))
+                    .map(|(k, v)| (k.clone(), v.apply_subst(subst)))
                     .collect(),
             ),
+        }
+    }
+
+    pub fn unify(&self, other: &Self) -> InferResult<Substitution> {
+        // println!("unify: {:?} and {:?}", t1, t2);
+        match (self, other) {
+            (Type::Int, Type::Int) | (Type::Bool, Type::Bool) | (Type::Unit, Type::Unit) => {
+                Ok(Substitution::new())
+            }
+            (Type::Lambda(p1, b1), Type::Lambda(p2, b2)) => {
+                let s1 = p1.iter().zip(p2.iter()).fold(
+                    Ok(Substitution::new()),
+                    |acc: InferResult<Substitution>, (t1, t2)| {
+                        let s = acc?;
+                        let t1 = t1.apply_subst(&s);
+                        let t2 = t2.apply_subst(&s);
+                        let s1 = self.unify(t2)?;
+                        Ok(s1.compose(&s))
+                    },
+                )?;
+                let s2 = b1.apply_subst(&s1).unify(&b2.apply_subst(&s1))?;
+                Ok(s1.compose(&s2))
+            }
+            (_, Type::Var(var)) => var.bind(*self),
+            (Type::Var(var), _) => var.bind(other),
+            _ => Err(TypeError::from(format!(
+                "cannot unify {:?} and {:?}",
+                self.lower(&mut HashMap::new()),
+                other.lower(&mut HashMap::new())
+            ))),
         }
     }
 

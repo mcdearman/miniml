@@ -14,14 +14,14 @@ impl Context {
         }
     }
 
-    pub fn from_builtins(builtins: HashMap<UniqueId, InternedString>) -> Self {
+    pub fn from_builtins(builtins: &HashMap<UniqueId, InternedString>) -> Self {
         let mut vars = HashMap::new();
         for (id, name) in builtins {
             match name.as_ref() {
                 "neg" => {
                     let var = TyVar::fresh();
                     vars.insert(
-                        id,
+                        *id,
                         Scheme::new(
                             vec![var],
                             Type::Lambda(vec![Type::Var(var)], Box::new(Type::Var(var))),
@@ -31,7 +31,7 @@ impl Context {
                 "not" => {
                     let var = TyVar::fresh();
                     vars.insert(
-                        id,
+                        *id,
                         Scheme::new(
                             vec![var],
                             Type::Lambda(vec![Type::Var(var)], Box::new(Type::Var(var))),
@@ -41,7 +41,7 @@ impl Context {
                 "add" => {
                     let var = TyVar::fresh();
                     vars.insert(
-                        id,
+                        *id,
                         Scheme::new(
                             vec![var],
                             Type::Lambda(
@@ -54,7 +54,7 @@ impl Context {
                 "sub" => {
                     let var = TyVar::fresh();
                     vars.insert(
-                        id,
+                        *id,
                         Scheme::new(
                             vec![var],
                             Type::Lambda(
@@ -67,7 +67,7 @@ impl Context {
                 "mul" => {
                     let var = TyVar::fresh();
                     vars.insert(
-                        id,
+                        *id,
                         Scheme::new(
                             vec![var],
                             Type::Lambda(
@@ -80,7 +80,7 @@ impl Context {
                 "div" => {
                     let var = TyVar::fresh();
                     vars.insert(
-                        id,
+                        *id,
                         Scheme::new(
                             vec![var],
                             Type::Lambda(
@@ -93,7 +93,7 @@ impl Context {
                 "rem" => {
                     let var = TyVar::fresh();
                     vars.insert(
-                        id,
+                        *id,
                         Scheme::new(
                             vec![var],
                             Type::Lambda(
@@ -106,7 +106,7 @@ impl Context {
                 "pow" => {
                     let var = TyVar::fresh();
                     vars.insert(
-                        id,
+                        *id,
                         Scheme::new(
                             vec![var],
                             Type::Lambda(
@@ -119,7 +119,7 @@ impl Context {
                 "eq" => {
                     let var = TyVar::fresh();
                     vars.insert(
-                        id,
+                        *id,
                         Scheme::new(
                             vec![var],
                             Type::Lambda(
@@ -132,7 +132,7 @@ impl Context {
                 "neq" => {
                     let var = TyVar::fresh();
                     vars.insert(
-                        id,
+                        *id,
                         Scheme::new(
                             vec![var],
                             Type::Lambda(
@@ -145,7 +145,7 @@ impl Context {
                 "lt" => {
                     let var = TyVar::fresh();
                     vars.insert(
-                        id,
+                        *id,
                         Scheme::new(
                             vec![var],
                             Type::Lambda(
@@ -158,7 +158,7 @@ impl Context {
                 "lte" => {
                     let var = TyVar::fresh();
                     vars.insert(
-                        id,
+                        *id,
                         Scheme::new(
                             vec![var],
                             Type::Lambda(
@@ -171,7 +171,7 @@ impl Context {
                 "gt" => {
                     let var = TyVar::fresh();
                     vars.insert(
-                        id,
+                        *id,
                         Scheme::new(
                             vec![var],
                             Type::Lambda(
@@ -184,7 +184,7 @@ impl Context {
                 "gte" => {
                     let var = TyVar::fresh();
                     vars.insert(
-                        id,
+                        *id,
                         Scheme::new(
                             vec![var],
                             Type::Lambda(
@@ -197,7 +197,7 @@ impl Context {
                 "and" => {
                     let var = TyVar::fresh();
                     vars.insert(
-                        id,
+                        *id,
                         Scheme::new(
                             vec![var],
                             Type::Lambda(vec![Type::Bool, Type::Bool], Box::new(Type::Bool)),
@@ -207,7 +207,7 @@ impl Context {
                 "or" => {
                     let var = TyVar::fresh();
                     vars.insert(
-                        id,
+                        *id,
                         Scheme::new(
                             vec![var],
                             Type::Lambda(vec![Type::Bool, Type::Bool], Box::new(Type::Bool)),
@@ -217,7 +217,7 @@ impl Context {
                 "println" => {
                     let var = TyVar::fresh();
                     vars.insert(
-                        id,
+                        *id,
                         Scheme::new(
                             vec![var],
                             Type::Lambda(vec![Type::Var(var)], Box::new(Type::Unit)),
@@ -249,13 +249,13 @@ impl Context {
         }
     }
 
-    pub(super) fn apply_subst(&self, subst: Substitution) -> Self {
+    pub(super) fn apply_subst(&self, subst: &Substitution) -> Self {
         Self {
             vars: self
                 .vars
                 .clone()
                 .into_iter()
-                .map(|(id, scheme)| (id, scheme.apply_subst(subst.clone())))
+                .map(|(id, scheme)| (id, scheme.apply_subst(subst)))
                 .collect(),
         }
     }

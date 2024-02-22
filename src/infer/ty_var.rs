@@ -1,3 +1,8 @@
+use super::{
+    error::{InferResult, TypeError},
+    r#type::Type,
+    substitution::Substitution,
+};
 use crate::utils::unique_id::UniqueId;
 use std::fmt::{Debug, Display};
 
@@ -11,6 +16,21 @@ impl TyVar {
 
     pub fn id(&self) -> UniqueId {
         self.0
+    }
+
+    pub fn bind(&self, ty: Type) -> InferResult<Substitution> {
+        if ty.clone() == Type::Var(self.clone()) {
+            Ok(Substitution::new())
+        } else if ty.free_vars().contains(self) {
+            Err(TypeError::from(format!(
+                "occurs check failed: {} occurs in {:?}",
+                self, ty
+            )))
+        } else {
+            let mut subst = Substitution::new();
+            subst.insert(*self, ty.clone());
+            Ok(subst)
+        }
     }
 }
 

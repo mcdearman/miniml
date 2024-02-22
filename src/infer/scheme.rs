@@ -12,14 +12,14 @@ impl Scheme {
         Self { vars, ty }
     }
 
-    pub fn apply_subst(&self, subst: Substitution) -> Self {
+    pub fn apply_subst(&self, subst: &Substitution) -> Self {
         let mut new_sub = subst.clone();
         for var in &self.vars {
             new_sub.remove(var);
         }
         Scheme {
             vars: self.vars.clone(),
-            ty: self.ty.apply_subst(new_sub),
+            ty: self.ty.apply_subst(&new_sub),
         }
     }
 
@@ -47,6 +47,6 @@ impl Scheme {
         for var in self.clone().vars {
             subst.insert(var, Type::Var(TyVar::fresh()));
         }
-        self.ty.apply_subst(subst)
+        self.ty.apply_subst(&subst)
     }
 }
