@@ -20,8 +20,8 @@ impl Root {
         &self.decls
     }
 
-    pub fn span(&self) -> &Span {
-        &self.span
+    pub fn span(&self) -> Span {
+        self.span
     }
 }
 
@@ -36,12 +36,12 @@ impl Decl {
         Self { kind, span }
     }
 
-    pub fn kind(&self) -> &DeclKind {
-        &self.kind
+    pub fn kind(&self) -> DeclKind {
+        self.kind
     }
 
-    pub fn span(&self) -> &Span {
-        &self.span
+    pub fn span(&self) -> Span {
+        self.span
     }
 }
 
@@ -75,16 +75,16 @@ impl DataType {
         }
     }
 
-    pub fn name(&self) -> &ScopedIdent {
-        &self.name
+    pub fn name(&self) -> ScopedIdent {
+        self.name
     }
 
-    pub fn kind(&self) -> &DataTypeKind {
-        &self.kind
+    pub fn kind(&self) -> DataTypeKind {
+        *self.kind
     }
 
-    pub fn span(&self) -> &Span {
-        &self.span
+    pub fn span(&self) -> Span {
+        self.span
     }
 }
 
@@ -110,12 +110,12 @@ impl Expr {
         }
     }
 
-    pub fn kind(&self) -> &ExprKind {
-        &self.kind
+    pub fn kind(&self) -> ExprKind {
+        *self.kind
     }
 
-    pub fn span(&self) -> &Span {
-        &self.span
+    pub fn span(&self) -> Span {
+        self.span
     }
 }
 

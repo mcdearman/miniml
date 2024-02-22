@@ -146,11 +146,11 @@ impl<'src> TypeSolver<'src> {
             nir::DeclKind::Let { name, expr } => {
                 let solved_expr = self.infer_expr(expr)?;
                 let scheme = solved_expr.ty().generalize(&self.ctx);
-                self.ctx.extend(*name.id(), scheme);
+                self.ctx.extend(name.id(), scheme);
 
                 Ok(Decl::new(
                     DeclKind::Let {
-                        name: UniqueIdent::new(*name.id(), *name.span()),
+                        name
                         expr: solved_expr,
                     },
                     solved_expr.ty(),
