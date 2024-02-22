@@ -1,4 +1,9 @@
-use crate::utils::{intern::InternedString, span::Span, unique_id::UniqueId};
+use crate::utils::{
+    ident::{Ident, ScopedIdent},
+    intern::InternedString,
+    span::Span,
+    unique_id::UniqueId,
+};
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Root {
@@ -44,25 +49,25 @@ impl Decl {
 pub enum DeclKind {
     DataType(DataType),
     Let {
-        name: UniqueIdent,
+        name: ScopedIdent,
         expr: Expr,
     },
     Fn {
-        name: UniqueIdent,
-        params: Vec<UniqueIdent>,
+        name: ScopedIdent,
+        params: Vec<ScopedIdent>,
         expr: Expr,
     },
 }
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct DataType {
-    name: UniqueIdent,
+    name: ScopedIdent,
     kind: Box<DataTypeKind>,
     span: Span,
 }
 
 impl DataType {
-    pub fn new(name: UniqueIdent, kind: DataTypeKind, span: Span) -> Self {
+    pub fn new(name: ScopedIdent, kind: DataTypeKind, span: Span) -> Self {
         Self {
             name,
             kind: Box::new(kind),
@@ -70,7 +75,7 @@ impl DataType {
         }
     }
 
-    pub fn name(&self) -> &UniqueIdent {
+    pub fn name(&self) -> &ScopedIdent {
         &self.name
     }
 
@@ -117,7 +122,7 @@ impl Expr {
 #[derive(Debug, Clone, PartialEq)]
 pub enum ExprKind {
     Lit(Lit),
-    Ident(UniqueIdent),
+    Ident(ScopedIdent),
     Apply {
         fun: Expr,
         args: Vec<Expr>,
@@ -128,23 +133,23 @@ pub enum ExprKind {
         else_: Expr,
     },
     Let {
-        name: UniqueIdent,
+        name: ScopedIdent,
         expr: Expr,
         body: Expr,
     },
     Fn {
-        name: UniqueIdent,
-        params: Vec<UniqueIdent>,
+        name: ScopedIdent,
+        params: Vec<ScopedIdent>,
         expr: Expr,
         body: Expr,
     },
     Lambda {
-        params: Vec<UniqueIdent>,
+        params: Vec<ScopedIdent>,
         expr: Expr,
     },
     List(Vec<Expr>),
     Record {
-        name: Option<UniqueIdent>,
+        name: Option<ScopedIdent>,
         fields: Vec<(Ident, Expr)>,
     },
     Unit,
@@ -182,52 +187,12 @@ pub enum TypeHintKind {
     Bool,
     String,
     // Char,
-    Ident(UniqueIdent),
+    Ident(ScopedIdent),
     List(TypeHint),
     // Array(TypeHint),
     // Tuple(Vec<TypeHint>),
     Fn(Vec<TypeHint>, TypeHint),
     Unit,
-}
-
-#[derive(Debug, Clone, PartialEq)]
-pub struct Ident {
-    name: InternedString,
-    span: Span,
-}
-
-impl Ident {
-    pub fn new(name: InternedString, span: Span) -> Self {
-        Self { name, span }
-    }
-
-    pub fn name(&self) -> &InternedString {
-        &self.name
-    }
-
-    pub fn span(&self) -> &Span {
-        &self.span
-    }
-}
-
-#[derive(Debug, Clone, PartialEq)]
-pub struct UniqueIdent {
-    id: UniqueId,
-    span: Span,
-}
-
-impl UniqueIdent {
-    pub fn new(id: UniqueId, span: Span) -> Self {
-        Self { id, span }
-    }
-
-    pub fn id(&self) -> &UniqueId {
-        &self.id
-    }
-
-    pub fn span(&self) -> &Span {
-        &self.span
-    }
 }
 
 #[derive(Debug, Clone, PartialEq)]

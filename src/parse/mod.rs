@@ -1,7 +1,7 @@
 use self::ast::*;
 use crate::{
     lex::token::Token,
-    utils::{intern::InternedString, span::Span},
+    utils::{ident::Ident, intern::InternedString, span::Span},
 };
 use chumsky::{
     error::Rich,

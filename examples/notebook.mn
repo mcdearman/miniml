@@ -17,10 +17,10 @@ let fib n =
 --   if b = 0 then a
 --   else gcd b (a % b)
 
-type Point = { x : Int, y : Int }
+-- type Point = { x : Int, y : Int }
 -- type Foo = { a : Int, b : Point }
 
-let main args = { x = 1, y = 2 }
+-- let main args = { x = 1, y = 2 }
 
 -- let main args = 
 --   let loop n =

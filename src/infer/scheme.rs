@@ -31,16 +31,6 @@ impl Scheme {
             .collect()
     }
 
-    pub fn generalize(ctx: Context, ty: Type) -> Self {
-        Self {
-            vars: ty
-                .free_vars()
-                .difference(&ctx.free_vars())
-                .cloned()
-                .collect(),
-            ty,
-        }
-    }
 
     pub fn instantiate(&self) -> Type {
         let mut subst = Substitution::new();

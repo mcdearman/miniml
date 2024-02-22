@@ -1,7 +1,10 @@
-use std::collections::HashMap;
-
 use super::{r#type::Type, substitution::Substitution};
-use crate::utils::{intern::InternedString, list::List, span::Span, unique_id::UniqueId};
+use crate::utils::{
+    ident::{Ident, ScopedIdent},
+    intern::InternedString,
+    list::List,
+    span::Span,
+};
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Root {
@@ -99,26 +102,26 @@ impl Decl {
 pub enum DeclKind {
     DataType(DataType),
     Let {
-        name: UniqueIdent,
+        name: ScopedIdent,
         expr: Expr,
     },
     Fn {
-        name: UniqueIdent,
-        params: Vec<UniqueIdent>,
+        name: ScopedIdent,
+        params: Vec<ScopedIdent>,
         expr: Expr,
     },
 }
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct DataType {
-    name: UniqueIdent,
+    name: ScopedIdent,
     kind: Box<DataTypeKind>,
     ty: Type,
     span: Span,
 }
 
 impl DataType {
-    pub fn new(name: UniqueIdent, kind: DataTypeKind, ty: Type, span: Span) -> Self {
+    pub fn new(name: ScopedIdent, kind: DataTypeKind, ty: Type, span: Span) -> Self {
         Self {
             name,
             kind: Box::new(kind),
@@ -127,7 +130,7 @@ impl DataType {
         }
     }
 
-    pub fn name(&self) -> &UniqueIdent {
+    pub fn name(&self) -> &ScopedIdent {
         &self.name
     }
 
@@ -168,16 +171,16 @@ impl Expr {
         }
     }
 
-    pub fn kind(&self) -> &ExprKind {
-        &self.kind
+    pub fn kind(&self) -> ExprKind {
+        *self.kind
     }
 
-    pub fn ty(&self) -> &Type {
-        &self.ty
+    pub fn ty(&self) -> Type {
+        self.ty
     }
 
-    pub fn span(&self) -> &Span {
-        &self.span
+    pub fn span(&self) -> Span {
+        self.span
     }
 
     pub fn apply_subst(&self, subst: &Substitution) -> Self {
@@ -265,7 +268,7 @@ impl Expr {
 #[derive(Debug, Clone, PartialEq)]
 pub enum ExprKind {
     Lit(Lit),
-    Ident(UniqueIdent),
+    Ident(ScopedIdent),
     Apply {
         fun: Expr,
         args: Vec<Expr>,
@@ -276,66 +279,26 @@ pub enum ExprKind {
         else_: Expr,
     },
     Let {
-        name: UniqueIdent,
+        name: ScopedIdent,
         expr: Expr,
         body: Expr,
     },
     Fn {
-        name: UniqueIdent,
-        params: Vec<UniqueIdent>,
+        name: ScopedIdent,
+        params: Vec<ScopedIdent>,
         expr: Expr,
         body: Expr,
     },
     Lambda {
-        params: Vec<UniqueIdent>,
+        params: Vec<ScopedIdent>,
         expr: Expr,
     },
     List(List<Expr>),
     Record {
-        name: UniqueIdent,
+        name: ScopedIdent,
         fields: Vec<(Ident, Expr)>,
     },
     Unit,
-}
-
-#[derive(Debug, Clone, PartialEq)]
-pub struct Ident {
-    name: InternedString,
-    span: Span,
-}
-
-impl Ident {
-    pub fn new(name: InternedString, span: Span) -> Self {
-        Self { name, span }
-    }
-
-    pub fn name(&self) -> &InternedString {
-        &self.name
-    }
-
-    pub fn span(&self) -> &Span {
-        &self.span
-    }
-}
-
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub struct UniqueIdent {
-    id: UniqueId,
-    span: Span,
-}
-
-impl UniqueIdent {
-    pub fn new(id: UniqueId, span: Span) -> Self {
-        Self { id, span }
-    }
-
-    pub fn id(&self) -> &UniqueId {
-        &self.id
-    }
-
-    pub fn span(&self) -> &Span {
-        &self.span
-    }
 }
 
 #[derive(Debug, Clone, PartialEq)]

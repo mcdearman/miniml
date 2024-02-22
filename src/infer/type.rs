@@ -1,5 +1,7 @@
 use super::{
+    context::Context,
     error::{InferResult, TypeError},
+    scheme::Scheme,
     substitution::Substitution,
     ty_var::TyVar,
 };
@@ -41,7 +43,17 @@ impl Type {
         }
     }
 
-    pub fn unify(&self, other: &Self) -> InferResult<Substitution> {
+    pub fn generalize(self, ctx: &Context) -> Scheme {
+        Scheme::new(
+            self.free_vars()
+                .difference(&ctx.free_vars())
+                .cloned()
+                .collect(),
+            self,
+        )
+    }
+
+    pub fn unify(self, other: &Self) -> InferResult<Substitution> {
         // println!("unify: {:?} and {:?}", t1, t2);
         match (self, other) {
             (Type::Int, Type::Int) | (Type::Bool, Type::Bool) | (Type::Unit, Type::Unit) => {
@@ -54,15 +66,15 @@ impl Type {
                         let s = acc?;
                         let t1 = t1.apply_subst(&s);
                         let t2 = t2.apply_subst(&s);
-                        let s1 = self.unify(t2)?;
+                        let s1 = self.unify(&t2)?;
                         Ok(s1.compose(&s))
                     },
                 )?;
                 let s2 = b1.apply_subst(&s1).unify(&b2.apply_subst(&s1))?;
                 Ok(s1.compose(&s2))
             }
-            (_, Type::Var(var)) => var.bind(*self),
-            (Type::Var(var), _) => var.bind(other),
+            (_, Type::Var(var)) => var.bind(self),
+            (Type::Var(var), _) => var.bind(other.clone()),
             _ => Err(TypeError::from(format!(
                 "cannot unify {:?} and {:?}",
                 self.lower(&mut HashMap::new()),
