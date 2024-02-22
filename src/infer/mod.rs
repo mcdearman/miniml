@@ -81,7 +81,7 @@ impl<'src> TypeSolver<'src> {
         }
 
         (
-            Root::new(solved_decls, *self.nir.span()).apply_subst(&self.sub),
+            Root::new(solved_decls, self.nir.span()).apply_subst(&self.sub),
             errors,
         )
     }
@@ -150,7 +150,7 @@ impl<'src> TypeSolver<'src> {
 
                 Ok(Decl::new(
                     DeclKind::Let {
-                        name
+                        name,
                         expr: solved_expr,
                     },
                     solved_expr.ty(),

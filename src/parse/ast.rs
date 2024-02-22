@@ -18,8 +18,8 @@ impl Root {
         &self.decls
     }
 
-    pub fn span(&self) -> &Span {
-        &self.span
+    pub fn span(&self) -> Span {
+        self.span
     }
 }
 
@@ -34,12 +34,12 @@ impl Decl {
         Self { kind, span }
     }
 
-    pub fn kind(&self) -> &DeclKind {
-        &self.kind
+    pub fn kind(&self) -> DeclKind {
+        self.kind
     }
 
-    pub fn span(&self) -> &Span {
-        &self.span
+    pub fn span(&self) -> Span {
+        self.span
     }
 }
 
@@ -60,29 +60,25 @@ pub enum DeclKind {
 #[derive(Debug, Clone, PartialEq)]
 pub struct DataType {
     name: Ident,
-    kind: Box<DataTypeKind>,
+    kind: DataTypeKind,
     span: Span,
 }
 
 impl DataType {
     pub fn new(name: Ident, kind: DataTypeKind, span: Span) -> Self {
-        Self {
-            name,
-            kind: Box::new(kind),
-            span,
-        }
+        Self { name, kind, span }
     }
 
     pub fn name(&self) -> &Ident {
         &self.name
     }
 
-    pub fn kind(&self) -> &DataTypeKind {
-        &self.kind
+    pub fn kind(&self) -> DataTypeKind {
+        self.kind
     }
 
-    pub fn span(&self) -> &Span {
-        &self.span
+    pub fn span(&self) -> Span {
+        self.span
     }
 }
 
@@ -108,12 +104,12 @@ impl Expr {
         }
     }
 
-    pub fn kind(&self) -> &ExprKind {
-        &self.kind
+    pub fn kind(&self) -> ExprKind {
+        *self.kind
     }
 
-    pub fn span(&self) -> &Span {
-        &self.span
+    pub fn span(&self) -> Span {
+        self.span
     }
 }
 
@@ -216,12 +212,12 @@ impl TypeHint {
         }
     }
 
-    pub fn kind(&self) -> &TypeHintKind {
-        &self.kind
+    pub fn kind(&self) -> TypeHintKind {
+        *self.kind
     }
 
-    pub fn span(&self) -> &Span {
-        &self.span
+    pub fn span(&self) -> Span {
+        self.span
     }
 }
 
@@ -293,12 +289,12 @@ impl UnaryOp {
         Self { kind, span }
     }
 
-    pub fn kind(&self) -> &UnaryOpKind {
-        &self.kind
+    pub fn kind(&self) -> UnaryOpKind {
+        self.kind
     }
 
-    pub fn span(&self) -> &Span {
-        &self.span
+    pub fn span(&self) -> Span {
+        self.span
     }
 }
 
@@ -344,12 +340,12 @@ impl BinaryOp {
         Self { kind, span }
     }
 
-    pub fn kind(&self) -> &BinaryOpKind {
-        &self.kind
+    pub fn kind(&self) -> BinaryOpKind {
+        self.kind
     }
 
-    pub fn span(&self) -> &Span {
-        &self.span
+    pub fn span(&self) -> Span {
+        self.span
     }
 }
 

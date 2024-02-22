@@ -203,7 +203,7 @@ fn expr_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
                     op: op.clone(),
                     expr: expr.clone(),
                 },
-                op.span().extend(*expr.span()),
+                op.span().extend(expr.span()),
             )
         });
 
@@ -222,7 +222,7 @@ fn expr_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
                             lhs: lhs.clone(),
                             rhs: rhs.clone(),
                         },
-                        lhs.span().extend(*rhs.span()),
+                        lhs.span().extend(rhs.span()),
                     )
                 },
             )
@@ -245,7 +245,7 @@ fn expr_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
                             lhs: lhs.clone(),
                             rhs: rhs.clone(),
                         },
-                        lhs.span().extend(*rhs.span()),
+                        lhs.span().extend(rhs.span()),
                     )
                 },
             )
@@ -268,7 +268,7 @@ fn expr_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
                             lhs: lhs.clone(),
                             rhs: rhs.clone(),
                         },
-                        lhs.span().extend(*rhs.span()),
+                        lhs.span().extend(rhs.span()),
                     )
                 },
             )
@@ -292,7 +292,7 @@ fn expr_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
                         lhs: lhs.clone(),
                         rhs: rhs.clone(),
                     },
-                    lhs.span().extend(*rhs.span()),
+                    lhs.span().extend(rhs.span()),
                 ),
                 None => lhs.clone(),
             })
@@ -314,7 +314,7 @@ fn expr_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
                         lhs: lhs.clone(),
                         rhs: rhs.clone(),
                     },
-                    lhs.span().extend(*rhs.span()),
+                    lhs.span().extend(rhs.span()),
                 ),
                 None => lhs.clone(),
             })
@@ -335,7 +335,7 @@ fn expr_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
                             lhs: lhs.clone(),
                             rhs: rhs.clone(),
                         },
-                        lhs.span().extend(*rhs.span()),
+                        lhs.span().extend(rhs.span()),
                     )
                 },
             )
@@ -356,7 +356,7 @@ fn expr_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
                             lhs: lhs.clone(),
                             rhs: rhs.clone(),
                         },
-                        lhs.span().extend(*rhs.span()),
+                        lhs.span().extend(rhs.span()),
                     )
                 },
             )

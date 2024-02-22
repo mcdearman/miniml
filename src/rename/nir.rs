@@ -2,7 +2,6 @@ use crate::utils::{
     ident::{Ident, ScopedIdent},
     intern::InternedString,
     span::Span,
-    unique_id::UniqueId,
 };
 
 #[derive(Debug, Clone, PartialEq)]
@@ -62,17 +61,13 @@ pub enum DeclKind {
 #[derive(Debug, Clone, PartialEq)]
 pub struct DataType {
     name: ScopedIdent,
-    kind: Box<DataTypeKind>,
+    kind: DataTypeKind,
     span: Span,
 }
 
 impl DataType {
     pub fn new(name: ScopedIdent, kind: DataTypeKind, span: Span) -> Self {
-        Self {
-            name,
-            kind: Box::new(kind),
-            span,
-        }
+        Self { name, kind, span }
     }
 
     pub fn name(&self) -> ScopedIdent {
@@ -80,7 +75,7 @@ impl DataType {
     }
 
     pub fn kind(&self) -> DataTypeKind {
-        *self.kind
+        self.kind
     }
 
     pub fn span(&self) -> Span {
@@ -169,12 +164,12 @@ impl TypeHint {
         }
     }
 
-    pub fn kind(&self) -> &TypeHintKind {
-        &self.kind
+    pub fn kind(&self) -> TypeHintKind {
+        *self.kind
     }
 
-    pub fn span(&self) -> &Span {
-        &self.span
+    pub fn span(&self) -> Span {
+        self.span
     }
 }
 

@@ -21,8 +21,8 @@ impl Root {
         &self.decls
     }
 
-    pub fn span(&self) -> &Span {
-        &self.span
+    pub fn span(&self) -> Span {
+        self.span
     }
 
     pub fn apply_subst(&self, subst: &Substitution) -> Self {
@@ -50,12 +50,12 @@ impl Decl {
         Self { kind, ty, span }
     }
 
-    pub fn kind(&self) -> &DeclKind {
-        &self.kind
+    pub fn kind(&self) -> DeclKind {
+        self.kind
     }
 
-    pub fn span(&self) -> &Span {
-        &self.span
+    pub fn span(&self) -> Span {
+        self.span
     }
 
     pub fn apply_subst(&self, subst: &Substitution) -> Decl {
@@ -115,7 +115,7 @@ pub enum DeclKind {
 #[derive(Debug, Clone, PartialEq)]
 pub struct DataType {
     name: ScopedIdent,
-    kind: Box<DataTypeKind>,
+    kind: DataTypeKind,
     ty: Type,
     span: Span,
 }
@@ -124,26 +124,26 @@ impl DataType {
     pub fn new(name: ScopedIdent, kind: DataTypeKind, ty: Type, span: Span) -> Self {
         Self {
             name,
-            kind: Box::new(kind),
+            kind,
             ty,
             span,
         }
     }
 
-    pub fn name(&self) -> &ScopedIdent {
-        &self.name
+    pub fn name(&self) -> ScopedIdent {
+        self.name
     }
 
-    pub fn kind(&self) -> &DataTypeKind {
-        &self.kind
+    pub fn kind(&self) -> DataTypeKind {
+        self.kind
     }
 
-    pub fn ty(&self) -> &Type {
-        &self.ty
+    pub fn ty(&self) -> Type {
+        self.ty
     }
 
-    pub fn span(&self) -> &Span {
-        &self.span
+    pub fn span(&self) -> Span {
+        self.span
     }
 }
 

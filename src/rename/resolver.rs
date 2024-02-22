@@ -2,6 +2,7 @@ use super::{
     env::Env,
     error::{ResError, ResErrorKind, ResResult},
     nir::*,
+    stack::Stack,
 };
 use crate::{
     parse::ast,
@@ -16,12 +17,14 @@ use log::trace;
 use std::{cell::RefCell, collections::HashMap, rc::Rc};
 
 #[derive(Debug)]
-pub struct Resolver {
+pub struct Resolver<'src> {
+    src: &'src str,
     builtins: HashMap<UniqueId, InternedString>,
+    stack: Stack,
 }
 
-impl Resolver {
-    pub fn new() -> Self {
+impl<'src> Resolver<'src> {
+    pub fn new(src: &'src str) -> Self {
         #[rustfmt::skip]
         let names = vec![
             "not", "neg", "add", "sub", 
@@ -30,12 +33,18 @@ impl Resolver {
             "gt", "gte", "and", "or",
             "println",
         ];
+
         let mut builtins = HashMap::new();
         for n in names {
             let id = UniqueId::gen();
             builtins.insert(id, InternedString::from(n));
         }
-        Self { builtins }
+
+        Self {
+            src,
+            builtins,
+            stack: Stack::new_with_builtins(builtins),
+        }
     }
 
     pub fn builtins(&self) -> &HashMap<UniqueId, InternedString> {
