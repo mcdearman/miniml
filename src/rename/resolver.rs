@@ -291,29 +291,28 @@ impl Resolver {
                     })
                     .collect::<ResResult<Vec<(Ident, Expr)>>>()?;
 
-                
-
-                let name = name.map(|n| {
-                    UniqueIdent::new(
-                        ,
-                        *n.span(),
-                    )
-                });
-                Ok(Expr::new(
-                    ExprKind::Record {
-                        name: name.map(|n| {
-                            UniqueIdent::new(
-                                env.borrow_mut().find(n.name()).ok_or(ResError::new(
-                                    ResErrorKind::UnboundName(*n.name()),
-                                    *n.span(),
-                                )),
-                                *n.span(),
-                            )
-                        }),
-                        fields,
-                    },
-                    *expr.span(),
-                ))
+                match name {
+                    Some(name) => {
+                        let name = UniqueIdent::new(
+                            env.borrow_mut().find(name.name()).ok_or(ResError::new(
+                                ResErrorKind::UnboundName(*name.name()),
+                                *name.span(),
+                            ))?,
+                            *name.span(),
+                        );
+                        Ok(Expr::new(
+                            ExprKind::Record {
+                                name: Some(name),
+                                fields,
+                            },
+                            *expr.span(),
+                        ))
+                    }
+                    None => Ok(Expr::new(
+                        ExprKind::Record { name: None, fields },
+                        *expr.span(),
+                    )),
+                }
             }
             ast::ExprKind::Unit => Ok(Expr::new(ExprKind::Unit, *expr.span())),
         }

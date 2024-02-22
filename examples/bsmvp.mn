@@ -157,3 +157,23 @@ add 1 2
 use Math
 add 1 2
 sub 1 2
+
+-- Modules are also typeclasses and can be used as such:
+mod Show a
+  let show : a -> String
+end
+
+-- You can define instances for typeclasses:
+mod Show Int
+  let show x = x.toString
+end
+
+-- You can also define instances for other modules:
+mod ToString a 
+  let toString : a -> String
+end
+
+mod Show ToString
+  let show x = x.toString
+end
+
