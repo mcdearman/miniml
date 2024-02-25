@@ -69,6 +69,7 @@ impl<'src> TypeSolver<'src> {
         for c in self.constraints.iter() {
             match c {
                 Constraint::Equal(t1, t2) => {
+                    println!("unify {:?} and {:?}", t1, t2);
                     self.sub = t1
                         .apply_subst(&self.sub)
                         .unify(&t2.apply_subst(&self.sub))
@@ -228,6 +229,7 @@ impl<'src> TypeSolver<'src> {
             }
             nir::ExprKind::Apply { fun, args } => {
                 let solved_fun = self.infer_expr(fun)?;
+
                 let mut solved_args = vec![];
                 let mut arg_types = vec![];
 
@@ -242,6 +244,9 @@ impl<'src> TypeSolver<'src> {
                     solved_fun.ty(),
                     Type::Lambda(arg_types, Box::new(ty_ret.clone())),
                 ));
+
+                println!("constraints: {:#?}", self.constraints);
+                println!("ctx: {:#?}", self.ctx);
 
                 Ok(Expr::new(
                     ExprKind::Apply {
