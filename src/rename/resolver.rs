@@ -1,5 +1,4 @@
 use super::{
-    env::Env,
     error::{ResError, ResErrorKind, ResResult},
     nir::*,
     stack::Stack,
@@ -13,7 +12,7 @@ use crate::{
     },
 };
 use log::trace;
-use std::{cell::RefCell, collections::HashMap, rc::Rc};
+use std::collections::HashMap;
 
 #[derive(Debug)]
 pub struct Resolver {
@@ -88,30 +87,25 @@ impl Resolver {
     fn resolve_decl(&mut self, decl: &ast::Decl) -> ResResult<Decl> {
         match decl.kind() {
             ast::DeclKind::DataType(dt) => {
-                todo!()
-                // let name = ScopedIdent::new(env.borrow_mut().define(dt.ident()), dt.span());
-                // match dt.kind() {
-                //     ast::DataTypeKind::Record { fields } => Ok(Decl::new(
-                //         DeclKind::DataType(DataType::new(
-                //             name,
-                //             DataTypeKind::Record {
-                //                 fields: fields
-                //                     .into_iter()
-                //                     .map(|(name, hint)| {
-                //                         self.resolve_type(env.clone(), hint).map(|ty| {
-                //                             (
-                //                                 Ident::new(name.key().clone(), name.span().clone()),
-                //                                 ty,
-                //                             )
-                //                         })
-                //                     })
-                //                     .try_collect()?,
-                //             },
-                //             decl.span().clone(),
-                //         )),
-                //         decl.span().clone(),
-                //     )),
-                // }
+                let res_name = ScopedIdent::new(self.stack.define(dt.ident().key()), dt.span());
+                match dt.kind() {
+                    ast::DataTypeKind::Record { fields } => {
+                        let res_fields = fields
+                            .iter()
+                            .map(|(name, hint)| {
+                                self.resolve_type(hint).map(|ty| (name.clone(), ty))
+                            })
+                            .collect::<ResResult<Vec<(Ident, TypeHint)>>>()?;
+                        Ok(Decl::new(
+                            DeclKind::DataType(DataType::new(
+                                res_name,
+                                DataTypeKind::Record { fields: res_fields },
+                                decl.span(),
+                            )),
+                            decl.span(),
+                        ))
+                    }
+                }
             }
             ast::DeclKind::Let { name, expr } => {
                 self.stack.push();
@@ -315,45 +309,43 @@ impl Resolver {
         }
     }
 
-    fn resolve_type(&mut self, env: Rc<RefCell<Env>>, ty: &ast::TypeHint) -> ResResult<TypeHint> {
-        todo!()
-        //     match ty.kind() {
-        //         ast::TypeHintKind::Int => Ok(TypeHint::new(TypeHintKind::Int, *ty.span())),
-        //         ast::TypeHintKind::Bool => Ok(TypeHint::new(TypeHintKind::Bool, *ty.span())),
-        //         ast::TypeHintKind::String => Ok(TypeHint::new(TypeHintKind::String, *ty.span())),
-        //         ast::TypeHintKind::Ident(ident) => {
-        //             if let Some(name) = env.borrow().find(ident.key()) {
-        //                 Ok(TypeHint::new(
-        //                     TypeHintKind::Ident(ScopedIdent::new(name, *ident.span())),
-        //                     *ty.span(),
-        //                 ))
-        //             } else {
-        //                 Err(ResError::new(
-        //                     ResErrorKind::UnboundName(*ident.key()),
-        //                     *ident.span(),
-        //                 ))
-        //             }
-        //         }
-        //         ast::TypeHintKind::List(ty) => Ok(TypeHint::new(
-        //             TypeHintKind::List(self.resolve_type(env.clone(), ty)?),
-        //             *ty.span(),
-        //         )),
-        //         ast::TypeHintKind::Fn(args, ret) => Ok(TypeHint::new(
-        //             TypeHintKind::Fn(
-        //                 args.iter()
-        //                     .map(|a| self.resolve_type(env.clone(), a))
-        //                     .collect::<ResResult<Vec<TypeHint>>>()?,
-        //                 self.resolve_type(env.clone(), ret)?,
-        //             ),
-        //             *ty.span(),
-        //         )),
-        //         ast::TypeHintKind::Unit => Ok(TypeHint::new(TypeHintKind::Unit, *ty.span())),
-        //     }
+    fn resolve_type(&mut self, ty: &ast::TypeHint) -> ResResult<TypeHint> {
+        match ty.kind() {
+            ast::TypeHintKind::Int => Ok(TypeHint::new(TypeHintKind::Int, ty.span())),
+            ast::TypeHintKind::Bool => Ok(TypeHint::new(TypeHintKind::Bool, ty.span())),
+            ast::TypeHintKind::String => Ok(TypeHint::new(TypeHintKind::String, ty.span())),
+            ast::TypeHintKind::Ident(ident) => {
+                if let Some(name) = self.stack.find(&ident.key()) {
+                    Ok(TypeHint::new(
+                        TypeHintKind::Ident(ScopedIdent::new(name, ident.span())),
+                        ty.span(),
+                    ))
+                } else {
+                    Err(ResError::new(
+                        ResErrorKind::UnboundName(ident.key()),
+                        ident.span(),
+                    ))
+                }
+            }
+            ast::TypeHintKind::List(ty) => Ok(TypeHint::new(
+                TypeHintKind::List(self.resolve_type(ty)?),
+                ty.span(),
+            )),
+            ast::TypeHintKind::Fn(args, ret) => Ok(TypeHint::new(
+                TypeHintKind::Fn(
+                    args.iter()
+                        .map(|arg_ty| self.resolve_type(arg_ty))
+                        .collect::<ResResult<Vec<TypeHint>>>()?,
+                    self.resolve_type(ret)?,
+                ),
+                ty.span(),
+            )),
+            ast::TypeHintKind::Unit => Ok(TypeHint::new(TypeHintKind::Unit, ty.span())),
+        }
     }
 }
 
 mod tests {
-    // use super::{Env, Resolver};
     // use crate::{ast::parse, db::Database};
     // use std::{cell::RefCell, rc::Rc};
 
