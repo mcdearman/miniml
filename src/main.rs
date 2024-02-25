@@ -1,10 +1,10 @@
-use crate::{lex::token_stream::TokenStream, parse::parse};
+use crate::{infer::TypeSolver, lex::token_stream::TokenStream, parse::parse};
 // use infer::TypeSolver;
 use rename::{nir, resolver::Resolver};
 // use runtime::{default_env, eval::eval};
 use std::fs;
 
-// mod infer;
+mod infer;
 mod lex;
 mod parse;
 mod rename;
@@ -42,33 +42,29 @@ fn main() {
     }
     let builtins = res.builtins();
     println!("Builtins: {:#?}", builtins);
-    println!("NIR: {:#?}", nir);
-    // if let Some(root) = nir.clone() {
-    //     if !errors.is_empty() {
-    //         panic!("{:#?}", errors);
-    //     }
-    //     // println!("NIR: {:#?}", root);
+    // println!("NIR: {:#?}", nir);
+    if let Some(root) = nir.clone() {
+        if !errors.is_empty() {
+            panic!("{:#?}", errors);
+        }
+        println!("NIR: {:#?}", root);
 
-    //     let mut solver = TypeSolver::new(&*src, root, builtins);
-    //     let tir = match solver.solve() {
-    //         Ok(tir) => {
-    //             println!("TIR: {:#?}", tir);
-    //             tir
-    //         }
-    //         Err(err) => {
-    //             panic!("Inference error: {:#?}", err);
-    //         }
-    //     };
-    //     let env = default_env(builtins);
-    //     match eval(&*src, env.clone(), tir) {
-    //         Ok(val) => {
-    //             println!("{}", val);
-    //         }
-    //         Err(err) => {
-    //             println!("Error: {:#?}", err);
-    //         }
-    //     }
-    // } else {
-    //     println!("Errors: {:#?}", errors);
-    // }
+        let mut solver = TypeSolver::new(&*src, root, builtins.clone());
+        if let (Some(tir), errors) = solver.solve() {
+            if !errors.is_empty() {
+                println!("Errors: {:#?}", errors);
+                return;
+            }
+            println!("TIR: {:#?}", tir);
+        };
+        // let env = default_env(builtins);
+        // match eval(&*src, env.clone(), tir) {
+        //     Ok(val) => {
+        //         println!("{}", val);
+        //     }
+        //     Err(err) => {
+        //         println!("Error: {:#?}", err);
+        //     }
+        // }
+    }
 }

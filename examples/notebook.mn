@@ -2,6 +2,8 @@
 --   if n <= 1 then n
 --   else fib (n - 1) + fib (n - 2)
 
+let x = 1 + 2
+
 -- let fibIter n =
 --   let loop i a b =
 --     if i = n then a

@@ -14,7 +14,7 @@ use crate::{
     utils::{intern::InternedString, list::List, unique_id::UniqueId},
 };
 use itertools::Itertools;
-use std::collections::HashMap;
+use std::{any::Any, collections::HashMap};
 
 mod constraint;
 pub mod context;
@@ -54,18 +54,19 @@ impl<'src> TypeSolver<'src> {
         }
     }
 
-    pub fn solve(&mut self) -> (Root, Vec<TypeError>) {
+    pub fn solve(&mut self) -> (Option<Root>, Vec<TypeError>) {
         let mut errors = vec![];
 
         let solved_decls = self
             .nir
             .decls()
-            .iter()
-            .map(|d| self.infer_decl(d))
+            .to_vec()
+            .into_iter()
+            .map(|d| self.infer_decl(&d))
             .filter_map(|r| r.map_err(|e| errors.push(e)).ok())
             .collect_vec();
 
-        for c in self.constraints {
+        for c in self.constraints.iter() {
             match c {
                 Constraint::Equal(t1, t2) => {
                     self.sub = t1
@@ -81,7 +82,11 @@ impl<'src> TypeSolver<'src> {
         }
 
         (
-            Root::new(solved_decls, self.nir.span()).apply_subst(&self.sub),
+            if solved_decls.is_empty() {
+                None
+            } else {
+                Some(Root::new(solved_decls, self.nir.span()).apply_subst(&self.sub))
+            },
             errors,
         )
     }
@@ -150,43 +155,41 @@ impl<'src> TypeSolver<'src> {
 
                 Ok(Decl::new(
                     DeclKind::Let {
-                        name,
-                        expr: solved_expr,
+                        name: *name,
+                        expr: solved_expr.clone(),
                     },
                     solved_expr.ty(),
-                    *decl.span(),
+                    decl.span(),
                 ))
             }
             nir::DeclKind::Fn { name, params, expr } => {
-                // let mut ty_binders = vec![];
-                // let mut tmp_ctx = self.ctx.clone();
-                let mut new_params = vec![];
-                for p in params.clone() {
-                    let ty_binder = Type::Var(TyVar::fresh());
-                    ty_binders.push(ty_binder.clone());
-                    tmp_ctx = self.ctx.union(tmp_ctx);
-                    tmp_ctx.extend(*p.id(), Scheme::new(vec![], ty_binder.clone()));
-                    new_params.push(UniqueIdent::new(*p.id(), *p.span()));
+                let mut param_types = vec![];
+
+                for param in params {
+                    let param_type = Type::Var(TyVar::fresh());
+                    param_types.push(param_type.clone());
+                    self.ctx.extend(param.id(), Scheme::new(vec![], param_type));
                 }
-                let ty = Type::Var(TyVar::fresh());
-                tmp_ctx.extend(*name.id(), Scheme::new(vec![], ty.clone()));
-                let (mut cs, t, c, new_expr) = self.infer_expr(expr)?;
-                cs.push(Constraint::Equal(
-                    ty.clone(),
-                    Type::Lambda(ty_binders.clone(), Box::new(t.clone())),
+
+                let fun_ty_var = Type::Var(TyVar::fresh());
+
+                self.ctx
+                    .extend(name.id(), Scheme::new(vec![], fun_ty_var.clone()));
+                let solved_expr = self.infer_expr(expr)?;
+
+                self.constraints.push(Constraint::Equal(
+                    fun_ty_var.clone(),
+                    Type::Lambda(param_types, Box::new(solved_expr.ty())),
                 ));
-                Ok((
-                    cs,
-                    tmp_ctx.union(c),
-                    Decl::new(
-                        DeclKind::Fn {
-                            name: UniqueIdent::new(*name.id(), *name.span()),
-                            params: new_params,
-                            expr: new_expr,
-                        },
-                        ty,
-                        *decl.span(),
-                    ),
+
+                Ok(Decl::new(
+                    DeclKind::Fn {
+                        name: *name,
+                        params: params.clone(),
+                        expr: solved_expr,
+                    },
+                    fun_ty_var,
+                    decl.span(),
                 ))
             }
         }
@@ -198,32 +201,28 @@ impl<'src> TypeSolver<'src> {
                 nir::Lit::Int(n) => Ok(Expr::new(
                     ExprKind::Lit(Lit::Int(n)),
                     Type::Int,
-                    *expr.span(),
+                    expr.span(),
                 )),
                 nir::Lit::Bool(b) => Ok(Expr::new(
                     ExprKind::Lit(Lit::Bool(b)),
                     Type::Bool,
-                    *expr.span(),
+                    expr.span(),
                 )),
                 nir::Lit::String(s) => Ok(Expr::new(
                     ExprKind::Lit(Lit::String(s)),
                     Type::String,
-                    *expr.span(),
+                    expr.span(),
                 )),
             },
             nir::ExprKind::Ident(name) => {
-                if let Some(scm) = self.ctx.get(name.id()) {
+                if let Some(scm) = self.ctx.get(&name.id()) {
                     let ty = scm.instantiate();
-                    Ok(Expr::new(
-                        ExprKind::Ident(UniqueIdent::new(*name.id(), *name.span())),
-                        ty.clone(),
-                        *expr.span(),
-                    ))
+                    Ok(Expr::new(ExprKind::Ident(*name), ty, expr.span()))
                 } else {
                     Err(TypeError::from(format!(
                         "unbound variable: {:?} - \"{}\"",
                         expr,
-                        self.src[*name.span()].to_string()
+                        self.src[name.span()].to_string()
                     )))
                 }
             }
@@ -231,47 +230,42 @@ impl<'src> TypeSolver<'src> {
                 let solved_fun = self.infer_expr(fun)?;
                 let mut solved_args = vec![];
                 let mut arg_types = vec![];
+
                 for arg in args {
                     let solved_arg = self.infer_expr(arg)?;
-                    // ctx1 = ctx2.union(ctx1);
-                    // cs1 = cs1.into_iter().chain(cs2.into_iter()).collect();
-                    solved_args.push(solved_arg);
+                    solved_args.push(solved_arg.clone());
                     arg_types.push(solved_arg.ty());
                 }
+
                 let ty_ret = Type::Var(TyVar::fresh());
                 self.constraints.push(Constraint::Equal(
                     solved_fun.ty(),
                     Type::Lambda(arg_types, Box::new(ty_ret.clone())),
                 ));
+
                 Ok(Expr::new(
                     ExprKind::Apply {
                         fun: solved_fun,
                         args: solved_args,
                     },
                     ty_ret,
-                    *expr.span(),
+                    expr.span(),
                 ))
             }
             nir::ExprKind::Let { name, expr, body } => {
-                let (cs1, t1, mut ctx1, expr) = self.infer_expr(expr)?;
-                let scheme = Scheme::generalize(ctx1.clone(), t1.clone());
-                ctx1.extend(*name.id(), scheme);
-                let (cs2, t2, ctx2, body) = self.infer_expr(body)?;
-                let ctx = ctx2.union(ctx1);
-                let cs = cs1.into_iter().chain(cs2.into_iter()).collect::<Vec<_>>();
-                Ok((
-                    cs,
-                    t2.clone(),
-                    ctx,
-                    Expr::new(
-                        ExprKind::Let {
-                            name: UniqueIdent::new(*name.id(), *name.span()),
-                            expr: expr.clone(),
-                            body,
-                        },
-                        t2,
-                        *expr.span(),
-                    ),
+                let solved_expr = self.infer_expr(expr)?;
+                let scheme = solved_expr.ty().generalize(&self.ctx);
+
+                self.ctx.extend(name.id(), scheme);
+                let solved_body = self.infer_expr(body)?;
+                Ok(Expr::new(
+                    ExprKind::Let {
+                        name: *name,
+                        expr: solved_expr,
+                        body: solved_body.clone(),
+                    },
+                    solved_body.ty(),
+                    expr.span(),
                 ))
             }
             nir::ExprKind::Fn {
@@ -280,130 +274,114 @@ impl<'src> TypeSolver<'src> {
                 expr,
                 body,
             } => {
-                let mut ty_binders = vec![];
-                let mut tmp_ctx = self.ctx.clone();
-                let mut new_params = vec![];
-                for p in params.clone() {
-                    let ty_binder = Type::Var(TyVar::fresh());
-                    ty_binders.push(ty_binder.clone());
-                    tmp_ctx = self.ctx.union(tmp_ctx);
-                    tmp_ctx.extend(*p.id(), Scheme::new(vec![], ty_binder.clone()));
-                    new_params.push(UniqueIdent::new(*p.id(), *p.span()));
+                let mut param_types = vec![];
+
+                for param in params {
+                    let param_type = Type::Var(TyVar::fresh());
+                    param_types.push(param_type.clone());
+                    self.ctx.extend(param.id(), Scheme::new(vec![], param_type));
                 }
-                let ty = Type::Var(TyVar::fresh());
-                tmp_ctx.extend(*name.id(), Scheme::new(vec![], ty.clone()));
-                let (cs, t, c, expr) = self.infer_expr(expr)?;
-                // let ty = Type::Lambda(ty_binders.clone(), Box::new(t.clone()));
-                let (cs_body, ty_body, ctx_body, body) = self.infer_expr(body)?;
-                let cs = cs
-                    .into_iter()
-                    .chain(cs_body.into_iter())
-                    .collect::<Vec<_>>();
-                Ok((
-                    cs,
-                    ty_body.clone(),
-                    ctx_body.union(tmp_ctx),
-                    Expr::new(
-                        ExprKind::Fn {
-                            name: UniqueIdent::new(*name.id(), *name.span()),
-                            params: new_params,
-                            expr: expr.clone(),
-                            body,
-                        },
-                        ty_body,
-                        *expr.span(),
-                    ),
+
+                let fun_ty_var = Type::Var(TyVar::fresh());
+
+                self.ctx
+                    .extend(name.id(), Scheme::new(vec![], fun_ty_var.clone()));
+                let solved_expr = self.infer_expr(expr)?;
+                let solved_body = self.infer_expr(body)?;
+
+                self.constraints.push(Constraint::Equal(
+                    fun_ty_var.clone(),
+                    Type::Lambda(param_types, Box::new(solved_expr.ty())),
+                ));
+
+                Ok(Expr::new(
+                    ExprKind::Fn {
+                        name: *name,
+                        params: params.clone(),
+                        expr: solved_expr,
+                        body: solved_body.clone(),
+                    },
+                    solved_body.ty(),
+                    expr.span(),
                 ))
             }
             nir::ExprKind::If { cond, then, else_ } => {
-                let (cs1, t1, mut ctx1, cond) = self.infer_expr(cond)?;
-                let (cs2, t2, mut ctx2, then) = self.infer_expr(then)?;
-                let (cs3, t3, ctx3, else_) = self.infer_expr(else_)?;
-                let ctx = ctx3.union(ctx2).union(ctx1);
-                let mut cs = cs1
-                    .into_iter()
-                    .chain(cs2.into_iter())
-                    .chain(cs3.into_iter())
-                    .collect_vec();
-                cs.push(Constraint::Equal(t1, Type::Bool));
-                cs.push(Constraint::Equal(t2.clone(), t3));
-                // println!("if constraints: {:#?}", cs);
-                Ok((
-                    cs,
-                    t2.clone(),
-                    ctx,
-                    Expr::new(ExprKind::If { cond, then, else_ }, t2, *expr.span()),
+                let solved_cond = self.infer_expr(cond)?;
+                let solved_then = self.infer_expr(then)?;
+                let solved_else_ = self.infer_expr(else_)?;
+
+                self.constraints
+                    .push(Constraint::Equal(solved_cond.ty(), Type::Bool));
+                self.constraints
+                    .push(Constraint::Equal(solved_then.ty(), solved_else_.ty()));
+
+                Ok(Expr::new(
+                    ExprKind::If {
+                        cond: solved_cond,
+                        then: solved_then.clone(),
+                        else_: solved_else_,
+                    },
+                    solved_then.ty(),
+                    expr.span(),
                 ))
             }
             nir::ExprKind::Lambda { params, expr } => {
-                let mut ty_binders = vec![];
-                let mut tmp_ctx = self.ctx.clone();
-                let mut new_params = vec![];
-                for p in params.clone() {
-                    let ty_binder = Type::Var(TyVar::fresh());
-                    ty_binders.push(ty_binder.clone());
-                    tmp_ctx = self.ctx.union(tmp_ctx);
-                    tmp_ctx.extend(*p.id(), Scheme::new(vec![], ty_binder.clone()));
-                    new_params.push(UniqueIdent::new(*p.id(), *p.span()));
+                let mut param_types = vec![];
+
+                for param in params {
+                    let param_type = Type::Var(TyVar::fresh());
+                    param_types.push(param_type.clone());
+                    self.ctx.extend(param.id(), Scheme::new(vec![], param_type));
                 }
-                let (cs, t, c, expr) = self.infer_expr(expr)?;
-                let ty = Type::Lambda(ty_binders.clone(), Box::new(t.clone()));
-                Ok((
-                    cs,
-                    ty.clone(),
-                    tmp_ctx.union(c),
-                    Expr::new(
-                        ExprKind::Lambda {
-                            params: new_params,
-                            expr: expr.clone(),
-                        },
-                        ty,
-                        *expr.span(),
-                    ),
+
+                let solved_expr = self.infer_expr(expr)?;
+                let fun_ty = Type::Lambda(param_types, Box::new(solved_expr.ty()));
+
+                Ok(Expr::new(
+                    ExprKind::Lambda {
+                        params: params.clone(),
+                        expr: solved_expr,
+                    },
+                    fun_ty,
+                    expr.span(),
                 ))
             }
-            nir::ExprKind::List(exprs) => {
-                let mut cs = vec![];
-                let mut ty_args = vec![];
-                let mut new_exprs = vec![];
-                for e in exprs {
-                    let (cs2, t2, ctx2, e2) = self.infer_expr(e)?;
-                    self.ctx = ctx2.union(self.ctx.clone());
-                    cs = cs.into_iter().chain(cs2.into_iter()).collect();
-                    new_exprs.push(e2);
-                    ty_args.push(t2);
+            nir::ExprKind::List(elems) => {
+                let mut solved_elems = vec![];
+
+                for elem in elems {
+                    let solved_elem = self.infer_expr(elem)?;
+                    solved_elems.push(solved_elem);
                 }
-                let ty = Type::List(Box::new(ty_args.clone()[0].clone()));
-                for t in ty_args.clone() {
-                    cs.push(Constraint::Equal(t, ty_args[0].clone()));
+
+                let list_ty = Type::List(Box::new(Type::Var(TyVar::fresh())));
+
+                for elem in solved_elems.iter() {
+                    self.constraints
+                        .push(Constraint::Equal(list_ty.clone(), elem.ty()));
                 }
-                Ok((
-                    cs,
-                    ty.clone(),
-                    self.ctx.clone(),
-                    Expr::new(ExprKind::List(List::from(new_exprs)), ty, *expr.span()),
+
+                Ok(Expr::new(
+                    ExprKind::List(List::from(solved_elems)),
+                    list_ty,
+                    expr.span(),
                 ))
             }
             nir::ExprKind::Record { name, fields } => {
-                if let Some(ident) = name {
-                    if let Some(scm) = self.ctx.get(ident.id()) {
-                        todo!()
-                    } else {
-                        return Err(TypeError::from(format!(
-                            "unbound type: {:?} - \"{}\"",
-                            ident,
-                            self.src[*ident.span()].to_string()
-                        )));
-                    }
-                }
+                // if let Some(ident) = name {
+                //     if let Some(scm) = self.ctx.get(ident.id()) {
+                //         todo!()
+                //     } else {
+                //         return Err(TypeError::from(format!(
+                //             "unbound type: {:?} - \"{}\"",
+                //             ident,
+                //             self.src[*ident.span()].to_string()
+                //         )));
+                //     }
+                // }
                 todo!()
             }
-            nir::ExprKind::Unit => Ok((
-                vec![],
-                Type::Unit,
-                self.ctx.clone(),
-                Expr::new(ExprKind::Unit, Type::Unit, *expr.span()),
-            )),
+            nir::ExprKind::Unit => Ok(Expr::new(ExprKind::Unit, Type::Unit, expr.span())),
             _ => todo!(),
         }
     }

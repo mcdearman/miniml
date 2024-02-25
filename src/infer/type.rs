@@ -53,7 +53,7 @@ impl Type {
         )
     }
 
-    pub fn unify(self, other: &Self) -> InferResult<Substitution> {
+    pub fn unify(&self, other: &Self) -> InferResult<Substitution> {
         // println!("unify: {:?} and {:?}", t1, t2);
         match (self, other) {
             (Type::Int, Type::Int) | (Type::Bool, Type::Bool) | (Type::Unit, Type::Unit) => {
@@ -73,7 +73,7 @@ impl Type {
                 let s2 = b1.apply_subst(&s1).unify(&b2.apply_subst(&s1))?;
                 Ok(s1.compose(&s2))
             }
-            (_, Type::Var(var)) => var.bind(self),
+            (_, Type::Var(var)) => var.bind(self.clone()),
             (Type::Var(var), _) => var.bind(other.clone()),
             _ => Err(TypeError::from(format!(
                 "cannot unify {:?} and {:?}",
