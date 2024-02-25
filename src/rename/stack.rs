@@ -25,23 +25,30 @@ impl Stack {
         }
     }
 
-    pub fn push(&mut self) -> Frame {
-        let frame = Frame::new();
-        self.frames.push(frame);
-        frame
+    pub fn push(&mut self) {
+        self.frames.push(Frame::new());
     }
 
     pub fn pop(&mut self) {
         self.frames.pop();
     }
 
-    pub fn define(&mut self, name: InternedString) -> Option<UniqueId> {
-        self.frames.last_mut().map(|frame| frame.define(name))
+    pub fn define(&mut self, name: InternedString) -> UniqueId {
+        if let Some(frame) = self.frames.last_mut() {
+            frame.define(name)
+        } else {
+            let mut frame = Frame::new();
+            let id = frame.define(name);
+            self.frames.push(frame);
+            id
+        }
     }
 
     pub fn push_and_define(&mut self, name: InternedString) -> UniqueId {
-        let mut frame = self.push();
-        frame.define(name)
+        let mut frame = Frame::new();
+        let id = frame.define(name);
+        self.frames.push(frame);
+        id
     }
 
     pub fn find(&self, name: &InternedString) -> Option<UniqueId> {

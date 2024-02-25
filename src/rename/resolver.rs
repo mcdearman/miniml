@@ -12,19 +12,17 @@ use crate::{
         unique_id::UniqueId,
     },
 };
-use itertools::Itertools;
 use log::trace;
 use std::{cell::RefCell, collections::HashMap, rc::Rc};
 
 #[derive(Debug)]
-pub struct Resolver<'src> {
-    src: &'src str,
+pub struct Resolver {
     builtins: HashMap<UniqueId, InternedString>,
     stack: Stack,
 }
 
-impl<'src> Resolver<'src> {
-    pub fn new(src: &'src str, ast: ast::Root) -> Self {
+impl Resolver {
+    pub fn new() -> Self {
         #[rustfmt::skip]
         let names = vec![
             "not", "neg", "add", "sub", 
@@ -41,16 +39,14 @@ impl<'src> Resolver<'src> {
         }
 
         Self {
-            src,
-            ast,
-            builtins,
+            builtins: builtins.clone(),
             stack: Stack::new_with_builtins(builtins),
         }
     }
 
-    pub fn set_src(&mut self, src: &'src str) {
-        self.src = src;
-    }
+    // pub fn set_src(&mut self, src: &'src str) {
+    //     self.src = src;
+    // }
 
     pub fn builtins(&self) -> &HashMap<UniqueId, InternedString> {
         &self.builtins
@@ -70,7 +66,7 @@ impl<'src> Resolver<'src> {
         let mut decls = vec![];
 
         for decl in ast.decls() {
-            match self.resolve_decl(decl) {
+            match self.resolve_decl(&decl) {
                 Ok(d) => {
                     trace!("stack: {:#?}", self.stack);
                     decls.push(d);
@@ -89,7 +85,7 @@ impl<'src> Resolver<'src> {
         }
     }
 
-    fn resolve_decl(&mut self, decl: ast::Decl) -> ResResult<Decl> {
+    fn resolve_decl(&mut self, decl: &ast::Decl) -> ResResult<Decl> {
         match decl.kind() {
             ast::DeclKind::DataType(dt) => {
                 todo!()
@@ -118,27 +114,22 @@ impl<'src> Resolver<'src> {
                 // }
             }
             ast::DeclKind::Let { name, expr } => {
-                // let let_env = Env::new_with_parent(env.clone());
-                let frame = self.stack.push();
-                let expr = self.resolve_expr(expr)?;
-                let name = ScopedIdent::new(env.borrow_mut().define(name.key()), name.span());
+                self.stack.push();
+                let expr = self.resolve_expr(&expr)?;
+                self.stack.pop();
+                let name = ScopedIdent::new(self.stack.define(name.key()), name.span());
                 Ok(Decl::new(DeclKind::Let { name, expr }, decl.span()))
             }
             ast::DeclKind::Fn { name, params, expr } => {
-                let fn_env = Env::new_with_parent(env.clone());
-                let name =
-                    ScopedIdent::new(env.borrow_mut().define(name.key().clone()), name.span());
+                self.stack.push();
+                let name = ScopedIdent::new(self.stack.define(name.key()), name.span());
                 let params = params
                     .iter()
-                    .map(|p| {
-                        ScopedIdent::new(fn_env.borrow_mut().define(p.key().clone()), p.span())
-                    })
+                    .map(|p| ScopedIdent::new(self.stack.define(p.key()), p.span()))
                     .collect();
-                let expr = self.resolve_expr(fn_env.clone(), expr)?;
-                Ok(Decl::new(
-                    DeclKind::Fn { name, params, expr },
-                    decl.span().clone(),
-                ))
+                let expr = self.resolve_expr(&expr)?;
+                self.stack.pop();
+                Ok(Decl::new(DeclKind::Fn { name, params, expr }, decl.span()))
             }
         }
     }
@@ -156,42 +147,42 @@ impl<'src> Resolver<'src> {
                 )),
             },
             ast::ExprKind::Ident(ident) => {
-                if let Some(name) = env.borrow().find(ident.key()) {
+                if let Some(name) = self.stack.find(&ident.key()) {
                     Ok(Expr::new(
                         ExprKind::Ident(ScopedIdent::new(name, expr.span().clone())),
                         expr.span().clone(),
                     ))
                 } else {
                     Err(ResError::new(
-                        ResErrorKind::UnboundName(*ident.key()),
-                        *expr.span(),
+                        ResErrorKind::UnboundName(ident.key()),
+                        expr.span(),
                     ))
                 }
             }
             ast::ExprKind::Apply { fun, args } => Ok(Expr::new(
                 ExprKind::Apply {
-                    fun: self.resolve_expr(env.clone(), fun)?,
+                    fun: self.resolve_expr(&fun)?,
                     args: args
                         .iter()
-                        .map(|a| self.resolve_expr(env.clone(), a))
+                        .map(|arg| self.resolve_expr(&arg))
                         .collect::<ResResult<Vec<Expr>>>()?,
                 },
-                *expr.span(),
+                expr.span(),
             )),
             ast::ExprKind::Unary { op, expr } => {
                 let id = self
                     .get_builtin(InternedString::from(*op))
                     .ok_or(ResError::new(
                         ResErrorKind::UnboundBuiltIn(InternedString::from(*op)),
-                        *op.span(),
+                        op.span(),
                     ))?;
-                let ident = ScopedIdent::new(id, *op.span());
+                let ident = ScopedIdent::new(id, op.span());
                 Ok(Expr::new(
                     ExprKind::Apply {
-                        fun: Expr::new(ExprKind::Ident(ident.clone()), *op.span()),
-                        args: vec![self.resolve_expr(env.clone(), expr)?],
+                        fun: Expr::new(ExprKind::Ident(ident.clone()), op.span()),
+                        args: vec![self.resolve_expr(&expr)?],
                     },
-                    *expr.span(),
+                    expr.span(),
                 ))
             }
             ast::ExprKind::Binary { op, lhs, rhs } => {
@@ -199,41 +190,38 @@ impl<'src> Resolver<'src> {
                     .get_builtin(InternedString::from(*op))
                     .ok_or(ResError::new(
                         ResErrorKind::UnboundBuiltIn(InternedString::from(*op)),
-                        *op.span(),
+                        op.span(),
                     ))?;
-                let ident = ScopedIdent::new(id, *op.span());
+                let ident = ScopedIdent::new(id, op.span());
                 Ok(Expr::new(
                     ExprKind::Apply {
-                        fun: Expr::new(ExprKind::Ident(ident.clone()), *op.span()),
-                        args: vec![
-                            self.resolve_expr(env.clone(), lhs)?,
-                            self.resolve_expr(env.clone(), rhs)?,
-                        ],
+                        fun: Expr::new(ExprKind::Ident(ident.clone()), op.span()),
+                        args: vec![self.resolve_expr(&lhs)?, self.resolve_expr(&rhs)?],
                     },
-                    *op.span(),
+                    op.span(),
                 ))
             }
             ast::ExprKind::If { cond, then, else_ } => Ok(Expr::new(
                 ExprKind::If {
-                    cond: self.resolve_expr(env.clone(), cond)?,
-                    then: self.resolve_expr(env.clone(), then)?,
-                    else_: self.resolve_expr(env.clone(), else_)?,
+                    cond: self.resolve_expr(&cond)?,
+                    then: self.resolve_expr(&then)?,
+                    else_: self.resolve_expr(&else_)?,
                 },
-                *expr.span(),
+                expr.span(),
             )),
             ast::ExprKind::Let { name, expr, body } => {
-                let let_env = Env::new_with_parent(env.clone());
-                let res_expr = self.resolve_expr(let_env.clone(), expr)?;
-                let name =
-                    ScopedIdent::new(env.borrow_mut().define(name.key().clone()), *name.span());
-                let body = self.resolve_expr(let_env.clone(), body)?;
+                self.stack.push();
+                let res_expr = self.resolve_expr(&expr)?;
+                let res_name = ScopedIdent::new(self.stack.define(name.key()), name.span());
+                let res_body = self.resolve_expr(&body)?;
+                self.stack.pop();
                 Ok(Expr::new(
                     ExprKind::Let {
-                        name,
+                        name: res_name,
                         expr: res_expr,
-                        body,
+                        body: res_body,
                     },
-                    *expr.span(),
+                    expr.span(),
                 ))
             }
             ast::ExprKind::Fn {
@@ -242,122 +230,125 @@ impl<'src> Resolver<'src> {
                 expr: fn_expr,
                 body,
             } => {
-                let fn_env = Env::new_with_parent(env.clone());
-                let name =
-                    ScopedIdent::new(fn_env.borrow_mut().define(name.key().clone()), *name.span());
-                let params = params
+                let res_name =
+                    ScopedIdent::new(self.stack.push_and_define(name.key()), name.span());
+                let res_params = params
                     .iter()
-                    .map(|p| {
-                        ScopedIdent::new(fn_env.borrow_mut().define(p.key().clone()), *p.span())
-                    })
+                    .map(|p| ScopedIdent::new(self.stack.define(p.key()), p.span()))
                     .collect();
-                let expr = self.resolve_expr(fn_env.clone(), fn_expr)?;
-                let body = self.resolve_expr(fn_env.clone(), body)?;
+
+                let res_expr = self.resolve_expr(&fn_expr)?;
+                let res_body = self.resolve_expr(&body)?;
+                self.stack.pop();
+
                 Ok(Expr::new(
                     ExprKind::Fn {
-                        name,
-                        params,
-                        expr,
-                        body,
+                        name: res_name,
+                        params: res_params,
+                        expr: res_expr,
+                        body: res_body,
                     },
-                    *fn_expr.span(),
+                    fn_expr.span(),
                 ))
             }
             ast::ExprKind::Lambda { params, expr } => {
-                let lam_env = Env::new_with_parent(env.clone());
-                let params = params
+                self.stack.push();
+                let res_params = params
                     .iter()
-                    .map(|p| {
-                        ScopedIdent::new(lam_env.borrow_mut().define(p.key().clone()), *p.span())
-                    })
+                    .map(|p| ScopedIdent::new(self.stack.define(p.key()), p.span()))
                     .collect();
+                let res_expr = self.resolve_expr(&expr)?;
+                self.stack.pop();
+
                 Ok(Expr::new(
                     ExprKind::Lambda {
-                        params,
-                        expr: self.resolve_expr(lam_env.clone(), expr)?,
+                        params: res_params,
+                        expr: res_expr,
                     },
-                    *expr.span(),
+                    expr.span(),
                 ))
             }
             ast::ExprKind::List(exprs) => Ok(Expr::new(
                 ExprKind::List(
                     exprs
                         .iter()
-                        .map(|e| self.resolve_expr(env.clone(), e))
+                        .map(|e| self.resolve_expr(e))
                         .collect::<ResResult<Vec<Expr>>>()?,
                 ),
-                *expr.span(),
+                expr.span(),
             )),
             ast::ExprKind::Record { name, fields } => {
-                let fields = fields
-                    .iter()
-                    .map(|(ident, expr)| {
-                        let new_ident = Ident::new(ident.key().clone(), *ident.span());
-                        let expr = self.resolve_expr(env.clone(), expr)?;
-                        Ok((new_ident, expr))
-                    })
-                    .collect::<ResResult<Vec<(Ident, Expr)>>>()?;
+                todo!()
+                // let fields = fields
+                //     .iter()
+                //     .map(|(ident, expr)| {
+                //         let new_ident = Ident::new(ident.key().clone(), *ident.span());
+                //         let expr = self.resolve_expr(env.clone(), expr)?;
+                //         Ok((new_ident, expr))
+                //     })
+                //     .collect::<ResResult<Vec<(Ident, Expr)>>>()?;
 
-                match name {
-                    Some(name) => {
-                        let name = ScopedIdent::new(
-                            env.borrow_mut().find(name.key()).ok_or(ResError::new(
-                                ResErrorKind::UnboundName(*name.key()),
-                                *name.span(),
-                            ))?,
-                            *name.span(),
-                        );
-                        Ok(Expr::new(
-                            ExprKind::Record {
-                                name: Some(name),
-                                fields,
-                            },
-                            *expr.span(),
-                        ))
-                    }
-                    None => Ok(Expr::new(
-                        ExprKind::Record { name: None, fields },
-                        *expr.span(),
-                    )),
-                }
+                // match name {
+                //     Some(name) => {
+                //         let name = ScopedIdent::new(
+                //             env.borrow_mut().find(name.key()).ok_or(ResError::new(
+                //                 ResErrorKind::UnboundName(*name.key()),
+                //                 *name.span(),
+                //             ))?,
+                //             *name.span(),
+                //         );
+                //         Ok(Expr::new(
+                //             ExprKind::Record {
+                //                 name: Some(name),
+                //                 fields,
+                //             },
+                //             *expr.span(),
+                //         ))
+                //     }
+                //     None => Ok(Expr::new(
+                //         ExprKind::Record { name: None, fields },
+                //         *expr.span(),
+                //     )),
+                // }
             }
-            ast::ExprKind::Unit => Ok(Expr::new(ExprKind::Unit, *expr.span())),
+            ast::ExprKind::Unit => Ok(Expr::new(ExprKind::Unit, expr.span())),
         }
     }
 
     fn resolve_type(&mut self, env: Rc<RefCell<Env>>, ty: &ast::TypeHint) -> ResResult<TypeHint> {
-        match ty.kind() {
-            ast::TypeHintKind::Int => Ok(TypeHint::new(TypeHintKind::Int, *ty.span())),
-            ast::TypeHintKind::Bool => Ok(TypeHint::new(TypeHintKind::Bool, *ty.span())),
-            ast::TypeHintKind::String => Ok(TypeHint::new(TypeHintKind::String, *ty.span())),
-            ast::TypeHintKind::Ident(ident) => {
-                if let Some(name) = env.borrow().find(ident.key()) {
-                    Ok(TypeHint::new(
-                        TypeHintKind::Ident(ScopedIdent::new(name, *ident.span())),
-                        *ty.span(),
-                    ))
-                } else {
-                    Err(ResError::new(
-                        ResErrorKind::UnboundName(*ident.key()),
-                        *ident.span(),
-                    ))
-                }
-            }
-            ast::TypeHintKind::List(ty) => Ok(TypeHint::new(
-                TypeHintKind::List(self.resolve_type(env.clone(), ty)?),
-                *ty.span(),
-            )),
-            ast::TypeHintKind::Fn(args, ret) => Ok(TypeHint::new(
-                TypeHintKind::Fn(
-                    args.iter()
-                        .map(|a| self.resolve_type(env.clone(), a))
-                        .collect::<ResResult<Vec<TypeHint>>>()?,
-                    self.resolve_type(env.clone(), ret)?,
-                ),
-                *ty.span(),
-            )),
-            ast::TypeHintKind::Unit => Ok(TypeHint::new(TypeHintKind::Unit, *ty.span())),
-        }
+        todo!()
+        //     match ty.kind() {
+        //         ast::TypeHintKind::Int => Ok(TypeHint::new(TypeHintKind::Int, *ty.span())),
+        //         ast::TypeHintKind::Bool => Ok(TypeHint::new(TypeHintKind::Bool, *ty.span())),
+        //         ast::TypeHintKind::String => Ok(TypeHint::new(TypeHintKind::String, *ty.span())),
+        //         ast::TypeHintKind::Ident(ident) => {
+        //             if let Some(name) = env.borrow().find(ident.key()) {
+        //                 Ok(TypeHint::new(
+        //                     TypeHintKind::Ident(ScopedIdent::new(name, *ident.span())),
+        //                     *ty.span(),
+        //                 ))
+        //             } else {
+        //                 Err(ResError::new(
+        //                     ResErrorKind::UnboundName(*ident.key()),
+        //                     *ident.span(),
+        //                 ))
+        //             }
+        //         }
+        //         ast::TypeHintKind::List(ty) => Ok(TypeHint::new(
+        //             TypeHintKind::List(self.resolve_type(env.clone(), ty)?),
+        //             *ty.span(),
+        //         )),
+        //         ast::TypeHintKind::Fn(args, ret) => Ok(TypeHint::new(
+        //             TypeHintKind::Fn(
+        //                 args.iter()
+        //                     .map(|a| self.resolve_type(env.clone(), a))
+        //                     .collect::<ResResult<Vec<TypeHint>>>()?,
+        //                 self.resolve_type(env.clone(), ret)?,
+        //             ),
+        //             *ty.span(),
+        //         )),
+        //         ast::TypeHintKind::Unit => Ok(TypeHint::new(TypeHintKind::Unit, *ty.span())),
+        //     }
     }
 }
 

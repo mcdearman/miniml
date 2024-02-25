@@ -14,8 +14,8 @@ impl Root {
         Self { decls, span }
     }
 
-    pub fn decls(&self) -> Vec<Decl> {
-        self.decls
+    pub fn decls(&self) -> &[Decl] {
+        &self.decls
     }
 
     pub fn span(&self) -> Span {
@@ -34,8 +34,8 @@ impl Decl {
         Self { kind, span }
     }
 
-    pub fn kind(&self) -> DeclKind {
-        self.kind
+    pub fn kind(&self) -> &DeclKind {
+        &self.kind
     }
 
     pub fn span(&self) -> Span {
@@ -77,8 +77,8 @@ impl DataType {
         self.ident
     }
 
-    pub fn kind(&self) -> DataTypeKind {
-        self.kind
+    pub fn kind(&self) -> &DataTypeKind {
+        &self.kind
     }
 
     pub fn span(&self) -> Span {
@@ -108,8 +108,8 @@ impl Expr {
         }
     }
 
-    pub fn kind(&self) -> ExprKind {
-        *self.kind
+    pub fn kind(&self) -> &ExprKind {
+        &self.kind
     }
 
     pub fn span(&self) -> Span {
@@ -216,8 +216,8 @@ impl TypeHint {
         }
     }
 
-    pub fn kind(&self) -> TypeHintKind {
-        *self.kind
+    pub fn kind(&self) -> &TypeHintKind {
+        &self.kind
     }
 
     pub fn span(&self) -> Span {
@@ -293,8 +293,8 @@ impl UnaryOp {
         Self { kind, span }
     }
 
-    pub fn kind(&self) -> UnaryOpKind {
-        self.kind
+    pub fn kind(&self) -> &UnaryOpKind {
+        &self.kind
     }
 
     pub fn span(&self) -> Span {
@@ -344,8 +344,8 @@ impl BinaryOp {
         Self { kind, span }
     }
 
-    pub fn kind(&self) -> BinaryOpKind {
-        self.kind
+    pub fn kind(&self) -> &BinaryOpKind {
+        &self.kind
     }
 
     pub fn span(&self) -> Span {

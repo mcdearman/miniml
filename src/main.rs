@@ -13,10 +13,8 @@ mod utils;
 
 fn main() {
     env_logger::init();
-    let src = fs::read_to_string("examples/notebook.mn")
-        .expect("failed to read file")
-        .as_ref();
-    let stream = TokenStream::new(src);
+    let src = fs::read_to_string("examples/notebook.mn").expect("failed to read file");
+    let stream = TokenStream::new(&*src);
     // println!("TOKENS: {:#?}", stream.tokenize());
     let root = match parse(stream, false) {
         (Some(root), errors) => {
@@ -34,11 +32,16 @@ fn main() {
     };
     // println!("AST: {:#?}", root);
 
-    let mut res = Resolver::new(src);
-    let builtins = res.builtins().clone();
+    let mut res = Resolver::new();
     // println!("Builtins: {:#?}", builtins);
-    let res_env = rename::env::Env::new_with_builtins(builtins.clone());
+    // let res_env = rename::env::Env::new_with_builtins(builtins.clone());
     let (nir, errors) = res.resolve(root);
+    if !errors.is_empty() {
+        println!("Errors: {:#?}", errors);
+        return;
+    }
+    let builtins = res.builtins();
+    println!("Builtins: {:#?}", builtins);
     println!("NIR: {:#?}", nir);
     // if let Some(root) = nir.clone() {
     //     if !errors.is_empty() {

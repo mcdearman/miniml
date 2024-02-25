@@ -35,8 +35,8 @@ impl Decl {
         Self { kind, span }
     }
 
-    pub fn kind(&self) -> DeclKind {
-        self.kind
+    pub fn kind(&self) -> &DeclKind {
+        &self.kind
     }
 
     pub fn span(&self) -> Span {
@@ -74,8 +74,8 @@ impl DataType {
         self.name
     }
 
-    pub fn kind(&self) -> DataTypeKind {
-        self.kind
+    pub fn kind(&self) -> &DataTypeKind {
+        &self.kind
     }
 
     pub fn span(&self) -> Span {
@@ -105,8 +105,8 @@ impl Expr {
         }
     }
 
-    pub fn kind(&self) -> ExprKind {
-        *self.kind
+    pub fn kind(&self) -> &ExprKind {
+        &self.kind
     }
 
     pub fn span(&self) -> Span {
@@ -164,8 +164,8 @@ impl TypeHint {
         }
     }
 
-    pub fn kind(&self) -> TypeHintKind {
-        *self.kind
+    pub fn kind(&self) -> &TypeHintKind {
+        &self.kind
     }
 
     pub fn span(&self) -> Span {
