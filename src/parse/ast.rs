@@ -14,8 +14,8 @@ impl Root {
         Self { decls, span }
     }
 
-    pub fn decls(&self) -> &[Decl] {
-        &self.decls
+    pub fn decls(&self) -> Vec<Decl> {
+        self.decls
     }
 
     pub fn span(&self) -> Span {
@@ -59,18 +59,22 @@ pub enum DeclKind {
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct DataType {
-    name: Ident,
+    ident: Ident,
     kind: DataTypeKind,
     span: Span,
 }
 
 impl DataType {
     pub fn new(name: Ident, kind: DataTypeKind, span: Span) -> Self {
-        Self { name, kind, span }
+        Self {
+            ident: name,
+            kind,
+            span,
+        }
     }
 
-    pub fn name(&self) -> &Ident {
-        &self.name
+    pub fn ident(&self) -> Ident {
+        self.ident
     }
 
     pub fn kind(&self) -> DataTypeKind {

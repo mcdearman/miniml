@@ -38,7 +38,7 @@ fn main() {
     let builtins = res.builtins().clone();
     // println!("Builtins: {:#?}", builtins);
     let res_env = rename::env::Env::new_with_builtins(builtins.clone());
-    let (nir, errors) = res.resolve(res_env.clone(), &root);
+    let (nir, errors) = res.resolve(root);
     println!("NIR: {:#?}", nir);
     // if let Some(root) = nir.clone() {
     //     if !errors.is_empty() {

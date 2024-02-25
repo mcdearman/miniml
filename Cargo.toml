@@ -22,3 +22,4 @@ rustyline = "11.0.0"
 notify = "6.1.1"
 chumsky = { version = "1.0.0-alpha.6", features = ["pratt"] }
 num-traits = "0.2.17"
+libc = "0.2.153"

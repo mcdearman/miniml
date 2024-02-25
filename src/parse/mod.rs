@@ -384,7 +384,7 @@ fn expr_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
 fn type_hint_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
 ) -> impl ChumskyParser<'a, I, TypeHint, extra::Err<Rich<'a, Token, Span>>> {
     ident_parser()
-        .map(|ident| match ident.name().as_ref() {
+        .map(|ident| match ident.key().as_ref() {
             "Int" => TypeHintKind::Int,
             "Bool" => TypeHintKind::Bool,
             "String" => TypeHintKind::String,
