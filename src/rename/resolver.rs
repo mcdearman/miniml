@@ -60,6 +60,10 @@ impl Resolver {
         None
     }
 
+    pub fn env(&self) -> &Env {
+        &self.env
+    }
+
     pub fn resolve(&mut self, ast: ast::Root) -> (Option<Root>, Vec<ResError>) {
         let mut errors = vec![];
         let mut decls = vec![];
@@ -115,8 +119,8 @@ impl Resolver {
                 Ok(Decl::new(DeclKind::Let { name, expr }, decl.span()))
             }
             ast::DeclKind::Fn { name, params, expr } => {
-                self.env.push();
                 let name = ScopedIdent::new(self.env.define(name.key()), name.span());
+                self.env.push();
                 let params = params
                     .iter()
                     .map(|p| ScopedIdent::new(self.env.define(p.key()), p.span()))

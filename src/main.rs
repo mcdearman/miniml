@@ -41,6 +41,7 @@ fn main() {
     let (nir, errors) = res.resolve(root);
     if !errors.is_empty() {
         println!("Errors: {:#?}", errors);
+        println!("env: {:#?}", res.env());
         return;
     }
     let builtins = res.builtins();
