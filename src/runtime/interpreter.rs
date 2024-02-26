@@ -7,28 +7,33 @@ use crate::infer::tir::{self, DeclKind, Expr, ExprKind, Root};
 use itertools::Itertools;
 use std::{cell::RefCell, collections::HashMap, rc::Rc};
 
+#[derive(Debug)]
+pub struct Interpreter {
+    env: Rc<RefCell<Env>>,
+}
+
 pub fn eval<'src>(src: &'src str, env: Rc<RefCell<Env>>, tir: Root) -> RuntimeResult<Value> {
     let mut types = HashMap::new();
     let mut val = Value::Unit;
     for decl in tir.decls() {
         match decl.kind() {
             DeclKind::DataType(dt) => {
-                types.insert(*dt.name().id(), dt.kind().clone());
+                types.insert(dt.name().id(), dt.kind().clone());
             }
             DeclKind::Let { name, expr, .. } => {
                 val = eval_expr(src, env.clone(), expr.clone())?;
-                env.borrow_mut().insert(*name.id(), val.clone());
+                env.borrow_mut().insert(name.id(), val.clone());
             }
             DeclKind::Fn {
                 name, params, expr, ..
             } => {
                 let value = Value::Lambda {
                     env: env.clone(),
-                    params: params.iter().map(|p| *p.id()).collect_vec(),
+                    params: params.iter().map(|p| p.id()).collect_vec(),
                     expr: expr.clone(),
                 };
-                env.borrow_mut().insert(*name.id(), value);
-                if src[*name.span()].trim() == "main" {
+                env.borrow_mut().insert(name.id(), value);
+                if src[name.span()].trim() == "main" {
                     val = eval_expr(src, env.clone(), expr.clone())?;
                 }
             }
@@ -51,12 +56,12 @@ fn eval_expr<'src>(
                 tir::Lit::String(s) => Value::Lit(Lit::String(s)),
             },
             ExprKind::Ident(name) => {
-                if let Some(value) = env.borrow().get(name.id()) {
+                if let Some(value) = env.borrow().get(&name.id()) {
                     value
                 } else {
                     return Err(RuntimeError::UnboundIdent(
-                        src[*name.span()].trim().into(),
-                        *name.span(),
+                        src[name.span()].trim().into(),
+                        name.span(),
                     ));
                 }
             }
@@ -98,7 +103,7 @@ fn eval_expr<'src>(
             } => {
                 let value = eval_expr(src, env.clone(), let_expr)?;
                 let let_env = Env::new_with_parent(env.clone());
-                let_env.borrow_mut().insert(*name.id(), value);
+                let_env.borrow_mut().insert(name.id(), value);
                 expr = body;
                 env = let_env;
                 continue 'tco;
@@ -112,10 +117,10 @@ fn eval_expr<'src>(
                 let lam_env = Env::new_with_parent(env.clone());
                 let value = Value::Lambda {
                     env: lam_env.clone(),
-                    params: params.iter().map(|p| *p.id()).collect_vec(),
+                    params: params.iter().map(|p| p.id()).collect_vec(),
                     expr: fn_expr,
                 };
-                env.borrow_mut().insert(*name.id(), value);
+                env.borrow_mut().insert(name.id(), value);
                 expr = body;
                 env = lam_env;
                 continue 'tco;
@@ -145,7 +150,7 @@ fn eval_expr<'src>(
                 expr: lam_expr,
             } => Value::Lambda {
                 env: Env::new_with_parent(env.clone()),
-                params: params.iter().map(|p| *p.id()).collect_vec(),
+                params: params.iter().map(|p| p.id()).collect_vec(),
                 expr: lam_expr,
             },
             ExprKind::List(exprs) => {

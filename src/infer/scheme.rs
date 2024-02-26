@@ -31,7 +31,6 @@ impl Scheme {
             .collect()
     }
 
-
     pub fn instantiate(&self) -> Type {
         let mut subst = Substitution::new();
         for var in self.clone().vars {

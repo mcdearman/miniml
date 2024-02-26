@@ -8,7 +8,7 @@ use std::{cell::RefCell, collections::HashMap, rc::Rc};
 
 pub mod env;
 pub mod error;
-pub mod eval;
+pub mod interpreter;
 pub mod value;
 
 pub fn default_env(builtins: HashMap<UniqueId, InternedString>) -> Rc<RefCell<Env>> {

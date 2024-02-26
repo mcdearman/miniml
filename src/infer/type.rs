@@ -54,7 +54,7 @@ impl Type {
     }
 
     pub fn unify(&self, other: &Self) -> InferResult<Substitution> {
-        // println!("unify: {:?} and {:?}", t1, t2);
+        // println!("unify: {:?} and {:?}", self, other);
         match (self, other) {
             (Type::Int, Type::Int) | (Type::Bool, Type::Bool) | (Type::Unit, Type::Unit) => {
                 Ok(Substitution::new())
@@ -66,7 +66,7 @@ impl Type {
                         let s = acc?;
                         let t1 = t1.apply_subst(&s);
                         let t2 = t2.apply_subst(&s);
-                        let s1 = self.unify(&t2)?;
+                        let s1 = t1.unify(&t2)?;
                         Ok(s1.compose(&s))
                     },
                 )?;

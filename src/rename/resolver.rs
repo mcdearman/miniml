@@ -1,7 +1,7 @@
 use super::{
+    env::Env,
     error::{ResError, ResErrorKind, ResResult},
     nir::*,
-    stack::Stack,
 };
 use crate::{
     parse::ast,
@@ -17,7 +17,7 @@ use std::collections::HashMap;
 #[derive(Debug)]
 pub struct Resolver {
     builtins: HashMap<UniqueId, InternedString>,
-    stack: Stack,
+    env: Env,
 }
 
 impl Resolver {
@@ -39,7 +39,7 @@ impl Resolver {
 
         Self {
             builtins: builtins.clone(),
-            stack: Stack::new_with_builtins(builtins),
+            env: Env::new_with_builtins(builtins),
         }
     }
 
@@ -67,11 +67,11 @@ impl Resolver {
         for decl in ast.decls() {
             match self.resolve_decl(&decl) {
                 Ok(d) => {
-                    trace!("stack: {:#?}", self.stack);
+                    trace!("env: {:#?}", self.env);
                     decls.push(d);
                 }
                 Err(err) => {
-                    trace!("stack: {:#?}", self.stack);
+                    trace!("env: {:#?}", self.env);
                     errors.push(err)
                 }
             }
@@ -87,7 +87,7 @@ impl Resolver {
     fn resolve_decl(&mut self, decl: &ast::Decl) -> ResResult<Decl> {
         match decl.kind() {
             ast::DeclKind::DataType(dt) => {
-                let res_name = ScopedIdent::new(self.stack.define(dt.ident().key()), dt.span());
+                let res_name = ScopedIdent::new(self.env.define(dt.ident().key()), dt.span());
                 match dt.kind() {
                     ast::DataTypeKind::Record { fields } => {
                         let res_fields = fields
@@ -108,21 +108,21 @@ impl Resolver {
                 }
             }
             ast::DeclKind::Let { name, expr } => {
-                self.stack.push();
+                self.env.push();
                 let expr = self.resolve_expr(&expr)?;
-                self.stack.pop();
-                let name = ScopedIdent::new(self.stack.define(name.key()), name.span());
+                self.env.pop();
+                let name = ScopedIdent::new(self.env.define(name.key()), name.span());
                 Ok(Decl::new(DeclKind::Let { name, expr }, decl.span()))
             }
             ast::DeclKind::Fn { name, params, expr } => {
-                self.stack.push();
-                let name = ScopedIdent::new(self.stack.define(name.key()), name.span());
+                self.env.push();
+                let name = ScopedIdent::new(self.env.define(name.key()), name.span());
                 let params = params
                     .iter()
-                    .map(|p| ScopedIdent::new(self.stack.define(p.key()), p.span()))
+                    .map(|p| ScopedIdent::new(self.env.define(p.key()), p.span()))
                     .collect();
                 let expr = self.resolve_expr(&expr)?;
-                self.stack.pop();
+                self.env.pop();
                 Ok(Decl::new(DeclKind::Fn { name, params, expr }, decl.span()))
             }
         }
@@ -141,7 +141,7 @@ impl Resolver {
                 )),
             },
             ast::ExprKind::Ident(ident) => {
-                if let Some(name) = self.stack.find(&ident.key()) {
+                if let Some(name) = self.env.find(&ident.key()) {
                     Ok(Expr::new(
                         ExprKind::Ident(ScopedIdent::new(name, expr.span().clone())),
                         expr.span().clone(),
@@ -204,11 +204,11 @@ impl Resolver {
                 expr.span(),
             )),
             ast::ExprKind::Let { name, expr, body } => {
-                self.stack.push();
+                self.env.push();
                 let res_expr = self.resolve_expr(&expr)?;
-                let res_name = ScopedIdent::new(self.stack.define(name.key()), name.span());
+                let res_name = ScopedIdent::new(self.env.define(name.key()), name.span());
                 let res_body = self.resolve_expr(&body)?;
-                self.stack.pop();
+                self.env.pop();
                 Ok(Expr::new(
                     ExprKind::Let {
                         name: res_name,
@@ -224,16 +224,15 @@ impl Resolver {
                 expr: fn_expr,
                 body,
             } => {
-                let res_name =
-                    ScopedIdent::new(self.stack.push_and_define(name.key()), name.span());
+                let res_name = ScopedIdent::new(self.env.push_and_define(name.key()), name.span());
                 let res_params = params
                     .iter()
-                    .map(|p| ScopedIdent::new(self.stack.define(p.key()), p.span()))
+                    .map(|p| ScopedIdent::new(self.env.define(p.key()), p.span()))
                     .collect();
 
                 let res_expr = self.resolve_expr(&fn_expr)?;
                 let res_body = self.resolve_expr(&body)?;
-                self.stack.pop();
+                self.env.pop();
 
                 Ok(Expr::new(
                     ExprKind::Fn {
@@ -246,13 +245,13 @@ impl Resolver {
                 ))
             }
             ast::ExprKind::Lambda { params, expr } => {
-                self.stack.push();
+                self.env.push();
                 let res_params = params
                     .iter()
-                    .map(|p| ScopedIdent::new(self.stack.define(p.key()), p.span()))
+                    .map(|p| ScopedIdent::new(self.env.define(p.key()), p.span()))
                     .collect();
                 let res_expr = self.resolve_expr(&expr)?;
-                self.stack.pop();
+                self.env.pop();
 
                 Ok(Expr::new(
                     ExprKind::Lambda {
@@ -315,7 +314,7 @@ impl Resolver {
             ast::TypeHintKind::Bool => Ok(TypeHint::new(TypeHintKind::Bool, ty.span())),
             ast::TypeHintKind::String => Ok(TypeHint::new(TypeHintKind::String, ty.span())),
             ast::TypeHintKind::Ident(ident) => {
-                if let Some(name) = self.stack.find(&ident.key()) {
+                if let Some(name) = self.env.find(&ident.key()) {
                     Ok(TypeHint::new(
                         TypeHintKind::Ident(ScopedIdent::new(name, ident.span())),
                         ty.span(),

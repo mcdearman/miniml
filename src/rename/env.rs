@@ -2,11 +2,11 @@ use crate::utils::{intern::InternedString, unique_id::UniqueId};
 use std::collections::HashMap;
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct Stack {
+pub struct Env {
     frames: Vec<Frame>,
 }
 
-impl Stack {
+impl Env {
     pub fn new() -> Self {
         Self {
             frames: vec![Frame::new()],

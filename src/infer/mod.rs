@@ -14,7 +14,7 @@ use crate::{
     utils::{intern::InternedString, list::List, unique_id::UniqueId},
 };
 use itertools::Itertools;
-use std::{any::Any, collections::HashMap};
+use std::collections::HashMap;
 
 mod constraint;
 pub mod context;
@@ -69,7 +69,7 @@ impl<'src> TypeSolver<'src> {
         for c in self.constraints.iter() {
             match c {
                 Constraint::Equal(t1, t2) => {
-                    println!("unify {:?} and {:?}", t1, t2);
+                    // println!("unify {:?} and {:?}", t1, t2);
                     self.sub = t1
                         .apply_subst(&self.sub)
                         .unify(&t2.apply_subst(&self.sub))
@@ -78,6 +78,8 @@ impl<'src> TypeSolver<'src> {
                             errors.push(e);
                             self.sub.clone()
                         });
+
+                    self.ctx = self.ctx.apply_subst(&self.sub);
                 }
             }
         }
@@ -245,8 +247,8 @@ impl<'src> TypeSolver<'src> {
                     Type::Lambda(arg_types, Box::new(ty_ret.clone())),
                 ));
 
-                println!("constraints: {:#?}", self.constraints);
-                println!("ctx: {:#?}", self.ctx);
+                // println!("constraints: {:#?}", self.constraints);
+                // println!("ctx: {:#?}", self.ctx);
 
                 Ok(Expr::new(
                     ExprKind::Apply {
@@ -387,7 +389,6 @@ impl<'src> TypeSolver<'src> {
                 todo!()
             }
             nir::ExprKind::Unit => Ok(Expr::new(ExprKind::Unit, Type::Unit, expr.span())),
-            _ => todo!(),
         }
     }
 }

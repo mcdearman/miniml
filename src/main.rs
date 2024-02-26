@@ -1,14 +1,17 @@
-use crate::{infer::TypeSolver, lex::token_stream::TokenStream, parse::parse};
-// use infer::TypeSolver;
-use rename::{nir, resolver::Resolver};
-// use runtime::{default_env, eval::eval};
+use crate::{
+    infer::TypeSolver,
+    lex::token_stream::TokenStream,
+    parse::parse,
+    runtime::{default_env, interpreter::eval},
+};
+use rename::resolver::Resolver;
 use std::fs;
 
 mod infer;
 mod lex;
 mod parse;
 mod rename;
-// mod runtime;
+mod runtime;
 mod utils;
 
 fn main() {
@@ -56,15 +59,16 @@ fn main() {
                 return;
             }
             println!("TIR: {:#?}", tir);
+
+            let env = default_env(builtins.clone());
+            match eval(&*src, env.clone(), tir) {
+                Ok(val) => {
+                    println!("{}", val);
+                }
+                Err(err) => {
+                    println!("Error: {:#?}", err);
+                }
+            }
         };
-        // let env = default_env(builtins);
-        // match eval(&*src, env.clone(), tir) {
-        //     Ok(val) => {
-        //         println!("{}", val);
-        //     }
-        //     Err(err) => {
-        //         println!("Error: {:#?}", err);
-        //     }
-        // }
     }
 }
