@@ -43,13 +43,13 @@ impl Type {
         }
     }
 
-    pub fn generalize(self, ctx: &Context) -> Scheme {
+    pub fn generalize(&self, ctx: &Context) -> Scheme {
         Scheme::new(
             self.free_vars()
                 .difference(&ctx.free_vars())
                 .cloned()
                 .collect(),
-            self,
+            self.clone(),
         )
     }
 

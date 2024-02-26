@@ -96,61 +96,36 @@ impl<'src> TypeSolver<'src> {
 
     fn infer_decl(&mut self, decl: &nir::Decl) -> InferResult<Decl> {
         match decl.kind() {
-            nir::DeclKind::DataType(dt) => todo!(),
-            // match dt.kind() {
-            //     nir::DataTypeKind::Record { fields } => {
-            //         let mut inferred_fields = vec![];
-            //         for (field, hint) in fields {
-            //             let var = Type::Var(TyVar::fresh());
-            //             let field_type = match hint.kind() {
-            //                 nir::TypeHintKind::Int => Type::Int,
-            //                 nir::TypeHintKind::Bool => Type::Bool,
-            //                 nir::TypeHintKind::String => Type::String,
-            //                 nir::TypeHintKind::Ident(ident) => {
-            //                     if let Some(scm) = self.ctx.get(ident.id()) {
-            //                         scm.instantiate()
-            //                     } else {
-            //                         return Err(TypeError::from(format!(
-            //                             "unbound type: {:?} - \"{}\"",
-            //                             ident,
-            //                             self.src[*ident.span()].to_string()
-            //                         )));
-            //                     }
-            //                 }
-            //                 nir::TypeHintKind::List(_) => todo!(),
-            //                 nir::TypeHintKind::Fn(_, _) => todo!(),
-            //                 nir::TypeHintKind::Unit => Type::Unit,
-            //             };
-            //             self.constraints.push(Constraint::Equal(var, field_type));
-            //             inferred_fields.push((Ident::new(*field.name(), *field.span()), var));
-            //             // tmp_ctx = self.ctx.union(tmp_ctx);
-            //             // tmp_ctx.extend(*field.name(), Scheme::new(vec![], field_type.clone()));
-            //         }
-            //         let ty = Type::Record(
-            //             *dt.name().id(),
-            //             inferred_fields
-            //                 .iter()
-            //                 .map(|(k, v)| (*k.name(), v.clone()))
-            //                 .collect(),
-            //         );
+            nir::DeclKind::DataType(dt) => match dt.kind() {
+                nir::DataTypeKind::Record { fields } => {
+                    let mut field_types = vec![];
 
-            //         self.ctx
-            //             .extend(*dt.name().id(), Scheme::new(vec![], ty.clone()));
+                    for (name, hint) in fields {
+                        let ty = self.hint_to_type(hint.clone())?;
+                        field_types.push((name.clone(), ty));
+                    }
 
-            //         Ok(Decl::new(
-            //             DeclKind::DataType(DataType::new(
-            //                 UniqueIdent::new(*dt.name().id(), *dt.name().span()),
-            //                 DataTypeKind::Record {
-            //                     fields: solved_fields,
-            //                 },
-            //                 ty.clone(),
-            //                 *decl.span(),
-            //             )),
-            //             ty,
-            //             *decl.span(),
-            //         ))
-            //     }
-            // },
+                    let kind = DataTypeKind::Record {
+                        fields: field_types.clone(),
+                    };
+
+                    let ty = Type::Record(
+                        dt.name().id(),
+                        field_types
+                            .iter()
+                            .map(|(name, ty)| (name.key(), ty.clone()))
+                            .collect(),
+                    );
+
+                    self.reg.insert(dt.name().id(), ty.generalize(&self.ctx));
+
+                    Ok(Decl::new(
+                        DeclKind::DataType(DataType::new(dt.name(), kind, ty.clone(), dt.span())),
+                        ty,
+                        decl.span(),
+                    ))
+                }
+            },
             nir::DeclKind::Let { name, expr } => {
                 let solved_expr = self.infer_expr(expr)?;
                 let scheme = solved_expr.ty().generalize(&self.ctx);
@@ -375,20 +350,67 @@ impl<'src> TypeSolver<'src> {
                 ))
             }
             nir::ExprKind::Record { name, fields } => {
-                // if let Some(ident) = name {
-                //     if let Some(scm) = self.ctx.get(ident.id()) {
-                //         todo!()
-                //     } else {
-                //         return Err(TypeError::from(format!(
-                //             "unbound type: {:?} - \"{}\"",
-                //             ident,
-                //             self.src[*ident.span()].to_string()
-                //         )));
-                //     }
-                // }
-                todo!()
+                if let Some(ident) = name {
+                    if let Some(scm) = self.reg.get(&ident.id()) {
+                        let ty = scm.instantiate();
+                        let mut solved_fields = vec![];
+
+                        for (name, expr) in fields {
+                            let solved_expr = self.infer_expr(expr)?;
+                            solved_fields.push((name.clone(), solved_expr));
+                        }
+
+                        Ok(Expr::new(
+                            ExprKind::Record {
+                                name: *ident,
+                                fields: solved_fields.clone(),
+                            },
+                            ty,
+                            expr.span(),
+                        ))
+                    } else {
+                        Err(TypeError::from(format!(
+                            "unbound type: {:?} - \"{}\"",
+                            ident,
+                            self.src[ident.span()].to_string()
+                        )))
+                    }
+                } else {
+                    Err(TypeError::from("record type must have a name".to_string()))
+                }
             }
             nir::ExprKind::Unit => Ok(Expr::new(ExprKind::Unit, Type::Unit, expr.span())),
+        }
+    }
+
+    fn hint_to_type(&self, hint: nir::TypeHint) -> InferResult<Type> {
+        match hint.kind() {
+            nir::TypeHintKind::Int => Ok(Type::Int),
+            nir::TypeHintKind::Bool => Ok(Type::Bool),
+            nir::TypeHintKind::String => Ok(Type::String),
+            nir::TypeHintKind::Ident(name) => {
+                if let Some(scm) = self.reg.get(&name.id()) {
+                    Ok(scm.instantiate())
+                } else {
+                    return Err(TypeError::from(format!(
+                        "unbound type: {:?} - \"{}\"",
+                        name,
+                        self.src[name.span()].to_string()
+                    )));
+                }
+            }
+            nir::TypeHintKind::List(list_hint) => self.hint_to_type(list_hint.clone()),
+            nir::TypeHintKind::Fn(args, ret) => {
+                let mut arg_types = vec![];
+                for arg in args {
+                    arg_types.push(self.hint_to_type(arg.clone())?);
+                }
+                Ok(Type::Lambda(
+                    arg_types,
+                    Box::new(self.hint_to_type(ret.clone())?),
+                ))
+            }
+            nir::TypeHintKind::Unit => Ok(Type::Unit),
         }
     }
 }
