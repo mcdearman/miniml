@@ -40,6 +40,8 @@ dot = apply "." ident # 10
 
 apply = atom+
 
+dot = atom "." ident # 11
+
 atom = ident 
      | lit 
      | if 
