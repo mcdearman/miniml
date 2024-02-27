@@ -33,7 +33,7 @@ fn main() {
             return;
         }
     };
-    // println!("AST: {:#?}", root);
+    println!("AST: {:#?}", root);
 
     let mut res = Resolver::new();
     // println!("Builtins: {:#?}", builtins);

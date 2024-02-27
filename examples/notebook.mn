@@ -15,9 +15,9 @@
 
 type Point = { x : Int, y : Int }
 -- type Foint = { x : Int, y : Int }
-type Foo = { a : Int, b : Point }
+-- type Foo = { a : Int, b : Point }
 
--- let main args = Point { x = 1, y = 2 }
+let main args = let a = Point { x = 1, y = 2 } in println a.x
 
 -- let fib_iter n =
 --   let loop i a b =

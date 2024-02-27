@@ -183,7 +183,28 @@ fn expr_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
                 .then_ignore(just(Token::RParen)))
             .boxed();
 
-        let apply = atom
+        let op = just(Token::Period)
+            .map(BinaryOpKind::from)
+            .map_with(|op, e| BinaryOp::new(op, e.span()));
+
+        let field_access = atom
+            .clone()
+            .foldl(
+                op.clone().then(ident_parser()).repeated(),
+                |expr, (op, field)| {
+                    Expr::new(
+                        ExprKind::Binary {
+                            op,
+                            lhs: expr.clone(),
+                            rhs: Expr::new(ExprKind::Ident(field), field.span()),
+                        },
+                        expr.span().extend(field.span()),
+                    )
+                },
+            )
+            .boxed();
+
+        let apply = field_access
             .clone()
             .then(atom.repeated().at_least(1).collect().or_not())
             .map(|(fun, args)| match args {
