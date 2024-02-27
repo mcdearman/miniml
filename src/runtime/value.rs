@@ -38,7 +38,22 @@ impl Eq for Value {}
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Record {
-    fields: Vec<(UniqueId, Value)>,
+    name: UniqueId,
+    fields: Vec<(InternedString, Value)>,
+}
+
+impl Record {
+    pub fn new(name: UniqueId, fields: Vec<(InternedString, Value)>) -> Self {
+        Self { name, fields }
+    }
+
+    pub fn name(&self) -> UniqueId {
+        self.name
+    }
+
+    pub fn fields(&self) -> &[(InternedString, Value)] {
+        &self.fields
+    }
 }
 
 impl Display for Record {

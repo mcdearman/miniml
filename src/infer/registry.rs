@@ -21,4 +21,8 @@ impl Registry {
     pub fn get(&self, id: &UniqueId) -> Option<&Scheme> {
         self.vars.get(id)
     }
+
+    pub fn iter(&self) -> impl Iterator<Item = (&UniqueId, &Scheme)> {
+        self.vars.iter()
+    }
 }

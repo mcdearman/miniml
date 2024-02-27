@@ -11,7 +11,9 @@ use self::{
 };
 use crate::{
     rename::nir,
-    utils::{intern::InternedString, list::List, unique_id::UniqueId},
+    utils::{
+        ident::ScopedIdent, intern::InternedString, list::List, span::Span, unique_id::UniqueId,
+    },
 };
 use itertools::Itertools;
 use std::collections::HashMap;
@@ -376,7 +378,52 @@ impl<'src> TypeSolver<'src> {
                         )))
                     }
                 } else {
-                    Err(TypeError::from("record type must have a name".to_string()))
+                    // infer record type
+                    let solved_fields = fields
+                        .iter()
+                        .map(|(name, expr)| Ok((name.clone(), self.infer_expr(expr)?)))
+                        .collect::<InferResult<Vec<_>>>()?;
+
+                    let mut possible_types = vec![];
+                    for (id, scm) in self.reg.iter() {
+                        if let Type::Record(_, fields) = scm.instantiate() {
+                            if fields
+                                .iter()
+                                .map(|(k, v)| (k.clone(), v.clone()))
+                                .collect::<Vec<_>>()
+                                == solved_fields
+                                    .iter()
+                                    .map(|(k, v)| (k.key(), v.ty()))
+                                    .collect::<Vec<_>>()
+                            {
+                                possible_types.push((id, scm.instantiate()));
+                            }
+                        }
+                    }
+
+                    if possible_types.is_empty() {
+                        Err(TypeError::from(format!(
+                            "no matching record type for fields: {:?}",
+                            solved_fields
+                        )))
+                    } else if possible_types.len() > 1 {
+                        Err(TypeError::from(format!(
+                            "ambiguous record type for fields: {:?}",
+                            solved_fields
+                        )))
+                    } else {
+                        Ok(Expr::new(
+                            ExprKind::Record {
+                                name: ScopedIdent::new(
+                                    possible_types[0].0.clone(),
+                                    Span::new(expr.span().start(), expr.span().start()),
+                                ),
+                                fields: solved_fields,
+                            },
+                            possible_types[0].1.clone(),
+                            expr.span(),
+                        ))
+                    }
                 }
             }
             nir::ExprKind::Unit => Ok(Expr::new(ExprKind::Unit, Type::Unit, expr.span())),

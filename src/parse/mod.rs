@@ -170,13 +170,13 @@ fn expr_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
 
         let atom = unit
             .or(lit)
+            .or(record)
             .or(ident)
             .or(lambda)
             .or(if_)
             .or(let_)
             .or(fn_)
             .or(list)
-            .or(record)
             .map_with(|kind, e| Expr::new(kind, e.span()))
             .or(just(Token::LParen)
                 .ignore_then(expr)

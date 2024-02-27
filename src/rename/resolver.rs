@@ -275,38 +275,36 @@ impl Resolver {
                 expr.span(),
             )),
             ast::ExprKind::Record { name, fields } => {
-                todo!()
-                // let fields = fields
-                //     .iter()
-                //     .map(|(ident, expr)| {
-                //         let new_ident = Ident::new(ident.key().clone(), *ident.span());
-                //         let expr = self.resolve_expr(env.clone(), expr)?;
-                //         Ok((new_ident, expr))
-                //     })
-                //     .collect::<ResResult<Vec<(Ident, Expr)>>>()?;
+                let fields = fields
+                    .iter()
+                    .map(|(ident, expr)| {
+                        let expr = self.resolve_expr(expr)?;
+                        Ok((ident.clone(), expr))
+                    })
+                    .collect::<ResResult<Vec<(Ident, Expr)>>>()?;
 
-                // match name {
-                //     Some(name) => {
-                //         let name = ScopedIdent::new(
-                //             env.borrow_mut().find(name.key()).ok_or(ResError::new(
-                //                 ResErrorKind::UnboundName(*name.key()),
-                //                 *name.span(),
-                //             ))?,
-                //             *name.span(),
-                //         );
-                //         Ok(Expr::new(
-                //             ExprKind::Record {
-                //                 name: Some(name),
-                //                 fields,
-                //             },
-                //             *expr.span(),
-                //         ))
-                //     }
-                //     None => Ok(Expr::new(
-                //         ExprKind::Record { name: None, fields },
-                //         *expr.span(),
-                //     )),
-                // }
+                match name {
+                    Some(name) => {
+                        let name = ScopedIdent::new(
+                            self.env.find(&name.key()).ok_or(ResError::new(
+                                ResErrorKind::UnboundName(name.key()),
+                                name.span(),
+                            ))?,
+                            name.span(),
+                        );
+                        Ok(Expr::new(
+                            ExprKind::Record {
+                                name: Some(name),
+                                fields,
+                            },
+                            expr.span(),
+                        ))
+                    }
+                    None => Ok(Expr::new(
+                        ExprKind::Record { name: None, fields },
+                        expr.span(),
+                    )),
+                }
             }
             ast::ExprKind::Unit => Ok(Expr::new(ExprKind::Unit, expr.span())),
         }

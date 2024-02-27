@@ -1,7 +1,7 @@
 use super::{
     env::Env,
     error::{RuntimeError, RuntimeResult},
-    value::{Lit, Value},
+    value::{Lit, Record, Value},
 };
 use crate::infer::tir::{self, DeclKind, Expr, ExprKind, Root};
 use itertools::Itertools;
@@ -160,13 +160,12 @@ fn eval_expr<'src>(
                 }
                 Value::List(list.into())
             }
-            ExprKind::Record { fields, .. } => {
-                todo!()
-                // let mut record = HashMap::new();
-                // for (name, expr) in fields.iter() {
-                //     record.insert(*name.id(), eval_expr(src, env.clone(), expr.clone())?);
-                // }
-                // Value::Record(record.into())
+            ExprKind::Record { name, fields } => {
+                let mut record = vec![];
+                for (name, expr) in fields.iter() {
+                    record.push((name.key(), eval_expr(src, env.clone(), expr.clone())?));
+                }
+                Value::Record(Record::new(name.id(), record))
             }
             ExprKind::Unit => Value::Unit,
         };

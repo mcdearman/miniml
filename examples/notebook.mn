@@ -13,24 +13,28 @@
 --   if b = 0 then a
 --   else gcd b (a % b)
 
--- type Point = { x : Int, y : Int }
--- type Foo = { a : Int, b : Point }
+type Point = { x : Int, y : Int }
+-- type Foint = { x : Int, y : Int }
+type Foo = { a : Int, b : Point }
 
 -- let main args = Point { x = 1, y = 2 }
 
-let fib_iter n =
-  let loop i a b =
-    if i = n then a
-    else loop (i + 1) b (a + b)
-  in loop 0 0 1
-
-let main args = 
-  let loop n =
-    if n <= 60 then
-      let a = println (fib_iter n) 
-      in loop (n + 1)
-    else ()
-   in loop 1
+-- let fib_iter n =
+--   let loop i a b =
+--     if i = n then a
+--     else loop (i + 1) b (a + b)
+--   in loop 0 0 1
+-- 
+-- let main args = 
+--   let loop n =
+--     if n <= 60 then
+--       let a = println (fib_iter n) 
+--       in loop (n + 1)
+--     else ()
+--    in loop 1
   
-
+-- partial application by named arguments
+-- let add a b = a + b
+-- let add2 = add (b = 2)
+-- > \a -> a + 2
     
