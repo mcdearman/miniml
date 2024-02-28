@@ -168,15 +168,10 @@ fn expr_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
             )
             .map(|(name, fields)| ExprKind::Record { name, fields });
 
-        let atom = unit
+        let simple = unit
             .or(lit)
             .or(record)
             .or(ident)
-            .or(lambda)
-            .or(if_)
-            .or(let_)
-            .or(fn_)
-            .or(list)
             .map_with(|kind, e| Expr::new(kind, e.span()))
             .or(just(Token::LParen)
                 .ignore_then(expr)
@@ -187,7 +182,7 @@ fn expr_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
             .map(BinaryOpKind::from)
             .map_with(|op, e| BinaryOp::new(op, e.span()));
 
-        let field_access = atom
+        let dot = simple
             .clone()
             .foldl(
                 op.clone().then(ident_parser()).repeated(),
@@ -204,7 +199,16 @@ fn expr_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
             )
             .boxed();
 
-        let apply = field_access
+        let atom = lambda
+            .or(if_)
+            .or(let_)
+            .or(fn_)
+            .or(list)
+            .map_with(|kind, e| Expr::new(kind, e.span()))
+            .or(dot)
+            .boxed();
+
+        let apply = atom
             .clone()
             .then(atom.repeated().at_least(1).collect().or_not())
             .map(|(fun, args)| match args {

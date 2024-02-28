@@ -44,10 +44,12 @@ dot = atom "." ident # 11
 
 atom = ident 
      | lit 
+     | recordExpr
      | if 
      | lambda 
      | letExpr 
      | fnExpr 
+     | listExpr
      | "(" expr ")"
 
 if = "if" expr "then" expr "else" expr

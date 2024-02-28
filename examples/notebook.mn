@@ -13,13 +13,13 @@
 --   if b = 0 then a
 --   else gcd b (a % b)
 
--- type Point = { x : Int, y : Int }
+type Point = { x : Int, y : Int }
 -- type SPoint = { a : Int, b : String }
 -- type Foint = { x : Int, y : Int }
 -- type Foo = { a : Int, b : Point }
 
-let main args = 
-  let f x = 1 + x in 1 + f 2
+-- let main args = 
+--   let f x = 1 + x in f 2
 
 let main args = 
   let a = Point { x = 1, y = 2 } 
