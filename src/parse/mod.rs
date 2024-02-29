@@ -369,15 +369,10 @@ fn expr_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
         let or = and
             .clone()
             .foldl(
-                just(Token::Or)
-                    .map(BinaryOpKind::from)
-                    .map_with(|op, e| BinaryOp::new(op, e.span()))
-                    .then(and.clone())
-                    .repeated(),
-                |lhs: Expr, (op, rhs): (BinaryOp, Expr)| {
+                just(Token::Or).ignore_then(and.clone()).repeated(),
+                |lhs, rhs| {
                     Expr::new(
-                        ExprKind::Binary {
-                            op: op.clone(),
+                        ExprKind::Or {
                             lhs: lhs.clone(),
                             rhs: rhs.clone(),
                         },

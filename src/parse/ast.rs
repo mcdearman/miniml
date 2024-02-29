@@ -134,6 +134,14 @@ pub enum ExprKind {
         lhs: Expr,
         rhs: Expr,
     },
+    Or {
+        lhs: Expr,
+        rhs: Expr,
+    },
+    And {
+        lhs: Expr,
+        rhs: Expr,
+    },
     If {
         cond: Expr,
         then: Expr,
@@ -164,6 +172,10 @@ pub enum ExprKind {
     Record {
         name: Option<Ident>,
         fields: Vec<(Ident, Expr)>,
+    },
+    Dot {
+        expr: Expr,
+        field: Ident,
     },
     // Sum {
     //     case: Ident,
@@ -373,9 +385,6 @@ pub enum BinaryOpKind {
     Lte,
     Gt,
     Gte,
-    And,
-    Or,
-    Dot,
     Pair,
 }
 
@@ -394,9 +403,6 @@ impl From<Token> for BinaryOpKind {
             Token::Leq => Self::Lte,
             Token::Gt => Self::Gt,
             Token::Geq => Self::Gte,
-            Token::And => Self::And,
-            Token::Or => Self::Or,
-            Token::Period => Self::Dot,
             Token::DoubleColon => Self::Pair,
             _ => unreachable!(),
         }
@@ -418,9 +424,6 @@ impl ToString for BinaryOpKind {
             Self::Lte => "lte".to_string(),
             Self::Gt => "gt".to_string(),
             Self::Gte => "gte".to_string(),
-            Self::And => "and".to_string(),
-            Self::Or => "or".to_string(),
-            Self::Dot => "dot".to_string(),
             Self::Pair => "pair".to_string(),
         }
     }
