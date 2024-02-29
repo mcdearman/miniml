@@ -178,20 +178,18 @@ fn expr_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
                 .then_ignore(just(Token::RParen)))
             .boxed();
 
-        let op = just(Token::Period)
-            .map(BinaryOpKind::from)
-            .map_with(|op, e| BinaryOp::new(op, e.span()));
-
         let dot = simple
             .clone()
             .foldl(
-                op.clone().then(ident_parser()).repeated(),
-                |expr, (op, field)| {
+                just(Token::Period)
+                    .clone()
+                    .ignore_then(ident_parser())
+                    .repeated(),
+                |expr, field| {
                     Expr::new(
-                        ExprKind::Binary {
-                            op,
-                            lhs: expr.clone(),
-                            rhs: Expr::new(ExprKind::Ident(field), field.span()),
+                        ExprKind::Dot {
+                            expr: expr.clone(),
+                            field: field.clone(),
                         },
                         expr.span().extend(field.span()),
                     )
@@ -348,15 +346,10 @@ fn expr_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
         let and = eq
             .clone()
             .foldl(
-                just(Token::And)
-                    .map(BinaryOpKind::from)
-                    .map_with(|op, e| BinaryOp::new(op, e.span()))
-                    .then(eq.clone())
-                    .repeated(),
-                |lhs: Expr, (op, rhs): (BinaryOp, Expr)| {
+                just(Token::And).ignore_then(eq.clone()).repeated(),
+                |lhs, rhs| {
                     Expr::new(
-                        ExprKind::Binary {
-                            op: op.clone(),
+                        ExprKind::And {
                             lhs: lhs.clone(),
                             rhs: rhs.clone(),
                         },

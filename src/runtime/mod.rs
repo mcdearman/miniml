@@ -311,48 +311,6 @@ pub fn default_env(builtins: HashMap<UniqueId, InternedString>) -> Rc<RefCell<En
                     }),
                 );
             }
-            "and" => {
-                env.borrow_mut().insert(
-                    id,
-                    Value::NativeFn(|args| {
-                        if args.len() != 2 {
-                            return Err(RuntimeError::ArityError(2, args.len()));
-                        } else {
-                            match (args.get(0).unwrap(), args.get(1).unwrap()) {
-                                (Value::Lit(Lit::Bool(l)), Value::Lit(Lit::Bool(r))) => {
-                                    Ok(Value::Lit(Lit::Bool(*l && *r)))
-                                }
-                                _ => {
-                                    return Err(RuntimeError::TypeError(InternedString::from(
-                                        format!("Expected bool, found {:?}", args),
-                                    )));
-                                }
-                            }
-                        }
-                    }),
-                );
-            }
-            "or" => {
-                env.borrow_mut().insert(
-                    id,
-                    Value::NativeFn(|args| {
-                        if args.len() != 2 {
-                            return Err(RuntimeError::ArityError(2, args.len()));
-                        } else {
-                            match (args.get(0).unwrap(), args.get(1).unwrap()) {
-                                (Value::Lit(Lit::Bool(l)), Value::Lit(Lit::Bool(r))) => {
-                                    Ok(Value::Lit(Lit::Bool(*l || *r)))
-                                }
-                                _ => {
-                                    return Err(RuntimeError::TypeError(InternedString::from(
-                                        format!("Expected bool, found {:?}", args),
-                                    )));
-                                }
-                            }
-                        }
-                    }),
-                );
-            }
             _ => {}
         }
     }

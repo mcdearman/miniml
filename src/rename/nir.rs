@@ -122,6 +122,14 @@ pub enum ExprKind {
         fun: Expr,
         args: Vec<Expr>,
     },
+    Or {
+        lhs: Expr,
+        rhs: Expr,
+    },
+    And {
+        lhs: Expr,
+        rhs: Expr,
+    },
     If {
         cond: Expr,
         then: Expr,
@@ -146,6 +154,10 @@ pub enum ExprKind {
     Record {
         name: Option<ScopedIdent>,
         fields: Vec<(Ident, Expr)>,
+    },
+    Dot {
+        expr: Expr,
+        field: Ident,
     },
     Unit,
 }

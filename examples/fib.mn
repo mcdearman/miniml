@@ -1,0 +1,17 @@
+let fib n =
+  if n <= 1 then n
+  else fib (n - 1) + fib (n - 2)
+
+let fib_iter n =
+  let loop i a b =
+    if i = n then a
+    else loop (i + 1) b (a + b)
+  in loop 0 0 1
+
+let main args = 
+  let loop n =
+    if n <= 60 then
+      let a = println (fib_iter n) 
+      in loop (n + 1)
+    else ()
+   in loop 1

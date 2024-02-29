@@ -27,8 +27,7 @@ impl Resolver {
             "not", "neg", "add", "sub", 
             "mul", "div", "rem", "pow",
             "eq", "neq", "lt", "lte", 
-            "gt", "gte", "and", "or",
-            "println",
+            "gt", "gte", "println",
         ];
 
         let mut builtins = HashMap::new();
@@ -199,6 +198,20 @@ impl Resolver {
                     op.span(),
                 ))
             }
+            ast::ExprKind::Or { lhs, rhs } => Ok(Expr::new(
+                ExprKind::Or {
+                    lhs: self.resolve_expr(expr)?,
+                    rhs: self.resolve_expr(expr)?,
+                },
+                expr.span(),
+            )),
+            ast::ExprKind::And { lhs, rhs } => Ok(Expr::new(
+                ExprKind::And {
+                    lhs: self.resolve_expr(expr)?,
+                    rhs: self.resolve_expr(expr)?,
+                },
+                expr.span(),
+            )),
             ast::ExprKind::If { cond, then, else_ } => Ok(Expr::new(
                 ExprKind::If {
                     cond: self.resolve_expr(&cond)?,
@@ -306,6 +319,13 @@ impl Resolver {
                     )),
                 }
             }
+            ast::ExprKind::Dot { expr, field } => Ok(Expr::new(
+                ExprKind::Dot {
+                    expr: self.resolve_expr(&expr)?,
+                    field: field.clone(),
+                },
+                expr.span(),
+            )),
             ast::ExprKind::Unit => Ok(Expr::new(ExprKind::Unit, expr.span())),
         }
     }

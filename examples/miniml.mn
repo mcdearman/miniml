@@ -1,9 +1,7 @@
 -- Bootstrapped compiler
 
 -- utils
-type Span = {
-  start : Int,
-}
+type Span = { start : Int }
 
 let spanToString span src = 
   let start = span.start
@@ -26,10 +24,7 @@ let spanToLineColString span src =
   format "{}:{}" (intToString line) (intToString col)
 
 -- Lexer
-type Token = {
-  kind : TokenKind,
-  span : Span,
-}
+type Token = { kind : TokenKind, span : Span }
 
 type TokenKind
   = Eof

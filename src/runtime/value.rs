@@ -54,6 +54,12 @@ impl Record {
     pub fn fields(&self) -> &[(InternedString, Value)] {
         &self.fields
     }
+
+    pub fn get(&self, field: &str) -> Option<&Value> {
+        self.fields
+            .iter()
+            .find_map(|(k, v)| if &**k == field { Some(v) } else { None })
+    }
 }
 
 impl Display for Record {

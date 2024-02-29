@@ -142,3 +142,8 @@ type Point = Point Real Real
 
 -- type alias
 type Point = (Real, Real)
+
+-- partial application by named arguments
+-- let add a b = a + b
+-- let add2 = add (b = 2)
+-- > \a -> a + 2

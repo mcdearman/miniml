@@ -96,6 +96,20 @@ fn eval_expr<'src>(
                     ));
                 }
             },
+            ExprKind::Or { lhs, rhs } => {
+                if let Value::Lit(Lit::Bool(true)) = eval_expr(src, env.clone(), lhs)? {
+                    Value::Lit(Lit::Bool(true))
+                } else {
+                    eval_expr(src, env.clone(), rhs)?
+                }
+            }
+            ExprKind::And { lhs, rhs } => {
+                if let Value::Lit(Lit::Bool(false)) = eval_expr(src, env.clone(), lhs)? {
+                    Value::Lit(Lit::Bool(false))
+                } else {
+                    eval_expr(src, env.clone(), rhs)?
+                }
+            }
             ExprKind::Let {
                 name,
                 expr: let_expr,
@@ -166,6 +180,23 @@ fn eval_expr<'src>(
                     record.push((name.key(), eval_expr(src, env.clone(), expr.clone())?));
                 }
                 Value::Record(Record::new(name.id(), record))
+            }
+            ExprKind::Dot { expr, field } => {
+                let record = eval_expr(src, env.clone(), expr)?;
+                if let Value::Record(record) = record {
+                    if let Some(val) = record.get(&field.key()) {
+                        val.clone()
+                    } else {
+                        return Err(RuntimeError::UnboundIdent(
+                            format!("Field {:?} not found", &src[field.span()]).into(),
+                            field.span(),
+                        ));
+                    }
+                } else {
+                    return Err(RuntimeError::TypeError(
+                        format!("Expected record, found {:?}", record).into(),
+                    ));
+                }
             }
             ExprKind::Unit => Value::Unit,
         };

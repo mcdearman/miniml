@@ -236,6 +236,42 @@ impl<'src> TypeSolver<'src> {
                     expr.span(),
                 ))
             }
+            nir::ExprKind::Or { lhs, rhs } => {
+                let solved_lhs = self.infer_expr(lhs)?;
+                let solved_rhs = self.infer_expr(rhs)?;
+
+                self.constraints
+                    .push(Constraint::Equal(solved_lhs.ty(), Type::Bool));
+                self.constraints
+                    .push(Constraint::Equal(solved_rhs.ty(), Type::Bool));
+
+                Ok(Expr::new(
+                    ExprKind::Or {
+                        lhs: solved_lhs,
+                        rhs: solved_rhs,
+                    },
+                    Type::Bool,
+                    expr.span(),
+                ))
+            }
+            nir::ExprKind::And { lhs, rhs } => {
+                let solved_lhs = self.infer_expr(lhs)?;
+                let solved_rhs = self.infer_expr(rhs)?;
+
+                self.constraints
+                    .push(Constraint::Equal(solved_lhs.ty(), Type::Bool));
+                self.constraints
+                    .push(Constraint::Equal(solved_rhs.ty(), Type::Bool));
+
+                Ok(Expr::new(
+                    ExprKind::And {
+                        lhs: solved_lhs,
+                        rhs: solved_rhs,
+                    },
+                    Type::Bool,
+                    expr.span(),
+                ))
+            }
             nir::ExprKind::Let { name, expr, body } => {
                 let solved_expr = self.infer_expr(expr)?;
                 let scheme = solved_expr.ty().generalize(&self.ctx);
@@ -424,6 +460,37 @@ impl<'src> TypeSolver<'src> {
                             expr.span(),
                         ))
                     }
+                }
+            }
+            nir::ExprKind::Dot { expr, field } => {
+                let solved_expr = self.infer_expr(expr)?;
+
+                if let Type::Record(_, fields) = solved_expr.ty() {
+                    if let Some(ty) = fields
+                        .iter()
+                        .find_or_first(|(k, _)| *k == field.key())
+                        .map(|(_, v)| v)
+                    {
+                        Ok(Expr::new(
+                            ExprKind::Dot {
+                                expr: solved_expr,
+                                field: *field,
+                            },
+                            ty.clone(),
+                            expr.span(),
+                        ))
+                    } else {
+                        Err(TypeError::from(format!(
+                            "field not found: {:?} - \"{}\"",
+                            field,
+                            self.src[field.span()].to_string()
+                        )))
+                    }
+                } else {
+                    Err(TypeError::from(format!(
+                        "expected record type, found: {:?}",
+                        solved_expr.ty()
+                    )))
                 }
             }
             nir::ExprKind::Unit => Ok(Expr::new(ExprKind::Unit, Type::Unit, expr.span())),

@@ -207,6 +207,22 @@ impl Expr {
                 self.ty.apply_subst(subst),
                 self.span,
             ),
+            ExprKind::Or { lhs, rhs } => Expr::new(
+                ExprKind::Or {
+                    lhs: lhs.apply_subst(subst),
+                    rhs: rhs.apply_subst(subst),
+                },
+                self.ty.apply_subst(subst),
+                self.span,
+            ),
+            ExprKind::And { lhs, rhs } => Expr::new(
+                ExprKind::And {
+                    lhs: lhs.apply_subst(subst),
+                    rhs: rhs.apply_subst(subst),
+                },
+                self.ty.apply_subst(subst),
+                self.span,
+            ),
             ExprKind::Let { name, expr, body } => Expr::new(
                 ExprKind::Let {
                     name: name.clone(),
@@ -264,6 +280,14 @@ impl Expr {
                 self.ty.apply_subst(subst),
                 self.span,
             ),
+            ExprKind::Dot { expr, field } => Expr::new(
+                ExprKind::Dot {
+                    expr: expr.apply_subst(subst),
+                    field: field.clone(),
+                },
+                self.ty.apply_subst(subst),
+                self.span,
+            ),
             ExprKind::Unit => self.clone(),
         }
     }
@@ -276,6 +300,14 @@ pub enum ExprKind {
     Apply {
         fun: Expr,
         args: Vec<Expr>,
+    },
+    Or {
+        lhs: Expr,
+        rhs: Expr,
+    },
+    And {
+        lhs: Expr,
+        rhs: Expr,
     },
     If {
         cond: Expr,
@@ -301,6 +333,10 @@ pub enum ExprKind {
     Record {
         name: ScopedIdent,
         fields: Vec<(Ident, Expr)>,
+    },
+    Dot {
+        expr: Expr,
+        field: Ident,
     },
     Unit,
 }
