@@ -1,3 +1,5 @@
+use num_rational::Rational64;
+
 use crate::{
     lex::token::Token,
     utils::{ident::Ident, intern::InternedString, span::Span},
@@ -437,10 +439,10 @@ impl ToString for BinaryOpKind {
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Lit {
-    Int(i64),
     // Byte(u8),
+    Int(i64),
+    Rational(Rational64),
     // Real(f64),
-    // Rational(Rational64),
     Bool(bool),
     String(InternedString),
     // Char(char),

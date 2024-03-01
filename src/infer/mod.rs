@@ -82,7 +82,9 @@ impl<'src> TypeSolver<'src> {
                         });
 
                     self.ctx = self.ctx.apply_subst(&self.sub);
+                    println!("ctx: {:#?}", self.ctx);
                 }
+                _ => todo!(),
             }
         }
 
@@ -181,6 +183,11 @@ impl<'src> TypeSolver<'src> {
                 nir::Lit::Int(n) => Ok(Expr::new(
                     ExprKind::Lit(Lit::Int(n)),
                     Type::Int,
+                    expr.span(),
+                )),
+                nir::Lit::Rational(n) => Ok(Expr::new(
+                    ExprKind::Lit(Lit::Rational(n)),
+                    Type::Rational,
                     expr.span(),
                 )),
                 nir::Lit::Bool(b) => Ok(Expr::new(

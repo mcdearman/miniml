@@ -1,5 +1,12 @@
-type Point = { x : Int, y : Int }
+-- type Point = { x : Int, y : Int }
+-- 
+-- let main args = 
+--   let a = Point { x = 1, y = 2 } 
+--   in println a.x
+
+-- let gcd a b = if b = 0/1 then a else gcd b (a % b)
+let my_rem a b = a % b
 
 let main args = 
-  let a = Point { x = 1, y = 2 } 
-  in println a.x
+  let a = my_rem 10 3
+  in my_rem 1/2 1/3

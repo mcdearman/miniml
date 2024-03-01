@@ -10,7 +10,6 @@ pub enum Token {
     Comment,
     #[regex(r"[ \t\n\r]+", logos::skip)]
     Whitespace,
-
     // Literals and identifiers
     #[regex(
         r"-?((0b[0-1]+)|(0o[0-7]+)|(0x[0-9a-fA-F]+)|([1-9]\d*|0))", 

@@ -52,6 +52,7 @@ fn eval_expr<'src>(
         val = match expr.kind().clone() {
             ExprKind::Lit(lit) => match lit {
                 tir::Lit::Int(i) => Value::Lit(Lit::Int(i)),
+                tir::Lit::Rational(r) => Value::Lit(Lit::Rational(r)),
                 tir::Lit::Bool(b) => Value::Lit(Lit::Bool(b)),
                 tir::Lit::String(s) => Value::Lit(Lit::String(s)),
             },

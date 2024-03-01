@@ -135,6 +135,10 @@ impl Resolver {
         match expr.kind() {
             ast::ExprKind::Lit(l) => match l {
                 ast::Lit::Int(n) => Ok(Expr::new(ExprKind::Lit(Lit::Int(n.clone())), expr.span())),
+                ast::Lit::Rational(n) => Ok(Expr::new(
+                    ExprKind::Lit(Lit::Rational(n.clone())),
+                    expr.span().clone(),
+                )),
                 ast::Lit::Bool(b) => {
                     Ok(Expr::new(ExprKind::Lit(Lit::Bool(*b)), expr.span().clone()))
                 }

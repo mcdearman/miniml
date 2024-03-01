@@ -1,3 +1,5 @@
+use num_rational::Rational64;
+
 use super::{env::Env, error::RuntimeResult};
 use crate::{
     infer::tir::Expr,
@@ -22,9 +24,7 @@ pub enum Value {
 impl Display for Value {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Value::Lit(Lit::Int(i)) => write!(f, "{}", i),
-            Value::Lit(Lit::Bool(b)) => write!(f, "{}", b),
-            Value::Lit(Lit::String(s)) => write!(f, "{}", s),
+            Value::Lit(lit) => write!(f, "{}", lit),
             Value::Lambda { .. } => write!(f, "<lambda>"),
             Value::NativeFn { .. } => write!(f, "<native fn>"),
             Value::List(list) => write!(f, "{}", list),
@@ -78,6 +78,7 @@ impl Display for Record {
 #[derive(Debug, Clone, PartialEq)]
 pub enum Lit {
     Int(i64),
+    Rational(Rational64),
     Bool(bool),
     String(InternedString),
 }
@@ -86,6 +87,7 @@ impl Display for Lit {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Lit::Int(i) => write!(f, "{}", i),
+            Lit::Rational(r) => write!(f, "{}", r),
             Lit::Bool(b) => write!(f, "{}", b),
             Lit::String(s) => write!(f, "{}", s),
         }

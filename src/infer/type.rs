@@ -14,6 +14,7 @@ use std::{
 #[derive(Clone, PartialEq, Eq)]
 pub enum Type {
     Int,
+    Rational,
     Bool,
     String,
     Var(TyVar),
@@ -26,7 +27,7 @@ pub enum Type {
 impl Type {
     pub(super) fn apply_subst(&self, subst: &Substitution) -> Type {
         match self {
-            Self::Int | Self::Bool | Self::String | Self::Unit => self.clone(),
+            Self::Int | Self::Rational | Self::Bool | Self::String | Self::Unit => self.clone(),
             Self::Var(n) => subst.get(&n).cloned().unwrap_or(self.clone()),
             Self::Lambda(params, body) => Self::Lambda(
                 params.into_iter().map(|p| p.apply_subst(subst)).collect(),
@@ -56,9 +57,10 @@ impl Type {
     pub fn unify(&self, other: &Self) -> InferResult<Substitution> {
         println!("unify: {:?} and {:?}", self, other);
         match (self, other) {
-            (Type::Int, Type::Int) | (Type::Bool, Type::Bool) | (Type::Unit, Type::Unit) => {
-                Ok(Substitution::new())
-            }
+            (Type::Int, Type::Int)
+            | (Type::Rational, Type::Rational)
+            | (Type::Bool, Type::Bool)
+            | (Type::Unit, Type::Unit) => Ok(Substitution::new()),
             (Type::Lambda(p1, b1), Type::Lambda(p2, b2)) => {
                 let s1 = p1.iter().zip(p2.iter()).fold(
                     Ok(Substitution::new()),
@@ -85,7 +87,7 @@ impl Type {
 
     pub(super) fn lower(&self, vars: &mut HashMap<TyVar, TyVar>) -> Self {
         match self {
-            Self::Int | Self::Bool | Self::String | Self::Unit => self.clone(),
+            Self::Int | Self::Rational | Self::Bool | Self::String | Self::Unit => self.clone(),
             Self::Var(name) => {
                 if let Some(n) = vars.get(&name) {
                     Self::Var(*n)
@@ -133,6 +135,7 @@ impl Debug for Type {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self.clone() {
             Self::Int => write!(f, "Int"),
+            Self::Rational => write!(f, "Rational"),
             Self::Bool => write!(f, "Bool"),
             Self::String => write!(f, "String"),
             Self::Var(n) => write!(f, "{:?}", n),

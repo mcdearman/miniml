@@ -1,3 +1,5 @@
+use num_rational::Rational64;
+
 use crate::utils::{
     ident::{Ident, ScopedIdent},
     intern::InternedString,
@@ -211,6 +213,7 @@ pub enum TypeHintKind {
 #[derive(Debug, Clone, PartialEq)]
 pub enum Lit {
     Int(i64),
+    Rational(Rational64),
     Bool(bool),
     String(InternedString),
 }

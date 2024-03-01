@@ -5,6 +5,7 @@ use crate::utils::{
     list::List,
     span::Span,
 };
+use num_rational::Rational64;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Root {
@@ -365,6 +366,7 @@ pub enum ExprKind {
 #[derive(Debug, Clone, PartialEq)]
 pub enum Lit {
     Int(i64),
+    Rational(Rational64),
     Bool(bool),
     String(InternedString),
 }

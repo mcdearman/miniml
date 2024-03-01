@@ -75,6 +75,9 @@ pub fn default_env(builtins: HashMap<UniqueId, InternedString>) -> Rc<RefCell<En
                                 (Value::Lit(Lit::Int(l)), Value::Lit(Lit::Int(r))) => {
                                     Ok(Value::Lit(Lit::Int(l + r)))
                                 }
+                                (Value::Lit(Lit::Rational(l)), Value::Lit(Lit::Rational(r))) => {
+                                    Ok(Value::Lit(Lit::Rational(l + r)))
+                                }
                                 _ => {
                                     return Err(RuntimeError::TypeError(InternedString::from(
                                         format!("Expected numbers got {:?}", args),
@@ -96,6 +99,9 @@ pub fn default_env(builtins: HashMap<UniqueId, InternedString>) -> Rc<RefCell<En
                                 (Value::Lit(Lit::Int(l)), Value::Lit(Lit::Int(r))) => {
                                     Ok(Value::Lit(Lit::Int(l - r)))
                                 }
+                                (Value::Lit(Lit::Rational(l)), Value::Lit(Lit::Rational(r))) => {
+                                    Ok(Value::Lit(Lit::Rational(l - r)))
+                                }
                                 _ => {
                                     return Err(RuntimeError::TypeError(InternedString::from(
                                         format!("Expected number, found {:?}", args),
@@ -116,6 +122,9 @@ pub fn default_env(builtins: HashMap<UniqueId, InternedString>) -> Rc<RefCell<En
                             match (args.get(0).unwrap(), args.get(1).unwrap()) {
                                 (Value::Lit(Lit::Int(l)), Value::Lit(Lit::Int(r))) => {
                                     Ok(Value::Lit(Lit::Int(l * r)))
+                                }
+                                (Value::Lit(Lit::Rational(l)), Value::Lit(Lit::Rational(r))) => {
+                                    Ok(Value::Lit(Lit::Rational(l * r)))
                                 }
                                 _ => {
                                     return Err(RuntimeError::TypeError(InternedString::from(
@@ -141,6 +150,9 @@ pub fn default_env(builtins: HashMap<UniqueId, InternedString>) -> Rc<RefCell<En
                                     }
                                     Ok(Value::Lit(Lit::Int(l / r)))
                                 }
+                                (Value::Lit(Lit::Rational(l)), Value::Lit(Lit::Rational(r))) => {
+                                    Ok(Value::Lit(Lit::Rational(l / r)))
+                                }
                                 _ => {
                                     return Err(RuntimeError::TypeError(InternedString::from(
                                         format!("Expected number, found {:?}", args),
@@ -161,6 +173,9 @@ pub fn default_env(builtins: HashMap<UniqueId, InternedString>) -> Rc<RefCell<En
                             match (args.get(0).unwrap(), args.get(1).unwrap()) {
                                 (Value::Lit(Lit::Int(l)), Value::Lit(Lit::Int(r))) => {
                                     Ok(Value::Lit(Lit::Int(l % r)))
+                                }
+                                (Value::Lit(Lit::Rational(l)), Value::Lit(Lit::Rational(r))) => {
+                                    Ok(Value::Lit(Lit::Rational(l % r)))
                                 }
                                 _ => {
                                     return Err(RuntimeError::TypeError(InternedString::from(
