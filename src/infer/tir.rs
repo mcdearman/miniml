@@ -269,6 +269,21 @@ impl Expr {
                 self.ty.apply_subst(subst),
                 self.span,
             ),
+            // ExprKind::Range {
+            //     start,
+            //     end,
+            //     step,
+            //     inclusive,
+            // } => Expr::new(
+            //     ExprKind::Range {
+            //         start: start.apply_subst(subst),
+            //         end: end.apply_subst(subst),
+            //         step: step.as_ref().map(|s| s.apply_subst(subst)),
+            //         inclusive: *inclusive,
+            //     },
+            //     self.ty.apply_subst(subst),
+            //     self.span,
+            // ),
             ExprKind::Record { name, fields } => Expr::new(
                 ExprKind::Record {
                     name: name.clone(),
@@ -330,6 +345,12 @@ pub enum ExprKind {
         expr: Expr,
     },
     List(List<Expr>),
+    // Range {
+    //     start: Expr,
+    //     end: Expr,
+    //     step: Option<Expr>,
+    //     inclusive: bool,
+    // },
     Record {
         name: ScopedIdent,
         fields: Vec<(Ident, Expr)>,

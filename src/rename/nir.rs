@@ -151,6 +151,12 @@ pub enum ExprKind {
         expr: Expr,
     },
     List(Vec<Expr>),
+    // Range {
+    //     start: Expr,
+    //     end: Expr,
+    //     step: Option<Expr>,
+    //     inclusive: bool,
+    // },
     Record {
         name: Option<ScopedIdent>,
         fields: Vec<(Ident, Expr)>,

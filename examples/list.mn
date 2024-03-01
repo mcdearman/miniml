@@ -1,29 +1,9 @@
 -- A pair list is either empty or a pair of an element and a pair list.
-class LinkedList T
-  = Pair (head: T, tail: List T)
+type List T
+  = Pair { head : T, tail : List T }
   | Empty
 
-  -- impl T <: Add Add T T for List T =
-
-class LinkedList T =
-  head : T
-  tail : List T
- 
-  LinkedList : () -> Self
-  LinkedList ()
-
-  LinkedList : (T, List T) -> Self
-  LinkedList head tail =
-    this.head = head
-    this.tail = tail
-
-  -- [len] takes a list [xs] and returns the number of elements in [xs].
-  len : List T -> u64
-  len xs =
-    match xs with
-      Pair x -> 1 + len x
-      Empty -> 0
-
+-- [len] takes a list [xs] and returns the number of elements in [xs].
 pub len (xs : List T) -> u64 =
   match xs with
     List.Pair x -> 1 + len x
@@ -51,7 +31,7 @@ filter f xs =
 -- [foldl] takes a binary operator [f], a starting value [z], and a list [xs],
 -- and returns the result of inserting [f] between successive elements of [xs],
 -- starting with [z] to the left of the leftmost element of [xs].
-pub fn foldl (f: 'a -> 'b -> 'a) (z: 'a) (xs: List 'b) -> 'a =
+pub fn foldl (f: a -> b -> a) (z: a) (xs: List b) -> a =
   match xs with
     List::Pair x -> foldl f (f z x) x
     List::Empty -> z

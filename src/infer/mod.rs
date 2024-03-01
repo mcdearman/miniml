@@ -387,6 +387,40 @@ impl<'src> TypeSolver<'src> {
                     expr.span(),
                 ))
             }
+            // nir::ExprKind::Range {
+            //     start,
+            //     end,
+            //     step,
+            //     inclusive,
+            // } => {
+            //     let solved_start = self.infer_expr(start)?;
+            //     let solved_end = self.infer_expr(end)?;
+            //     let solved_step = step
+            //         .as_ref()
+            //         .map(|s| self.infer_expr(s))
+            //         .transpose()?
+            //         .unwrap_or_else(|| {
+            //             Expr::new(ExprKind::Lit(Lit::Int(1)), Type::Int, expr.span())
+            //         });
+
+            //     self.constraints
+            //         .push(Constraint::Equal(solved_start.ty(), Type::Int));
+            //     self.constraints
+            //         .push(Constraint::Equal(solved_end.ty(), Type::Int));
+            //     self.constraints
+            //         .push(Constraint::Equal(solved_step.ty(), Type::Int));
+
+            //     Ok(Expr::new(
+            //         ExprKind::Range {
+            //             start: solved_start,
+            //             end: solved_end,
+            //             step: Some(solved_step),
+            //             inclusive: *inclusive,
+            //         },
+            //         Type::List(Box::new(Type::Int)),
+            //         expr.span(),
+            //     ))
+            // }
             nir::ExprKind::Record { name, fields } => {
                 if let Some(ident) = name {
                     if let Some(scm) = self.reg.get(&ident.id()) {

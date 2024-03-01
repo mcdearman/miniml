@@ -287,6 +287,20 @@ impl Resolver {
                 ),
                 expr.span(),
             )),
+            // ast::ExprKind::Range {
+            //     start,
+            //     end,
+            //     step,
+            //     inclusive,
+            // } => Ok(Expr::new(
+            //     ExprKind::Range {
+            //         start: self.resolve_expr(&start)?,
+            //         end: self.resolve_expr(&end)?,
+            //         step: step.as_ref().map(|e| self.resolve_expr(e)).transpose()?,
+            //         inclusive: *inclusive,
+            //     },
+            //     expr.span(),
+            // )),
             ast::ExprKind::Record { name, fields } => {
                 let fields = fields
                     .iter()
