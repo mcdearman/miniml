@@ -65,11 +65,11 @@ impl Type {
                 let s1 = p1.iter().zip(p2.iter()).fold(
                     Ok(Substitution::new()),
                     |acc: InferResult<Substitution>, (t1, t2)| {
-                        let s = acc?;
-                        let t1 = t1.apply_subst(&s);
-                        let t2 = t2.apply_subst(&s);
-                        let s1 = t1.unify(&t2)?;
-                        Ok(s1.compose(&s))
+                        let s1 = acc?;
+                        let t1 = t1.apply_subst(&s1);
+                        let t2 = t2.apply_subst(&s1);
+                        let s2 = t1.unify(&t2)?;
+                        Ok(s1.compose(&s2))
                     },
                 )?;
                 let s2 = b1.apply_subst(&s1).unify(&b2.apply_subst(&s1))?;
