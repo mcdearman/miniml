@@ -4,23 +4,23 @@ use std::collections::{BTreeSet, HashMap};
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Context {
-    vars: HashMap<UniqueId, Scheme>,
+    frames: Vec<Frame>,
 }
 
 impl Context {
     pub fn new() -> Self {
         Self {
-            vars: HashMap::new(),
+            frames: vec![Frame::new()],
         }
     }
 
     pub fn from_builtins(builtins: &HashMap<UniqueId, InternedString>) -> Self {
-        let mut vars = HashMap::new();
+        let mut frame = Frame::new();
         for (id, name) in builtins {
             match name.as_ref() {
                 "neg" => {
                     let var = TyVar::fresh();
-                    vars.insert(
+                    frame.insert(
                         *id,
                         Scheme::new(
                             vec![var],
@@ -30,7 +30,7 @@ impl Context {
                 }
                 "not" => {
                     let var = TyVar::fresh();
-                    vars.insert(
+                    frame.insert(
                         *id,
                         Scheme::new(
                             vec![var],
@@ -40,7 +40,7 @@ impl Context {
                 }
                 "add" => {
                     let var = TyVar::fresh();
-                    vars.insert(
+                    frame.insert(
                         *id,
                         Scheme::new(
                             vec![var],
@@ -53,7 +53,7 @@ impl Context {
                 }
                 "sub" => {
                     let var = TyVar::fresh();
-                    vars.insert(
+                    frame.insert(
                         *id,
                         Scheme::new(
                             vec![var],
@@ -66,7 +66,7 @@ impl Context {
                 }
                 "mul" => {
                     let var = TyVar::fresh();
-                    vars.insert(
+                    frame.insert(
                         *id,
                         Scheme::new(
                             vec![var],
@@ -79,7 +79,7 @@ impl Context {
                 }
                 "div" => {
                     let var = TyVar::fresh();
-                    vars.insert(
+                    frame.insert(
                         *id,
                         Scheme::new(
                             vec![var],
@@ -92,7 +92,7 @@ impl Context {
                 }
                 "rem" => {
                     let var = TyVar::fresh();
-                    vars.insert(
+                    frame.insert(
                         *id,
                         Scheme::new(
                             vec![var],
@@ -105,7 +105,7 @@ impl Context {
                 }
                 "pow" => {
                     let var = TyVar::fresh();
-                    vars.insert(
+                    frame.insert(
                         *id,
                         Scheme::new(
                             vec![var],
@@ -118,7 +118,7 @@ impl Context {
                 }
                 "eq" => {
                     let var = TyVar::fresh();
-                    vars.insert(
+                    frame.insert(
                         *id,
                         Scheme::new(
                             vec![var],
@@ -131,7 +131,7 @@ impl Context {
                 }
                 "neq" => {
                     let var = TyVar::fresh();
-                    vars.insert(
+                    frame.insert(
                         *id,
                         Scheme::new(
                             vec![var],
@@ -144,7 +144,7 @@ impl Context {
                 }
                 "lt" => {
                     let var = TyVar::fresh();
-                    vars.insert(
+                    frame.insert(
                         *id,
                         Scheme::new(
                             vec![var],
@@ -157,7 +157,7 @@ impl Context {
                 }
                 "lte" => {
                     let var = TyVar::fresh();
-                    vars.insert(
+                    frame.insert(
                         *id,
                         Scheme::new(
                             vec![var],
@@ -170,7 +170,7 @@ impl Context {
                 }
                 "gt" => {
                     let var = TyVar::fresh();
-                    vars.insert(
+                    frame.insert(
                         *id,
                         Scheme::new(
                             vec![var],
@@ -183,7 +183,7 @@ impl Context {
                 }
                 "gte" => {
                     let var = TyVar::fresh();
-                    vars.insert(
+                    frame.insert(
                         *id,
                         Scheme::new(
                             vec![var],
@@ -196,7 +196,7 @@ impl Context {
                 }
                 "and" => {
                     let var = TyVar::fresh();
-                    vars.insert(
+                    frame.insert(
                         *id,
                         Scheme::new(
                             vec![var],
@@ -206,7 +206,7 @@ impl Context {
                 }
                 "or" => {
                     let var = TyVar::fresh();
-                    vars.insert(
+                    frame.insert(
                         *id,
                         Scheme::new(
                             vec![var],
@@ -216,7 +216,7 @@ impl Context {
                 }
                 "println" => {
                     let var = TyVar::fresh();
-                    vars.insert(
+                    frame.insert(
                         *id,
                         Scheme::new(
                             vec![var],
@@ -227,26 +227,78 @@ impl Context {
                 _ => unreachable!("unknown builtin: {}", name),
             }
         }
-        Self { vars }
+
+        Self {
+            frames: vec![frame],
+        }
+    }
+
+    pub fn push(&mut self) {
+        self.frames.push(Frame::new());
+    }
+
+    pub fn pop(&mut self) {
+        self.frames.pop();
+    }
+
+    pub fn get(&self, id: &UniqueId) -> Option<Scheme> {
+        for frame in self.frames.iter().rev() {
+            if let Some(scheme) = frame.get(id) {
+                return Some(scheme.clone());
+            }
+        }
+        None
+    }
+
+    pub fn insert(&mut self, id: UniqueId, scheme: Scheme) {
+        if let Some(frame) = self.frames.last_mut() {
+            frame.insert(id, scheme);
+        } else {
+            let mut frame = Frame::new();
+            frame.insert(id, scheme);
+            self.frames.push(frame);
+        }
+    }
+
+    pub(super) fn apply_subst(&self, subst: &Substitution) -> Self {
+        Self {
+            frames: self
+                .frames
+                .clone()
+                .into_iter()
+                .map(|frame| frame.apply_subst(subst))
+                .collect(),
+        }
+    }
+
+    pub(super) fn free_vars(&self) -> BTreeSet<TyVar> {
+        self.frames
+            .iter()
+            .map(|frame| frame.free_vars())
+            .fold(BTreeSet::new(), |acc, set| {
+                acc.union(&set).cloned().collect()
+            })
+    }
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct Frame {
+    vars: HashMap<UniqueId, Scheme>,
+}
+
+impl Frame {
+    pub fn new() -> Self {
+        Self {
+            vars: HashMap::new(),
+        }
     }
 
     pub fn get(&self, id: &UniqueId) -> Option<&Scheme> {
         self.vars.get(id)
     }
 
-    pub(crate) fn extend(&mut self, id: UniqueId, scheme: Scheme) {
+    pub fn insert(&mut self, id: UniqueId, scheme: Scheme) {
         self.vars.insert(id, scheme);
-    }
-
-    pub fn union(&self, other: Self) -> Self {
-        Self {
-            vars: self
-                .vars
-                .clone()
-                .into_iter()
-                .chain(other.vars.clone().into_iter())
-                .collect(),
-        }
     }
 
     pub(super) fn apply_subst(&self, subst: &Substitution) -> Self {

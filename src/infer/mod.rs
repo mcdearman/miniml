@@ -131,9 +131,11 @@ impl<'src> TypeSolver<'src> {
                 }
             },
             nir::DeclKind::Let { name, expr } => {
+                self.ctx.push();
                 let solved_expr = self.infer_expr(expr)?;
                 let scheme = solved_expr.ty().generalize(&self.ctx);
-                self.ctx.extend(name.id(), scheme);
+                self.ctx.pop();
+                self.ctx.insert(name.id(), scheme);
 
                 Ok(Decl::new(
                     DeclKind::Let {
@@ -145,19 +147,21 @@ impl<'src> TypeSolver<'src> {
                 ))
             }
             nir::DeclKind::Fn { name, params, expr } => {
+                let fun_ty_var = Type::Var(TyVar::fresh());
+                self.ctx
+                    .insert(name.id(), Scheme::new(vec![], fun_ty_var.clone()));
+
                 let mut param_types = vec![];
+                self.ctx.push();
 
                 for param in params {
                     let param_type = Type::Var(TyVar::fresh());
                     param_types.push(param_type.clone());
-                    self.ctx.extend(param.id(), Scheme::new(vec![], param_type));
+                    self.ctx.insert(param.id(), Scheme::new(vec![], param_type));
                 }
 
-                let fun_ty_var = Type::Var(TyVar::fresh());
-
-                self.ctx
-                    .extend(name.id(), Scheme::new(vec![], fun_ty_var.clone()));
                 let solved_expr = self.infer_expr(expr)?;
+                self.ctx.pop();
 
                 self.constraints.push(Constraint::Equal(
                     fun_ty_var.clone(),
@@ -280,11 +284,13 @@ impl<'src> TypeSolver<'src> {
                 ))
             }
             nir::ExprKind::Let { name, expr, body } => {
+                self.ctx.push();
                 let solved_expr = self.infer_expr(expr)?;
                 let scheme = solved_expr.ty().generalize(&self.ctx);
-
-                self.ctx.extend(name.id(), scheme);
+                self.ctx.insert(name.id(), scheme);
                 let solved_body = self.infer_expr(body)?;
+                self.ctx.pop();
+
                 Ok(Expr::new(
                     ExprKind::Let {
                         name: *name,
@@ -301,20 +307,22 @@ impl<'src> TypeSolver<'src> {
                 expr,
                 body,
             } => {
+                self.ctx.push();
+                let fun_ty_var = Type::Var(TyVar::fresh());
+                self.ctx
+                    .insert(name.id(), Scheme::new(vec![], fun_ty_var.clone()));
+
                 let mut param_types = vec![];
 
                 for param in params {
                     let param_type = Type::Var(TyVar::fresh());
                     param_types.push(param_type.clone());
-                    self.ctx.extend(param.id(), Scheme::new(vec![], param_type));
+                    self.ctx.insert(param.id(), Scheme::new(vec![], param_type));
                 }
 
-                let fun_ty_var = Type::Var(TyVar::fresh());
-
-                self.ctx
-                    .extend(name.id(), Scheme::new(vec![], fun_ty_var.clone()));
                 let solved_expr = self.infer_expr(expr)?;
                 let solved_body = self.infer_expr(body)?;
+                self.ctx.pop();
 
                 self.constraints.push(Constraint::Equal(
                     fun_ty_var.clone(),
@@ -353,16 +361,18 @@ impl<'src> TypeSolver<'src> {
                 ))
             }
             nir::ExprKind::Lambda { params, expr } => {
+                self.ctx.push();
                 let mut param_types = vec![];
 
                 for param in params {
                     let param_type = Type::Var(TyVar::fresh());
                     param_types.push(param_type.clone());
-                    self.ctx.extend(param.id(), Scheme::new(vec![], param_type));
+                    self.ctx.insert(param.id(), Scheme::new(vec![], param_type));
                 }
 
                 let solved_expr = self.infer_expr(expr)?;
                 let fun_ty = Type::Lambda(param_types, Box::new(solved_expr.ty()));
+                self.ctx.pop();
 
                 Ok(Expr::new(
                     ExprKind::Lambda {

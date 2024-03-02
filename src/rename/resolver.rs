@@ -230,6 +230,7 @@ impl Resolver {
                 let res_name = ScopedIdent::new(self.env.define(name.key()), name.span());
                 let res_body = self.resolve_expr(&body)?;
                 self.env.pop();
+
                 Ok(Expr::new(
                     ExprKind::Let {
                         name: res_name,
