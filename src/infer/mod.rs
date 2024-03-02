@@ -286,7 +286,11 @@ impl<'src> TypeSolver<'src> {
             nir::ExprKind::Let { name, expr, body } => {
                 self.ctx.push();
                 let solved_expr = self.infer_expr(expr)?;
+                self.ctx.pop();
+
+                self.ctx.push();
                 let scheme = solved_expr.ty().generalize(&self.ctx);
+                // let scheme = Scheme::new(vec![], solved_expr.ty());
                 self.ctx.insert(name.id(), scheme);
                 let solved_body = self.infer_expr(body)?;
                 self.ctx.pop();
