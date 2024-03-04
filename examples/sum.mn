@@ -1,0 +1,20 @@
+-- sum types are just tagged unions
+type Shape = Circle | Rectangle | Triangle
+
+-- this is equivalent to
+record Circle
+record Rectangle
+record Triangle
+
+-- and the type of the Shape type is
+union Shape = Circle | Rectangle | Triangle
+
+-- here's another with a parameter
+type Option T = Some T | None
+
+-- this is equivalent to
+record Some T = T
+record None
+
+-- and the type of the Option type is
+union Option T = Some T | None
