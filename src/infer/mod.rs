@@ -220,7 +220,6 @@ impl<'src> TypeSolver<'src> {
                 }
             }
             nir::ExprKind::Apply { fun, args } => {
-                self.ctx.push();
                 let solved_fun = self.infer_expr(fun)?;
 
                 let mut solved_args = vec![];
@@ -231,7 +230,6 @@ impl<'src> TypeSolver<'src> {
                     solved_args.push(solved_arg.clone());
                     arg_types.push(solved_arg.ty());
                 }
-                self.ctx.pop();
 
                 let ty_ret = Type::Var(TyVar::fresh());
                 self.constraints.push(Constraint::Equal(
