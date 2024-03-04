@@ -233,6 +233,10 @@ impl Context {
         }
     }
 
+    pub fn iter(&self) -> impl Iterator<Item = (&UniqueId, &Scheme)> {
+        self.frames.iter().rev().flat_map(|frame| frame.vars.iter())
+    }
+
     pub fn push(&mut self) {
         self.frames.push(Frame::new());
     }

@@ -1,6 +1,6 @@
 use self::{
     constraint::Constraint,
-    context::Context,
+    context::{Context, Frame},
     error::{InferResult, TypeError},
     r#type::Type,
     registry::Registry,
@@ -82,11 +82,12 @@ impl<'src> TypeSolver<'src> {
                         });
 
                     self.ctx = self.ctx.apply_subst(&self.sub);
-                    println!("ctx: {:#?}", self.ctx);
                 }
                 _ => todo!(),
             }
         }
+
+        // self.pretty_print_ctx();
 
         (
             if solved_decls.is_empty() {
@@ -147,9 +148,10 @@ impl<'src> TypeSolver<'src> {
                 ))
             }
             nir::DeclKind::Fn { name, params, expr } => {
-                let fun_ty_var = Type::Var(TyVar::fresh());
+                let fun_ty_var = TyVar::fresh();
+                let fun_ty = Type::Var(fun_ty_var.clone());
                 self.ctx
-                    .insert(name.id(), Scheme::new(vec![], fun_ty_var.clone()));
+                    .insert(name.id(), Scheme::new(vec![fun_ty_var], fun_ty.clone()));
 
                 let mut param_types = vec![];
                 self.ctx.push();
@@ -164,7 +166,7 @@ impl<'src> TypeSolver<'src> {
                 self.ctx.pop();
 
                 self.constraints.push(Constraint::Equal(
-                    fun_ty_var.clone(),
+                    fun_ty.clone(),
                     Type::Lambda(param_types, Box::new(solved_expr.ty())),
                 ));
 
@@ -174,7 +176,7 @@ impl<'src> TypeSolver<'src> {
                         params: params.clone(),
                         expr: solved_expr,
                     },
-                    fun_ty_var,
+                    fun_ty,
                     decl.span(),
                 ))
             }
@@ -218,6 +220,7 @@ impl<'src> TypeSolver<'src> {
                 }
             }
             nir::ExprKind::Apply { fun, args } => {
+                self.ctx.push();
                 let solved_fun = self.infer_expr(fun)?;
 
                 let mut solved_args = vec![];
@@ -228,6 +231,7 @@ impl<'src> TypeSolver<'src> {
                     solved_args.push(solved_arg.clone());
                     arg_types.push(solved_arg.ty());
                 }
+                self.ctx.pop();
 
                 let ty_ret = Type::Var(TyVar::fresh());
                 self.constraints.push(Constraint::Equal(
@@ -312,9 +316,10 @@ impl<'src> TypeSolver<'src> {
                 body,
             } => {
                 self.ctx.push();
-                let fun_ty_var = Type::Var(TyVar::fresh());
+                let fun_ty_var = TyVar::fresh();
+                let fun_ty = Type::Var(fun_ty_var.clone());
                 self.ctx
-                    .insert(name.id(), Scheme::new(vec![], fun_ty_var.clone()));
+                    .insert(name.id(), Scheme::new(vec![], fun_ty.clone()));
 
                 let mut param_types = vec![];
 
@@ -329,7 +334,7 @@ impl<'src> TypeSolver<'src> {
                 self.ctx.pop();
 
                 self.constraints.push(Constraint::Equal(
-                    fun_ty_var.clone(),
+                    fun_ty.clone(),
                     Type::Lambda(param_types, Box::new(solved_expr.ty())),
                 ));
 
@@ -408,40 +413,6 @@ impl<'src> TypeSolver<'src> {
                     expr.span(),
                 ))
             }
-            // nir::ExprKind::Range {
-            //     start,
-            //     end,
-            //     step,
-            //     inclusive,
-            // } => {
-            //     let solved_start = self.infer_expr(start)?;
-            //     let solved_end = self.infer_expr(end)?;
-            //     let solved_step = step
-            //         .as_ref()
-            //         .map(|s| self.infer_expr(s))
-            //         .transpose()?
-            //         .unwrap_or_else(|| {
-            //             Expr::new(ExprKind::Lit(Lit::Int(1)), Type::Int, expr.span())
-            //         });
-
-            //     self.constraints
-            //         .push(Constraint::Equal(solved_start.ty(), Type::Int));
-            //     self.constraints
-            //         .push(Constraint::Equal(solved_end.ty(), Type::Int));
-            //     self.constraints
-            //         .push(Constraint::Equal(solved_step.ty(), Type::Int));
-
-            //     Ok(Expr::new(
-            //         ExprKind::Range {
-            //             start: solved_start,
-            //             end: solved_end,
-            //             step: Some(solved_step),
-            //             inclusive: *inclusive,
-            //         },
-            //         Type::List(Box::new(Type::Int)),
-            //         expr.span(),
-            //     ))
-            // }
             nir::ExprKind::Record { name, fields } => {
                 if let Some(ident) = name {
                     if let Some(scm) = self.reg.get(&ident.id()) {
@@ -581,5 +552,15 @@ impl<'src> TypeSolver<'src> {
             }
             nir::TypeHintKind::Unit => Ok(Type::Unit),
         }
+    }
+
+    fn pretty_print_ctx(&self) {
+        let mut ctx = HashMap::new();
+        for (uid, scm) in self.ctx.iter() {
+            let name = self.builtins.get(uid).map(|s| s.to_string());
+            ctx.insert(name.unwrap_or_else(|| format!("{:?}", uid)), scm.clone());
+        }
+
+        println!("ctx: {:#?}", ctx);
     }
 }
