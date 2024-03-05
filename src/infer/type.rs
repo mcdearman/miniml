@@ -8,7 +8,7 @@ use super::{
 use crate::utils::{intern::InternedString, unique_id::UniqueId};
 use std::{
     collections::{BTreeSet, HashMap},
-    fmt::Debug,
+    fmt::{Debug, Display},
 };
 
 #[derive(Clone, PartialEq, Eq)]
@@ -79,39 +79,8 @@ impl Type {
             (Type::Var(var), _) => var.bind(other.clone()),
             _ => Err(TypeError::from(format!(
                 "cannot unify {:?} and {:?}",
-                self.lower(&mut HashMap::new()),
-                other.lower(&mut HashMap::new())
+                self, other,
             ))),
-        }
-    }
-
-    pub(super) fn lower(&self, vars: &mut HashMap<TyVar, TyVar>) -> Self {
-        match self {
-            Self::Int | Self::Rational | Self::Bool | Self::String | Self::Unit => self.clone(),
-            Self::Var(name) => {
-                if let Some(n) = vars.get(&name) {
-                    Self::Var(*n)
-                } else {
-                    let n = vars.len();
-                    vars.insert(*name, TyVar::from(n));
-                    Self::Var(TyVar::from(n))
-                }
-            }
-            Self::Lambda(params, body) => {
-                let mut lowered_params = vec![];
-                for param in params {
-                    lowered_params.push(param.lower(vars));
-                }
-                Self::Lambda(lowered_params, Box::new(body.lower(vars)))
-            }
-            Self::List(ty) => Self::List(Box::new(ty.lower(vars))),
-            Self::Record(name, fields) => {
-                let mut lowered_fields = vec![];
-                for (k, v) in fields {
-                    lowered_fields.push((k.clone(), v.lower(vars)));
-                }
-                Self::Record(*name, lowered_fields)
-            }
         }
     }
 
@@ -138,7 +107,54 @@ impl Debug for Type {
             Self::Rational => write!(f, "Rational"),
             Self::Bool => write!(f, "Bool"),
             Self::String => write!(f, "String"),
-            Self::Var(n) => write!(f, "{:?}", n),
+            Self::Var(n) => write!(f, "{}", n),
+            Self::Lambda(params, body) => write!(f, "{:?} -> {:?}", params, body),
+            Self::List(ty) => write!(f, "[{:?}]", ty),
+            Self::Record(name, fields) => write!(f, "{:?} = {:?}", name, fields),
+            Self::Unit => write!(f, "()"),
+        }
+    }
+}
+
+impl Display for Type {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        fn lower(ty: Type, vars: &mut HashMap<TyVar, TyVar>) -> Type {
+            match ty {
+                Type::Int | Type::Rational | Type::Bool | Type::String | Type::Unit => ty,
+                Type::Var(name) => {
+                    if let Some(n) = vars.get(&name) {
+                        Type::Var(*n)
+                    } else {
+                        let n = vars.len();
+                        vars.insert(name, TyVar::from(n));
+                        Type::Var(TyVar::from(n))
+                    }
+                }
+                Type::Lambda(params, body) => {
+                    let mut lowered_params = vec![];
+                    for param in params {
+                        lowered_params.push(lower(param, vars));
+                    }
+                    Type::Lambda(lowered_params, Box::new(lower(*body, vars)))
+                }
+                Type::List(list_ty) => Type::List(Box::new(lower(*list_ty, vars))),
+                Type::Record(name, fields) => {
+                    let mut lowered_fields = vec![];
+                    for (k, v) in fields {
+                        lowered_fields.push((k.clone(), lower(v, vars)));
+                    }
+                    Type::Record(name, lowered_fields)
+                }
+            }
+        }
+
+        let mut vars = HashMap::new();
+        match lower(self.clone(), &mut vars) {
+            Self::Int => write!(f, "Int"),
+            Self::Rational => write!(f, "Rational"),
+            Self::Bool => write!(f, "Bool"),
+            Self::String => write!(f, "String"),
+            Self::Var(n) => write!(f, "{}", n),
             Self::Lambda(params, body) => write!(f, "{:?} -> {:?}", params, body),
             Self::List(ty) => write!(f, "[{:?}]", ty),
             Self::Record(name, fields) => write!(f, "{:?} = {:?}", name, fields),

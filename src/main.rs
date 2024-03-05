@@ -33,7 +33,7 @@ fn main() {
             return;
         }
     };
-    println!("AST: {:#?}", root);
+    // println!("AST: {:#?}", root);
 
     let mut res = Resolver::new();
     // println!("Builtins: {:#?}", builtins);
@@ -45,13 +45,13 @@ fn main() {
         return;
     }
     let builtins = res.builtins();
-    println!("Builtins: {:#?}", builtins);
+    // println!("Builtins: {:#?}", builtins);
     // println!("NIR: {:#?}", nir);
     if let Some(root) = nir.clone() {
         if !errors.is_empty() {
             panic!("{:#?}", errors);
         }
-        println!("NIR: {:#?}", root);
+        // println!("NIR: {:#?}", root);
 
         let mut solver = TypeSolver::new(&*src, root, builtins.clone());
         if let (Some(tir), errors) = solver.solve() {

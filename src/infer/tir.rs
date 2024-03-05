@@ -1,3 +1,5 @@
+use std::fmt::Display;
+
 use super::{r#type::Type, substitution::Substitution};
 use crate::utils::{
     ident::{Ident, ScopedIdent},
@@ -152,6 +154,12 @@ impl DataType {
     }
 }
 
+// impl Display for DataType {
+//     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+//         write!(f, "datatype {} = {}", self.name, self.kind)
+//     }
+// }
+
 #[derive(Debug, Clone, PartialEq)]
 pub enum DataTypeKind {
     Record { fields: Vec<(Ident, Type)> },
@@ -159,6 +167,23 @@ pub enum DataTypeKind {
     //     cases: Vec<(Ident, Option<SumTypeCaseHint>)>,
     // },
 }
+
+// impl Display for DataTypeKind {
+//     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+//         match self {
+//             DataTypeKind::Record { fields } => {
+//                 write!(f, "{{ ")?;
+//                 for (i, (name, ty)) in fields.iter().enumerate() {
+//                     write!(f, "{}: {}", name, ty)?;
+//                     if i < fields.len() - 1 {
+//                         write!(f, ", ")?;
+//                     }
+//                 }
+//                 write!(f, " }}")
+//             }
+//         }
+//     }
+// }
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Expr {

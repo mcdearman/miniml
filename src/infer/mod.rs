@@ -87,7 +87,9 @@ impl<'src> TypeSolver<'src> {
             }
         }
 
-        // self.pretty_print_ctx();
+        println!("constraints: {:#?}", self.constraints);
+        println!("sub: {:#?}", self.sub);
+        self.pretty_print_ctx();
 
         (
             if solved_decls.is_empty() {
