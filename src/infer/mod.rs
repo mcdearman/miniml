@@ -81,6 +81,8 @@ impl<'src> TypeSolver<'src> {
                             self.sub.clone()
                         });
 
+                    println!("sub: {:#?}", self.sub);
+
                     self.ctx = self.ctx.apply_subst(&self.sub);
                 }
                 _ => todo!(),
