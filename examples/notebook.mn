@@ -4,7 +4,7 @@
 --   let a = Point { x = 1, y = 2 } 
 --   in println a.x
 
--- let gcd a b = if b = 0/1 then a else gcd b (a % b)
+-- let gcd a b = if b = 0 then a else gcd b (a % b)
 let id x = x
 
 let a = id 1

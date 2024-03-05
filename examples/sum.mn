@@ -2,9 +2,9 @@
 type Shape = Circle | Rectangle | Triangle
 
 -- this is equivalent to
-record Circle
-record Rectangle
-record Triangle
+type Circle
+type Rectangle
+type Triangle
 
 -- and the type of the Shape type is
 union Shape = Circle | Rectangle | Triangle
@@ -13,8 +13,15 @@ union Shape = Circle | Rectangle | Triangle
 type Option T = Some T | None
 
 -- this is equivalent to
-record Some T = T
-record None
+type Some T
+type None
 
 -- and the type of the Option type is
 union Option T = Some T | None
+
+type List T = Pair T (List T) | Nil
+
+type Pair T = (T, List T)
+type Nil
+
+union List T = Pair T (List T) | Nil
