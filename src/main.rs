@@ -1,13 +1,13 @@
 use crate::{
-    infer::TypeSolver,
     lex::token_stream::TokenStream,
     parse::parse,
     runtime::{default_env, interpreter::eval},
 };
+use analysis::infer::TypeSolver;
 use rename::resolver::Resolver;
 use std::fs;
 
-mod infer;
+mod analysis;
 mod lex;
 mod parse;
 mod rename;

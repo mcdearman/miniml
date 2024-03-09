@@ -3,7 +3,7 @@ use super::{
     error::{RuntimeError, RuntimeResult},
     value::{Lit, Record, Value},
 };
-use crate::infer::tir::{self, DeclKind, Expr, ExprKind, Root};
+use crate::analysis::infer::tir::{self, *};
 use itertools::Itertools;
 use std::{cell::RefCell, collections::HashMap, rc::Rc};
 

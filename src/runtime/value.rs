@@ -2,7 +2,7 @@ use num_rational::Rational64;
 
 use super::{env::Env, error::RuntimeResult};
 use crate::{
-    infer::tir::Expr,
+    analysis::infer::tir::Expr,
     utils::{intern::InternedString, list::List, unique_id::UniqueId},
 };
 use std::{cell::RefCell, fmt::Display, rc::Rc};
