@@ -1,7 +1,8 @@
 /*
- * High-level Intermediate Representation (HIR) for the analysis phase. This IR
+ * Mid-level Intermediate Representation (MIR) for the analysis phase. This IR
  * is used after type inference for all subsequent analysis and transformations.
- * It's an ANF (A-normal form) representation extended with join points and jumps.
+ * It's an ANF (A-normal form) representation extended with join points, jumps,
+ * and returns.
  */
 
 use crate::utils::span::Span;
@@ -48,5 +49,4 @@ impl Expr {
 #[derive(Debug, Clone, PartialEq)]
 pub enum ExprKind {
     Halt(Expr),
-    
 }
