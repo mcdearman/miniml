@@ -61,15 +61,15 @@ fn main() {
             }
             println!("TIR: {:#?}", tir);
 
-            let env = default_env(builtins.clone());
-            match eval(&*src, env.clone(), tir) {
-                Ok(val) => {
-                    println!("{}", val);
-                }
-                Err(err) => {
-                    println!("Error: {:#?}", err);
-                }
-            }
+            // let env = default_env(builtins.clone());
+            // match eval(&*src, env.clone(), tir) {
+            //     Ok(val) => {
+            //         println!("{}", val);
+            //     }
+            //     Err(err) => {
+            //         println!("Error: {:#?}", err);
+            //     }
+            // }
         };
     }
 }

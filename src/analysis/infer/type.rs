@@ -55,7 +55,7 @@ impl Type {
     }
 
     pub fn unify(&self, other: &Self) -> InferResult<Substitution> {
-        println!("unify: {:?} and {:?}", self, other);
+        // println!("unify: {:?} and {:?}", self, other);
         match (self, other) {
             (Type::Int, Type::Int)
             | (Type::Rational, Type::Rational)
