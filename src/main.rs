@@ -53,7 +53,9 @@ fn main() {
         }
         // println!("NIR: {:#?}", root);
 
-        let mut solver = TypeSolver::new(&*src, root, builtins.clone());
+        let scoped_interner = res.env().dump_to_interner();
+
+        let mut solver = TypeSolver::new(&*src, root, builtins.clone(), scoped_interner);
         if let (Some(tir), errors) = solver.solve() {
             if !errors.is_empty() {
                 println!("Errors: {:#?}", errors);

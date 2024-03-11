@@ -1,7 +1,7 @@
 use super::{intern::InternedString, unique_id::UniqueId};
 use std::collections::HashMap;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct ScopedInterner {
     entries: HashMap<UniqueId, InternedString>,
 }

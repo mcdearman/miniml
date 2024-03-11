@@ -12,7 +12,12 @@ use self::{
 use crate::{
     rename::nir,
     utils::{
-        ident::ScopedIdent, intern::InternedString, list::List, span::Span, unique_id::UniqueId,
+        ident::ScopedIdent,
+        intern::InternedString,
+        list::List,
+        scoped_intern::{self, ScopedInterner},
+        span::Span,
+        unique_id::UniqueId,
     },
 };
 use itertools::Itertools;
@@ -28,7 +33,7 @@ pub mod tir;
 mod ty_var;
 pub mod r#type;
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone)]
 pub struct TypeSolver<'src> {
     src: &'src str,
     nir: nir::Root,
@@ -37,6 +42,7 @@ pub struct TypeSolver<'src> {
     builtins: HashMap<UniqueId, InternedString>,
     constraints: Vec<Constraint>,
     sub: Substitution,
+    scoped_interner: ScopedInterner,
 }
 
 impl<'src> TypeSolver<'src> {
@@ -44,6 +50,7 @@ impl<'src> TypeSolver<'src> {
         src: &'src str,
         nir: nir::Root,
         builtins: HashMap<UniqueId, InternedString>,
+        scoped_interner: ScopedInterner,
     ) -> Self {
         Self {
             src,
@@ -53,6 +60,7 @@ impl<'src> TypeSolver<'src> {
             builtins,
             constraints: vec![],
             sub: Substitution::new(),
+            scoped_interner,
         }
     }
 
@@ -480,6 +488,12 @@ impl<'src> TypeSolver<'src> {
                             ExprKind::Record {
                                 name: ScopedIdent::new(
                                     possible_types[0].0.clone(),
+                                    *self.scoped_interner.get(*possible_types[0].0).ok_or(
+                                        TypeError::from(format!(
+                                            "unbound type: {:?}",
+                                            possible_types[0].0
+                                        )),
+                                    )?,
                                     Span::new(expr.span().start(), expr.span().start()),
                                 ),
                                 fields: solved_fields,

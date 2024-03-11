@@ -25,8 +25,8 @@ impl Env {
         }
     }
 
-    pub fn dump_to_interner(&self, interner: &mut ScopedInterner) {
-        ScopedInterner::from_iter(self.flatten().into_iter().map(|(k, v)| (v, k)));
+    pub fn dump_to_interner(&self) -> ScopedInterner {
+        ScopedInterner::from_iter(self.flatten().into_iter().map(|(k, v)| (v, k)))
     }
 
     fn flatten(&self) -> HashMap<InternedString, UniqueId> {

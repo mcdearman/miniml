@@ -122,7 +122,7 @@ impl Resolver {
                 self.env.push();
                 let params = params
                     .iter()
-                    .map(|p| ScopedIdent::new(self.env.define(p.key()), name.key(), p.span()))
+                    .map(|p| ScopedIdent::new(self.env.define(p.key()), p.key(), p.span()))
                     .collect();
                 let expr = self.resolve_expr(&expr)?;
                 self.env.pop();
