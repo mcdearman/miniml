@@ -1,3 +1,5 @@
+use itertools::Itertools;
+
 use super::{
     context::Context,
     error::{InferResult, TypeError},
@@ -108,7 +110,7 @@ impl Debug for Type {
             Self::Bool => write!(f, "Bool"),
             Self::String => write!(f, "String"),
             Self::Var(n) => write!(f, "{}", n),
-            Self::Lambda(params, body) => write!(f, "{:?} -> {:?}", params, body),
+            Self::Lambda(params, body) => write!(f, "{} -> {:?}", params.iter().join(" "), body),
             Self::List(ty) => write!(f, "[{:?}]", ty),
             Self::Record(name, fields) => write!(f, "{:?} = {:?}", name, fields),
             Self::Unit => write!(f, "()"),

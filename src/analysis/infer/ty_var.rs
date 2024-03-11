@@ -65,11 +65,11 @@ impl Display for TyVar {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let id = usize::from(self.0);
         if id < ALPHABET.len() {
-            write!(f, "'{}", ALPHABET[id])
+            write!(f, "{}", ALPHABET[id])
         } else {
             write!(
                 f,
-                "'{}{}",
+                "{}{}",
                 ALPHABET[id / ALPHABET.len() - 1],
                 (id + 1) % ALPHABET.len()
             )
