@@ -95,7 +95,7 @@ impl<'src> TypeSolver<'src> {
 
         // println!("constraints: {:#?}", self.constraints);
         // println!("sub: {:#?}", self.sub);
-        self.pretty_print_ctx();
+        // self.pretty_print_ctx();
 
         (
             if solved_decls.is_empty() {
@@ -140,10 +140,8 @@ impl<'src> TypeSolver<'src> {
                 }
             },
             nir::DeclKind::Let { name, expr } => {
-                self.ctx.push();
                 let solved_expr = self.infer_expr(expr)?;
                 let scheme = solved_expr.ty().generalize(&self.ctx);
-                self.ctx.pop();
                 self.ctx.insert(name.id(), scheme);
 
                 Ok(Decl::new(
@@ -162,7 +160,6 @@ impl<'src> TypeSolver<'src> {
                     .insert(name.id(), Scheme::new(vec![fun_ty_var], fun_ty.clone()));
 
                 let mut param_types = vec![];
-                self.ctx.push();
 
                 for param in params {
                     let var = TyVar::fresh();
@@ -173,7 +170,6 @@ impl<'src> TypeSolver<'src> {
                 }
 
                 let solved_expr = self.infer_expr(expr)?;
-                self.ctx.pop();
 
                 self.constraints.push(Constraint::Equal(
                     fun_ty.clone(),
@@ -248,7 +244,7 @@ impl<'src> TypeSolver<'src> {
                 ));
 
                 // println!("constraints: {:#?}", self.constraints);
-                // println!("ctx: {:#?}", self.ctx);
+                // println!("apply ctx: {:#?}", self.ctx);
 
                 Ok(Expr::new(
                     ExprKind::Apply {
@@ -296,16 +292,12 @@ impl<'src> TypeSolver<'src> {
                 ))
             }
             nir::ExprKind::Let { name, expr, body } => {
-                self.ctx.push();
                 let solved_expr = self.infer_expr(expr)?;
-                self.ctx.pop();
 
-                self.ctx.push();
                 let scheme = solved_expr.ty().generalize(&self.ctx);
                 // let scheme = Scheme::new(vec![], solved_expr.ty());
                 self.ctx.insert(name.id(), scheme);
                 let solved_body = self.infer_expr(body)?;
-                self.ctx.pop();
 
                 Ok(Expr::new(
                     ExprKind::Let {
@@ -323,7 +315,6 @@ impl<'src> TypeSolver<'src> {
                 expr,
                 body,
             } => {
-                self.ctx.push();
                 let fun_ty_var = TyVar::fresh();
                 let fun_ty = Type::Var(fun_ty_var.clone());
                 self.ctx
@@ -339,7 +330,6 @@ impl<'src> TypeSolver<'src> {
 
                 let solved_expr = self.infer_expr(expr)?;
                 let solved_body = self.infer_expr(body)?;
-                self.ctx.pop();
 
                 self.constraints.push(Constraint::Equal(
                     fun_ty.clone(),
@@ -378,7 +368,6 @@ impl<'src> TypeSolver<'src> {
                 ))
             }
             nir::ExprKind::Lambda { params, expr } => {
-                self.ctx.push();
                 let mut param_types = vec![];
 
                 for param in params {
@@ -389,7 +378,6 @@ impl<'src> TypeSolver<'src> {
 
                 let solved_expr = self.infer_expr(expr)?;
                 let fun_ty = Type::Lambda(param_types, Box::new(solved_expr.ty()));
-                self.ctx.pop();
 
                 Ok(Expr::new(
                     ExprKind::Lambda {

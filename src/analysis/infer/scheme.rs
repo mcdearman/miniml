@@ -1,5 +1,5 @@
-use super::{context::Context, r#type::Type, substitution::Substitution, ty_var::TyVar};
-use std::collections::BTreeSet;
+use super::{r#type::Type, substitution::Substitution, ty_var::TyVar};
+use std::collections::HashSet;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Scheme {
@@ -23,7 +23,7 @@ impl Scheme {
         }
     }
 
-    pub fn free_vars(&self) -> BTreeSet<TyVar> {
+    pub fn free_vars(&self) -> HashSet<TyVar> {
         self.ty
             .free_vars()
             .difference(&self.vars.iter().cloned().collect())

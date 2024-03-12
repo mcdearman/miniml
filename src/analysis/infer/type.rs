@@ -1,5 +1,3 @@
-use itertools::Itertools;
-
 use super::{
     context::Context,
     error::{InferResult, TypeError},
@@ -8,8 +6,9 @@ use super::{
     ty_var::TyVar,
 };
 use crate::utils::{intern::InternedString, unique_id::UniqueId};
+use itertools::Itertools;
 use std::{
-    collections::{BTreeSet, HashMap},
+    collections::{HashMap, HashSet},
     fmt::{Debug, Display},
 };
 
@@ -47,7 +46,7 @@ impl Type {
     }
 
     // id : forall a. a -> a
-    //  
+    //
     pub fn generalize(&self, ctx: &Context) -> Scheme {
         Scheme::new(
             self.free_vars()
@@ -88,18 +87,18 @@ impl Type {
         }
     }
 
-    pub(super) fn free_vars(&self) -> BTreeSet<TyVar> {
+    pub(super) fn free_vars(&self) -> HashSet<TyVar> {
         match self {
             Self::Var(n) => vec![n.clone()].into_iter().collect(),
             Self::Lambda(params, body) => params
                 .into_iter()
-                .fold(BTreeSet::new(), |acc, p| {
+                .fold(HashSet::new(), |acc, p| {
                     p.free_vars().union(&acc).cloned().collect()
                 })
                 .union(&body.free_vars())
                 .cloned()
                 .collect(),
-            _ => BTreeSet::new(),
+            _ => HashSet::new(),
         }
     }
 }
