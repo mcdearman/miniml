@@ -46,6 +46,8 @@ impl Type {
         }
     }
 
+    // id : forall a. a -> a
+    //  
     pub fn generalize(&self, ctx: &Context) -> Scheme {
         Scheme::new(
             self.free_vars()
@@ -109,7 +111,7 @@ impl Debug for Type {
             Self::Rational => write!(f, "Rational"),
             Self::Bool => write!(f, "Bool"),
             Self::String => write!(f, "String"),
-            Self::Var(n) => write!(f, "{}", n),
+            Self::Var(n) => write!(f, "{:?}", n),
             Self::Lambda(params, body) => write!(f, "{} -> {:?}", params.iter().join(" "), body),
             Self::List(ty) => write!(f, "[{:?}]", ty),
             Self::Record(name, fields) => write!(f, "{:?} = {:?}", name, fields),
@@ -156,7 +158,7 @@ impl Display for Type {
             Self::Rational => write!(f, "Rational"),
             Self::Bool => write!(f, "Bool"),
             Self::String => write!(f, "String"),
-            Self::Var(n) => write!(f, "{}", n),
+            Self::Var(n) => write!(f, "{:?}", n),
             Self::Lambda(params, body) => write!(f, "{:?} -> {:?}", params, body),
             Self::List(ty) => write!(f, "[{:?}]", ty),
             Self::Record(name, fields) => write!(f, "{:?} = {:?}", name, fields),

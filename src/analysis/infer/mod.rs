@@ -1,6 +1,6 @@
 use self::{
     constraint::Constraint,
-    context::{Context, Frame},
+    context::Context,
     error::{InferResult, TypeError},
     r#type::Type,
     registry::Registry,
@@ -12,12 +12,8 @@ use self::{
 use crate::{
     rename::nir,
     utils::{
-        ident::ScopedIdent,
-        intern::InternedString,
-        list::List,
-        scoped_intern::{self, ScopedInterner},
-        span::Span,
-        unique_id::UniqueId,
+        ident::ScopedIdent, intern::InternedString, list::List, scoped_intern::ScopedInterner,
+        span::Span, unique_id::UniqueId,
     },
 };
 use itertools::Itertools;
@@ -79,7 +75,7 @@ impl<'src> TypeSolver<'src> {
         for c in self.constraints.iter() {
             match c {
                 Constraint::Equal(t1, t2) => {
-                    // println!("unify {:?} and {:?}", t1, t2);
+                    println!("unify {:?} and {:?}", t1, t2);
                     self.sub = t1
                         .apply_subst(&self.sub)
                         .unify(&t2.apply_subst(&self.sub))
@@ -99,7 +95,7 @@ impl<'src> TypeSolver<'src> {
 
         // println!("constraints: {:#?}", self.constraints);
         // println!("sub: {:#?}", self.sub);
-        // self.pretty_print_ctx();
+        self.pretty_print_ctx();
 
         (
             if solved_decls.is_empty() {
@@ -161,7 +157,7 @@ impl<'src> TypeSolver<'src> {
             }
             nir::DeclKind::Fn { name, params, expr } => {
                 let fun_ty_var = TyVar::fresh();
-                let fun_ty = Type::Var(fun_ty_var.clone());
+                let fun_ty = Type::Var(fun_ty_var);
                 self.ctx
                     .insert(name.id(), Scheme::new(vec![fun_ty_var], fun_ty.clone()));
 
@@ -169,9 +165,11 @@ impl<'src> TypeSolver<'src> {
                 self.ctx.push();
 
                 for param in params {
-                    let param_type = Type::Var(TyVar::fresh());
+                    let var = TyVar::fresh();
+                    let param_type = Type::Var(var);
                     param_types.push(param_type.clone());
-                    self.ctx.insert(param.id(), Scheme::new(vec![], param_type));
+                    self.ctx
+                        .insert(param.id(), Scheme::new(vec![var], param_type));
                 }
 
                 let solved_expr = self.infer_expr(expr)?;

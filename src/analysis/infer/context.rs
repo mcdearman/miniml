@@ -30,6 +30,7 @@ impl Context {
                 }
                 "not" => {
                     let var = TyVar::fresh();
+                    println!("not: {:?}", var);
                     frame.insert(
                         *id,
                         Scheme::new(

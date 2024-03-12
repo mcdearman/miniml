@@ -45,7 +45,7 @@ fn main() {
         return;
     }
     let builtins = res.builtins();
-    // println!("Builtins: {:#?}", builtins);
+    println!("Builtins: {:#?}", builtins);
     // println!("NIR: {:#?}", nir);
     if let Some(root) = nir.clone() {
         if !errors.is_empty() {

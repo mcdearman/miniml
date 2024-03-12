@@ -102,11 +102,13 @@ let fib n =
   in loop n 0 1 
 
 -- pattern matching
+-- map : (a -> b) [a] -> [b]
 let map f xs = match xs with
   | [] -> []
-  | [y::ys] -> f y :: map f ys
+  | x::xs -> f x :: map f xs
 
-let mapIter f xs = 
+-- map_iter : (a -> b) [a] -> [b]
+let map_iter f xs = 
   let loop xs acc = match xs with
     | [] -> acc
     | x::xs -> loop xs (f x :: acc)

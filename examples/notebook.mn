@@ -1,6 +1,4 @@
 let id x = x
 
 let main args = 
-  let a = id 1 in id "hello"
-
--- (\y -> 10 + if y then y + 3 else y * y) 2
+  let _a = id 1 in id "hello"
