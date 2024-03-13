@@ -111,7 +111,17 @@ impl Debug for Type {
             Self::Bool => write!(f, "Bool"),
             Self::String => write!(f, "String"),
             Self::Var(n) => write!(f, "{:?}", n),
-            Self::Lambda(params, body) => write!(f, "{} -> {:?}", params.iter().join(" "), body),
+            Self::Lambda(params, body) => {
+                let mut param_str = String::new();
+                for (i, param) in params.iter().enumerate() {
+                    if i == 0 {
+                        param_str.push_str(&format!("{:?}", param));
+                    } else {
+                        param_str.push_str(&format!(" {:?}", param));
+                    }
+                }
+                write!(f, "{} -> {:?}", param_str, body)
+            }
             Self::List(ty) => write!(f, "[{:?}]", ty),
             Self::Record(name, fields) => write!(f, "{:?} = {:?}", name, fields),
             Self::Unit => write!(f, "()"),
@@ -157,7 +167,7 @@ impl Display for Type {
             Self::Rational => write!(f, "Rational"),
             Self::Bool => write!(f, "Bool"),
             Self::String => write!(f, "String"),
-            Self::Var(n) => write!(f, "{:?}", n),
+            Self::Var(n) => write!(f, "{}", n),
             Self::Lambda(params, body) => write!(f, "{:?} -> {:?}", params, body),
             Self::List(ty) => write!(f, "[{:?}]", ty),
             Self::Record(name, fields) => write!(f, "{:?} = {:?}", name, fields),
