@@ -157,7 +157,7 @@ impl<'src> TypeSolver<'src> {
                 let fun_ty_var = TyVar::fresh();
                 let fun_ty = Type::Var(fun_ty_var);
                 self.ctx
-                    .insert(name.id(), Scheme::new(vec![fun_ty_var], fun_ty.clone()));
+                    .insert(name.id(), Scheme::new(vec![], fun_ty.clone()));
 
                 let mut param_types = vec![];
 

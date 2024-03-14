@@ -200,15 +200,15 @@ impl Resolver {
             }
             ast::ExprKind::Or { lhs, rhs } => Ok(Expr::new(
                 ExprKind::Or {
-                    lhs: self.resolve_expr(expr)?,
-                    rhs: self.resolve_expr(expr)?,
+                    lhs: self.resolve_expr(lhs)?,
+                    rhs: self.resolve_expr(rhs)?,
                 },
                 expr.span(),
             )),
             ast::ExprKind::And { lhs, rhs } => Ok(Expr::new(
                 ExprKind::And {
-                    lhs: self.resolve_expr(expr)?,
-                    rhs: self.resolve_expr(expr)?,
+                    lhs: self.resolve_expr(lhs)?,
+                    rhs: self.resolve_expr(rhs)?,
                 },
                 expr.span(),
             )),
