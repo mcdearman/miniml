@@ -6,7 +6,7 @@ use super::{
 use crate::utils::unique_id::UniqueId;
 use std::fmt::{Debug, Display};
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct TyVar(UniqueId);
 
 impl TyVar {
@@ -46,11 +46,11 @@ impl From<usize> for TyVar {
     }
 }
 
-// impl Debug for TyVar {
-//     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-//         write!(f, "TyVar({})", self)
-//     }
-// }
+impl Debug for TyVar {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "TyVar({})", self)
+    }
+}
 
 #[rustfmt::skip]
 const ALPHABET: &[char] = &[

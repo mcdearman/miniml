@@ -165,8 +165,7 @@ impl<'src> TypeSolver<'src> {
                     let var = TyVar::fresh();
                     let param_type = Type::Var(var);
                     param_types.push(param_type.clone());
-                    self.ctx
-                        .insert(param.id(), Scheme::new(vec![var], param_type));
+                    self.ctx.insert(param.id(), Scheme::new(vec![], param_type));
                 }
 
                 let solved_expr = self.infer_expr(expr)?;

@@ -107,6 +107,19 @@ let map f xs = match xs with
   | [] -> []
   | x::xs -> f x :: map f xs
 
+-- this is equivalent to the following S-expression
+-- (map : (a -> b) [a] -> [b])
+()
+
+map : (a -> b) [a] -> [b]
+  | f []      = []
+  | f (x::xs) = f x :: map f xs
+
+-- S-expression equivalent
+(map : (a -> b) [a]     -> [b])
+(map   f        []      =  [])
+(map   f        (x::xs) =  (:: (f x) (map f xs)))
+
 -- map_iter : (a -> b) [a] -> [b]
 let map_iter f xs = 
   let loop xs acc = match xs with
@@ -114,8 +127,14 @@ let map_iter f xs =
     | x::xs -> loop xs (f x :: acc)
   in loop xs []
 
+map_iter : (a -> b) [a]     -> [b]
+map_iter   f        []      =  []
+map_iter   f        (x::xs) =  loop xs (f x :: acc)
+  where loop [] acc = acc
+  loop (x::xs) acc = loop xs (f x :: acc)
+
 -- this is equivalent to the following imperative code
--- let mapIter f xs = 
+-- let map_iter f xs = 
 --   let acc = [];
 --   for x in xs do
 --     acc = f x :: acc;
@@ -127,20 +146,31 @@ let gcd a b =
   else gcd b (a % b)
 
 -- record
-type Point = { x : Real, y : Real }
+typedef Point = { x : Real, y : Real }
 let p = { x = 1, y = 2 }
 p.x
 
 -- sum type
-type Shape 
+data Shape 
   = Circle Real 
-  | Rectangle Real Real
+  | Rectangle (Real, Real)
+
+-- here's the same in S-expressions
+(data Shape 
+  (Circle Real) 
+  (Rectangle (Real Real)))
 
 let s1 = Circle 1
 let s2 = Rectangle 1.0 2.0
 
--- product types are just single-constructor sum types
-type Point = Point Real Real
+-- here's the same in S-expressions
+(let s1 (Circle 1))
+
+-- product type
+typedef Point = (Real, Real)
+
+-- S-expression equivalent
+(typedef Point (Real Real))
 
 -- type alias
 type Point = (Real, Real)

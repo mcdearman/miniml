@@ -1,4 +1,3 @@
 let id x = x
 
-let main args = 
-  let _a = id 1 in id "hello"
+let _a = id 1
