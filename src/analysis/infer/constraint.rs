@@ -1,6 +1,8 @@
-use super::r#type::Type;
+use super::{r#type::Type, scheme::Scheme};
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Constraint {
-    Equal(Type, Type),
+    Eq(Type, Type),
+    Inst(Scheme),
+    Gen(Type),
 }

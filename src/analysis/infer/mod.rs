@@ -74,7 +74,7 @@ impl<'src> TypeSolver<'src> {
 
         for c in self.constraints.iter() {
             match c {
-                Constraint::Equal(t1, t2) => {
+                Constraint::Eq(t1, t2) => {
                     println!("unify {:?} and {:?}", t1, t2);
                     self.sub = t1
                         .apply_subst(&self.sub)
@@ -170,7 +170,7 @@ impl<'src> TypeSolver<'src> {
 
                 let solved_expr = self.infer_expr(expr)?;
 
-                self.constraints.push(Constraint::Equal(
+                self.constraints.push(Constraint::Eq(
                     fun_ty.clone(),
                     Type::Lambda(param_types, Box::new(solved_expr.ty())),
                 ));
@@ -237,7 +237,7 @@ impl<'src> TypeSolver<'src> {
                 }
 
                 let ty_ret = Type::Var(TyVar::fresh());
-                self.constraints.push(Constraint::Equal(
+                self.constraints.push(Constraint::Eq(
                     solved_fun.ty(),
                     Type::Lambda(arg_types, Box::new(ty_ret.clone())),
                 ));
@@ -259,9 +259,9 @@ impl<'src> TypeSolver<'src> {
                 let solved_rhs = self.infer_expr(rhs)?;
 
                 self.constraints
-                    .push(Constraint::Equal(solved_lhs.ty(), Type::Bool));
+                    .push(Constraint::Eq(solved_lhs.ty(), Type::Bool));
                 self.constraints
-                    .push(Constraint::Equal(solved_rhs.ty(), Type::Bool));
+                    .push(Constraint::Eq(solved_rhs.ty(), Type::Bool));
 
                 Ok(Expr::new(
                     ExprKind::Or {
@@ -277,9 +277,9 @@ impl<'src> TypeSolver<'src> {
                 let solved_rhs = self.infer_expr(rhs)?;
 
                 self.constraints
-                    .push(Constraint::Equal(solved_lhs.ty(), Type::Bool));
+                    .push(Constraint::Eq(solved_lhs.ty(), Type::Bool));
                 self.constraints
-                    .push(Constraint::Equal(solved_rhs.ty(), Type::Bool));
+                    .push(Constraint::Eq(solved_rhs.ty(), Type::Bool));
 
                 Ok(Expr::new(
                     ExprKind::And {
@@ -330,7 +330,7 @@ impl<'src> TypeSolver<'src> {
                 let solved_expr = self.infer_expr(expr)?;
                 let solved_body = self.infer_expr(body)?;
 
-                self.constraints.push(Constraint::Equal(
+                self.constraints.push(Constraint::Eq(
                     fun_ty.clone(),
                     Type::Lambda(param_types, Box::new(solved_expr.ty())),
                 ));
@@ -352,9 +352,9 @@ impl<'src> TypeSolver<'src> {
                 let solved_else_ = self.infer_expr(else_)?;
 
                 self.constraints
-                    .push(Constraint::Equal(solved_cond.ty(), Type::Bool));
+                    .push(Constraint::Eq(solved_cond.ty(), Type::Bool));
                 self.constraints
-                    .push(Constraint::Equal(solved_then.ty(), solved_else_.ty()));
+                    .push(Constraint::Eq(solved_then.ty(), solved_else_.ty()));
 
                 Ok(Expr::new(
                     ExprKind::If {
@@ -399,7 +399,7 @@ impl<'src> TypeSolver<'src> {
 
                 for elem in solved_elems.iter() {
                     self.constraints
-                        .push(Constraint::Equal(list_ty.clone(), elem.ty()));
+                        .push(Constraint::Eq(list_ty.clone(), elem.ty()));
                 }
 
                 Ok(Expr::new(
