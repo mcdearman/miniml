@@ -145,9 +145,9 @@ impl TypeSolver {
 
                 let solved_expr = self.infer_expr(expr)?;
 
-                self.sub = fun_ty
-                    .apply_subst(&self.sub)
-                    .unify(&Type::Lambda(param_types, Box::new(solved_expr.ty())))?;
+                // self.sub = fun_ty
+                //     .apply_subst(&self.sub)
+                //     .unify(&Type::Lambda(param_types, Box::new(solved_expr.ty())))?;
 
                 Ok(Decl::new(
                     DeclKind::Fn {
@@ -307,7 +307,7 @@ impl TypeSolver {
                 let solved_expr = self.infer_expr(expr)?;
                 let solved_body = self.infer_expr(body)?;
 
-                self.sub = fun_ty.unify(&Type::Lambda(param_types, Box::new(solved_expr.ty())))?;
+                // self.sub = fun_ty.unify(&Type::Lambda(param_types, Box::new(solved_expr.ty())))?;
 
                 Ok(Expr::new(
                     ExprKind::Fn {
