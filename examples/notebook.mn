@@ -1,3 +1,4 @@
+-- let id = \x -> x
 let id x = x
 
 let a = id 1

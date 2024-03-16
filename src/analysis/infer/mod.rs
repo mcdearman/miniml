@@ -75,7 +75,7 @@ impl<'src> TypeSolver<'src> {
         for c in self.constraints.iter() {
             match c {
                 Constraint::Eq(t1, t2) => {
-                    println!("unify {:?} and {:?}", t1, t2);
+                    // println!("unify {:?} and {:?}", t1, t2);
                     self.sub = t1
                         .apply_subst(&self.sub)
                         .unify(&t2.apply_subst(&self.sub))
@@ -94,7 +94,7 @@ impl<'src> TypeSolver<'src> {
         }
 
         // println!("constraints: {:#?}", self.constraints);
-        // println!("sub: {:#?}", self.sub);
+        println!("sub: {:#?}", self.sub);
         // self.pretty_print_ctx();
 
         (
