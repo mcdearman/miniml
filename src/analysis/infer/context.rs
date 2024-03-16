@@ -30,7 +30,6 @@ impl Context {
                 }
                 "not" => {
                     let var = TyVar::fresh();
-                    println!("not: {:?}", var);
                     bindings.insert(
                         *id,
                         Scheme::new(

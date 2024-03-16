@@ -44,15 +44,10 @@ fn root_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
 fn repl_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
 ) -> impl ChumskyParser<'a, I, Root, extra::Err<Rich<'a, Token, Span>>> {
     expr_parser()
-        .map(|e| DeclKind::Let {
+        .map(|e| DeclKind::Fn {
             name: Ident::new(InternedString::from("main"), e.span().clone()),
-            expr: Expr::new(
-                ExprKind::Lambda {
-                    params: vec![Ident::new(InternedString::from("args"), e.span().clone())],
-                    expr: e.clone(),
-                },
-                e.span().clone(),
-            ),
+            params: vec![Ident::new(InternedString::from("args"), e.span().clone())],
+            expr: e.clone(),
         })
         .map_with(|kind, e| Decl::new(kind, e.span()))
         .or(decl_parser())

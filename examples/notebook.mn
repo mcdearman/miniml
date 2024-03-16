@@ -2,3 +2,4 @@
 let id x = x
 
 let a = id 1
+-- let a = let b = id 1 in id 1/2

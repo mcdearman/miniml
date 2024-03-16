@@ -2,14 +2,25 @@
 
 (defn id (x) x)
 
-(type List (a)
-  Nil
-  (Pair a (List a)))
+(module List
+  (record Nil)
+  (record (Pair head tail))
+
+;; overload `display` for `List`
+(defn display (xs)
+  (match xs
+    (Nil (println "[]"))
+    ((Pair x xs) (begin
+                   (print "[")
+                   (display x)
+                   (print ", ")
+                   (display xs)
+                   (print "]")))))
 
 (defn map (f xs)
   (match xs
-    ([] [])
-    ((Pair x xs) (Pair (f x) (map f xs)))))
+    (Nil Nil)
+    ((Pair x xs) (Pair (f x) (map f xs))))))
 
 (macro defn (name args body)
   `(def ,name (fn ,args ,body)))
@@ -21,14 +32,8 @@
 (begin (println 1) (println 2) (println 3))
 
 ;; expands to:
-(let ((_)) (print 1) 
-  (let ((_)) (print 2) 
-    (let ((_)) (print 3) _)) '())
-
-let _ = println 1 in
-let _ = println 2 in
-let _ = println 3 in
-()
+(let ((_ (print 1)
+      (_ (print 2) (print 3)))))
 
 (let ((x 1) (y 2))
   (println (+ x y)))
