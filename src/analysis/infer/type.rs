@@ -19,7 +19,7 @@ pub enum Type {
     Bool,
     String,
     Var(TyVar),
-    Lambda(Vec<Self>, Box<Self>),
+    Lambda(Box<Self>, Box<Self>),
     List(Box<Self>),
     Record(UniqueId, Vec<(InternedString, Self)>),
     Unit,
@@ -30,8 +30,8 @@ impl Type {
         match self {
             Self::Int | Self::Rational | Self::Bool | Self::String | Self::Unit => self.clone(),
             Self::Var(n) => subst.get(&n).cloned().unwrap_or(self.clone()),
-            Self::Lambda(params, body) => Self::Lambda(
-                params.into_iter().map(|p| p.apply_subst(subst)).collect(),
+            Self::Lambda(param, body) => Self::Lambda(
+                Box::new(param.apply_subst(subst)),
                 Box::new(body.apply_subst(subst)),
             ),
             Self::List(ty) => Self::List(Box::new(ty.apply_subst(subst))),
@@ -45,8 +45,6 @@ impl Type {
         }
     }
 
-    // id : forall a. a -> a
-    //
     pub fn generalize(&self, ctx: &Context) -> Scheme {
         Scheme::new(
             self.free_vars()
@@ -65,16 +63,7 @@ impl Type {
             | (Type::Bool, Type::Bool)
             | (Type::Unit, Type::Unit) => Ok(Substitution::new()),
             (Type::Lambda(p1, b1), Type::Lambda(p2, b2)) => {
-                let s1 = p1.iter().zip(p2.iter()).fold(
-                    Ok(Substitution::new()),
-                    |acc: InferResult<Substitution>, (t1, t2)| {
-                        let s1 = acc?;
-                        let t1 = t1.apply_subst(&s1);
-                        let t2 = t2.apply_subst(&s1);
-                        let s2 = t1.unify(&t2)?;
-                        Ok(s1.compose(&s2))
-                    },
-                )?;
+                let s1 = p1.unify(p2)?;
                 let s2 = b1.apply_subst(&s1).unify(&b2.apply_subst(&s1))?;
                 Ok(s1.compose(&s2))
             }
@@ -90,11 +79,8 @@ impl Type {
     pub(super) fn free_vars(&self) -> HashSet<TyVar> {
         match self {
             Self::Var(n) => vec![n.clone()].into_iter().collect(),
-            Self::Lambda(params, body) => params
-                .into_iter()
-                .fold(HashSet::new(), |acc, p| {
-                    p.free_vars().union(&acc).cloned().collect()
-                })
+            Self::Lambda(param, body) => param
+                .free_vars()
                 .union(&body.free_vars())
                 .cloned()
                 .collect(),
@@ -111,17 +97,7 @@ impl Debug for Type {
             Self::Bool => write!(f, "Bool"),
             Self::String => write!(f, "String"),
             Self::Var(n) => write!(f, "{:?}", n),
-            Self::Lambda(params, body) => {
-                let mut param_str = String::new();
-                for (i, param) in params.iter().enumerate() {
-                    if i == 0 {
-                        param_str.push_str(&format!("{:?}", param));
-                    } else {
-                        param_str.push_str(&format!(" {:?}", param));
-                    }
-                }
-                write!(f, "{} -> {:?}", param_str, body)
-            }
+            Self::Lambda(param, body) => write!(f, "{:?} -> {:?}", param, body),
             Self::List(ty) => write!(f, "[{:?}]", ty),
             Self::Record(name, fields) => write!(f, "{:?} = {:?}", name, fields),
             Self::Unit => write!(f, "()"),
@@ -143,12 +119,8 @@ impl Display for Type {
                         Type::Var(TyVar::from(n))
                     }
                 }
-                Type::Lambda(params, body) => {
-                    let mut lowered_params = vec![];
-                    for param in params {
-                        lowered_params.push(lower(param, vars));
-                    }
-                    Type::Lambda(lowered_params, Box::new(lower(*body, vars)))
+                Type::Lambda(param, body) => {
+                    Type::Lambda(Box::new(lower(*param, vars)), Box::new(lower(*body, vars)))
                 }
                 Type::List(list_ty) => Type::List(Box::new(lower(*list_ty, vars))),
                 Type::Record(name, fields) => {

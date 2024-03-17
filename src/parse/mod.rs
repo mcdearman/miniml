@@ -16,14 +16,14 @@ pub mod ast;
 
 pub fn parse<'src>(
     tokens: impl Iterator<Item = (Token, Span)> + Clone + 'src,
-) -> (Option<Expr>, Vec<Rich<'src, Token, Span>>) {
+) -> Result<Expr, Vec<Rich<'src, Token, Span>>> {
     let eof_span = tokens
         .clone()
         .last()
         .map(|(_, span)| span)
         .unwrap_or_default();
     let tok_stream = Stream::from_iter(tokens).spanned(eof_span);
-    expr_parser().parse(tok_stream).into_output_errors()
+    expr_parser().parse(tok_stream).into_result()
 }
 
 fn expr_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
@@ -37,11 +37,15 @@ fn expr_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
 
         let ident = ident_parser().map(|ident| ExprKind::Var(ident));
 
-        let abs = just(Token::Backslash)
-            .ignore_then(ident_parser())
-            .then_ignore(just(Token::RArrow))
-            .then(expr.clone())
-            .map(|(param, expr)| ExprKind::Abs(param, expr));
+        let abs = just(Token::Backslash).ignore_then(ident_parser().repeated().at_least(1).foldr(
+            just(Token::RArrow).ignore_then(expr.clone()),
+            |param, expr: Expr| {
+                Expr::new(
+                    ExprKind::Abs(param, expr.clone()),
+                    param.span().extend(expr.span()),
+                )
+            },
+        ));
 
         // let if_ = just(Token::If)
         //     .ignore_then(expr.clone())
@@ -57,7 +61,22 @@ fn expr_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
             .then(expr.clone())
             .then_ignore(just(Token::In))
             .then(expr.clone())
-            .map(|((name, expr), body)| ExprKind::Let(name, expr, body));
+            .map(|((name, expr), body)| ExprKind::Let(name, false, expr, body));
+
+        let fn_ = just(Token::Let)
+            .ignore_then(ident_parser())
+            .then(ident_parser().repeated().at_least(1).foldr(
+                just(Token::Eq).ignore_then(expr.clone()),
+                |param, expr: Expr| {
+                    Expr::new(
+                        ExprKind::Abs(param, expr.clone()),
+                        param.span().extend(expr.span()),
+                    )
+                },
+            ))
+            .then_ignore(just(Token::In))
+            .then(expr.clone())
+            .map(|((name, expr), body)| ExprKind::Let(name, true, expr, body));
 
         let simple = unit
             .or(lit)
@@ -68,20 +87,19 @@ fn expr_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
                 .then_ignore(just(Token::RParen)))
             .boxed();
 
-        let atom = abs
-            .or(let_)
+        let atom = let_
+            .or(fn_)
             .map_with(|kind, e| Expr::new(kind, e.span()))
             .or(simple)
+            .or(abs)
             .boxed();
 
-        let apply = atom
-            .clone()
-            .then(atom.or_not())
-            .map(|(fun, arg)| match arg {
-                Some(arg) => ExprKind::App(fun, arg),
-                None => fun.kind().clone(),
-            })
-            .map_with(|kind, e| Expr::new(kind, e.span()));
+        let apply = atom.clone().foldl(atom.clone().repeated(), |fun, arg| {
+            Expr::new(
+                ExprKind::App(fun.clone(), arg.clone()),
+                fun.span().extend(arg.span()),
+            )
+        });
 
         let op = just(Token::Minus)
             .or(just(Token::Not))

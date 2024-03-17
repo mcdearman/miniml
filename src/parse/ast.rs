@@ -38,7 +38,7 @@ pub enum ExprKind {
     BinaryOp(BinaryOp, Expr, Expr),
     Or(Expr, Expr),
     And(Expr, Expr),
-    Let(Ident, Expr, Expr),
+    Let(Ident, bool, Expr, Expr),
     Unit,
 }
 

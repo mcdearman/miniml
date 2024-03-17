@@ -24,7 +24,7 @@ impl Context {
                         *id,
                         Scheme::new(
                             vec![var],
-                            Type::Lambda(vec![Type::Var(var)], Box::new(Type::Var(var))),
+                            Type::Lambda(Box::new(Type::Var(var)), Box::new(Type::Var(var))),
                         ),
                     );
                 }
@@ -34,84 +34,78 @@ impl Context {
                         *id,
                         Scheme::new(
                             vec![var],
-                            Type::Lambda(vec![Type::Var(var)], Box::new(Type::Var(var))),
+                            Type::Lambda(Box::new(Type::Var(var)), Box::new(Type::Var(var))),
                         ),
                     );
                 }
                 "add" => {
-                    let var = TyVar::fresh();
                     bindings.insert(
                         *id,
                         Scheme::new(
-                            vec![var],
+                            vec![],
                             Type::Lambda(
-                                vec![Type::Var(var), Type::Var(var)],
-                                Box::new(Type::Var(var)),
+                                Box::new(Type::Int),
+                                Box::new(Type::Lambda(Box::new(Type::Int), Box::new(Type::Int))),
                             ),
                         ),
                     );
                 }
                 "sub" => {
-                    let var = TyVar::fresh();
                     bindings.insert(
                         *id,
                         Scheme::new(
-                            vec![var],
+                            vec![],
                             Type::Lambda(
-                                vec![Type::Var(var), Type::Var(var)],
-                                Box::new(Type::Var(var)),
+                                Box::new(Type::Int),
+                                Box::new(Type::Lambda(Box::new(Type::Int), Box::new(Type::Int))),
                             ),
                         ),
                     );
                 }
                 "mul" => {
-                    let var = TyVar::fresh();
                     bindings.insert(
                         *id,
                         Scheme::new(
-                            vec![var],
+                            vec![],
                             Type::Lambda(
-                                vec![Type::Var(var), Type::Var(var)],
-                                Box::new(Type::Var(var)),
+                                Box::new(Type::Int),
+                                Box::new(Type::Lambda(Box::new(Type::Int), Box::new(Type::Int))),
                             ),
                         ),
                     );
                 }
                 "div" => {
-                    let var = TyVar::fresh();
                     bindings.insert(
                         *id,
                         Scheme::new(
-                            vec![var],
+                            vec![],
                             Type::Lambda(
-                                vec![Type::Var(var), Type::Var(var)],
-                                Box::new(Type::Var(var)),
+                                Box::new(Type::Int),
+                                Box::new(Type::Lambda(Box::new(Type::Int), Box::new(Type::Int))),
                             ),
                         ),
                     );
                 }
                 "rem" => {
-                    let var = TyVar::fresh();
                     bindings.insert(
                         *id,
                         Scheme::new(
-                            vec![var],
+                            vec![],
                             Type::Lambda(
-                                vec![Type::Var(var), Type::Var(var)],
-                                Box::new(Type::Var(var)),
+                                Box::new(Type::Int),
+                                Box::new(Type::Lambda(Box::new(Type::Int), Box::new(Type::Int))),
                             ),
                         ),
                     );
                 }
                 "pow" => {
-                    let var = TyVar::fresh();
                     bindings.insert(
                         *id,
                         Scheme::new(
-                            vec![var],
+                            vec![],
                             Type::Lambda(
-                                vec![Type::Var(var), Type::Var(var)],
-                                Box::new(Type::Var(var)),
+                                Box::new(Type::Int),
+                                Box::new(Type::Lambda(Box::new(Type::Int), Box::new(Type::Int))),
                             ),
                         ),
                     );
@@ -123,8 +117,11 @@ impl Context {
                         Scheme::new(
                             vec![var],
                             Type::Lambda(
-                                vec![Type::Var(var), Type::Var(var)],
-                                Box::new(Type::Bool),
+                                Box::new(Type::Var(var)),
+                                Box::new(Type::Lambda(
+                                    Box::new(Type::Var(var)),
+                                    Box::new(Type::Bool),
+                                )),
                             ),
                         ),
                     );
@@ -136,8 +133,11 @@ impl Context {
                         Scheme::new(
                             vec![var],
                             Type::Lambda(
-                                vec![Type::Var(var), Type::Var(var)],
-                                Box::new(Type::Bool),
+                                Box::new(Type::Var(var)),
+                                Box::new(Type::Lambda(
+                                    Box::new(Type::Var(var)),
+                                    Box::new(Type::Bool),
+                                )),
                             ),
                         ),
                     );
@@ -149,8 +149,11 @@ impl Context {
                         Scheme::new(
                             vec![var],
                             Type::Lambda(
-                                vec![Type::Var(var), Type::Var(var)],
-                                Box::new(Type::Bool),
+                                Box::new(Type::Var(var)),
+                                Box::new(Type::Lambda(
+                                    Box::new(Type::Var(var)),
+                                    Box::new(Type::Bool),
+                                )),
                             ),
                         ),
                     );
@@ -162,8 +165,11 @@ impl Context {
                         Scheme::new(
                             vec![var],
                             Type::Lambda(
-                                vec![Type::Var(var), Type::Var(var)],
-                                Box::new(Type::Bool),
+                                Box::new(Type::Var(var)),
+                                Box::new(Type::Lambda(
+                                    Box::new(Type::Var(var)),
+                                    Box::new(Type::Bool),
+                                )),
                             ),
                         ),
                     );
@@ -175,8 +181,11 @@ impl Context {
                         Scheme::new(
                             vec![var],
                             Type::Lambda(
-                                vec![Type::Var(var), Type::Var(var)],
-                                Box::new(Type::Bool),
+                                Box::new(Type::Var(var)),
+                                Box::new(Type::Lambda(
+                                    Box::new(Type::Var(var)),
+                                    Box::new(Type::Bool),
+                                )),
                             ),
                         ),
                     );
@@ -188,29 +197,12 @@ impl Context {
                         Scheme::new(
                             vec![var],
                             Type::Lambda(
-                                vec![Type::Var(var), Type::Var(var)],
-                                Box::new(Type::Bool),
+                                Box::new(Type::Var(var)),
+                                Box::new(Type::Lambda(
+                                    Box::new(Type::Var(var)),
+                                    Box::new(Type::Bool),
+                                )),
                             ),
-                        ),
-                    );
-                }
-                "and" => {
-                    let var = TyVar::fresh();
-                    bindings.insert(
-                        *id,
-                        Scheme::new(
-                            vec![var],
-                            Type::Lambda(vec![Type::Bool, Type::Bool], Box::new(Type::Bool)),
-                        ),
-                    );
-                }
-                "or" => {
-                    let var = TyVar::fresh();
-                    bindings.insert(
-                        *id,
-                        Scheme::new(
-                            vec![var],
-                            Type::Lambda(vec![Type::Bool, Type::Bool], Box::new(Type::Bool)),
                         ),
                     );
                 }
@@ -220,7 +212,7 @@ impl Context {
                         *id,
                         Scheme::new(
                             vec![var],
-                            Type::Lambda(vec![Type::Var(var)], Box::new(Type::Unit)),
+                            Type::Lambda(Box::new(Type::Var(var)), Box::new(Type::Unit)),
                         ),
                     );
                 }
