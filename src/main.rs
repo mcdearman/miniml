@@ -56,8 +56,9 @@ fn main() {
             }
             if let (Some(tir), errors) = solver.solve(&*src.clone(), &root) {
                 if !errors.is_empty() {
-                    println!("Errors: {:#?}", errors);
-                    continue;
+                    panic!("Errors: {:#?}", errors);
+                    // src.clear();
+                    // io::stdout().flush().unwrap();
                 }
                 println!("TIR: {:#?}", tir);
                 src.clear();

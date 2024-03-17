@@ -251,12 +251,8 @@ impl TypeSolver {
                 let solved_lhs = self.infer_expr(lhs)?;
                 let solved_rhs = self.infer_expr(rhs)?;
 
-                // self.constraints
-                //     .push(Constraint::Eq(solved_lhs.ty(), Type::Bool));
-                // self.constraints
-                //     .push(Constraint::Eq(solved_rhs.ty(), Type::Bool));
                 self.sub = solved_lhs.ty().unify(&Type::Bool)?;
-                self.sub = solved_rhs.ty().unify(&Type::Bool)?;
+                self.sub = solved_rhs.ty().apply_subst(&self.sub).unify(&Type::Bool)?;
 
                 Ok(Expr::new(
                     ExprKind::And {
@@ -268,10 +264,12 @@ impl TypeSolver {
                 ))
             }
             nir::ExprKind::Let { name, expr, body } => {
+                // to show that Γ ⊢ let x = e1 in e2 : T' we need to show that
+                // Γ ⊢ e1 : T1
                 let solved_expr = self.infer_expr(expr)?;
 
+                // Γ, x: gen(T1) ⊢ e2 : T'
                 let scheme = solved_expr.ty().generalize(&self.ctx);
-                // let scheme = Scheme::new(vec![], solved_expr.ty());
                 self.ctx.insert(name.id(), scheme);
                 let solved_body = self.infer_expr(body)?;
 
@@ -339,14 +337,17 @@ impl TypeSolver {
                 ))
             }
             nir::ExprKind::Lambda { params, expr } => {
+                // to show that Γ ⊢ λx1...xn.e : T1...Tn -> T' we need to show that
                 let mut param_types = vec![];
 
+                // T1...Tn = newvar
                 for param in params {
                     let param_type = Type::Var(TyVar::fresh());
                     param_types.push(param_type.clone());
                     self.ctx.insert(param.id(), Scheme::new(vec![], param_type));
                 }
 
+                // Γ, x1:T1...xn:Tn ⊢ e : T'
                 let solved_expr = self.infer_expr(expr)?;
                 let fun_ty = Type::Lambda(param_types, Box::new(solved_expr.ty()));
 
