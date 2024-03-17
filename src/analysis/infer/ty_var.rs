@@ -48,7 +48,7 @@ impl From<usize> for TyVar {
 
 impl Debug for TyVar {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "TyVar({})", self)
+        write!(f, "{}", self)
     }
 }
 
