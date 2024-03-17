@@ -6,97 +6,6 @@ use crate::{
 };
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct Root {
-    decls: Vec<Decl>,
-    span: Span,
-}
-
-impl Root {
-    pub fn new(decls: Vec<Decl>, span: Span) -> Self {
-        Self { decls, span }
-    }
-
-    pub fn decls(&self) -> &[Decl] {
-        &self.decls
-    }
-
-    pub fn span(&self) -> Span {
-        self.span
-    }
-}
-
-#[derive(Debug, Clone, PartialEq)]
-pub struct Decl {
-    kind: DeclKind,
-    span: Span,
-}
-
-impl Decl {
-    pub fn new(kind: DeclKind, span: Span) -> Self {
-        Self { kind, span }
-    }
-
-    pub fn kind(&self) -> &DeclKind {
-        &self.kind
-    }
-
-    pub fn span(&self) -> Span {
-        self.span
-    }
-}
-
-#[derive(Debug, Clone, PartialEq)]
-pub enum DeclKind {
-    DataType(DataType),
-    Let {
-        name: Ident,
-        expr: Expr,
-    },
-    Fn {
-        name: Ident,
-        params: Vec<Ident>,
-        expr: Expr,
-    },
-}
-
-#[derive(Debug, Clone, PartialEq)]
-pub struct DataType {
-    ident: Ident,
-    kind: DataTypeKind,
-    span: Span,
-}
-
-impl DataType {
-    pub fn new(name: Ident, kind: DataTypeKind, span: Span) -> Self {
-        Self {
-            ident: name,
-            kind,
-            span,
-        }
-    }
-
-    pub fn ident(&self) -> Ident {
-        self.ident
-    }
-
-    pub fn kind(&self) -> &DataTypeKind {
-        &self.kind
-    }
-
-    pub fn span(&self) -> Span {
-        self.span
-    }
-}
-
-#[derive(Debug, Clone, PartialEq)]
-pub enum DataTypeKind {
-    Record { fields: Vec<(Ident, TypeHint)> },
-    // Sum {
-    //     cases: Vec<(Ident, Option<SumTypeCaseHint>)>,
-    // },
-}
-
-#[derive(Debug, Clone, PartialEq)]
 pub struct Expr {
     kind: Box<ExprKind>,
     span: Span,
@@ -122,185 +31,16 @@ impl Expr {
 #[derive(Debug, Clone, PartialEq)]
 pub enum ExprKind {
     Lit(Lit),
-    Ident(Ident),
-    Apply {
-        fun: Expr,
-        args: Vec<Expr>,
-    },
-    Unary {
-        op: UnaryOp,
-        expr: Expr,
-    },
-    Binary {
-        op: BinaryOp,
-        lhs: Expr,
-        rhs: Expr,
-    },
-    Or {
-        lhs: Expr,
-        rhs: Expr,
-    },
-    And {
-        lhs: Expr,
-        rhs: Expr,
-    },
-    If {
-        cond: Expr,
-        then: Expr,
-        else_: Expr,
-    },
-    // Match {
-    //     expr: Expr,
-    //     cases: Vec<(Pattern, Expr)>,
-    // },
-    Let {
-        name: Ident,
-        expr: Expr,
-        body: Expr,
-    },
-    Fn {
-        name: Ident,
-        params: Vec<Ident>,
-        expr: Expr,
-        body: Expr,
-    },
-    Lambda {
-        params: Vec<Ident>,
-        expr: Expr,
-    },
-    List(Vec<Expr>),
-    // Array(Vec<Expr>),
-    // Tuple(Vec<Expr>),
-    // Range {
-    //     start: Expr,
-    //     end: Expr,
-    //     step: Option<Expr>,
-    //     inclusive: bool,
-    // },
-    Record {
-        name: Option<Ident>,
-        fields: Vec<(Ident, Expr)>,
-    },
-    Dot {
-        expr: Expr,
-        field: Ident,
-    },
-    // Sum {
-    //     case: Ident,
-    //     expr: Option<Expr>,
-    // },
+    Var(Ident),
+    App(Expr, Expr),
+    Abs(Ident, Expr),
+    UnaryOp(UnaryOp, Expr),
+    BinaryOp(BinaryOp, Expr, Expr),
+    Or(Expr, Expr),
+    And(Expr, Expr),
+    Let(Ident, Expr, Expr),
     Unit,
 }
-
-// #[derive(Debug, Clone, PartialEq)]
-// pub struct SumTypeCaseHint {
-//     kind: Box<SumTypeCaseHintKind>,
-//     span: Span,
-// }
-
-// impl SumTypeCaseHint {
-//     pub fn new(kind: SumTypeCaseHintKind, span: Span) -> Self {
-//         Self {
-//             kind: Box::new(kind),
-//             span,
-//         }
-//     }
-
-//     pub fn kind(&self) -> &SumTypeCaseHintKind {
-//         &self.kind
-//     }
-
-//     pub fn span(&self) -> &Span {
-//         &self.span
-//     }
-// }
-
-// #[derive(Debug, Clone, PartialEq)]
-// pub enum SumTypeCaseHintKind {
-//     Record(Vec<(Ident, TypeHint)>),
-//     Product(Vec<TypeHint>),
-//     TypeHint(TypeHint),
-// }
-
-#[derive(Debug, Clone, PartialEq)]
-pub struct TypeHint {
-    kind: Box<TypeHintKind>,
-    span: Span,
-}
-
-impl TypeHint {
-    pub fn new(kind: TypeHintKind, span: Span) -> Self {
-        Self {
-            kind: Box::new(kind),
-            span,
-        }
-    }
-
-    pub fn kind(&self) -> &TypeHintKind {
-        &self.kind
-    }
-
-    pub fn span(&self) -> Span {
-        self.span
-    }
-}
-
-#[derive(Debug, Clone, PartialEq)]
-pub enum TypeHintKind {
-    Int,
-    // Byte,
-    // Real,
-    // Rational,
-    Bool,
-    String,
-    // Char,
-    Ident(Ident),
-    List(TypeHint),
-    // Array(TypeHint),
-    // Tuple(Vec<TypeHint>),
-    Fn(Vec<TypeHint>, TypeHint),
-    Unit,
-}
-
-// #[derive(Debug, Clone, PartialEq)]
-// pub struct Pattern {
-//     kind: Box<PatternKind>,
-//     span: Span,
-// }
-
-// impl Pattern {
-//     pub fn new(kind: PatternKind, span: Span) -> Self {
-//         Self {
-//             kind: Box::new(kind),
-//             span,
-//         }
-//     }
-
-//     pub fn kind(&self) -> &PatternKind {
-//         &self.kind
-//     }
-
-//     pub fn span(&self) -> &Span {
-//         &self.span
-//     }
-// }
-
-// #[derive(Debug, Clone, PartialEq)]
-// pub enum PatternKind {
-//     Wildcard,
-//     Lit(Lit),
-//     Ident(Ident),
-//     Tuple(Vec<Pattern>),
-//     List(Vec<Pattern>),
-//     Pair(Pattern, Pattern),
-//     Record {
-//         fields: Vec<(Ident, Pattern)>,
-//     },
-//     Sum {
-//         case: Ident,
-//         pattern: Option<Pattern>,
-//     },
-// }
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct UnaryOp {
@@ -441,9 +181,9 @@ impl ToString for BinaryOpKind {
 pub enum Lit {
     // Byte(u8),
     Int(i64),
-    Rational(Rational64),
+    // Rational(Rational64),
     // Real(f64),
     Bool(bool),
-    String(InternedString),
+    // String(InternedString),
     // Char(char),
 }

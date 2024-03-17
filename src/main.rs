@@ -1,26 +1,20 @@
-use crate::{
-    lex::token_stream::TokenStream,
-    parse::parse,
-    runtime::{default_env, interpreter::eval},
-};
-use analysis::infer::TypeSolver;
-use rename::resolver::Resolver;
+use crate::{lex::token_stream::TokenStream, parse::parse};
 use std::io::{self, Write};
 
-mod analysis;
+// mod analysis;
 mod lex;
 mod parse;
-mod rename;
-mod runtime;
+// mod rename;
+// mod runtime;
 mod utils;
 
 fn main() {
     env_logger::init();
     let mut src = String::new();
-    let mut res = Resolver::new();
-    let builtins = res.builtins();
-    let scoped_interner = res.env().dump_to_interner();
-    let mut solver = TypeSolver::new(builtins.clone(), scoped_interner);
+    // let mut res = Resolver::new();
+    // let builtins = res.builtins();
+    // let scoped_interner = res.env().dump_to_interner();
+    // let mut solver = TypeSolver::new(builtins.clone(), scoped_interner);
 
     loop {
         print!("> ");
@@ -28,12 +22,15 @@ fn main() {
         std::io::stdin().read_line(&mut src).unwrap();
 
         let stream = TokenStream::new(&src);
-        let root = match parse(stream, true) {
+        let root = match parse(stream) {
             (Some(root), errors) => {
                 if errors.is_empty() {
+                    println!("AST: {:#?}", root);
+                    src.clear();
                     root
                 } else {
                     println!("Errors: {:#?}", errors);
+                    src.clear();
                     continue;
                 }
             }
@@ -43,36 +40,36 @@ fn main() {
             }
         };
 
-        let (nir, errors) = res.resolve(root);
-        if !errors.is_empty() {
-            println!("Errors: {:#?}", errors);
-            println!("env: {:#?}", res.env());
-            continue;
-        }
+        // let (nir, errors) = res.resolve(root);
+        // if !errors.is_empty() {
+        //     println!("Errors: {:#?}", errors);
+        //     println!("env: {:#?}", res.env());
+        //     continue;
+        // }
 
-        if let Some(root) = nir.clone() {
-            if !errors.is_empty() {
-                panic!("{:#?}", errors);
-            }
-            if let (Some(tir), errors) = solver.solve(&*src.clone(), &root) {
-                if !errors.is_empty() {
-                    panic!("Errors: {:#?}", errors);
-                    // src.clear();
-                    // io::stdout().flush().unwrap();
-                }
-                println!("TIR: {:#?}", tir);
-                src.clear();
-                io::stdout().flush().unwrap();
-                // match eval(&*src, env.clone(), tir) {
-                //     Ok(val) => {
-                //         println!("{}", val);
-                //     }
-                //     Err(err) => {
-                //         println!("Error: {:#?}", err);
-                //     }
-                // }
-            };
-        }
+        // if let Some(root) = nir.clone() {
+        //     if !errors.is_empty() {
+        //         panic!("{:#?}", errors);
+        //     }
+        //     if let (Some(tir), errors) = solver.solve(&*src.clone(), &root) {
+        //         if !errors.is_empty() {
+        //             panic!("Errors: {:#?}", errors);
+        //             // src.clear();
+        //             // io::stdout().flush().unwrap();
+        //         }
+        //         println!("TIR: {:#?}", tir);
+        //         src.clear();
+        //         io::stdout().flush().unwrap();
+        //         // match eval(&*src, env.clone(), tir) {
+        //         //     Ok(val) => {
+        //         //         println!("{}", val);
+        //         //     }
+        //         //     Err(err) => {
+        //         //         println!("Error: {:#?}", err);
+        //         //     }
+        //         // }
+        //     };
+        // }
     }
 }
 
