@@ -100,21 +100,26 @@ impl TypeSolver {
                 ))
             }
             nir::ExprKind::App(fun, arg) => {
+                log::debug!("infer app: {:?} and {:?}", fun, arg);
                 // to show that Γ ⊢ e0 e1 : T' we need to show that
                 // Γ ⊢ e0 : T0
                 let solved_fun = self.infer_expr(fun)?;
+                log::debug!("solved_fun: {:?}", solved_fun);
 
                 // Γ ⊢ e1 : T1
                 let solved_arg = self.infer_expr(arg)?;
+                log::debug!("solved_arg: {:?}", solved_arg);
 
                 // T' = newvar
                 let ty_ret = Type::Var(TyVar::fresh());
+                log::debug!("ty_ret: {:?}", ty_ret);
 
                 // unify(T0, T1 -> T')
                 self.sub = solved_fun.ty().apply_subst(&self.sub).unify(&Type::Lambda(
                     Box::new(solved_arg.ty()),
                     Box::new(ty_ret.clone()),
                 ))?;
+                log::debug!("sub: {:?}", self.sub);
 
                 Ok(Expr::new(
                     ExprKind::App(solved_fun, solved_arg),
