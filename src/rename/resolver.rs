@@ -160,8 +160,8 @@ impl Resolver {
                         expr.span(),
                     ))
                 } else {
+                    let res_expr = self.resolve_expr(&let_expr)?;
                     self.env.push();
-                    let res_expr = self.resolve_expr(&expr)?;
                     let res_name =
                         ScopedIdent::new(self.env.define(name.key()), name.key(), name.span());
                     let res_body = self.resolve_expr(&body)?;

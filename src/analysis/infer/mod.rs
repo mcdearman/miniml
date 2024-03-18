@@ -71,8 +71,16 @@ impl TypeSolver {
                 )),
             },
             nir::ExprKind::Var(name) => {
+                // to show that Γ ⊢ x : T we need to show that
+
+                // x : σ ∈ Γ
+                log::debug!("infer var: {:?}", name.id());
                 if let Some(scm) = self.ctx.get(&name.id()) {
+                    // T = inst(σ)
+                    log::debug!("var_scm: {:?}", scm);
                     let ty = scm.instantiate();
+                    log::debug!("var_ty: {:?}", ty);
+
                     Ok(Expr::new(ExprKind::Var(*name), ty, expr.span()))
                 } else {
                     Err(TypeError::from(format!(
@@ -83,15 +91,22 @@ impl TypeSolver {
                 }
             }
             nir::ExprKind::Abs(param, fn_expr) => {
+                log::debug!("infer abs: {:?} and {:?}", param, fn_expr);
                 // to show that Γ ⊢ λx.e : T -> T' we need to show that
                 // T = newvar
                 let param_ty = Type::Var(TyVar::fresh());
+                log::debug!("abs_param_ty: {:?}", param_ty);
 
                 // Γ, x : T ⊢ e : T'
+                self.ctx.push();
                 self.ctx
                     .insert(param.id(), Scheme::new(vec![], param_ty.clone()));
+                // log::debug!("abs_ctx: {:?}", self.ctx);
                 let solved_expr = self.infer_expr(fn_expr)?;
+                log::debug!("abs_solved_expr: {:?}", solved_expr);
                 let fun_ty = Type::Lambda(Box::new(param_ty), Box::new(solved_expr.ty()));
+                log::debug!("abs_fun_ty: {:?}", fun_ty);
+                self.ctx.pop();
 
                 Ok(Expr::new(
                     ExprKind::Abs(*param, solved_expr),
@@ -104,22 +119,22 @@ impl TypeSolver {
                 // to show that Γ ⊢ e0 e1 : T' we need to show that
                 // Γ ⊢ e0 : T0
                 let solved_fun = self.infer_expr(fun)?;
-                log::debug!("solved_fun: {:?}", solved_fun);
+                log::debug!("app_solved_fun: {:?}", solved_fun);
 
                 // Γ ⊢ e1 : T1
                 let solved_arg = self.infer_expr(arg)?;
-                log::debug!("solved_arg: {:?}", solved_arg);
+                log::debug!("app_solved_arg: {:?}", solved_arg);
 
                 // T' = newvar
                 let ty_ret = Type::Var(TyVar::fresh());
-                log::debug!("ty_ret: {:?}", ty_ret);
+                log::debug!("app_ty_ret: {:?}", ty_ret);
 
                 // unify(T0, T1 -> T')
-                self.sub = solved_fun.ty().apply_subst(&self.sub).unify(&Type::Lambda(
+                self.sub = solved_fun.ty().unify(&Type::Lambda(
                     Box::new(solved_arg.ty()),
                     Box::new(ty_ret.clone()),
                 ))?;
-                log::debug!("sub: {:?}", self.sub);
+                log::debug!("app_sub: {:?}", self.sub);
 
                 Ok(Expr::new(
                     ExprKind::App(solved_fun, solved_arg),
@@ -154,14 +169,18 @@ impl TypeSolver {
                 ))
             }
             nir::ExprKind::Let(name, rec, let_expr, body) => {
+                log::debug!("infer let ({:?}) = {:#?} in {:#?}", name, let_expr, body);
                 // to show that Γ ⊢ let x = e0 in e1 : T' we need to show that
                 // Γ ⊢ e0 : T
                 let solved_expr = self.infer_expr(let_expr)?;
+                log::debug!("let_solved_expr: {:?}", solved_expr);
 
                 // Γ, x: gen(T) ⊢ e1 : T'
                 let scheme = solved_expr.ty().generalize(&self.ctx);
+                log::debug!("let_scheme: {:?}", scheme);
                 self.ctx.insert(name.id(), scheme);
                 let solved_body = self.infer_expr(body)?;
+                log::debug!("let_solved_body: {:?}", solved_body);
 
                 Ok(Expr::new(
                     ExprKind::Let(*name, *rec, solved_expr, solved_body.clone()),

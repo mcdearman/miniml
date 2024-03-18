@@ -4,23 +4,23 @@ use std::collections::{HashMap, HashSet};
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Context {
-    bindings: HashMap<UniqueId, Scheme>,
+    frames: Vec<Frame>,
 }
 
 impl Context {
     pub fn new() -> Self {
         Self {
-            bindings: HashMap::new(),
+            frames: vec![Frame::new()],
         }
     }
 
     pub fn from_builtins(builtins: &HashMap<UniqueId, InternedString>) -> Self {
-        let mut bindings = HashMap::new();
+        let mut frame = Frame::new();
         for (id, name) in builtins {
             match name.as_ref() {
                 "neg" => {
                     let var = TyVar::fresh();
-                    bindings.insert(
+                    frame.insert(
                         *id,
                         Scheme::new(
                             vec![var],
@@ -30,7 +30,7 @@ impl Context {
                 }
                 "not" => {
                     let var = TyVar::fresh();
-                    bindings.insert(
+                    frame.insert(
                         *id,
                         Scheme::new(
                             vec![var],
@@ -39,7 +39,7 @@ impl Context {
                     );
                 }
                 "add" => {
-                    bindings.insert(
+                    frame.insert(
                         *id,
                         Scheme::new(
                             vec![],
@@ -51,7 +51,7 @@ impl Context {
                     );
                 }
                 "sub" => {
-                    bindings.insert(
+                    frame.insert(
                         *id,
                         Scheme::new(
                             vec![],
@@ -63,7 +63,7 @@ impl Context {
                     );
                 }
                 "mul" => {
-                    bindings.insert(
+                    frame.insert(
                         *id,
                         Scheme::new(
                             vec![],
@@ -75,7 +75,7 @@ impl Context {
                     );
                 }
                 "div" => {
-                    bindings.insert(
+                    frame.insert(
                         *id,
                         Scheme::new(
                             vec![],
@@ -87,7 +87,7 @@ impl Context {
                     );
                 }
                 "rem" => {
-                    bindings.insert(
+                    frame.insert(
                         *id,
                         Scheme::new(
                             vec![],
@@ -99,7 +99,7 @@ impl Context {
                     );
                 }
                 "pow" => {
-                    bindings.insert(
+                    frame.insert(
                         *id,
                         Scheme::new(
                             vec![],
@@ -112,7 +112,7 @@ impl Context {
                 }
                 "eq" => {
                     let var = TyVar::fresh();
-                    bindings.insert(
+                    frame.insert(
                         *id,
                         Scheme::new(
                             vec![var],
@@ -128,7 +128,7 @@ impl Context {
                 }
                 "neq" => {
                     let var = TyVar::fresh();
-                    bindings.insert(
+                    frame.insert(
                         *id,
                         Scheme::new(
                             vec![var],
@@ -144,7 +144,7 @@ impl Context {
                 }
                 "lt" => {
                     let var = TyVar::fresh();
-                    bindings.insert(
+                    frame.insert(
                         *id,
                         Scheme::new(
                             vec![var],
@@ -160,7 +160,7 @@ impl Context {
                 }
                 "lte" => {
                     let var = TyVar::fresh();
-                    bindings.insert(
+                    frame.insert(
                         *id,
                         Scheme::new(
                             vec![var],
@@ -176,7 +176,7 @@ impl Context {
                 }
                 "gt" => {
                     let var = TyVar::fresh();
-                    bindings.insert(
+                    frame.insert(
                         *id,
                         Scheme::new(
                             vec![var],
@@ -192,7 +192,7 @@ impl Context {
                 }
                 "gte" => {
                     let var = TyVar::fresh();
-                    bindings.insert(
+                    frame.insert(
                         *id,
                         Scheme::new(
                             vec![var],
@@ -208,7 +208,7 @@ impl Context {
                 }
                 "println" => {
                     let var = TyVar::fresh();
-                    bindings.insert(
+                    frame.insert(
                         *id,
                         Scheme::new(
                             vec![var],
@@ -220,7 +220,63 @@ impl Context {
             }
         }
 
-        Self { bindings }
+        Self {
+            frames: vec![frame],
+        }
+    }
+
+    pub fn push(&mut self) {
+        self.frames.push(Frame::new());
+    }
+
+    pub fn pop(&mut self) {
+        self.frames.pop();
+    }
+
+    pub fn get(&self, id: &UniqueId) -> Option<Scheme> {
+        self.frames.iter().rev().find_map(|frame| frame.get(id))
+    }
+
+    pub fn insert(&mut self, id: UniqueId, scheme: Scheme) {
+        if let Some(frame) = self.frames.last_mut() {
+            frame.insert(id, scheme);
+        } else {
+            let mut frame = Frame::new();
+            frame.insert(id, scheme);
+            self.frames.push(frame);
+        }
+    }
+
+    pub(super) fn apply_subst(&self, subst: &Substitution) -> Self {
+        Self {
+            frames: self
+                .frames
+                .iter()
+                .map(|frame| frame.apply_subst(subst))
+                .collect(),
+        }
+    }
+
+    pub(super) fn free_vars(&self) -> HashSet<TyVar> {
+        self.frames
+            .iter()
+            .map(|frame| frame.free_vars())
+            .fold(HashSet::new(), |acc, set| {
+                acc.union(&set).cloned().collect()
+            })
+    }
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct Frame {
+    bindings: HashMap<UniqueId, Scheme>,
+}
+
+impl Frame {
+    pub fn new() -> Self {
+        Self {
+            bindings: HashMap::new(),
+        }
     }
 
     pub fn iter(&self) -> impl Iterator<Item = (&UniqueId, &Scheme)> {

@@ -46,6 +46,9 @@ impl Type {
     }
 
     pub fn generalize(&self, ctx: &Context) -> Scheme {
+        log::debug!("generalize: {:?}", self);
+        log::debug!("free vars: {:?}", self.free_vars());
+        log::debug!("ctx free vars: {:?}", ctx.free_vars());
         Scheme::new(
             self.free_vars()
                 .difference(&ctx.free_vars())

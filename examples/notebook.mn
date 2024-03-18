@@ -1,15 +1,6 @@
 let id x = x in id 1
+let id = \x -> x in id 1
 
-Let @ 0..20
-  Var @ 4..6
-    id
-  Abs @ 11..12
-    Var @ 7..8
-      x
-    Var @ 11..12
-      x : Int
-  App @ 16..20
-    Var @ 16..18
-      id : Int -> Int
-    Lit @ 19..20
-      1 : Int
+let id x = x in let a = id 1 in id false
+
+let a = 1 in let b = 2 in a + b
