@@ -80,20 +80,20 @@ impl Resolver {
                     ))
                 }
             }
-            ast::ExprKind::Abs(param, expr) => {
+            ast::ExprKind::Abs(param, fn_expr) => {
                 self.env.push();
                 let res_param =
                     ScopedIdent::new(self.env.define(param.key()), param.key(), param.span());
-                let res_expr = self.resolve_expr(&expr)?;
+                let res_expr = self.resolve_expr(fn_expr)?;
                 self.env.pop();
 
                 Ok(Expr::new(ExprKind::Abs(res_param, res_expr), expr.span()))
             }
             ast::ExprKind::App(fun, arg) => Ok(Expr::new(
-                ExprKind::App(self.resolve_expr(&fun)?, self.resolve_expr(&arg)?),
+                ExprKind::App(self.resolve_expr(fun)?, self.resolve_expr(arg)?),
                 expr.span(),
             )),
-            ast::ExprKind::UnaryOp(op, expr) => {
+            ast::ExprKind::UnaryOp(op, op_expr) => {
                 let name = InternedString::from(*op);
                 let id = self
                     .get_builtin(name)
@@ -102,7 +102,7 @@ impl Resolver {
                 Ok(Expr::new(
                     ExprKind::App(
                         Expr::new(ExprKind::Var(ident.clone()), op.span()),
-                        self.resolve_expr(&expr)?,
+                        self.resolve_expr(op_expr)?,
                     ),
                     expr.span(),
                 ))
@@ -120,11 +120,11 @@ impl Resolver {
                                 Expr::new(ExprKind::Var(ident.clone()), op.span()),
                                 self.resolve_expr(&lhs)?,
                             ),
-                            op.span().extend(lhs.span()),
+                            lhs.span().extend(rhs.span()),
                         ),
-                        self.resolve_expr(&rhs)?,
+                        self.resolve_expr(rhs)?,
                     ),
-                    op.span(),
+                    expr.span(),
                 ))
             }
             ast::ExprKind::Or(lhs, rhs) => Ok(Expr::new(
@@ -143,7 +143,7 @@ impl Resolver {
             //     },
             //     expr.span(),
             // )),
-            ast::ExprKind::Let(name, rec, expr, body) => {
+            ast::ExprKind::Let(name, rec, let_expr, body) => {
                 if *rec {
                     let res_name = ScopedIdent::new(
                         self.env.push_and_define(name.key()),
@@ -151,8 +151,8 @@ impl Resolver {
                         name.span(),
                     );
 
-                    let res_expr = self.resolve_expr(&expr)?;
-                    let res_body = self.resolve_expr(&body)?;
+                    let res_expr = self.resolve_expr(let_expr)?;
+                    let res_body = self.resolve_expr(body)?;
                     self.env.pop();
 
                     Ok(Expr::new(

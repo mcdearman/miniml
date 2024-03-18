@@ -82,16 +82,15 @@ impl TypeSolver {
                     )))
                 }
             }
-            nir::ExprKind::Abs(param, expr) => {
+            nir::ExprKind::Abs(param, fn_expr) => {
                 // to show that Γ ⊢ λx.e : T -> T' we need to show that
-
                 // T = newvar
                 let param_ty = Type::Var(TyVar::fresh());
 
                 // Γ, x : T ⊢ e : T'
                 self.ctx
                     .insert(param.id(), Scheme::new(vec![], param_ty.clone()));
-                let solved_expr = self.infer_expr(expr)?;
+                let solved_expr = self.infer_expr(fn_expr)?;
                 let fun_ty = Type::Lambda(Box::new(param_ty), Box::new(solved_expr.ty()));
 
                 Ok(Expr::new(
@@ -149,10 +148,10 @@ impl TypeSolver {
                     expr.span(),
                 ))
             }
-            nir::ExprKind::Let(name, rec, expr, body) => {
+            nir::ExprKind::Let(name, rec, let_expr, body) => {
                 // to show that Γ ⊢ let x = e0 in e1 : T' we need to show that
                 // Γ ⊢ e0 : T
-                let solved_expr = self.infer_expr(expr)?;
+                let solved_expr = self.infer_expr(let_expr)?;
 
                 // Γ, x: gen(T) ⊢ e1 : T'
                 let scheme = solved_expr.ty().generalize(&self.ctx);
@@ -165,41 +164,6 @@ impl TypeSolver {
                     expr.span(),
                 ))
             }
-            // nir::ExprKind::Fn {
-            //     name,
-            //     params,
-            //     expr,
-            //     body,
-            // } => {
-            //     let fun_ty_var = TyVar::fresh();
-            //     let fun_ty = Type::Var(fun_ty_var.clone());
-            //     self.ctx
-            //         .insert(name.id(), Scheme::new(vec![], fun_ty.clone()));
-
-            //     let mut param_types = vec![];
-
-            //     for param in params {
-            //         let param_type = Type::Var(TyVar::fresh());
-            //         param_types.push(param_type.clone());
-            //         self.ctx.insert(param.id(), Scheme::new(vec![], param_type));
-            //     }
-
-            //     let solved_expr = self.infer_expr(expr)?;
-            //     let solved_body = self.infer_expr(body)?;
-
-            //     // self.sub = fun_ty.unify(&Type::Lambda(param_types, Box::new(solved_expr.ty())))?;
-
-            //     Ok(Expr::new(
-            //         ExprKind::Fn {
-            //             name: *name,
-            //             params: params.clone(),
-            //             expr: solved_expr,
-            //             body: solved_body.clone(),
-            //         },
-            //         solved_body.ty(),
-            //         expr.span(),
-            //     ))
-            // }
             // nir::ExprKind::If { cond, then, else_ } => {
             //     let solved_cond = self.infer_expr(cond)?;
             //     let solved_then = self.infer_expr(then)?;

@@ -129,8 +129,18 @@ impl Debug for Expr {
                     indent -= 1;
                     debug(f, indent, expr)
                 }
-                ExprKind::Or(_, _) => todo!(),
-                ExprKind::And(_, _) => todo!(),
+                ExprKind::Or(lhs, rhs) => {
+                    writeln!(f, "{}Or @ {}", spaces(indent), expr.span)?;
+                    indent += 1;
+                    debug(f, indent, lhs)?;
+                    debug(f, indent, rhs)
+                }
+                ExprKind::And(lhs, rhs) => {
+                    writeln!(f, "{}And @ {}", spaces(indent), expr.span)?;
+                    indent += 1;
+                    debug(f, indent, lhs)?;
+                    debug(f, indent, rhs)
+                }
                 ExprKind::Let(name, _, let_expr, body) => {
                     writeln!(f, "{}Let @ {}", spaces(indent), expr.span)?;
                     indent += 1;
@@ -145,6 +155,7 @@ impl Debug for Expr {
             }
         }
 
+        println!("{}", self.span());
         debug(f, 0, &self)
     }
 }
