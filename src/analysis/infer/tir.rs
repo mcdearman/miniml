@@ -120,14 +120,14 @@ impl Debug for Expr {
                     debug(f, indent, fun)?;
                     debug(f, indent, arg)
                 }
-                ExprKind::Abs(param, expr) => {
+                ExprKind::Abs(param, fn_expr) => {
                     writeln!(f, "{}Abs @ {}", spaces(indent), expr.span)?;
                     indent += 1;
                     writeln!(f, "{}Var @ {}", spaces(indent), param.span())?;
                     indent += 1;
                     writeln!(f, "{}{}", spaces(indent), param)?;
                     indent -= 1;
-                    debug(f, indent, expr)
+                    debug(f, indent, fn_expr)
                 }
                 ExprKind::Or(lhs, rhs) => {
                     writeln!(f, "{}Or @ {}", spaces(indent), expr.span)?;
