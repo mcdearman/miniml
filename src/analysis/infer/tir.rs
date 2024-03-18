@@ -155,7 +155,6 @@ impl Debug for Expr {
             }
         }
 
-        println!("{}", self.span());
         debug(f, 0, &self)
     }
 }

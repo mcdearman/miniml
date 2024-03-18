@@ -26,7 +26,7 @@ fn main() {
         let stream = TokenStream::new(&src);
         let expr = match parse(stream) {
             Ok(ast) => {
-                println!("AST: {:#?}", ast);
+                // println!("AST: {:#?}", ast);
                 ast
             }
             Err(e) => {
@@ -38,7 +38,7 @@ fn main() {
 
         let nir = match res.resolve_expr(&expr) {
             Ok(nir) => {
-                println!("NIR: {:#?}", nir);
+                // println!("NIR: {:#?}", nir);
                 nir
             }
             Err(e) => {
