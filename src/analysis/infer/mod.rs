@@ -56,6 +56,50 @@ impl TypeSolver {
         self.infer_expr(nir).map(|e| e.apply_subst(&self.sub))
     }
 
+    fn infer_decl(&mut self, decl: &nir::Decl) -> InferResult<Decl> {
+        match decl.kind() {
+            nir::DeclKind::Let(name, rec, let_expr) => {
+                log::debug!("infer let ({:?}) = {:#?}", name, let_expr);
+                // to show that Γ ⊢ let x = e0 in e1 : T' we need to show that
+                // Γ ⊢ e0 : T
+                let solved_expr = self.infer_expr(let_expr)?;
+                log::debug!("let_solved_expr: {:?}", solved_expr);
+
+                // Γ, x: gen(T) ⊢ e1 : T'
+                let scheme = solved_expr.ty().generalize(&self.ctx);
+                log::debug!("let_scheme: {:?}", scheme);
+                self.ctx.insert(name.id(), scheme);
+
+                Ok(Decl::new(
+                    DeclKind::Let(*name, *rec, solved_expr.clone()),
+                    solved_expr.ty(),
+                    decl.span(),
+                ))
+            }
+            nir::DeclKind::Fn(name, params, fn_expr) => {
+                log::debug!("infer fn ({:?}) = {:#?}", name, fn_expr);
+                // to show that Γ ⊢ fn x = e0 in e1 : T' we need to show that
+                // Γ, x: gen(T) ⊢ e1 : T'
+                let param_tys = params.iter().map(|_| Type::Var(TyVar::fresh())).collect();
+                let fn_ty = Type::Lambda(param_tys.clone(), Box::new(Type::Var(TyVar::fresh())));
+                log::debug!("fn_ty: {:?}", fn_ty);
+
+                self.ctx.push();
+                self.ctx
+                    .insert(name.id(), Scheme::new(vec![], fn_ty.clone()));
+                let solved_expr = self.infer_expr(fn_expr)?;
+                log::debug!("fn_solved_expr: {:?}", solved_expr);
+                self.ctx.pop();
+
+                Ok(Decl::new(
+                    DeclKind::Fn(*name, params.clone(), solved_expr.clone()),
+                    fn_ty,
+                    decl.span(),
+                ))
+            }
+        }
+    }
+
     fn infer_expr(&mut self, expr: &nir::Expr) -> InferResult<Expr> {
         match expr.kind() {
             nir::ExprKind::Lit(lit) => match *lit {

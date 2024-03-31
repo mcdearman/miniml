@@ -5,7 +5,12 @@
 let main args = 1
 
 -- Bindings are immutable by default.
-let x = 1
+-- Top-level let-bindings must have explicit type annotations.
+let x : Int = 1
+
+let gcd (a : Int) (b : Int) : Int = 
+  if b = 0 then a 
+  else gcd b (a % b)
 
 -- ints
 1
