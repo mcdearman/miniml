@@ -4,6 +4,24 @@ use crate::utils::{
 };
 
 #[derive(Debug, Clone, PartialEq)]
+pub struct Root {
+    pub decls: Vec<Decl>,
+    pub span: Span,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct Decl {
+    pub kind: DeclKind,
+    pub span: Span,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum DeclKind {
+    Let(ScopedIdent, Expr),
+    Fn(ScopedIdent, Vec<ScopedIdent>, Expr),
+}
+
+#[derive(Debug, Clone, PartialEq)]
 pub struct Expr {
     kind: Box<ExprKind>,
     span: Span,
@@ -30,11 +48,12 @@ impl Expr {
 pub enum ExprKind {
     Lit(Lit),
     Var(ScopedIdent),
-    App(Expr, Expr),
-    Abs(ScopedIdent, Expr),
+    Apply(Expr, Vec<Expr>),
+    Lambda(Vec<ScopedIdent>, Expr),
     Or(Expr, Expr),
     And(Expr, Expr),
-    Let(ScopedIdent, bool, Expr, Expr),
+    Let(ScopedIdent, Expr, Expr),
+    Fn(ScopedIdent, Vec<ScopedIdent>, Expr, Expr),
     Unit,
 }
 

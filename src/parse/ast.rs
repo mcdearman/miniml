@@ -1,9 +1,25 @@
-use num_rational::Rational64;
-
 use crate::{
     lex::token::Token,
     utils::{ident::Ident, intern::InternedString, span::Span},
 };
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct Root {
+    pub decls: Vec<Decl>,
+    pub span: Span,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct Decl {
+    pub kind: DeclKind,
+    pub span: Span,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum DeclKind {
+    Let(Ident, Expr),
+    Fn(Ident, Vec<Ident>, Expr),
+}
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Expr {
@@ -32,13 +48,14 @@ impl Expr {
 pub enum ExprKind {
     Lit(Lit),
     Var(Ident),
-    App(Expr, Expr),
-    Abs(Ident, Expr),
+    Apply(Expr, Vec<Expr>),
+    Lambda(Vec<Ident>, Expr),
     UnaryOp(UnaryOp, Expr),
     BinaryOp(BinaryOp, Expr, Expr),
     Or(Expr, Expr),
     And(Expr, Expr),
-    Let(Ident, bool, Expr, Expr),
+    Let(Ident, Expr, Expr),
+    Fn(Ident, Vec<Ident>, Expr, Expr),
     Unit,
 }
 

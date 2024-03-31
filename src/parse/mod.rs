@@ -16,14 +16,92 @@ pub mod ast;
 
 pub fn parse<'src>(
     tokens: impl Iterator<Item = (Token, Span)> + Clone + 'src,
-) -> Result<Expr, Vec<Rich<'src, Token, Span>>> {
+) -> (Option<Root>, Vec<Rich<'src, Token, Span>>) {
     let eof_span = tokens
         .clone()
         .last()
         .map(|(_, span)| span)
         .unwrap_or_default();
     let tok_stream = Stream::from_iter(tokens).spanned(eof_span);
-    expr_parser().parse(tok_stream).into_result()
+    root_parser().parse(tok_stream).into_output_errors()
+}
+
+fn root_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
+) -> impl ChumskyParser<'a, I, Root, extra::Err<Rich<'a, Token, Span>>> {
+    decl_parser()
+        .repeated()
+        .collect()
+        .map_with(|decls, e| Root {
+            decls,
+            span: e.span(),
+        })
+        .boxed()
+}
+
+fn repl_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
+) -> impl ChumskyParser<'a, I, Root, extra::Err<Rich<'a, Token, Span>>> {
+    expr_parser()
+        .map(|e| {
+            DeclKind::Fn(
+                Ident::new(InternedString::from("main"), e.span().clone()),
+                vec![Ident::new(InternedString::from("args"), e.span().clone())],
+                e.clone(),
+            )
+        })
+        .map_with(|kind, e| Decl {
+            kind,
+            span: e.span(),
+        })
+        .or(decl_parser())
+        .map_with(|decl, e| Root {
+            decls: vec![decl],
+            span: e.span(),
+        })
+        .boxed()
+}
+
+fn decl_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
+) -> impl ChumskyParser<'a, I, Decl, extra::Err<Rich<'a, Token, Span>>> {
+    // let record = just(Token::Type)
+    //     .ignore_then(ident_parser())
+    //     .then_ignore(just(Token::Eq))
+    //     .then(
+    //         ident_parser()
+    //             .then_ignore(just(Token::Colon))
+    //             .then(type_hint_parser())
+    //             .separated_by(just(Token::Comma))
+    //             .allow_trailing()
+    //             .at_least(1)
+    //             .collect()
+    //             .delimited_by(just(Token::LBrace), just(Token::RBrace)),
+    //     )
+    //     .map_with(|(name, fields), e| {
+    //         DeclKind::DataType(DataType::new(
+    //             name,
+    //             DataTypeKind::Record { fields },
+    //             e.span(),
+    //         ))
+    //     });
+
+    let let_ = just(Token::Let)
+        .ignore_then(ident_parser())
+        .then_ignore(just(Token::Eq))
+        .then(expr_parser())
+        .map(|(name, expr)| DeclKind::Let(name, expr));
+
+    let fn_ = just(Token::Let)
+        .ignore_then(ident_parser())
+        .then(ident_parser().repeated().at_least(1).collect())
+        .then_ignore(just(Token::Eq))
+        .then(expr_parser())
+        .map(|((name, params), expr)| DeclKind::Fn(name, params, expr));
+
+    let_.or(fn_)
+        // .or(record)
+        .map_with(|kind, e| Decl {
+            kind,
+            span: e.span(),
+        })
 }
 
 fn expr_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
@@ -37,15 +115,11 @@ fn expr_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
 
         let ident = ident_parser().map(|ident| ExprKind::Var(ident));
 
-        let abs = just(Token::Backslash).ignore_then(ident_parser().repeated().at_least(1).foldr(
-            just(Token::RArrow).ignore_then(expr.clone()),
-            |param, expr: Expr| {
-                Expr::new(
-                    ExprKind::Abs(param, expr.clone()),
-                    param.span().extend(expr.span()),
-                )
-            },
-        ));
+        let lambda = just(Token::Backslash)
+            .ignore_then(ident_parser().repeated().at_least(1).collect())
+            .then_ignore(just(Token::RArrow))
+            .then(expr.clone())
+            .map(|(params, expr)| ExprKind::Lambda(params, expr));
 
         // let if_ = just(Token::If)
         //     .ignore_then(expr.clone())
@@ -61,22 +135,16 @@ fn expr_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
             .then(expr.clone())
             .then_ignore(just(Token::In))
             .then(expr.clone())
-            .map(|((name, expr), body)| ExprKind::Let(name, false, expr, body));
+            .map(|((name, expr), body)| ExprKind::Let(name, expr, body));
 
         let fn_ = just(Token::Let)
             .ignore_then(ident_parser())
-            .then(ident_parser().repeated().at_least(1).foldr(
-                just(Token::Eq).ignore_then(expr.clone()),
-                |param, expr: Expr| {
-                    Expr::new(
-                        ExprKind::Abs(param, expr.clone()),
-                        param.span().extend(expr.span()),
-                    )
-                },
-            ))
+            .then(ident_parser().repeated().at_least(1).collect())
+            .then_ignore(just(Token::Eq))
+            .then(expr.clone())
             .then_ignore(just(Token::In))
             .then(expr.clone())
-            .map(|((name, expr), body)| ExprKind::Let(name, true, expr, body));
+            .map(|(((name, params), expr), body)| ExprKind::Fn(name, params, expr, body));
 
         let simple = unit
             .or(lit)
@@ -89,17 +157,16 @@ fn expr_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
 
         let atom = let_
             .or(fn_)
+            .or(lambda)
             .map_with(|kind, e| Expr::new(kind, e.span()))
             .or(simple)
-            .or(abs)
             .boxed();
 
-        let apply = atom.clone().foldl(atom.clone().repeated(), |fun, arg| {
-            Expr::new(
-                ExprKind::App(fun.clone(), arg.clone()),
-                fun.span().extend(arg.span()),
-            )
-        });
+        let apply = atom
+            .clone()
+            .then(atom.clone().repeated().collect())
+            .map(|(fun, args)| ExprKind::Apply(fun, args))
+            .map_with(|kind, e| Expr::new(kind, e.span()));
 
         let op = just(Token::Minus)
             .or(just(Token::Not))
