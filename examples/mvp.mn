@@ -8,7 +8,16 @@ let main args = 1
 -- Top-level let-bindings must have explicit type annotations.
 let x : Int = 1
 
+gcd : Int Int -> Int
+let gcd a b = 
+  if b = 0 then a 
+  else gcd b (a % b)
+
 let gcd (a : Int) (b : Int) : Int = 
+  if b = 0 then a 
+  else gcd b (a % b)
+
+gcd(a: Int, b: Int): Int = 
   if b = 0 then a 
   else gcd b (a % b)
 
