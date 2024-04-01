@@ -44,7 +44,11 @@ fn repl_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
         .map(|e| {
             DeclKind::Fn(
                 Ident::new(InternedString::from("main"), e.span().clone()),
-                vec![Ident::new(InternedString::from("args"), e.span().clone())],
+                vec![(
+                    Ident::new(InternedString::from("args"), e.span().clone()),
+                    TypeHint::new(TypeHintKind::Unit, e.span().clone()),
+                )],
+                TypeHint::new(TypeHintKind::Unit, e.span().clone()),
                 e.clone(),
             )
         })
@@ -301,6 +305,20 @@ fn expr_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
 
         or
     })
+}
+
+fn type_hint_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
+) -> impl ChumskyParser<'a, I, TypeHint, extra::Err<Rich<'a, Token, Span>>> {
+    let simple = just(Token::Colon)
+        .ignore_then(ident_parser())
+        .map(|ident| match ident.as_str() {
+            "Int" => TypeHintKind::Int,
+            "Bool" => TypeHintKind::Bool,
+            _ => TypeHintKind::Unit,
+        })
+        .map_with(|ty, e| TypeHint::new(ty, e.span()));
+
+    todo!()
 }
 
 fn ident_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(

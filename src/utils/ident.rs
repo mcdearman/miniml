@@ -3,8 +3,8 @@ use std::fmt::Display;
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Ident {
-    key: InternedString,
-    span: Span,
+    pub key: InternedString,
+    pub span: Span,
 }
 
 impl Ident {
@@ -12,20 +12,16 @@ impl Ident {
         Self { key, span }
     }
 
-    pub fn key(&self) -> InternedString {
-        self.key
-    }
-
-    pub fn span(&self) -> Span {
-        self.span
+    pub fn as_str(&self) -> &str {
+        &self.key
     }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct ScopedIdent {
-    id: UniqueId,
-    key: InternedString,
-    span: Span,
+    pub id: UniqueId,
+    pub key: InternedString,
+    pub span: Span,
 }
 
 impl ScopedIdent {
@@ -33,20 +29,8 @@ impl ScopedIdent {
         Self { id, key, span }
     }
 
-    pub fn name(&self) -> &str {
+    pub fn as_str(&self) -> &str {
         &self.key
-    }
-
-    pub fn id(&self) -> UniqueId {
-        self.id
-    }
-
-    pub fn key(&self) -> InternedString {
-        self.key
-    }
-
-    pub fn span(&self) -> Span {
-        self.span
     }
 }
 

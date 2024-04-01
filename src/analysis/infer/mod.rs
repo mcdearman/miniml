@@ -158,7 +158,7 @@ impl TypeSolver {
                     expr.span(),
                 ))
             }
-            nir::ExprKind::App(fun, arg) => {
+            nir::ExprKind::Apply(fun, arg) => {
                 log::debug!("infer app: {:?} and {:?}", fun, arg);
                 // to show that Γ ⊢ e0 e1 : T' we need to show that
                 // Γ ⊢ e0 : T0

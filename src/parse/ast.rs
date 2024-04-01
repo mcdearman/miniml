@@ -1,3 +1,5 @@
+use num_rational::Rational64;
+
 use crate::{
     lex::token::Token,
     utils::{ident::Ident, intern::InternedString, span::Span},
@@ -17,8 +19,8 @@ pub struct Decl {
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum DeclKind {
-    Let(Ident, Expr),
-    Fn(Ident, Vec<Ident>, Expr),
+    Let(Ident, TypeHint, Expr),
+    Fn(Ident, Vec<(Ident, TypeHint)>, TypeHint, Expr),
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -195,12 +197,38 @@ impl ToString for BinaryOpKind {
 }
 
 #[derive(Debug, Clone, PartialEq)]
+pub struct TypeHint {
+    pub kind: Box<TypeHintKind>,
+    pub span: Span,
+}
+
+impl TypeHint {
+    pub fn new(kind: TypeHintKind, span: Span) -> Self {
+        Self {
+            kind: Box::new(kind),
+            span,
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum TypeHintKind {
+    Int,
+    Bool,
+    String,
+    Ident(Ident),
+    Fn(Vec<TypeHint>, TypeHint),
+    List(TypeHint),
+    Unit,
+}
+
+#[derive(Debug, Clone, PartialEq)]
 pub enum Lit {
-    // Byte(u8),
+    Byte(u8),
     Int(i64),
-    // Rational(Rational64),
-    // Real(f64),
+    Rational(Rational64),
+    Real(f64),
     Bool(bool),
-    // String(InternedString),
-    // Char(char),
+    String(InternedString),
+    Char(char),
 }

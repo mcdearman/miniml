@@ -1,23 +1,24 @@
+-- main data types:
+42b -- Byte
+42 -- Int
+1/2 -- Rational
+1.0 -- Real
+"hello" -- String
+'a' -- Char
+true -- Bool
+() -- Unit
+
 -- Files are composed of declarations at the top level. In the notebook 
 -- or repl, you can use expressions at the top level. You can think of 
 -- this as a shorthand for `let main args = <expr>`. In files, the main 
 -- function must be defined explicitly:
-let main args = 1
+let main (args : [String]) : () = ()
 
 -- Bindings are immutable by default.
 -- Top-level let-bindings must have explicit type annotations.
 let x : Int = 1
 
-gcd : Int Int -> Int
-let gcd a b = 
-  if b = 0 then a 
-  else gcd b (a % b)
-
 let gcd (a : Int) (b : Int) : Int = 
-  if b = 0 then a 
-  else gcd b (a % b)
-
-gcd(a: Int, b: Int): Int = 
   if b = 0 then a 
   else gcd b (a % b)
 
