@@ -333,11 +333,11 @@ fn lit_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
 ) -> impl ChumskyParser<'a, I, Lit, extra::Err<Rich<'a, Token, Span>>> {
     select! {
         Token::Int(i) => Lit::Int(i),
-        // Token::Rational(r) => Lit::Rational(r),
-        // Token::Real(r) => Lit::Real(r),
+        Token::Rational(r) => Lit::Rational(r),
+        Token::Real(r) => Lit::Real(r),
         Token::Bool(b) => Lit::Bool(b),
-        // Token::String(s) => Lit::String(s),
-        // Token::Char(c) => Lit::Char(c),
+        Token::String(s) => Lit::String(s),
+        Token::Char(c) => Lit::Char(c),
     }
 }
 
