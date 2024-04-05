@@ -1,5 +1,8 @@
+use num_rational::Rational64;
+
 use crate::utils::{
     ident::{Ident, ScopedIdent},
+    intern::InternedString,
     span::Span,
 };
 
@@ -59,6 +62,11 @@ pub enum ExprKind {
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Lit {
+    Byte(u8),
     Int(i64),
+    Rational(Rational64),
+    Real(f64),
     Bool(bool),
+    String(InternedString),
+    Char(char),
 }

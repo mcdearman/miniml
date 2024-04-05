@@ -1,19 +1,22 @@
-use crate::{lex::token_stream::TokenStream, parse::parse};
+use crate::{
+    lex::token_stream::TokenStream,
+    parse::{ast, parse},
+};
+use rename::resolver::Resolver;
 // use analysis::infer::TypeSolver;
-// use rename::resolver::Resolver;
 use std::io::{self, Write};
 
 // mod analysis;
 mod lex;
 mod parse;
-// mod rename;
+mod rename;
 // mod runtime;
 mod utils;
 
 fn main() {
     env_logger::init();
     let mut src = String::new();
-    // let mut res = Resolver::new();
+    let mut res = Resolver::new();
     // let builtins = res.builtins();
     // let scoped_interner = res.env().dump_to_interner();
     // let mut solver = TypeSolver::new(builtins.clone(), scoped_interner);
@@ -24,28 +27,21 @@ fn main() {
         std::io::stdin().read_line(&mut src).unwrap();
 
         let stream = TokenStream::new(&src);
-        if let (Some(ast), parse_errors) = parse(stream) {
-            if !parse_errors.is_empty() {
-                for error in parse_errors {
-                    println!("Error: {:#?}", error);
-                }
+        // let (ast, parse_errors) = parse(stream, true);
+        let root = match parse(stream, true) {
+            (Some(root), _) => {
+                log::debug!("{:#?}", root);
+                src.clear();
+                root
+            }
+            (_, errors) => {
+                println!("{:#?}", errors);
                 src.clear();
                 continue;
             }
-            println!("{:#?}", ast);
-        }
+        };
 
-        //     let nir = match res.resolve(&expr) {
-        //         Ok(nir) => {
-        //             // log::debug!("{:?}", nir);
-        //             nir
-        //         }
-        //         Err(e) => {
-        //             println!("Error: {:#?}", e);
-        //             src.clear();
-        //             continue;
-        //         }
-        //     };
+        // let nir =
 
         //     let tir = match solver.infer(&src, &nir) {
         //         Ok(tir) => {

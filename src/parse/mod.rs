@@ -16,6 +16,7 @@ pub mod ast;
 
 pub fn parse<'src>(
     tokens: impl Iterator<Item = (Token, Span)> + Clone + 'src,
+    repl: bool,
 ) -> (Option<Root>, Vec<Rich<'src, Token, Span>>) {
     let eof_span = tokens
         .clone()
@@ -23,7 +24,11 @@ pub fn parse<'src>(
         .map(|(_, span)| span)
         .unwrap_or_default();
     let tok_stream = Stream::from_iter(tokens).spanned(eof_span);
-    root_parser().parse(tok_stream).into_output_errors()
+    if repl {
+        repl_parser().parse(tok_stream).into_output_errors()
+    } else {
+        root_parser().parse(tok_stream).into_output_errors()
+    }
 }
 
 fn root_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
@@ -35,7 +40,6 @@ fn root_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
             decls,
             span: e.span(),
         })
-        .boxed()
 }
 
 fn repl_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
@@ -43,12 +47,12 @@ fn repl_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
     expr_parser()
         .map(|e| {
             DeclKind::Fn(
-                Ident::new(InternedString::from("main"), e.span().clone()),
-                vec![(
-                    Ident::new(InternedString::from("args"), e.span().clone()),
-                    TypeHint::new(TypeHintKind::Unit, e.span().clone()),
-                )],
-                TypeHint::new(TypeHintKind::Unit, e.span().clone()),
+                Ident::new(InternedString::from("main"), e.span),
+                vec![
+                    Ident::new(InternedString::from("args"), e.span),
+                    // TypeHint::new(TypeHintKind::Unit, e.span().clone()),
+                ],
+                // TypeHint::new(TypeHintKind::Unit, e.span().clone()),
                 e.clone(),
             )
         })
@@ -175,18 +179,24 @@ fn expr_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
         let op = just(Token::Minus)
             .or(just(Token::Not))
             .map(UnaryOpKind::from)
-            .map_with(|op, e| UnaryOp::new(op, e.span()));
+            .map_with(|kind, e| UnaryOp {
+                kind,
+                span: e.span(),
+            });
 
         let unary = op.clone().repeated().foldr(apply, |op, expr| {
             Expr::new(
                 ExprKind::UnaryOp(op, expr.clone()),
-                op.span().extend(expr.span()),
+                op.span.extend(expr.span),
             )
         });
 
         let op = just(Token::Caret)
             .map(BinaryOpKind::from)
-            .map_with(|op, e| BinaryOp::new(op, e.span()));
+            .map_with(|kind, e| BinaryOp {
+                kind,
+                span: e.span(),
+            });
 
         let pow = unary
             .clone()
@@ -195,7 +205,7 @@ fn expr_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
                 |lhs: Expr, (op, rhs): (BinaryOp, Expr)| {
                     Expr::new(
                         ExprKind::BinaryOp(op, lhs.clone(), rhs.clone()),
-                        lhs.span().extend(rhs.span()),
+                        lhs.span.extend(rhs.span),
                     )
                 },
             )
@@ -205,7 +215,10 @@ fn expr_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
             .or(just(Token::Slash))
             .or(just(Token::Percent))
             .map(BinaryOpKind::from)
-            .map_with(|op, e| BinaryOp::new(op, e.span()));
+            .map_with(|kind, e| BinaryOp {
+                kind,
+                span: e.span(),
+            });
 
         let factor = pow
             .clone()
@@ -214,7 +227,7 @@ fn expr_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
                 |lhs: Expr, (op, rhs): (BinaryOp, Expr)| {
                     Expr::new(
                         ExprKind::BinaryOp(op, lhs.clone(), rhs.clone()),
-                        lhs.span().extend(rhs.span()),
+                        lhs.span.extend(rhs.span),
                     )
                 },
             )
@@ -223,7 +236,10 @@ fn expr_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
         let op = just(Token::Plus)
             .or(just(Token::Minus))
             .map(BinaryOpKind::from)
-            .map_with(|op, e| BinaryOp::new(op, e.span()))
+            .map_with(|kind, e| BinaryOp {
+                kind,
+                span: e.span(),
+            })
             .boxed();
 
         let term = factor
@@ -233,7 +249,7 @@ fn expr_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
                 |lhs: Expr, (op, rhs): (BinaryOp, Expr)| {
                     Expr::new(
                         ExprKind::BinaryOp(op, lhs.clone(), rhs.clone()),
-                        lhs.span().extend(rhs.span()),
+                        lhs.span.extend(rhs.span),
                     )
                 },
             )
@@ -244,7 +260,10 @@ fn expr_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
             .or(just(Token::Leq))
             .or(just(Token::Geq))
             .map(BinaryOpKind::from)
-            .map_with(|op, e| BinaryOp::new(op, e.span()))
+            .map_with(|kind, e| BinaryOp {
+                kind,
+                span: e.span(),
+            })
             .boxed();
 
         let cmp = term
@@ -253,7 +272,7 @@ fn expr_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
             .map(|(lhs, rhs)| match rhs {
                 Some((op, rhs)) => Expr::new(
                     ExprKind::BinaryOp(op, lhs.clone(), rhs.clone()),
-                    lhs.span().extend(rhs.span()),
+                    lhs.span.extend(rhs.span),
                 ),
                 None => lhs.clone(),
             })
@@ -262,7 +281,10 @@ fn expr_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
         let op = just(Token::Eq)
             .or(just(Token::Neq))
             .map(BinaryOpKind::from)
-            .map_with(|op, e| BinaryOp::new(op, e.span()))
+            .map_with(|kind, e| BinaryOp {
+                kind,
+                span: e.span(),
+            })
             .boxed();
 
         let eq = cmp
@@ -271,7 +293,7 @@ fn expr_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
             .map(|(lhs, rhs)| match rhs {
                 Some((op, rhs)) => Expr::new(
                     ExprKind::BinaryOp(op, lhs.clone(), rhs.clone()),
-                    lhs.span().extend(rhs.span()),
+                    lhs.span.extend(rhs.span),
                 ),
                 None => lhs.clone(),
             })
@@ -284,7 +306,7 @@ fn expr_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
                 |lhs, rhs| {
                     Expr::new(
                         ExprKind::And(lhs.clone(), rhs.clone()),
-                        lhs.span().extend(rhs.span()),
+                        lhs.span.extend(rhs.span),
                     )
                 },
             )
@@ -297,7 +319,7 @@ fn expr_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
                 |lhs, rhs| {
                     Expr::new(
                         ExprKind::Or(lhs.clone(), rhs.clone()),
-                        lhs.span().extend(rhs.span()),
+                        lhs.span.extend(rhs.span),
                     )
                 },
             )
@@ -307,19 +329,19 @@ fn expr_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
     })
 }
 
-fn type_hint_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
-) -> impl ChumskyParser<'a, I, TypeHint, extra::Err<Rich<'a, Token, Span>>> {
-    let simple = just(Token::Colon)
-        .ignore_then(ident_parser())
-        .map(|ident| match ident.as_str() {
-            "Int" => TypeHintKind::Int,
-            "Bool" => TypeHintKind::Bool,
-            _ => TypeHintKind::Unit,
-        })
-        .map_with(|ty, e| TypeHint::new(ty, e.span()));
+// fn type_hint_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
+// ) -> impl ChumskyParser<'a, I, TypeHint, extra::Err<Rich<'a, Token, Span>>> {
+//     let simple = just(Token::Colon)
+//         .ignore_then(ident_parser())
+//         .map(|ident| match ident.as_str() {
+//             "Int" => TypeHintKind::Int,
+//             "Bool" => TypeHintKind::Bool,
+//             _ => TypeHintKind::Unit,
+//         })
+//         .map_with(|ty, e| TypeHint::new(ty, e.span()));
 
-    todo!()
-}
+//     todo!()
+// }
 
 fn ident_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
 ) -> impl ChumskyParser<'a, I, Ident, extra::Err<Rich<'a, Token, Span>>> {

@@ -19,14 +19,14 @@ pub struct Decl {
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum DeclKind {
-    Let(Ident, TypeHint, Expr),
-    Fn(Ident, Vec<(Ident, TypeHint)>, TypeHint, Expr),
+    Let(Ident, Expr),
+    Fn(Ident, Vec<Ident>, Expr),
 }
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Expr {
-    kind: Box<ExprKind>,
-    span: Span,
+    pub kind: Box<ExprKind>,
+    pub span: Span,
 }
 
 impl Expr {
@@ -35,14 +35,6 @@ impl Expr {
             kind: Box::new(kind),
             span,
         }
-    }
-
-    pub fn kind(&self) -> &ExprKind {
-        &self.kind
-    }
-
-    pub fn span(&self) -> Span {
-        self.span
     }
 }
 
@@ -63,22 +55,8 @@ pub enum ExprKind {
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct UnaryOp {
-    kind: UnaryOpKind,
-    span: Span,
-}
-
-impl UnaryOp {
-    pub fn new(kind: UnaryOpKind, span: Span) -> Self {
-        Self { kind, span }
-    }
-
-    pub fn kind(&self) -> &UnaryOpKind {
-        &self.kind
-    }
-
-    pub fn span(&self) -> Span {
-        self.span
-    }
+    pub kind: UnaryOpKind,
+    pub span: Span,
 }
 
 impl From<UnaryOp> for InternedString {
@@ -114,22 +92,8 @@ impl ToString for UnaryOpKind {
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct BinaryOp {
-    kind: BinaryOpKind,
-    span: Span,
-}
-
-impl BinaryOp {
-    pub fn new(kind: BinaryOpKind, span: Span) -> Self {
-        Self { kind, span }
-    }
-
-    pub fn kind(&self) -> &BinaryOpKind {
-        &self.kind
-    }
-
-    pub fn span(&self) -> Span {
-        self.span
-    }
+    pub kind: BinaryOpKind,
+    pub span: Span,
 }
 
 impl From<BinaryOp> for InternedString {
