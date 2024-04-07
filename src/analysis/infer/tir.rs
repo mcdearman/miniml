@@ -183,7 +183,7 @@ impl Expr {
 //     }
 // }
 
-#[derive(Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum ExprKind {
     Lit(Lit),
     Var(ScopedIdent),
@@ -194,31 +194,6 @@ pub enum ExprKind {
     Let(ScopedIdent, Expr, Expr),
     Fn(ScopedIdent, Vec<ScopedIdent>, Expr, Expr),
     Unit,
-}
-
-impl Debug for ExprKind {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        todo!()
-        // match self {
-        //     Self::Lit(lit) => write!(f, "Lit({:?})", lit),
-        //     Self::Var(var) => write!(f, "Var({:?})", var),
-        //     Self::App(fun, arg) => {
-        //         // write!(f, "App({:?}, {:?})", fun, arg)?;
-
-        //     }
-        //     Self::Abs(arg0, arg1) => f.debug_tuple("Abs").field(arg0).field(arg1).finish(),
-        //     Self::Or(arg0, arg1) => f.debug_tuple("Or").field(arg0).field(arg1).finish(),
-        //     Self::And(arg0, arg1) => f.debug_tuple("And").field(arg0).field(arg1).finish(),
-        //     Self::Let(arg0, arg1, arg2, arg3) => f
-        //         .debug_tuple("Let")
-        //         .field(arg0)
-        //         .field(arg1)
-        //         .field(arg2)
-        //         .field(arg3)
-        //         .finish(),
-        //     Self::Unit => write!(f, "Unit"),
-        // }
-    }
 }
 
 #[derive(Clone, PartialEq)]

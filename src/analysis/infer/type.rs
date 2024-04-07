@@ -152,7 +152,7 @@ impl Display for Type {
                     }
                 }
                 Type::Lambda(params, body) => Type::Lambda(
-                    params.iter().map(|p| lower(*p, vars)).collect_vec(),
+                    params.iter().map(|p| lower(p.clone(), vars)).collect_vec(),
                     Box::new(lower(*body, vars)),
                 ),
                 Type::List(list_ty) => Type::List(Box::new(lower(*list_ty, vars))),

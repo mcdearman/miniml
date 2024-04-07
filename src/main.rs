@@ -53,7 +53,7 @@ fn main() {
 
         let tir = match solver.infer(&src, &nir) {
             (Some(tir), _) => {
-                log::debug!("{:?}", tir);
+                log::debug!("{:#?}", tir);
                 src.clear();
                 tir
             }

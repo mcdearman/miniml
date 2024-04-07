@@ -24,7 +24,7 @@ impl Context {
                         *id,
                         Scheme::new(
                             vec![var],
-                            Type::Lambda(Box::new(Type::Var(var)), Box::new(Type::Var(var))),
+                            Type::Lambda(vec![Type::Var(var)], Box::new(Type::Var(var))),
                         ),
                     );
                 }
@@ -34,7 +34,7 @@ impl Context {
                         *id,
                         Scheme::new(
                             vec![var],
-                            Type::Lambda(Box::new(Type::Var(var)), Box::new(Type::Var(var))),
+                            Type::Lambda(vec![Type::Var(var)], Box::new(Type::Var(var))),
                         ),
                     );
                 }
@@ -44,8 +44,8 @@ impl Context {
                         Scheme::new(
                             vec![],
                             Type::Lambda(
-                                Box::new(Type::Int),
-                                Box::new(Type::Lambda(Box::new(Type::Int), Box::new(Type::Int))),
+                                vec![Type::Int],
+                                Box::new(Type::Lambda(vec![Type::Int], Box::new(Type::Int))),
                             ),
                         ),
                     );
@@ -56,8 +56,8 @@ impl Context {
                         Scheme::new(
                             vec![],
                             Type::Lambda(
-                                Box::new(Type::Int),
-                                Box::new(Type::Lambda(Box::new(Type::Int), Box::new(Type::Int))),
+                                vec![Type::Int],
+                                Box::new(Type::Lambda(vec![Type::Int], Box::new(Type::Int))),
                             ),
                         ),
                     );
@@ -68,8 +68,8 @@ impl Context {
                         Scheme::new(
                             vec![],
                             Type::Lambda(
-                                Box::new(Type::Int),
-                                Box::new(Type::Lambda(Box::new(Type::Int), Box::new(Type::Int))),
+                                vec![Type::Int],
+                                Box::new(Type::Lambda(vec![Type::Int], Box::new(Type::Int))),
                             ),
                         ),
                     );
@@ -80,8 +80,8 @@ impl Context {
                         Scheme::new(
                             vec![],
                             Type::Lambda(
-                                Box::new(Type::Int),
-                                Box::new(Type::Lambda(Box::new(Type::Int), Box::new(Type::Int))),
+                                vec![Type::Int],
+                                Box::new(Type::Lambda(vec![Type::Int], Box::new(Type::Int))),
                             ),
                         ),
                     );
@@ -92,8 +92,8 @@ impl Context {
                         Scheme::new(
                             vec![],
                             Type::Lambda(
-                                Box::new(Type::Int),
-                                Box::new(Type::Lambda(Box::new(Type::Int), Box::new(Type::Int))),
+                                vec![Type::Int],
+                                Box::new(Type::Lambda(vec![Type::Int], Box::new(Type::Int))),
                             ),
                         ),
                     );
@@ -104,8 +104,8 @@ impl Context {
                         Scheme::new(
                             vec![],
                             Type::Lambda(
-                                Box::new(Type::Int),
-                                Box::new(Type::Lambda(Box::new(Type::Int), Box::new(Type::Int))),
+                                vec![Type::Int],
+                                Box::new(Type::Lambda(vec![Type::Int], Box::new(Type::Int))),
                             ),
                         ),
                     );
@@ -117,11 +117,8 @@ impl Context {
                         Scheme::new(
                             vec![var],
                             Type::Lambda(
-                                Box::new(Type::Var(var)),
-                                Box::new(Type::Lambda(
-                                    Box::new(Type::Var(var)),
-                                    Box::new(Type::Bool),
-                                )),
+                                vec![Type::Var(var)],
+                                Box::new(Type::Lambda(vec![Type::Var(var)], Box::new(Type::Bool))),
                             ),
                         ),
                     );
@@ -133,11 +130,8 @@ impl Context {
                         Scheme::new(
                             vec![var],
                             Type::Lambda(
-                                Box::new(Type::Var(var)),
-                                Box::new(Type::Lambda(
-                                    Box::new(Type::Var(var)),
-                                    Box::new(Type::Bool),
-                                )),
+                                vec![Type::Var(var)],
+                                Box::new(Type::Lambda(vec![Type::Var(var)], Box::new(Type::Bool))),
                             ),
                         ),
                     );
@@ -149,11 +143,8 @@ impl Context {
                         Scheme::new(
                             vec![var],
                             Type::Lambda(
-                                Box::new(Type::Var(var)),
-                                Box::new(Type::Lambda(
-                                    Box::new(Type::Var(var)),
-                                    Box::new(Type::Bool),
-                                )),
+                                vec![Type::Var(var)],
+                                Box::new(Type::Lambda(vec![Type::Var(var)], Box::new(Type::Bool))),
                             ),
                         ),
                     );
@@ -165,11 +156,8 @@ impl Context {
                         Scheme::new(
                             vec![var],
                             Type::Lambda(
-                                Box::new(Type::Var(var)),
-                                Box::new(Type::Lambda(
-                                    Box::new(Type::Var(var)),
-                                    Box::new(Type::Bool),
-                                )),
+                                vec![Type::Var(var)],
+                                Box::new(Type::Lambda(vec![Type::Var(var)], Box::new(Type::Bool))),
                             ),
                         ),
                     );
@@ -181,11 +169,8 @@ impl Context {
                         Scheme::new(
                             vec![var],
                             Type::Lambda(
-                                Box::new(Type::Var(var)),
-                                Box::new(Type::Lambda(
-                                    Box::new(Type::Var(var)),
-                                    Box::new(Type::Bool),
-                                )),
+                                vec![Type::Var(var)],
+                                Box::new(Type::Lambda(vec![Type::Var(var)], Box::new(Type::Bool))),
                             ),
                         ),
                     );
@@ -197,11 +182,8 @@ impl Context {
                         Scheme::new(
                             vec![var],
                             Type::Lambda(
-                                Box::new(Type::Var(var)),
-                                Box::new(Type::Lambda(
-                                    Box::new(Type::Var(var)),
-                                    Box::new(Type::Bool),
-                                )),
+                                vec![Type::Var(var)],
+                                Box::new(Type::Lambda(vec![Type::Var(var)], Box::new(Type::Bool))),
                             ),
                         ),
                     );
@@ -212,7 +194,7 @@ impl Context {
                         *id,
                         Scheme::new(
                             vec![var],
-                            Type::Lambda(Box::new(Type::Var(var)), Box::new(Type::Unit)),
+                            Type::Lambda(vec![Type::Var(var)], Box::new(Type::Unit)),
                         ),
                     );
                 }

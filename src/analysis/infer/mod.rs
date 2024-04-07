@@ -1,3 +1,4 @@
+use insta::internals::AutoName;
 use itertools::Itertools;
 
 use self::{
@@ -197,12 +198,12 @@ impl TypeSolver {
                 // log::debug!("abs_ctx: {:?}", self.ctx);
                 let solved_expr = self.infer_expr(fn_expr)?;
                 log::debug!("lambda_solved_expr: {:?}", solved_expr);
-                let fun_ty = Type::Lambda(param_types, Box::new(solved_expr.ty));
+                let fun_ty = Type::Lambda(param_types, Box::new(solved_expr.ty.clone()));
                 log::debug!("lambda_fun_ty: {:?}", fun_ty);
                 self.ctx.pop();
 
                 Ok(Expr::new(
-                    ExprKind::Lambda(*params, solved_expr),
+                    ExprKind::Lambda(params.clone(), solved_expr),
                     fun_ty,
                     expr.span,
                 ))
@@ -243,21 +244,21 @@ impl TypeSolver {
                 let solved_lhs = self.infer_expr(lhs)?;
                 let solved_rhs = self.infer_expr(rhs)?;
 
-                self.sub = solved_lhs.ty().unify(&Type::Bool)?;
-                self.sub = solved_rhs.ty().unify(&Type::Bool)?;
+                self.sub = solved_lhs.ty.unify(&Type::Bool)?;
+                self.sub = solved_rhs.ty.unify(&Type::Bool)?;
 
                 Ok(Expr::new(
                     ExprKind::Or(solved_lhs, solved_rhs),
                     Type::Bool,
-                    expr.span(),
+                    expr.span,
                 ))
             }
             nir::ExprKind::And(lhs, rhs) => {
                 let solved_lhs = self.infer_expr(lhs)?;
                 let solved_rhs = self.infer_expr(rhs)?;
 
-                self.sub = solved_lhs.ty().unify(&Type::Bool)?;
-                self.sub = solved_rhs.ty().apply_subst(&self.sub).unify(&Type::Bool)?;
+                self.sub = solved_lhs.ty.unify(&Type::Bool)?;
+                self.sub = solved_rhs.ty.apply_subst(&self.sub).unify(&Type::Bool)?;
 
                 Ok(Expr::new(
                     ExprKind::And(solved_lhs, solved_rhs),
@@ -275,14 +276,40 @@ impl TypeSolver {
                 // Γ, x: gen(T) ⊢ e1 : T'
                 let scheme = solved_expr.ty.generalize(&self.ctx);
                 log::debug!("let_scheme: {:?}", scheme);
-                self.ctx.insert(name.id(), scheme);
+                self.ctx.insert(name.id, scheme);
                 let solved_body = self.infer_expr(body)?;
                 log::debug!("let_solved_body: {:?}", solved_body);
 
                 Ok(Expr::new(
-                    ExprKind::Let(*name, *rec, solved_expr, solved_body.clone()),
-                    solved_body.ty(),
-                    expr.span(),
+                    ExprKind::Let(*name, solved_expr, solved_body.clone()),
+                    solved_body.ty,
+                    expr.span,
+                ))
+            }
+            nir::ExprKind::Fn(name, params, expr, body) => {
+                log::debug!("infer fn ({:?}) = {:#?}", name, expr);
+                // to show that Γ ⊢ fn x = e0 in e1 : T' we need to show that
+                // Γ, x: gen(T) ⊢ e1 : T'
+                let param_tys = params
+                    .iter()
+                    .map(|_| Type::Var(TyVar::fresh()))
+                    .collect_vec();
+                let fn_ty = Type::Lambda(param_tys.clone(), Box::new(Type::Var(TyVar::fresh())));
+                log::debug!("fn_ty: {:?}", fn_ty);
+
+                self.ctx.push();
+                self.ctx.insert(name.id, Scheme::new(vec![], fn_ty.clone()));
+                let solved_expr = self.infer_expr(expr)?;
+                log::debug!("fn_solved_expr: {:?}", solved_expr);
+
+                let solved_body = self.infer_expr(body)?;
+                log::debug!("fn_solved_body: {:?}", solved_body);
+                self.ctx.pop();
+
+                Ok(Expr::new(
+                    ExprKind::Fn(*name, params.clone(), solved_expr, solved_body),
+                    fn_ty,
+                    expr.span,
                 ))
             }
             // nir::ExprKind::If { cond, then, else_ } => {
@@ -303,7 +330,7 @@ impl TypeSolver {
             //         expr.span(),
             //     ))
             // }
-            nir::ExprKind::Unit => Ok(Expr::new(ExprKind::Unit, Type::Unit, expr.span())),
+            nir::ExprKind::Unit => Ok(Expr::new(ExprKind::Unit, Type::Unit, expr.span)),
         }
     }
 
