@@ -84,18 +84,16 @@ impl Resolver {
     fn resolve_decl(&mut self, decl: &ast::Decl) -> ResResult<Decl> {
         match &decl.kind {
             ast::DeclKind::Let(ident, expr) => {
-                self.env.push();
                 let res_name = ScopedIdent::new(self.env.define(ident.key), ident.key, ident.span);
                 let res_expr = self.resolve_expr(&expr)?;
-                self.env.pop();
                 Ok(Decl {
                     kind: DeclKind::Let(res_name, res_expr),
                     span: decl.span,
                 })
             }
             ast::DeclKind::Fn(ident, params, fn_expr) => {
-                self.env.push();
                 let res_name = self.env.define(ident.key);
+                self.env.push();
                 let res_params = params
                     .iter()
                     .map(|p| ScopedIdent::new(self.env.define(p.key), p.key, p.span))

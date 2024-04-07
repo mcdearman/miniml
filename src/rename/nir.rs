@@ -26,8 +26,8 @@ pub enum DeclKind {
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Expr {
-    kind: Box<ExprKind>,
-    span: Span,
+    pub kind: Box<ExprKind>,
+    pub span: Span,
 }
 
 impl Expr {
@@ -36,14 +36,6 @@ impl Expr {
             kind: Box::new(kind),
             span,
         }
-    }
-
-    pub fn kind(&self) -> &ExprKind {
-        &self.kind
-    }
-
-    pub fn span(&self) -> Span {
-        self.span
     }
 }
 

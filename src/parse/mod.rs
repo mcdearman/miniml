@@ -172,8 +172,14 @@ fn expr_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
 
         let apply = atom
             .clone()
-            .then(atom.clone().repeated().collect())
-            .map(|(fun, args)| ExprKind::Apply(fun, args))
+            .then(atom.clone().repeated().collect::<Vec<_>>())
+            .map(|(fun, args)| {
+                if args.is_empty() {
+                    *fun.kind
+                } else {
+                    ExprKind::Apply(fun, args)
+                }
+            })
             .map_with(|kind, e| Expr::new(kind, e.span()));
 
         let op = just(Token::Minus)

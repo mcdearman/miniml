@@ -1,3 +1,5 @@
+use itertools::Itertools;
+
 use super::{
     context::Context,
     error::{InferResult, TypeError},
@@ -6,7 +8,6 @@ use super::{
     ty_var::TyVar,
 };
 use crate::utils::{intern::InternedString, unique_id::UniqueId};
-use itertools::Itertools;
 use std::{
     collections::{HashMap, HashSet},
     fmt::{Debug, Display},
@@ -14,12 +15,15 @@ use std::{
 
 #[derive(Clone, PartialEq, Eq)]
 pub enum Type {
+    Byte,
     Int,
     Rational,
+    Real,
     Bool,
     String,
+    Char,
     Var(TyVar),
-    Lambda(Box<Self>, Box<Self>),
+    Lambda(Vec<Self>, Box<Self>),
     List(Box<Self>),
     Record(UniqueId, Vec<(InternedString, Self)>),
     Unit,
@@ -28,10 +32,17 @@ pub enum Type {
 impl Type {
     pub(super) fn apply_subst(&self, subst: &Substitution) -> Type {
         match self {
-            Self::Int | Self::Rational | Self::Bool | Self::String | Self::Unit => self.clone(),
+            Self::Byte
+            | Self::Int
+            | Self::Rational
+            | Self::Real
+            | Self::Bool
+            | Self::String
+            | Self::Char
+            | Self::Unit => self.clone(),
             Self::Var(n) => subst.get(&n).cloned().unwrap_or(self.clone()),
-            Self::Lambda(param, body) => Self::Lambda(
-                Box::new(param.apply_subst(subst)),
+            Self::Lambda(params, body) => Self::Lambda(
+                params.iter().map(|ty| ty.apply_subst(subst)).collect(),
                 Box::new(body.apply_subst(subst)),
             ),
             Self::List(ty) => Self::List(Box::new(ty.apply_subst(subst))),
@@ -66,7 +77,12 @@ impl Type {
             | (Type::Bool, Type::Bool)
             | (Type::Unit, Type::Unit) => Ok(Substitution::new()),
             (Type::Lambda(p1, b1), Type::Lambda(p2, b2)) => {
-                let s1 = p1.unify(p2)?;
+                let s1 = p1
+                    .iter()
+                    .zip(p2.iter())
+                    .try_fold(Substitution::new(), |s, (t1, t2)| {
+                        t1.apply_subst(&s).unify(&t2.apply_subst(&s))
+                    })?;
                 let s2 = b1.apply_subst(&s1).unify(&b2.apply_subst(&s1))?;
                 Ok(s1.compose(&s2))
             }
@@ -82,8 +98,11 @@ impl Type {
     pub(super) fn free_vars(&self) -> HashSet<TyVar> {
         match self {
             Self::Var(n) => vec![n.clone()].into_iter().collect(),
-            Self::Lambda(param, body) => param
-                .free_vars()
+            Self::Lambda(params, body) => params
+                .iter()
+                .fold(HashSet::new(), |acc, ty| {
+                    acc.union(&ty.free_vars()).cloned().collect()
+                })
                 .union(&body.free_vars())
                 .cloned()
                 .collect(),
@@ -95,10 +114,13 @@ impl Type {
 impl Debug for Type {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self.clone() {
+            Self::Byte => write!(f, "Byte"),
             Self::Int => write!(f, "Int"),
             Self::Rational => write!(f, "Rational"),
+            Self::Real => write!(f, "Real"),
             Self::Bool => write!(f, "Bool"),
             Self::String => write!(f, "String"),
+            Self::Char => write!(f, "Char"),
             Self::Var(n) => write!(f, "{:?}", n),
             Self::Lambda(param, body) => write!(f, "{:?} -> {:?}", param, body),
             Self::List(ty) => write!(f, "[{:?}]", ty),
@@ -112,7 +134,14 @@ impl Display for Type {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         fn lower(ty: Type, vars: &mut HashMap<TyVar, TyVar>) -> Type {
             match ty {
-                Type::Int | Type::Rational | Type::Bool | Type::String | Type::Unit => ty,
+                Type::Byte
+                | Type::Int
+                | Type::Rational
+                | Type::Real
+                | Type::Bool
+                | Type::String
+                | Type::Char
+                | Type::Unit => ty,
                 Type::Var(name) => {
                     if let Some(n) = vars.get(&name) {
                         Type::Var(*n)
@@ -122,9 +151,10 @@ impl Display for Type {
                         Type::Var(TyVar::from(n))
                     }
                 }
-                Type::Lambda(param, body) => {
-                    Type::Lambda(Box::new(lower(*param, vars)), Box::new(lower(*body, vars)))
-                }
+                Type::Lambda(params, body) => Type::Lambda(
+                    params.iter().map(|p| lower(*p, vars)).collect_vec(),
+                    Box::new(lower(*body, vars)),
+                ),
                 Type::List(list_ty) => Type::List(Box::new(lower(*list_ty, vars))),
                 Type::Record(name, fields) => {
                     let mut lowered_fields = vec![];
@@ -138,10 +168,13 @@ impl Display for Type {
 
         let mut vars = HashMap::new();
         match lower(self.clone(), &mut vars) {
+            Self::Byte => write!(f, "Byte"),
             Self::Int => write!(f, "Int"),
             Self::Rational => write!(f, "Rational"),
+            Self::Real => write!(f, "Real"),
             Self::Bool => write!(f, "Bool"),
             Self::String => write!(f, "String"),
+            Self::Char => write!(f, "Char"),
             Self::Var(n) => write!(f, "{}", n),
             Self::Lambda(params, body) => write!(f, "{:?} -> {:?}", params, body),
             Self::List(ty) => write!(f, "[{:?}]", ty),

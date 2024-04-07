@@ -1,27 +1,28 @@
 use itertools::Itertools;
+use num_rational::Rational64;
 
 use super::{r#type::Type, substitution::Substitution};
 use crate::utils::{
     ident::{Ident, ScopedIdent},
     intern::InternedString,
-    list::List,
     span::Span,
 };
 use std::fmt::{Debug, Display};
 
-#[derive(Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Root {
     pub decls: Vec<Decl>,
     pub span: Span,
 }
 
-#[derive(Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Decl {
     pub kind: DeclKind,
+    pub ty: Type,
     pub span: Span,
 }
 
-#[derive(Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum DeclKind {
     Let(ScopedIdent, Expr),
     Fn(ScopedIdent, Vec<ScopedIdent>, Expr),
@@ -29,9 +30,9 @@ pub enum DeclKind {
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Expr {
-    kind: Box<ExprKind>,
-    ty: Type,
-    span: Span,
+    pub kind: Box<ExprKind>,
+    pub ty: Type,
+    pub span: Span,
 }
 
 impl Expr {
@@ -41,18 +42,6 @@ impl Expr {
             ty,
             span,
         }
-    }
-
-    pub fn kind(&self) -> &ExprKind {
-        &self.kind
-    }
-
-    pub fn ty(&self) -> Type {
-        self.ty.clone()
-    }
-
-    pub fn span(&self) -> Span {
-        self.span
     }
 
     pub fn apply_subst(&self, subst: &Substitution) -> Self {
@@ -234,15 +223,25 @@ impl Debug for ExprKind {
 
 #[derive(Clone, PartialEq)]
 pub enum Lit {
+    Byte(u8),
     Int(i64),
+    Rational(Rational64),
+    Real(f64),
     Bool(bool),
+    String(InternedString),
+    Char(char),
 }
 
 impl Debug for Lit {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
+            Lit::Byte(b) => write!(f, "Byte({})", b),
             Lit::Int(i) => write!(f, "Int({})", i),
+            Lit::Rational(r) => write!(f, "Rational({})", r),
+            Lit::Real(r) => write!(f, "Real({})", r),
             Lit::Bool(b) => write!(f, "Bool({})", b),
+            Lit::String(s) => write!(f, "String({})", s),
+            Lit::Char(c) => write!(f, "Char({})", c),
         }
     }
 }
@@ -250,8 +249,13 @@ impl Debug for Lit {
 impl Display for Lit {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
+            Lit::Byte(b) => write!(f, "{}", b),
             Lit::Int(i) => write!(f, "{}", i),
+            Lit::Rational(r) => write!(f, "{}", r),
+            Lit::Real(r) => write!(f, "{}", r),
             Lit::Bool(b) => write!(f, "{}", b),
+            Lit::String(s) => write!(f, "{}", s),
+            Lit::Char(c) => write!(f, "{}", c),
         }
     }
 }
