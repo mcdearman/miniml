@@ -43,10 +43,7 @@ impl Context {
                         *id,
                         Scheme::new(
                             vec![],
-                            Type::Lambda(
-                                vec![Type::Int],
-                                Box::new(Type::Lambda(vec![Type::Int], Box::new(Type::Int))),
-                            ),
+                            Type::Lambda(vec![Type::Int, Type::Int], Box::new(Type::Int)),
                         ),
                     );
                 }
@@ -55,10 +52,7 @@ impl Context {
                         *id,
                         Scheme::new(
                             vec![],
-                            Type::Lambda(
-                                vec![Type::Int],
-                                Box::new(Type::Lambda(vec![Type::Int], Box::new(Type::Int))),
-                            ),
+                            Type::Lambda(vec![Type::Int, Type::Int], Box::new(Type::Int)),
                         ),
                     );
                 }
@@ -67,10 +61,7 @@ impl Context {
                         *id,
                         Scheme::new(
                             vec![],
-                            Type::Lambda(
-                                vec![Type::Int],
-                                Box::new(Type::Lambda(vec![Type::Int], Box::new(Type::Int))),
-                            ),
+                            Type::Lambda(vec![Type::Int, Type::Int], Box::new(Type::Int)),
                         ),
                     );
                 }
@@ -79,10 +70,7 @@ impl Context {
                         *id,
                         Scheme::new(
                             vec![],
-                            Type::Lambda(
-                                vec![Type::Int],
-                                Box::new(Type::Lambda(vec![Type::Int], Box::new(Type::Int))),
-                            ),
+                            Type::Lambda(vec![Type::Int, Type::Int], Box::new(Type::Int)),
                         ),
                     );
                 }
@@ -91,10 +79,7 @@ impl Context {
                         *id,
                         Scheme::new(
                             vec![],
-                            Type::Lambda(
-                                vec![Type::Int],
-                                Box::new(Type::Lambda(vec![Type::Int], Box::new(Type::Int))),
-                            ),
+                            Type::Lambda(vec![Type::Int, Type::Int], Box::new(Type::Int)),
                         ),
                     );
                 }
@@ -103,10 +88,7 @@ impl Context {
                         *id,
                         Scheme::new(
                             vec![],
-                            Type::Lambda(
-                                vec![Type::Int],
-                                Box::new(Type::Lambda(vec![Type::Int], Box::new(Type::Int))),
-                            ),
+                            Type::Lambda(vec![Type::Int, Type::Int], Box::new(Type::Int)),
                         ),
                     );
                 }

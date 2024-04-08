@@ -15,16 +15,7 @@ true -- Bool
 let main (args : [String]) : () = ()
 
 -- Bindings are immutable by default.
--- Top-level let-bindings must have explicit type annotations.
-let x : Int = 1
-
-let gcd (a : Int) (b : Int) : Int = 
-  if b = 0 then a 
-  else gcd b (a % b)
-
-let fib (n : Int) : Int = 
-  if n <= 1 then n 
-  else fib (n - 1) + fib (n - 2)
+let x = 1
 
 -- ints
 1
@@ -85,6 +76,15 @@ let gcd a b =
   if b = 0 then a 
   else gcd b (a % b)
 
+-- with type annotations
+let gcd (a : Int) (b : Int) : Int = 
+  if b = 0 then a 
+  else gcd b (a % b)
+
+let fib (n : Int) : Int = 
+  if n <= 1 then n 
+  else fib (n - 1) + fib (n - 2)
+
 -- tail recursion
 let fib n = 
   let loop a b n = 
@@ -97,4 +97,3 @@ let gcd a b =
     if b = 0 then acc
     else loop b (a % b) b
   in loop a b a
-

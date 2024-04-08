@@ -28,7 +28,6 @@ fn main() {
         let ast = match parse(stream, true) {
             (Some(root), _) => {
                 log::debug!("{:#?}", root);
-                src.clear();
                 root
             }
             (_, errors) => {
@@ -41,7 +40,6 @@ fn main() {
         let nir = match res.resolve(&ast) {
             (Some(nir), _) => {
                 log::debug!("{:#?}", nir);
-                src.clear();
                 nir
             }
             (_, errors) => {
@@ -54,7 +52,6 @@ fn main() {
         let tir = match solver.infer(&src, &nir) {
             (Some(tir), _) => {
                 log::debug!("{:#?}", tir);
-                src.clear();
                 tir
             }
             (_, errors) => {
@@ -63,5 +60,6 @@ fn main() {
                 continue;
             }
         };
+        src.clear();
     }
 }

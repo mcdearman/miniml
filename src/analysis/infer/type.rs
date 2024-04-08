@@ -122,7 +122,7 @@ impl Debug for Type {
             Self::String => write!(f, "String"),
             Self::Char => write!(f, "Char"),
             Self::Var(n) => write!(f, "{:?}", n),
-            Self::Lambda(param, body) => write!(f, "{:?} -> {:?}", param, body),
+            Self::Lambda(params, body) => write!(f, "{:?} -> {:?}", params, body),
             Self::List(ty) => write!(f, "[{:?}]", ty),
             Self::Record(name, fields) => write!(f, "{:?} = {:?}", name, fields),
             Self::Unit => write!(f, "()"),

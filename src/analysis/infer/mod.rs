@@ -60,6 +60,7 @@ impl TypeSolver {
         nir: &nir::Root,
     ) -> (Option<Root>, Vec<TypeError>) {
         self.src = src.into();
+        println!("src: {:?}", self.src);
         let mut decls = vec![];
         let mut errors = vec![];
         for decl in &nir.decls {
@@ -114,6 +115,9 @@ impl TypeSolver {
 
                 self.ctx.push();
                 self.ctx.insert(name.id, Scheme::new(vec![], fn_ty.clone()));
+                params.iter().zip(param_tys.iter()).for_each(|(param, ty)| {
+                    self.ctx.insert(param.id, Scheme::new(vec![], ty.clone()));
+                });
                 let solved_expr = self.infer_expr(fn_expr)?;
                 log::debug!("fn_solved_expr: {:?}", solved_expr);
                 self.ctx.pop();
