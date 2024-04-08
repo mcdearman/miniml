@@ -97,3 +97,17 @@ let gcd a b =
     if b = 0 then acc
     else loop b (a % b) b
   in loop a b a
+
+-- pattern match
+let fib n = 
+  match n with 
+  | 0 -> 0
+  | 1 -> 1
+  | n -> fib (n - 1) + fib (n - 2)
+
+-- with guards
+let gcd a b = 
+  match (a, b) with 
+  | (a, 0) -> a
+  | (a, b) if a > b -> gcd b (a % b)
+  | (a, b) -> gcd a (b % a)
