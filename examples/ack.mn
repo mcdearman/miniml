@@ -38,12 +38,6 @@ let fib n =
     ((m 0) (ack (- m 1) 1))
     ((m n) (ack (- m 1) (ack m (- n 1))))))
 
-(def (ack m n) 
-       (match (m n)
-         ((0 n) (+ n 1))
-         ((m 0) (ack (- m 1) 1))
-         ((m n) (ack (- m 1) (ack m (- n 1))))))
-
 (macro (if cond then else)
   (match cond
     (true then-expr)
