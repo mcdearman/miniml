@@ -77,12 +77,14 @@ impl Type {
             | (Type::Bool, Type::Bool)
             | (Type::Unit, Type::Unit) => Ok(Substitution::new()),
             (Type::Lambda(p1, b1), Type::Lambda(p2, b2)) => {
-                let s1 = p1
-                    .iter()
-                    .zip(p2.iter())
-                    .try_fold(Substitution::new(), |s, (t1, t2)| {
-                        t1.apply_subst(&s).unify(&t2.apply_subst(&s))
-                    })?;
+                let s1 =
+                    p1.iter()
+                        .zip(p2.iter())
+                        .try_fold(Substitution::new(), |s, (t1, t2)| {
+                            let sub = t1.apply_subst(&s).unify(&t2.apply_subst(&s));
+                            log::debug!("unify lambda params: {:?}", sub);
+                            sub
+                        })?;
                 let s2 = b1.apply_subst(&s1).unify(&b2.apply_subst(&s1))?;
                 Ok(s1.compose(&s2))
             }

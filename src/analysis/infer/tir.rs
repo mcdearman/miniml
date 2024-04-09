@@ -15,11 +15,39 @@ pub struct Root {
     pub span: Span,
 }
 
+impl Root {
+    pub fn apply_subst(&self, subst: &Substitution) -> Self {
+        Self {
+            decls: self
+                .decls
+                .iter()
+                .map(|decl| decl.apply_subst(subst))
+                .collect_vec(),
+            span: self.span,
+        }
+    }
+}
+
 #[derive(Debug, Clone, PartialEq)]
 pub struct Decl {
     pub kind: DeclKind,
     pub ty: Type,
     pub span: Span,
+}
+
+impl Decl {
+    pub fn apply_subst(&self, subst: &Substitution) -> Self {
+        Self {
+            kind: match &self.kind {
+                DeclKind::Let(name, expr) => DeclKind::Let(name.clone(), expr.apply_subst(subst)),
+                DeclKind::Fn(name, params, expr) => {
+                    DeclKind::Fn(name.clone(), params.clone(), expr.apply_subst(subst))
+                }
+            },
+            ty: self.ty.apply_subst(subst),
+            span: self.span,
+        }
+    }
 }
 
 #[derive(Debug, Clone, PartialEq)]

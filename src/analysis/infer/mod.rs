@@ -65,7 +65,7 @@ impl TypeSolver {
         let mut errors = vec![];
         for decl in &nir.decls {
             match self.infer_decl(decl) {
-                Ok(decl) => decls.push(decl),
+                Ok(decl) => decls.push(decl.apply_subst(&self.sub)),
                 Err(e) => errors.push(e),
             }
         }
@@ -232,8 +232,11 @@ impl TypeSolver {
                 log::debug!("app_ty_ret: {:?}", ty_ret);
 
                 // unify(T0, T1 -> T')
+                let ty_args = solved_args.iter().map(|arg| arg.ty.clone()).collect_vec();
+                log::debug!("app_ty_args: {:?}", ty_args);
                 self.sub = solved_fun.ty.unify(&Type::Lambda(
-                    solved_args.iter().map(|arg| arg.ty.clone()).collect(),
+                    // solved_args.iter().map(|arg| arg.ty.clone()).collect(),
+                    ty_args,
                     Box::new(ty_ret.clone()),
                 ))?;
                 log::debug!("app_sub: {:?}", self.sub);
@@ -277,8 +280,8 @@ impl TypeSolver {
                 let solved_expr = self.infer_expr(let_expr)?;
                 log::debug!("let_solved_expr: {:?}", solved_expr);
 
-                // Γ, x: gen(T) ⊢ e1 : T'
-                let scheme = solved_expr.ty.generalize(&self.ctx);
+                // Γ, x: T ⊢ e1 : T'
+                let scheme = Scheme::new(vec![], solved_expr.ty.clone());
                 log::debug!("let_scheme: {:?}", scheme);
                 self.ctx.insert(name.id, scheme);
                 let solved_body = self.infer_expr(body)?;
