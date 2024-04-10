@@ -328,8 +328,8 @@ impl TypeSolver {
                 let solved_lhs = self.infer_expr(lhs)?;
                 let solved_rhs = self.infer_expr(rhs)?;
 
-                self.sub = solved_lhs.ty.unify(&Type::Bool)?;
-                self.sub = solved_rhs.ty.unify(&Type::Bool)?;
+                self.sub = self.sub.compose(&solved_lhs.ty.unify(&Type::Bool)?);
+                self.sub = self.sub.compose(&solved_rhs.ty.unify(&Type::Bool)?);
 
                 Ok(Expr::new(
                     ExprKind::Or(solved_lhs, solved_rhs),

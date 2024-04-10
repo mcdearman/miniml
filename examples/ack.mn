@@ -24,9 +24,10 @@ let fib n =
 
 -- in sexprs
 (define (fib n)
-  (let loop ((a 0) (b 1) (n n))
-    (if (= n 0) a
-        (loop b (+ a b) (- n 1)))))
+  (let loop ((a 0) (b 1) (i n))
+    (if (= i 0) 
+        a
+        (loop b (+ a b) (- i 1)))))
 
 (def (ack 0 n) (+ n 1))
 (def (ack m 0) (ack (- m 1) 1))
