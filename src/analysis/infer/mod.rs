@@ -103,15 +103,16 @@ impl TypeSolver {
                 })
             }
             nir::DeclKind::Fn(name, params, fn_expr) => {
-                log::debug!("infer fn ({:?}) = {:#?}", name, fn_expr);
+                log::debug!("infer fn decl ({:?}) = {:#?}", name, fn_expr);
                 // to show that Γ ⊢ fn x = e0 in e1 : T' we need to show that
                 // Γ, x: gen(T) ⊢ e1 : T'
                 let param_tys = params
                     .iter()
                     .map(|_| Type::Var(TyVar::fresh()))
                     .collect_vec();
-                let fn_ty = Type::Lambda(param_tys.clone(), Box::new(Type::Var(TyVar::fresh())));
-                log::debug!("fn_ty: {:?}", fn_ty);
+                let ty_ret = Type::Var(TyVar::fresh());
+                let fn_ty = Type::Lambda(param_tys.clone(), Box::new(ty_ret.clone()));
+                log::debug!("decl_fn_ty: {:?}", fn_ty);
 
                 self.ctx.push();
                 self.ctx.insert(name.id, Scheme::new(vec![], fn_ty.clone()));
@@ -119,7 +120,14 @@ impl TypeSolver {
                     self.ctx.insert(param.id, Scheme::new(vec![], ty.clone()));
                 });
                 let solved_expr = self.infer_expr(fn_expr)?;
-                log::debug!("fn_solved_expr: {:?}", solved_expr);
+                self.sub = self.sub.compose(
+                    &solved_expr
+                        .ty
+                        .apply_subst(&self.sub)
+                        .unify(&ty_ret.apply_subst(&self.sub))?,
+                );
+                log::debug!("decl_fn_sub: {:?}", self.sub);
+                log::debug!("decl_fn_solved_expr: {:?}", solved_expr);
                 self.ctx.pop();
 
                 Ok(Decl {
