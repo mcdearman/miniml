@@ -39,11 +39,15 @@ impl Context {
                     );
                 }
                 "add" => {
+                    let var = TyVar::fresh();
                     frame.insert(
                         *id,
                         Scheme::new(
-                            vec![],
-                            Type::Lambda(vec![Type::Int, Type::Int], Box::new(Type::Int)),
+                            vec![var],
+                            Type::Lambda(
+                                vec![Type::Var(var), Type::Var(var)],
+                                Box::new(Type::Var(var)),
+                            ),
                         ),
                     );
                 }
