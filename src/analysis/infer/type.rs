@@ -30,6 +30,13 @@ pub enum Type {
 }
 
 impl Type {
+    pub(super) fn is_numeric(&self) -> bool {
+        match self {
+            Self::Byte | Self::Int | Self::Rational | Self::Real => true,
+            _ => false,
+        }
+    }
+
     pub(super) fn apply_subst(&self, subst: &Substitution) -> Type {
         match self {
             Self::Byte

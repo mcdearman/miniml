@@ -2,6 +2,7 @@ use insta::internals::AutoName;
 use itertools::Itertools;
 
 use self::{
+    constraint::Constraint,
     context::Context,
     error::{InferResult, TypeError},
     r#type::Type,
@@ -20,6 +21,7 @@ use crate::{
 };
 use std::{collections::HashMap, vec};
 
+mod constraint;
 pub mod context;
 pub mod error;
 pub mod registry;
@@ -35,6 +37,7 @@ pub struct TypeSolver {
     ctx: Context,
     reg: Registry,
     builtins: HashMap<UniqueId, InternedString>,
+    constraints: Vec<Constraint>,
     sub: Substitution,
     scoped_interner: ScopedInterner,
 }
@@ -49,6 +52,7 @@ impl TypeSolver {
             ctx: Context::from_builtins(&builtins),
             reg: Registry::new(),
             builtins,
+            constraints: vec![],
             sub: Substitution::new(),
             scoped_interner,
         }
@@ -69,12 +73,51 @@ impl TypeSolver {
                 Err(e) => errors.push(e),
             }
         }
+
+        // solve constraints
+        for c in &self.constraints {
+            log::debug!("constraint: {:?}", c);
+            match c {
+                Constraint::Num(ty) => match ty {
+                    Type::Byte | Type::Int | Type::Rational | Type::Real => {}
+                    Type::Var(var) => {
+                        if let Some(ty) = self.sub.get(var) {
+                            if !ty.is_numeric() {
+                                errors.push(TypeError::from(format!(
+                                    "expected number type, found: {:?}",
+                                    ty
+                                )));
+                            }
+                        } else {
+                            match ty.unify(&Type::Int) {
+                                Ok(sub) => {
+                                    self.sub = self.sub.compose(&sub);
+                                }
+                                Err(e) => {
+                                    errors.push(e);
+                                }
+                            }
+                        }
+                    }
+                    _ => {
+                        errors.push(TypeError::from(format!(
+                            "expected number type, found: {:?}",
+                            ty
+                        )));
+                    }
+                },
+            }
+        }
+
         if errors.is_empty() {
             (
-                Some(Root {
-                    decls,
-                    span: nir.span,
-                }),
+                Some(
+                    Root {
+                        decls,
+                        span: nir.span,
+                    }
+                    .apply_subst(&self.sub),
+                ),
                 errors,
             )
         } else {
@@ -114,8 +157,8 @@ impl TypeSolver {
                 let fn_ty = Type::Lambda(param_tys.clone(), Box::new(ty_ret.clone()));
                 log::debug!("decl_fn_ty: {:?}", fn_ty);
 
-                self.ctx.push();
                 self.ctx.insert(name.id, Scheme::new(vec![], fn_ty.clone()));
+                self.ctx.push();
                 params.iter().zip(param_tys.iter()).for_each(|(param, ty)| {
                     self.ctx.insert(param.id, Scheme::new(vec![], ty.clone()));
                 });
@@ -225,6 +268,32 @@ impl TypeSolver {
                 // to show that Γ ⊢ e0 e1 : T' we need to show that
                 // Γ ⊢ e0 : T0
                 let solved_fun = self.infer_expr(fun)?;
+                match &solved_fun {
+                    Expr { kind, ty, .. } => match kind.as_ref() {
+                        ExprKind::Var(name) => {
+                            if let Some(op) = self.builtins.get(&name.id) {
+                                match op.as_ref() {
+                                    "add" | "sub" | "mul" | "div" => {
+                                        // self.constraints.push(Constraint::Num(ty.clone()));
+                                        match ty {
+                                            Type::Lambda(param_types, ret_ty) => {
+                                                for p in param_types {
+                                                    self.constraints
+                                                        .push(Constraint::Num(p.clone()));
+                                                }
+                                                self.constraints
+                                                    .push(Constraint::Num(*ret_ty.clone()));
+                                            }
+                                            _ => {}
+                                        }
+                                    }
+                                    _ => {}
+                                }
+                            }
+                        }
+                        _ => {}
+                    },
+                };
                 log::debug!("app_solved_fun: {:?}", solved_fun);
 
                 // Γ ⊢ e1 : T1

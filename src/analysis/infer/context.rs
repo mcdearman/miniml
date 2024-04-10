@@ -29,13 +29,9 @@ impl Context {
                     );
                 }
                 "not" => {
-                    let var = TyVar::fresh();
                     frame.insert(
                         *id,
-                        Scheme::new(
-                            vec![var],
-                            Type::Lambda(vec![Type::Var(var)], Box::new(Type::Var(var))),
-                        ),
+                        Scheme::new(vec![], Type::Lambda(vec![Type::Bool], Box::new(Type::Bool))),
                     );
                 }
                 "add" => {
@@ -52,47 +48,67 @@ impl Context {
                     );
                 }
                 "sub" => {
+                    let var = TyVar::fresh();
                     frame.insert(
                         *id,
                         Scheme::new(
-                            vec![],
-                            Type::Lambda(vec![Type::Int, Type::Int], Box::new(Type::Int)),
+                            vec![var],
+                            Type::Lambda(
+                                vec![Type::Var(var), Type::Var(var)],
+                                Box::new(Type::Var(var)),
+                            ),
                         ),
                     );
                 }
                 "mul" => {
+                    let var = TyVar::fresh();
                     frame.insert(
                         *id,
                         Scheme::new(
-                            vec![],
-                            Type::Lambda(vec![Type::Int, Type::Int], Box::new(Type::Int)),
+                            vec![var],
+                            Type::Lambda(
+                                vec![Type::Var(var), Type::Var(var)],
+                                Box::new(Type::Var(var)),
+                            ),
                         ),
                     );
                 }
                 "div" => {
+                    let var = TyVar::fresh();
                     frame.insert(
                         *id,
                         Scheme::new(
-                            vec![],
-                            Type::Lambda(vec![Type::Int, Type::Int], Box::new(Type::Int)),
+                            vec![var],
+                            Type::Lambda(
+                                vec![Type::Var(var), Type::Var(var)],
+                                Box::new(Type::Var(var)),
+                            ),
                         ),
                     );
                 }
                 "rem" => {
+                    let var = TyVar::fresh();
                     frame.insert(
                         *id,
                         Scheme::new(
-                            vec![],
-                            Type::Lambda(vec![Type::Int, Type::Int], Box::new(Type::Int)),
+                            vec![var],
+                            Type::Lambda(
+                                vec![Type::Var(var), Type::Var(var)],
+                                Box::new(Type::Var(var)),
+                            ),
                         ),
                     );
                 }
                 "pow" => {
+                    let var = TyVar::fresh();
                     frame.insert(
                         *id,
                         Scheme::new(
-                            vec![],
-                            Type::Lambda(vec![Type::Int, Type::Int], Box::new(Type::Int)),
+                            vec![var],
+                            Type::Lambda(
+                                vec![Type::Var(var), Type::Var(var)],
+                                Box::new(Type::Var(var)),
+                            ),
                         ),
                     );
                 }
