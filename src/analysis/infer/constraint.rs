@@ -1,6 +1,6 @@
 use super::r#type::Type;
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Constraint {
-    Num(Type),
+    Add(Type, Type, Type),
 }

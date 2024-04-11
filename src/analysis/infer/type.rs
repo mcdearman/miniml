@@ -1,6 +1,7 @@
 use itertools::Itertools;
 
 use super::{
+    constraint::Constraint,
     context::Context,
     error::{InferResult, TypeError},
     scheme::Scheme,
@@ -24,6 +25,7 @@ pub enum Type {
     Char,
     Var(TyVar),
     Lambda(Vec<Self>, Box<Self>),
+    Qual(Box<Constraint>, Box<Self>),
     List(Box<Self>),
     Record(UniqueId, Vec<(InternedString, Self)>),
     Unit,
