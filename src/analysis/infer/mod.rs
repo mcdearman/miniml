@@ -78,34 +78,32 @@ impl TypeSolver {
         for c in &self.constraints {
             log::debug!("constraint: {:?}", c);
             match c {
-                Constraint::Num(ty) => match ty {
-                    Type::Byte | Type::Int | Type::Rational | Type::Real => {}
-                    Type::Var(var) => {
-                        if let Some(ty) = self.sub.get(var) {
-                            if !ty.is_numeric() {
-                                errors.push(TypeError::from(format!(
-                                    "expected number type, found: {:?}",
-                                    ty
-                                )));
-                            }
-                        } else {
-                            match ty.unify(&Type::Int) {
-                                Ok(sub) => {
-                                    self.sub = self.sub.compose(&sub);
-                                }
-                                Err(e) => {
-                                    errors.push(e);
-                                }
-                            }
-                        }
-                    }
-                    _ => {
-                        errors.push(TypeError::from(format!(
-                            "expected number type, found: {:?}",
-                            ty
-                        )));
-                    }
-                },
+                Constraint::Add(lhs, rhs, ret) => {
+                    
+                    // if let Some(ty) = self.sub.get(var) {
+                    //     if !ty.is_numeric() {
+                    //         errors.push(TypeError::from(format!(
+                    //             "expected number type, found: {:?}",
+                    //             ty
+                    //         )));
+                    //     }
+                    // } else {
+                    //     match ty.unify(&Type::Int) {
+                    //         Ok(sub) => {
+                    //             self.sub = self.sub.compose(&sub);
+                    //         }
+                    //         Err(e) => {
+                    //             errors.push(e);
+                    //         }
+                    //     }
+                    // }
+                    // _ => {
+                    //     errors.push(TypeError::from(format!(
+                    //         "expected number type, found: {:?}",
+                    //         ty
+                    //     )));
+                    // }
+                }
             }
         }
 
