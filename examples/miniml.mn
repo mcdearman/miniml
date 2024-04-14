@@ -3,12 +3,12 @@
 -- utils
 type Span = { start : Int }
 
-let spanToString span src = 
+let span_to_string span src = 
   let start = span.start
   let end = span.end
   stringSub src start (end - start)
 
-let spanToLineCol span src = 
+let span_to_line_col span src = 
   let loop pos line col =
     if pos >= span.start then
       (line, col)
@@ -19,7 +19,7 @@ let spanToLineCol span src =
   in
   loop 0 0 0
 
-let spanToLineColString span src = 
+let span_to_line_col_string span src = 
   let (line, col) = spanToLineCol span src
   format "{}:{}" (intToString line) (intToString col)
 
@@ -69,22 +69,22 @@ type Lexer = {
   pos : Int,
 }
 
-let initLexer src = {
+let init_lexer src = {
   src = src,
   pos = 0,
 }
 
-let isWhitespace c = c = ' ' or c = '\t' or c = '\n' or c = '\r'
+let is_whitespace c = c = ' ' or c = '\t' or c = '\n' or c = '\r'
 
-let isDigit c = c >= '0' and c <= '9'
+let is_digit c = c >= '0' and c <= '9'
 
-let isAlpha c = 
+let is_alpha c = 
   (c >= 'a' and c <= 'z') or 
   (c >= 'A' and c <= 'Z')
 
-let isAlphaNum c = isAlpha c or isDigit c
+let is_alpha_num c = is_alpha c or is_digit c
 
-let consumeWhitespace lexer =
+let consume_whitespace lexer =
   let loop pos =
     if pos < String.length lexer.src and 
       (lexer.src[pos] = ' ' or 
@@ -96,19 +96,19 @@ let consumeWhitespace lexer =
   in
   { lexer with pos = loop lexer.pos }
 
-let peekChar lexer = 
+let peek_char lexer = 
   if lexer.pos < String.length lexer.src then
     Some lexer.src[lexer.pos]
   else
     None
 
-let nextToken (lexer : Lexer) : Token = 
-  match peekChar lexer with
+let next_token (lexer : Lexer) : Token = 
+  match peek_char lexer with
   | None -> { kind = Eof, span = { start = lexer.pos, end = lexer.pos } }
   | Some c -> 
-    if isWhitespace c then
+    if is_whitespace c then
       let start = lexer.pos
-      let lexer' = consumeWhitespace lexer
+      let lexer' = consume_whitespace lexer
       { kind = Whitespace, span = { start, end = lexer'.pos } }
     else
       let start = lexer.pos
@@ -139,10 +139,10 @@ type Expr =
   | Real Real
   | Bool Bool
   | Ident String 
-  | UnaryOp UnaryOp Expr
-  | BinaryOp BinaryOp Expr Expr
-  | If Expr Expr Expr
-  | Let String Expr Expr
-  | Fn String (List String) Expr
-  | Lambda String Expr
-  | App Expr Expr
+  | UnaryOp (UnaryOp, Expr)
+  | BinaryOp (BinaryOp, Expr, Expr)
+  | If (Expr, Expr, Expr)
+  | Let (String, Expr, Expr)
+  | Fn (String, List String, Expr)
+  | Lambda (String, Expr)
+  | Apply (Expr, Expr)

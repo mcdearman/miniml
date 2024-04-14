@@ -79,7 +79,7 @@ impl TypeSolver {
             log::debug!("constraint: {:?}", c);
             match c {
                 Constraint::Add(lhs, rhs, ret) => {
-                    
+
                     // if let Some(ty) = self.sub.get(var) {
                     //     if !ty.is_numeric() {
                     //         errors.push(TypeError::from(format!(

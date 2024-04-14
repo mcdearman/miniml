@@ -4,37 +4,40 @@ type List T
   | Empty
 
 -- [len] takes a list [xs] and returns the number of elements in [xs].
-pub len (xs : List T) -> u64 =
+pub let len (xs : List T) -> u64 =
   match xs with
     List.Pair x -> 1 + len x
     List.Nil -> 0
 
 -- [map] takes a function [f] and a list [xs] and returns the list of
 -- the results of applying [f] to each element of [xs].
-map (f : T -> U) (xs : List T) : List U =
+pub let map (f : T -> U) (xs : List T) : List U =
   match xs with
     List::Pair x -> Pair (map f x) 
     List::Empty -> []
 
 -- [filter] takes a predicate [f] and a list [xs] and returns the 
 -- list of all elements [x] in [xs] such that [f x] is [True].
-filter : (T -> Bool) (List T) -> List T
-filter f xs =
+pub let filter (f : T -> Bool) (xs : List T) : List T =
   match xs with
-    List::Pair x ->
+  | List::Pair x ->
       if f x then
         Pair (filter f x)
       else
         filter f x
-    List::Empty -> Nil
+  | List::Empty -> Nil
 
 -- [foldl] takes a binary operator [f], a starting value [z], and a list [xs],
 -- and returns the result of inserting [f] between successive elements of [xs],
 -- starting with [z] to the left of the leftmost element of [xs].
-pub fn foldl (f: a -> b -> a) (z: a) (xs: List b) -> a =
+pub let foldl 
+        (f : a -> b -> a) 
+        (z : a) 
+        (xs : List b)
+      : a =
   match xs with
-    List::Pair x -> foldl f (f z x) x
-    List::Empty -> z
+  | List::Pair x -> foldl f (f z x) x
+  | List::Empty -> z
 
 -- [foldr] takes a binary operator [f], a starting value [z], and a list [xs],
 -- and returns the result of inserting [f] between successive elements of [xs],

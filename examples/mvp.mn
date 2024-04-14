@@ -85,7 +85,7 @@ let fib (n : Int) : Int =
   if n <= 1 then n 
   else fib (n - 1) + fib (n - 2)
 
--- tail recursion
+(* -- tail recursive fib *)
 let fib n = 
   let loop a b n = 
     if n = 0 then a 
@@ -100,14 +100,24 @@ let gcd a b =
 
 -- pattern match
 let fib n = 
-  match n with 
+  match n
   | 0 -> 0
   | 1 -> 1
   | n -> fib (n - 1) + fib (n - 2)
 
--- with guards
+(* -- with guards *)
 let gcd a b = 
-  match (a, b) with 
+  match (a, b)
   | (a, 0) -> a
   | (a, b) if a > b -> gcd b (a % b)
   | (a, b) -> gcd a (b % a)
+
+class Eq a <: PartialEq where
+  (==) : (a, a) -> Bool
+
+class Ord a <: Eq where
+  compare : (a, a) -> Ordering
+  (<) : (a, a) -> Bool
+  (<=) : (a, a) -> Bool
+  (>) : (a, a) -> Bool
+  (>=) : (a, a) -> Bool
