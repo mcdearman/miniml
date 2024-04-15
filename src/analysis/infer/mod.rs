@@ -75,37 +75,37 @@ impl TypeSolver {
         }
 
         // solve constraints
-        for c in &self.constraints {
-            log::debug!("constraint: {:?}", c);
-            match c {
-                Constraint::Add(lhs, rhs, ret) => {
+        // for c in &self.constraints {
+        //     log::debug!("constraint: {:?}", c);
+        //     match c {
+        //         Constraint::Add(lhs, rhs, ret) => {
 
-                    // if let Some(ty) = self.sub.get(var) {
-                    //     if !ty.is_numeric() {
-                    //         errors.push(TypeError::from(format!(
-                    //             "expected number type, found: {:?}",
-                    //             ty
-                    //         )));
-                    //     }
-                    // } else {
-                    //     match ty.unify(&Type::Int) {
-                    //         Ok(sub) => {
-                    //             self.sub = self.sub.compose(&sub);
-                    //         }
-                    //         Err(e) => {
-                    //             errors.push(e);
-                    //         }
-                    //     }
-                    // }
-                    // _ => {
-                    //     errors.push(TypeError::from(format!(
-                    //         "expected number type, found: {:?}",
-                    //         ty
-                    //     )));
-                    // }
-                }
-            }
-        }
+        //             // if let Some(ty) = self.sub.get(var) {
+        //             //     if !ty.is_numeric() {
+        //             //         errors.push(TypeError::from(format!(
+        //             //             "expected number type, found: {:?}",
+        //             //             ty
+        //             //         )));
+        //             //     }
+        //             // } else {
+        //             //     match ty.unify(&Type::Int) {
+        //             //         Ok(sub) => {
+        //             //             self.sub = self.sub.compose(&sub);
+        //             //         }
+        //             //         Err(e) => {
+        //             //             errors.push(e);
+        //             //         }
+        //             //     }
+        //             // }
+        //             // _ => {
+        //             //     errors.push(TypeError::from(format!(
+        //             //         "expected number type, found: {:?}",
+        //             //         ty
+        //             //     )));
+        //             // }
+        //         }
+        //     }
+        // }
 
         if errors.is_empty() {
             (
@@ -266,32 +266,32 @@ impl TypeSolver {
                 // to show that Γ ⊢ e0 e1 : T' we need to show that
                 // Γ ⊢ e0 : T0
                 let solved_fun = self.infer_expr(fun)?;
-                match &solved_fun {
-                    Expr { kind, ty, .. } => match kind.as_ref() {
-                        ExprKind::Var(name) => {
-                            if let Some(op) = self.builtins.get(&name.id) {
-                                match op.as_ref() {
-                                    "add" | "sub" | "mul" | "div" => {
-                                        // self.constraints.push(Constraint::Num(ty.clone()));
-                                        match ty {
-                                            Type::Lambda(param_types, ret_ty) => {
-                                                for p in param_types {
-                                                    self.constraints
-                                                        .push(Constraint::Num(p.clone()));
-                                                }
-                                                self.constraints
-                                                    .push(Constraint::Num(*ret_ty.clone()));
-                                            }
-                                            _ => {}
-                                        }
-                                    }
-                                    _ => {}
-                                }
-                            }
-                        }
-                        _ => {}
-                    },
-                };
+                // match &solved_fun {
+                //     Expr { kind, ty, .. } => match kind.as_ref() {
+                //         ExprKind::Var(name) => {
+                //             if let Some(op) = self.builtins.get(&name.id) {
+                //                 match op.as_ref() {
+                //                     "add" | "sub" | "mul" | "div" => {
+                //                         // self.constraints.push(Constraint::Num(ty.clone()));
+                //                         match ty {
+                //                             Type::Lambda(param_types, ret_ty) => {
+                //                                 for p in param_types {
+                //                                     self.constraints
+                //                                         .push(Constraint::Num(p.clone()));
+                //                                 }
+                //                                 self.constraints
+                //                                     .push(Constraint::Num(*ret_ty.clone()));
+                //                             }
+                //                             _ => {}
+                //                         }
+                //                     }
+                //                     _ => {}
+                //                 }
+                //             }
+                //         }
+                //         _ => {}
+                //     },
+                // };
                 log::debug!("app_solved_fun: {:?}", solved_fun);
 
                 // Γ ⊢ e1 : T1

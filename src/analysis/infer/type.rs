@@ -25,7 +25,7 @@ pub enum Type {
     Char,
     Var(TyVar),
     Lambda(Vec<Self>, Box<Self>),
-    Qual(Box<Constraint>, Box<Self>),
+    // Qual(Box<Constraint>, Box<Self>),
     List(Box<Self>),
     Record(UniqueId, Vec<(InternedString, Self)>),
     Unit,

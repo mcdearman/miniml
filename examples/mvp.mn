@@ -112,12 +112,4 @@ let gcd a b =
   | (a, b) if a > b -> gcd b (a % b)
   | (a, b) -> gcd a (b % a)
 
-class Eq a <: PartialEq where
-  (==) : (a, a) -> Bool
-
-class Ord a <: Eq where
-  compare : (a, a) -> Ordering
-  (<) : (a, a) -> Bool
-  (<=) : (a, a) -> Bool
-  (>) : (a, a) -> Bool
-  (>=) : (a, a) -> Bool
+let f : Int, Int -> Int = \x y -> x + y

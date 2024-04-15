@@ -159,3 +159,13 @@ type Point = (Real, Real)
 -- let add a b = a + b
 -- let add2 = add (b = 2)
 -- > \a -> a + 2
+
+class Eq a <: PartialEq where
+  (==) : (a, a) -> Bool
+
+class Ord a <: Eq where
+  compare : (a, a) -> Ordering
+  (<) : (a, a) -> Bool
+  (<=) : (a, a) -> Bool
+  (>) : (a, a) -> Bool
+  (>=) : (a, a) -> Bool
