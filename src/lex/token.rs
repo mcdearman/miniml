@@ -121,12 +121,10 @@ pub enum Token {
     Let,
     #[token("in")]
     In,
-    #[token("if")]
-    If,
     #[token("match")]
     Match,
-    #[token("with")]
-    With,
+    #[token("if")]
+    If,
     #[token("then")]
     Then,
     #[token("else")]

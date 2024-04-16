@@ -10,11 +10,7 @@ use std::{cell::RefCell, fmt::Display, rc::Rc};
 #[derive(Debug, Clone, PartialEq)]
 pub enum Value {
     Lit(Lit),
-    Lambda {
-        env: Rc<RefCell<Env>>,
-        params: Vec<UniqueId>,
-        expr: Expr,
-    },
+    Lambda(Rc<RefCell<Env>>, Vec<UniqueId>, Expr),
     NativeFn(fn(Vec<Value>) -> RuntimeResult<Value>),
     List(List<Value>),
     Record(Record),
@@ -77,19 +73,25 @@ impl Display for Record {
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Lit {
+    Byte(u8),
     Int(i64),
     Rational(Rational64),
+    Real(f64),
     Bool(bool),
     String(InternedString),
+    Char(char),
 }
 
 impl Display for Lit {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
+            Lit::Byte(b) => write!(f, "{}", b),
             Lit::Int(i) => write!(f, "{}", i),
             Lit::Rational(r) => write!(f, "{}", r),
+            Lit::Real(r) => write!(f, "{}", r),
             Lit::Bool(b) => write!(f, "{}", b),
             Lit::String(s) => write!(f, "{}", s),
+            Lit::Char(c) => write!(f, "{}", c),
         }
     }
 }

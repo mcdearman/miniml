@@ -1,13 +1,14 @@
-use crate::{analysis::infer::tir, lex::token_stream::TokenStream, parse::parse};
+use crate::{analysis::infer::tir, lex::token_iter::TokenIter, parse::parse, runtime::interpreter::eval};
 use analysis::infer::TypeSolver;
 use rename::resolver::Resolver;
+use runtime::default_env;
 use std::io::{self, Write};
 
 mod analysis;
 mod lex;
 mod parse;
 mod rename;
-// mod runtime;
+mod runtime;
 mod utils;
 
 fn main() {
@@ -17,13 +18,14 @@ fn main() {
     let builtins = res.builtins();
     let scoped_interner = res.env().dump_to_interner();
     let mut solver = TypeSolver::new(builtins.clone(), scoped_interner);
+    let env = default_env(builtins.clone());
 
     loop {
         print!("> ");
         io::stdout().flush().unwrap();
         std::io::stdin().read_line(&mut src).unwrap();
 
-        let stream = TokenStream::new(&src);
+        let stream = TokenIter::new(&src);
         // let (ast, parse_errors) = parse(stream, true);
         let ast = match parse(stream, true) {
             (Some(root), _) => {
@@ -60,6 +62,10 @@ fn main() {
                 continue;
             }
         };
+        match eval(&src, env.clone(), tir) {
+            Ok(val) => println!("{}", val),
+            Err(err) => println!("Error: {:#?}", err),
+        }
         src.clear();
     }
 }

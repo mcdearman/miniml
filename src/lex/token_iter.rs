@@ -3,11 +3,11 @@ use crate::utils::span::Span;
 use logos::Logos;
 
 #[derive(Debug, Clone)]
-pub struct TokenStream<'src> {
+pub struct TokenIter<'src> {
     logos: logos::Lexer<'src, Token>,
 }
 
-impl<'src> TokenStream<'src> {
+impl<'src> TokenIter<'src> {
     pub fn new(src: &'src str) -> Self {
         Self {
             logos: Token::lexer(src),
@@ -15,7 +15,7 @@ impl<'src> TokenStream<'src> {
     }
 }
 
-impl<'src> Iterator for TokenStream<'src> {
+impl<'src> Iterator for TokenIter<'src> {
     type Item = (Token, Span);
 
     fn next(&mut self) -> Option<Self::Item> {
