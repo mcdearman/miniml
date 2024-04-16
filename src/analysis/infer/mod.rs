@@ -58,6 +58,10 @@ impl TypeSolver {
         }
     }
 
+    pub fn sub(&self) -> &Substitution {
+        &self.sub
+    }
+
     pub fn infer<'src>(
         &mut self,
         src: &'src str,
@@ -269,32 +273,6 @@ impl TypeSolver {
                 // to show that Γ ⊢ e0 e1 : T' we need to show that
                 // Γ ⊢ e0 : T0
                 let solved_fun = self.infer_expr(fun)?;
-                // match &solved_fun {
-                //     Expr { kind, ty, .. } => match kind.as_ref() {
-                //         ExprKind::Var(name) => {
-                //             if let Some(op) = self.builtins.get(&name.id) {
-                //                 match op.as_ref() {
-                //                     "add" | "sub" | "mul" | "div" => {
-                //                         // self.constraints.push(Constraint::Num(ty.clone()));
-                //                         match ty {
-                //                             Type::Lambda(param_types, ret_ty) => {
-                //                                 for p in param_types {
-                //                                     self.constraints
-                //                                         .push(Constraint::Num(p.clone()));
-                //                                 }
-                //                                 self.constraints
-                //                                     .push(Constraint::Num(*ret_ty.clone()));
-                //                             }
-                //                             _ => {}
-                //                         }
-                //                     }
-                //                     _ => {}
-                //                 }
-                //             }
-                //         }
-                //         _ => {}
-                //     },
-                // };
                 log::debug!("app_solved_fun: {:?}", solved_fun);
 
                 // Γ ⊢ e1 : T1
@@ -312,11 +290,11 @@ impl TypeSolver {
                 // unify(T0, T1 -> T')
                 let ty_args = solved_args.iter().map(|arg| arg.ty.clone()).collect_vec();
                 log::debug!("app_ty_args: {:?}", ty_args);
-                self.sub = solved_fun.ty.unify(&Type::Lambda(
-                    // solved_args.iter().map(|arg| arg.ty.clone()).collect(),
-                    ty_args,
-                    Box::new(ty_ret.clone()),
-                ))?;
+                self.sub = self.sub.compose(
+                    &solved_fun
+                        .ty
+                        .unify(&Type::Lambda(ty_args, Box::new(ty_ret.clone())))?,
+                );
                 log::debug!("app_sub: {:?}", self.sub);
 
                 Ok(Expr::new(
@@ -342,8 +320,10 @@ impl TypeSolver {
                 let solved_lhs = self.infer_expr(lhs)?;
                 let solved_rhs = self.infer_expr(rhs)?;
 
-                self.sub = solved_lhs.ty.unify(&Type::Bool)?;
-                self.sub = solved_rhs.ty.apply_subst(&self.sub).unify(&Type::Bool)?;
+                self.sub = self.sub.compose(&solved_lhs.ty.unify(&Type::Bool)?);
+                self.sub = self
+                    .sub
+                    .compose(&solved_rhs.ty.apply_subst(&self.sub).unify(&Type::Bool)?);
 
                 Ok(Expr::new(
                     ExprKind::And(solved_lhs, solved_rhs),
@@ -402,14 +382,11 @@ impl TypeSolver {
             }
             nir::ExprKind::If(cond, then, else_) => {
                 log::debug!("infer if: {:?} and {:?}", cond, then);
-                // to show that Γ ⊢ if e0 then e1 else e2 : T' we need to show that
                 let solved_cond = self.infer_expr(cond)?;
                 let solved_then = self.infer_expr(then)?;
                 let solved_else_ = self.infer_expr(else_)?;
 
-                // Γ ⊢ e0 : Bool
                 let sub = self.sub.compose(&solved_cond.ty.unify(&Type::Bool)?);
-                // Γ ⊢ e1 : T
                 self.sub = sub.compose(&solved_then.ty.unify(&solved_else_.ty)?);
 
                 Ok(Expr::new(

@@ -24,6 +24,11 @@ fn main() {
         print!("> ");
         io::stdout().flush().unwrap();
         std::io::stdin().read_line(&mut src).unwrap();
+        if src.trim() == "sub" {
+            println!("{:#?}", solver.sub());
+            src.clear();
+            continue;
+        }
 
         let stream = TokenIter::new(&src);
         // let (ast, parse_errors) = parse(stream, true);
