@@ -35,7 +35,6 @@ impl Context {
                     );
                 }
                 "add" => {
-                    let var = TyVar::fresh();
                     frame.insert(
                         *id,
                         Scheme::new(
@@ -45,7 +44,6 @@ impl Context {
                     );
                 }
                 "sub" => {
-                    let var = TyVar::fresh();
                     frame.insert(
                         *id,
                         Scheme::new(
@@ -55,41 +53,35 @@ impl Context {
                     );
                 }
                 "mul" => {
-                    let var = TyVar::fresh();
                     frame.insert(
                         *id,
                         Scheme::new(
-                            vec![var],
+                            vec![],
                             Type::Lambda(
-                                vec![Type::Var(var), Type::Var(var)],
-                                Box::new(Type::Var(var)),
+                                vec![Type::Int, Type::Int],
+                                Box::new(Type::Int),
                             ),
                         ),
                     );
                 }
                 "div" => {
-                    let var = TyVar::fresh();
                     frame.insert(
                         *id,
                         Scheme::new(
-                            vec![var],
+                            vec![],
                             Type::Lambda(
-                                vec![Type::Var(var), Type::Var(var)],
-                                Box::new(Type::Var(var)),
+                                vec![Type::Int, Type::Int],
+                                Box::new(Type::Int),
                             ),
                         ),
                     );
                 }
                 "rem" => {
-                    let var = TyVar::fresh();
                     frame.insert(
                         *id,
                         Scheme::new(
-                            vec![var],
-                            Type::Lambda(
-                                vec![Type::Var(var), Type::Var(var)],
-                                Box::new(Type::Var(var)),
-                            ),
+                            vec![],
+                            Type::Lambda(vec![Type::Int, Type::Int], Box::new(Type::Int)),
                         ),
                     );
                 }
