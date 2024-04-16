@@ -113,5 +113,14 @@ let f : (Int, Int) -> Int = \x y -> x + y
 -- ((Int, Int) -> Int), Int -> Int
 
 let map f xs =
-  if null xs then []
-  else f (head xs) :: map f (tail xs)
+  match xs
+  | [] -> []
+  | x :: xs -> f x :: map f xs
+
+let map f [] = []
+  | map f (x :: xs) = f x :: map f xs
+
+map : (a -> b, [a]) -> [b]
+map f [] = []
+map f (x :: xs) = f x :: map f xs
+
