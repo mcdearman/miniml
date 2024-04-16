@@ -384,13 +384,13 @@ impl TypeSolver {
                 log::debug!("infer if: {:?} and {:?}", cond, then);
                 let solved_cond = self.infer_expr(cond)?;
                 let solved_then = self.infer_expr(then)?;
-                let solved_else_ = self.infer_expr(else_)?;
+                let solved_else = self.infer_expr(else_)?;
 
                 let sub = self.sub.compose(&solved_cond.ty.unify(&Type::Bool)?);
-                self.sub = sub.compose(&solved_then.ty.unify(&solved_else_.ty)?);
+                self.sub = sub.compose(&solved_then.ty.unify(&solved_else.ty)?);
 
                 Ok(Expr::new(
-                    ExprKind::If(solved_cond, solved_then.clone(), solved_else_),
+                    ExprKind::If(solved_cond, solved_then.clone(), solved_else),
                     solved_then.ty,
                     expr.span,
                 ))
