@@ -194,14 +194,6 @@ impl Resolver {
                 ExprKind::And(self.resolve_expr(lhs)?, self.resolve_expr(rhs)?),
                 expr.span,
             )),
-            // ast::ExprKind::If { cond, then, else_ } => Ok(Expr::new(
-            //     ExprKind::If {
-            //         cond: self.resolve_expr(&cond)?,
-            //         then: self.resolve_expr(&then)?,
-            //         else_: self.resolve_expr(&else_)?,
-            //     },
-            //     expr.span,
-            // )),
             ast::ExprKind::Let(name, let_expr, body) => {
                 let res_expr = self.resolve_expr(&let_expr)?;
                 self.env.push();
@@ -235,6 +227,14 @@ impl Resolver {
                     expr.span,
                 ))
             }
+            ast::ExprKind::If(cond, then, else_) => Ok(Expr::new(
+                ExprKind::If(
+                    self.resolve_expr(&cond)?,
+                    self.resolve_expr(&then)?,
+                    self.resolve_expr(&else_)?,
+                ),
+                expr.span,
+            )),
             ast::ExprKind::Unit => Ok(Expr::new(ExprKind::Unit, expr.span)),
         }
     }

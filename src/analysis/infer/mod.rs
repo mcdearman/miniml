@@ -69,7 +69,10 @@ impl TypeSolver {
         let mut errors = vec![];
         for decl in &nir.decls {
             match self.infer_decl(decl) {
-                Ok(decl) => decls.push(decl.apply_subst(&self.sub)),
+                Ok(decl) => {
+                    decls.push(decl.apply_subst(&self.sub));
+                    self.ctx = self.ctx.apply_subst(&self.sub);
+                }
                 Err(e) => errors.push(e),
             }
         }
@@ -381,6 +384,9 @@ impl TypeSolver {
 
                 self.ctx.push();
                 self.ctx.insert(name.id, Scheme::new(vec![], fn_ty.clone()));
+                param_tys.iter().zip(params.iter()).for_each(|(ty, param)| {
+                    self.ctx.insert(param.id, Scheme::new(vec![], ty.clone()));
+                });
                 let solved_expr = self.infer_expr(expr)?;
                 log::debug!("fn_solved_expr: {:?}", solved_expr);
 
@@ -389,29 +395,29 @@ impl TypeSolver {
                 self.ctx.pop();
 
                 Ok(Expr::new(
-                    ExprKind::Fn(*name, params.clone(), solved_expr, solved_body),
-                    fn_ty,
+                    ExprKind::Fn(*name, params.clone(), solved_expr, solved_body.clone()),
+                    solved_body.ty,
                     expr.span,
                 ))
             }
-            // nir::ExprKind::If { cond, then, else_ } => {
-            //     let solved_cond = self.infer_expr(cond)?;
-            //     let solved_then = self.infer_expr(then)?;
-            //     let solved_else_ = self.infer_expr(else_)?;
+            nir::ExprKind::If(cond, then, else_) => {
+                log::debug!("infer if: {:?} and {:?}", cond, then);
+                // to show that Γ ⊢ if e0 then e1 else e2 : T' we need to show that
+                let solved_cond = self.infer_expr(cond)?;
+                let solved_then = self.infer_expr(then)?;
+                let solved_else_ = self.infer_expr(else_)?;
 
-            //     self.sub = solved_cond.ty().unify(&Type::Bool)?;
-            //     self.sub = solved_then.ty().unify(&solved_else_.ty())?;
+                // Γ ⊢ e0 : Bool
+                let sub = self.sub.compose(&solved_cond.ty.unify(&Type::Bool)?);
+                // Γ ⊢ e1 : T
+                self.sub = sub.compose(&solved_then.ty.unify(&solved_else_.ty)?);
 
-            //     Ok(Expr::new(
-            //         ExprKind::If {
-            //             cond: solved_cond,
-            //             then: solved_then.clone(),
-            //             else_: solved_else_,
-            //         },
-            //         solved_then.ty(),
-            //         expr.span(),
-            //     ))
-            // }
+                Ok(Expr::new(
+                    ExprKind::If(solved_cond, solved_then.clone(), solved_else_),
+                    solved_then.ty,
+                    expr.span,
+                ))
+            }
             nir::ExprKind::Unit => Ok(Expr::new(ExprKind::Unit, Type::Unit, expr.span)),
         }
     }

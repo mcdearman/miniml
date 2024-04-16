@@ -39,11 +39,8 @@ impl Context {
                     frame.insert(
                         *id,
                         Scheme::new(
-                            vec![var],
-                            Type::Lambda(
-                                vec![Type::Var(var), Type::Var(var)],
-                                Box::new(Type::Var(var)),
-                            ),
+                            vec![],
+                            Type::Lambda(vec![Type::Int, Type::Int], Box::new(Type::Int)),
                         ),
                     );
                 }
@@ -52,11 +49,8 @@ impl Context {
                     frame.insert(
                         *id,
                         Scheme::new(
-                            vec![var],
-                            Type::Lambda(
-                                vec![Type::Var(var), Type::Var(var)],
-                                Box::new(Type::Var(var)),
-                            ),
+                            vec![],
+                            Type::Lambda(vec![Type::Int, Type::Int], Box::new(Type::Int)),
                         ),
                     );
                 }

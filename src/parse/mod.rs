@@ -123,19 +123,28 @@ fn expr_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
 
         let ident = ident_parser().map(|ident| ExprKind::Var(ident));
 
+        let simple = unit
+            .or(lit)
+            .or(ident)
+            .map_with(|kind, e| Expr::new(kind, e.span()))
+            .or(just(Token::LParen)
+                .ignore_then(expr.clone())
+                .then_ignore(just(Token::RParen)))
+            .boxed();
+
         let lambda = just(Token::Backslash)
             .ignore_then(ident_parser().repeated().at_least(1).collect())
             .then_ignore(just(Token::RArrow))
             .then(expr.clone())
             .map(|(params, expr)| ExprKind::Lambda(params, expr));
 
-        // let if_ = just(Token::If)
-        //     .ignore_then(expr.clone())
-        //     .then_ignore(just(Token::Then))
-        //     .then(expr.clone())
-        //     .then_ignore(just(Token::Else))
-        //     .then(expr.clone())
-        //     .map(|((cond, then), else_)| ExprKind::If { cond, then, else_ });
+        let if_ = just(Token::If)
+            .ignore_then(expr.clone())
+            .then_ignore(just(Token::Then))
+            .then(expr.clone())
+            .then_ignore(just(Token::Else))
+            .then(expr.clone())
+            .map(|((cond, then), else_)| ExprKind::If(cond, then, else_));
 
         let let_ = just(Token::Let)
             .ignore_then(ident_parser())
@@ -154,18 +163,10 @@ fn expr_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
             .then(expr.clone())
             .map(|(((name, params), expr), body)| ExprKind::Fn(name, params, expr, body));
 
-        let simple = unit
-            .or(lit)
-            .or(ident)
-            .map_with(|kind, e| Expr::new(kind, e.span()))
-            .or(just(Token::LParen)
-                .ignore_then(expr)
-                .then_ignore(just(Token::RParen)))
-            .boxed();
-
         let atom = let_
             .or(fn_)
             .or(lambda)
+            .or(if_)
             .map_with(|kind, e| Expr::new(kind, e.span()))
             .or(simple)
             .boxed();

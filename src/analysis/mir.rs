@@ -72,9 +72,9 @@ pub enum DeclKind {
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Expr {
-    kind: Box<ExprKind>,
-    ty: Type,
-    span: Span,
+    pub kind: Box<ExprKind>,
+    pub ty: Type,
+    pub span: Span,
 }
 
 impl Expr {
@@ -85,52 +85,32 @@ impl Expr {
             span,
         }
     }
-
-    pub fn kind(&self) -> &ExprKind {
-        &self.kind
-    }
-
-    pub fn ty(&self) -> &Type {
-        &self.ty
-    }
-
-    pub fn span(&self) -> Span {
-        self.span
-    }
 }
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum ExprKind {
     Value(Value),
-    Let {
-        name: ScopedIdent,
-        expr: Expr,
-        body: Expr,
-    },
-    Fn {
-        name: ScopedIdent,
-        params: Vec<ScopedIdent>,
-        expr: Expr,
-        body: Expr,
-    },
-    Join {
-        name: ScopedIdent,
-        expr: Expr,
-        body: Expr,
-    },
-    Jump {
-        name: ScopedIdent,
-        value: Option<Value>,
-    },
-    Apply {
-        func: Expr,
-        args: Vec<Expr>,
-    },
-    If {
-        cond: Value,
-        then: Expr,
-        else_: Expr,
-    },
+    Let(ScopedIdent, Expr, Expr),
+    Fn(ScopedIdent, Vec<ScopedIdent>, Expr, Expr),
+    Join(ScopedIdent, Expr, Expr),
+    Jump(ScopedIdent, Option<Value>),
+    Apply(Expr, Vec<Expr>),
+    Match(Expr, Vec<(Pattern, Expr)>),
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct Pattern {
+    pub kind: PatternKind,
+    pub ty: Type,
+    pub span: Span,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum PatternKind {
+    Wildcard,
+    Ident(ScopedIdent),
+    Literal(Value),
+    Record(Option<ScopedIdent>, Vec<(InternedString, Pattern)>),
 }
 
 #[derive(Debug, Clone, PartialEq)]

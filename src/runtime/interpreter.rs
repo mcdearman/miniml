@@ -128,26 +128,24 @@ fn eval_expr<'src>(
                 env = lam_env;
                 continue 'tco;
             }
-            // ExprKind::If {
-            //     cond, then, else_, ..
-            // } => {
-            //     let cond = eval_expr(src, env.clone(), cond)?;
-            //     match cond {
-            //         Value::Lit(Lit::Bool(true)) => {
-            //             expr = then;
-            //             continue 'tco;
-            //         }
-            //         Value::Lit(Lit::Bool(false)) => {
-            //             expr = else_;
-            //             continue 'tco;
-            //         }
-            //         _ => {
-            //             return Err(RuntimeError::TypeError(
-            //                 format!("Expected bool, found {:?}", cond).into(),
-            //             ));
-            //         }
-            //     }
-            // }
+            ExprKind::If(cond, then, else_, ..) => {
+                let cond = eval_expr(src, env.clone(), cond.clone())?;
+                match cond {
+                    Value::Lit(Lit::Bool(true)) => {
+                        expr = then.clone();
+                        continue 'tco;
+                    }
+                    Value::Lit(Lit::Bool(false)) => {
+                        expr = else_.clone();
+                        continue 'tco;
+                    }
+                    _ => {
+                        return Err(RuntimeError::TypeError(
+                            format!("Expected bool, found {:?}", cond).into(),
+                        ));
+                    }
+                }
+            }
             ExprKind::Lambda(params, lam_expr) => Value::Lambda(
                 Env::new_with_parent(env.clone()),
                 params.iter().map(|p| p.id).collect_vec(),

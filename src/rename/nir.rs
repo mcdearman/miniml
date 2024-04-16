@@ -49,6 +49,7 @@ pub enum ExprKind {
     And(Expr, Expr),
     Let(ScopedIdent, Expr, Expr),
     Fn(ScopedIdent, Vec<ScopedIdent>, Expr, Expr),
+    If(Expr, Expr, Expr),
     Unit,
 }
 

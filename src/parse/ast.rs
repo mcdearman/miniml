@@ -50,6 +50,7 @@ pub enum ExprKind {
     And(Expr, Expr),
     Let(Ident, Expr, Expr),
     Fn(Ident, Vec<Ident>, Expr, Expr),
+    If(Expr, Expr, Expr),
     Unit,
 }
 

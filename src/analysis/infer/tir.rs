@@ -121,17 +121,17 @@ impl Expr {
                 self.ty.apply_subst(subst),
                 self.span,
             ),
-            // ExprKind::If { cond, then, else_ } => Expr::new(
-            //     ExprKind::If {
-            //         cond: cond.apply_subst(subst),
-            //         then: then.apply_subst(subst),
-            //         else_: else_.apply_subst(subst),
-            //     },
-            //     self.ty.apply_subst(subst),
-            //     self.span,
-            // ),
             ExprKind::Lambda(params, expr) => Expr::new(
                 ExprKind::Lambda(params.clone(), expr.apply_subst(subst)),
+                self.ty.apply_subst(subst),
+                self.span,
+            ),
+            ExprKind::If(cond, then, else_) => Expr::new(
+                ExprKind::If(
+                    cond.apply_subst(subst),
+                    then.apply_subst(subst),
+                    else_.apply_subst(subst),
+                ),
                 self.ty.apply_subst(subst),
                 self.span,
             ),
@@ -151,7 +151,7 @@ impl Expr {
 //                 "  ".repeat(indent as usize)
 //             }
 
-//             match expr.kind() {
+//             match expr.kind.as_ref() {
 //                 ExprKind::Lit(lit) => {
 //                     writeln!(f, "{}Lit @ {}", spaces(indent), expr.span)?;
 //                     indent += 1;
@@ -175,11 +175,13 @@ impl Expr {
 //                 ExprKind::Lambda(params, fn_expr) => {
 //                     writeln!(f, "{}Lambda @ {}", spaces(indent), expr.span)?;
 //                     indent += 1;
-//                     writeln!(f, "{}Var @ {}", spaces(indent), )?;
+//                     for param in params {
+//                         writeln!(f, "{}ScopedIdent @ {}", spaces(indent), param.span())?;
+//                     }
 //                     indent += 1;
 //                     writeln!(f, "{}{}", spaces(indent), param)?;
 //                     indent -= 1;
-//                     debug(f, indent, fn_expr)
+//                     debug(f, indent, &fn_expr)
 //                 }
 //                 ExprKind::Or(lhs, rhs) => {
 //                     writeln!(f, "{}Or @ {}", spaces(indent), expr.span)?;
@@ -221,6 +223,7 @@ pub enum ExprKind {
     And(Expr, Expr),
     Let(ScopedIdent, Expr, Expr),
     Fn(ScopedIdent, Vec<ScopedIdent>, Expr, Expr),
+    If(Expr, Expr, Expr),
     Unit,
 }
 

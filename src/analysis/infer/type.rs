@@ -81,9 +81,13 @@ impl Type {
     pub fn unify(&self, other: &Self) -> InferResult<Substitution> {
         println!("unify: {:?} and {:?}", self, other);
         match (self, other) {
-            (Type::Int, Type::Int)
+            (Type::Byte, Type::Byte)
+            | (Type::Int, Type::Int)
             | (Type::Rational, Type::Rational)
+            | (Type::Real, Type::Real)
             | (Type::Bool, Type::Bool)
+            | (Type::String, Type::String)
+            | (Type::Char, Type::Char)
             | (Type::Unit, Type::Unit) => Ok(Substitution::new()),
             (Type::Lambda(p1, b1), Type::Lambda(p2, b2)) => {
                 let s1 = p1.iter().zip(p2.iter()).try_fold(
