@@ -182,6 +182,13 @@ fn eval_expr<'src>(
             //         ));
             //     }
             // }
+            ExprKind::List(exprs) => {
+                let mut list = Vec::new();
+                for expr in exprs.iter() {
+                    list.push(eval_expr(src, env.clone(), expr.clone())?);
+                }
+                Value::List(list.into())
+            }
             ExprKind::Unit => Value::Unit,
         };
 

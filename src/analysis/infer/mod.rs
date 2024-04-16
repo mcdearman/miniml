@@ -395,6 +395,18 @@ impl TypeSolver {
                     expr.span,
                 ))
             }
+            nir::ExprKind::List(exprs) => {
+                let ty = Type::Var(TyVar::fresh());
+                let solved_exprs = exprs
+                    .iter()
+                    .map(|expr| self.infer_expr(expr))
+                    .collect::<InferResult<Vec<Expr>>>()?;
+                for expr in &solved_exprs {
+                    self.sub = self.sub.compose(&expr.ty.unify(&ty)?);
+                }
+
+                Ok(Expr::new(ExprKind::List(solved_exprs), ty, expr.span))
+            }
             nir::ExprKind::Unit => Ok(Expr::new(ExprKind::Unit, Type::Unit, expr.span)),
         }
     }

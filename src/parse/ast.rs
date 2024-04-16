@@ -51,6 +51,7 @@ pub enum ExprKind {
     Let(Ident, Expr, Expr),
     Fn(Ident, Vec<Ident>, Expr, Expr),
     If(Expr, Expr, Expr),
+    List(Vec<Expr>),
     Unit,
 }
 
@@ -162,6 +163,23 @@ impl ToString for BinaryOpKind {
 }
 
 #[derive(Debug, Clone, PartialEq)]
+pub struct Pattern {
+    pub kind: Box<PatternKind>,
+    pub span: Span,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum PatternKind {
+    Wildcard,
+    Lit(Lit),
+    Ident(Ident),
+    IdentHint(Ident, TypeHint),
+    List(Vec<Pattern>),
+    Pair(Pattern, Pattern),
+    Unit,
+}
+
+#[derive(Debug, Clone, PartialEq)]
 pub struct TypeHint {
     pub kind: Box<TypeHintKind>,
     pub span: Span,
@@ -178,9 +196,13 @@ impl TypeHint {
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum TypeHintKind {
+    Byte,
     Int,
+    Rational,
+    Real,
     Bool,
     String,
+    Char,
     Ident(Ident),
     Fn(Vec<TypeHint>, TypeHint),
     List(TypeHint),

@@ -163,10 +163,21 @@ fn expr_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
             .then(expr.clone())
             .map(|(((name, params), expr), body)| ExprKind::Fn(name, params, expr, body));
 
+        let list = just(Token::LBrack)
+            .ignore_then(
+                expr.clone()
+                    .separated_by(just(Token::Comma))
+                    .allow_trailing()
+                    .collect(),
+            )
+            .then_ignore(just(Token::RBrack))
+            .map(|exprs| ExprKind::List(exprs));
+
         let atom = let_
             .or(fn_)
             .or(lambda)
             .or(if_)
+            .or(list)
             .map_with(|kind, e| Expr::new(kind, e.span()))
             .or(simple)
             .boxed();

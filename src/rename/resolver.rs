@@ -235,6 +235,15 @@ impl Resolver {
                 ),
                 expr.span,
             )),
+            ast::ExprKind::List(exprs) => Ok(Expr::new(
+                ExprKind::List(
+                    exprs
+                        .iter()
+                        .map(|e| self.resolve_expr(e))
+                        .collect::<ResResult<Vec<Expr>>>()?,
+                ),
+                expr.span,
+            )),
             ast::ExprKind::Unit => Ok(Expr::new(ExprKind::Unit, expr.span)),
         }
     }

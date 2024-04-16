@@ -135,6 +135,11 @@ impl Expr {
                 self.ty.apply_subst(subst),
                 self.span,
             ),
+            ExprKind::List(exprs) => Expr::new(
+                ExprKind::List(exprs.iter().map(|expr| expr.apply_subst(subst)).collect_vec()),
+                self.ty.apply_subst(subst),
+                self.span,
+            ),
             ExprKind::Unit => self.clone(),
         }
     }
@@ -224,6 +229,7 @@ pub enum ExprKind {
     Let(ScopedIdent, Expr, Expr),
     Fn(ScopedIdent, Vec<ScopedIdent>, Expr, Expr),
     If(Expr, Expr, Expr),
+    List(Vec<Expr>),
     Unit,
 }
 

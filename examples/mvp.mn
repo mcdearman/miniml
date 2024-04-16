@@ -109,5 +109,9 @@ let gcd a b =
   | (a, b) if a > b -> gcd b (a % b)
   | (a, b) -> gcd a (b % a)
 
-let f : Int, Int -> Int = \x y -> x + y
+let f : (Int, Int) -> Int = \x y -> x + y
+-- ((Int, Int) -> Int), Int -> Int
 
+let map f xs =
+  if null xs then []
+  else f (head xs) :: map f (tail xs)
