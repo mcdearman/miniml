@@ -3,7 +3,10 @@ use super::{
     error::{RuntimeError, RuntimeResult},
     value::{Lit, Record, Value},
 };
-use crate::analysis::infer::tir::{self, *};
+use crate::{
+    analysis::infer::tir::{self, *},
+    utils::list::List,
+};
 use itertools::Itertools;
 use std::{cell::RefCell, collections::HashMap, rc::Rc};
 
@@ -188,6 +191,21 @@ fn eval_expr<'src>(
                     list.push(eval_expr(src, env.clone(), expr.clone())?);
                 }
                 Value::List(list.into())
+            }
+            ExprKind::Pair(head, tail) => {
+                let head = eval_expr(src, env.clone(), head.clone())?;
+                match eval_expr(src, env.clone(), tail.clone())? {
+                    Value::List(tail @ List::Pair { .. }) => Value::List(List::Pair {
+                        head: Box::new(head),
+                        tail: Box::new(tail),
+                    }),
+                    Value::List(List::Empty) => Value::List(List::Empty),
+                    _ => {
+                        return Err(RuntimeError::TypeError(
+                            format!("Expected list, found {:?}", tail).into(),
+                        ));
+                    }
+                }
             }
             ExprKind::Unit => Value::Unit,
         };

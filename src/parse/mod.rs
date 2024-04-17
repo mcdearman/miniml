@@ -182,9 +182,20 @@ fn expr_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
             .or(simple)
             .boxed();
 
-        let apply = atom
+        let pair = atom
             .clone()
-            .then(atom.clone().repeated().collect::<Vec<_>>())
+            .then(just(Token::DoubleColon).ignore_then(atom.clone()).or_not())
+            .map_with(|(head, tail), e| {
+                if let Some(tail) = tail {
+                    Expr::new(ExprKind::Pair(head, tail), e.span())
+                } else {
+                    head
+                }
+            });
+
+        let apply = pair
+            .clone()
+            .then(pair.clone().repeated().collect::<Vec<_>>())
             .map(|(fun, args)| {
                 if args.is_empty() {
                     *fun.kind

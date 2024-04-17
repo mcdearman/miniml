@@ -407,6 +407,22 @@ impl TypeSolver {
 
                 Ok(Expr::new(ExprKind::List(solved_exprs), ty, expr.span))
             }
+            nir::ExprKind::Pair(head, tail) => {
+                let ty = Type::Var(TyVar::fresh());
+                let solved_head = self.infer_expr(head)?;
+                let solved_tail = self.infer_expr(tail)?;
+
+                self.sub = self.sub.compose(&solved_head.ty.unify(&ty)?);
+                self.sub = self
+                    .sub
+                    .compose(&solved_tail.ty.unify(&Type::List(Box::new(ty.clone())))?);
+
+                Ok(Expr::new(
+                    ExprKind::Pair(solved_head, solved_tail),
+                    Type::List(Box::new(ty)),
+                    expr.span,
+                ))
+            }
             nir::ExprKind::Unit => Ok(Expr::new(ExprKind::Unit, Type::Unit, expr.span)),
         }
     }

@@ -136,7 +136,17 @@ impl Expr {
                 self.span,
             ),
             ExprKind::List(exprs) => Expr::new(
-                ExprKind::List(exprs.iter().map(|expr| expr.apply_subst(subst)).collect_vec()),
+                ExprKind::List(
+                    exprs
+                        .iter()
+                        .map(|expr| expr.apply_subst(subst))
+                        .collect_vec(),
+                ),
+                self.ty.apply_subst(subst),
+                self.span,
+            ),
+            ExprKind::Pair(head, tail) => Expr::new(
+                ExprKind::Pair(head.apply_subst(subst), tail.apply_subst(subst)),
                 self.ty.apply_subst(subst),
                 self.span,
             ),
@@ -230,6 +240,7 @@ pub enum ExprKind {
     Fn(ScopedIdent, Vec<ScopedIdent>, Expr, Expr),
     If(Expr, Expr, Expr),
     List(Vec<Expr>),
+    Pair(Expr, Expr),
     Unit,
 }
 

@@ -244,6 +244,10 @@ impl Resolver {
                 ),
                 expr.span,
             )),
+            ast::ExprKind::Pair(head, tail) => Ok(Expr::new(
+                ExprKind::Pair(self.resolve_expr(&head)?, self.resolve_expr(&tail)?),
+                expr.span,
+            )),
             ast::ExprKind::Unit => Ok(Expr::new(ExprKind::Unit, expr.span)),
         }
     }
