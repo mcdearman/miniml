@@ -182,20 +182,9 @@ fn expr_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
             .or(simple)
             .boxed();
 
-        let pair = atom
+        let apply = atom
             .clone()
-            .then(just(Token::DoubleColon).ignore_then(atom.clone()).or_not())
-            .map_with(|(head, tail), e| {
-                if let Some(tail) = tail {
-                    Expr::new(ExprKind::Pair(head, tail), e.span())
-                } else {
-                    head
-                }
-            });
-
-        let apply = pair
-            .clone()
-            .then(pair.clone().repeated().collect::<Vec<_>>())
+            .then(atom.clone().repeated().collect::<Vec<_>>())
             .map(|(fun, args)| {
                 if args.is_empty() {
                     *fun.kind
@@ -205,6 +194,24 @@ fn expr_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
             })
             .map_with(|kind, e| Expr::new(kind, e.span()));
 
+        let op = just(Token::DoubleColon)
+            .map(BinaryOpKind::from)
+            .map_with(|kind, e| BinaryOp {
+                kind,
+                span: e.span(),
+            });
+
+        let pair = apply
+            .clone()
+            .then(op.clone().then(apply.clone()).or_not())
+            .map(|(lhs, rhs)| match rhs {
+                Some((op, rhs)) => Expr::new(
+                    ExprKind::BinaryOp(op, lhs.clone(), rhs.clone()),
+                    lhs.span.extend(rhs.span),
+                ),
+                None => lhs.clone(),
+            });
+
         let op = just(Token::Minus)
             .or(just(Token::Not))
             .map(UnaryOpKind::from)
@@ -213,7 +220,7 @@ fn expr_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
                 span: e.span(),
             });
 
-        let unary = op.clone().repeated().foldr(apply, |op, expr| {
+        let unary = op.clone().repeated().foldr(pair, |op, expr| {
             Expr::new(
                 ExprKind::UnaryOp(op, expr.clone()),
                 op.span.extend(expr.span),

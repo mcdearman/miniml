@@ -192,21 +192,6 @@ fn eval_expr<'src>(
                 }
                 Value::List(list.into())
             }
-            ExprKind::Pair(head, tail) => {
-                let head = eval_expr(src, env.clone(), head.clone())?;
-                match eval_expr(src, env.clone(), tail.clone())? {
-                    Value::List(tail @ List::Pair { .. }) => Value::List(List::Pair {
-                        head: Box::new(head),
-                        tail: Box::new(tail),
-                    }),
-                    Value::List(List::Empty) => Value::List(List::Empty),
-                    _ => {
-                        return Err(RuntimeError::TypeError(
-                            format!("Expected list, found {:?}", tail).into(),
-                        ));
-                    }
-                }
-            }
             ExprKind::Unit => Value::Unit,
         };
 

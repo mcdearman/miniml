@@ -145,11 +145,6 @@ impl Expr {
                 self.ty.apply_subst(subst),
                 self.span,
             ),
-            ExprKind::Pair(head, tail) => Expr::new(
-                ExprKind::Pair(head.apply_subst(subst), tail.apply_subst(subst)),
-                self.ty.apply_subst(subst),
-                self.span,
-            ),
             ExprKind::Unit => self.clone(),
         }
     }
@@ -240,7 +235,6 @@ pub enum ExprKind {
     Fn(ScopedIdent, Vec<ScopedIdent>, Expr, Expr),
     If(Expr, Expr, Expr),
     List(Vec<Expr>),
-    Pair(Expr, Expr),
     Unit,
 }
 

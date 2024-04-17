@@ -52,7 +52,6 @@ pub enum ExprKind {
     Fn(Ident, Vec<Ident>, Expr, Expr),
     If(Expr, Expr, Expr),
     List(Vec<Expr>),
-    Pair(Expr, Expr),
     Unit,
 }
 
@@ -119,6 +118,7 @@ pub enum BinaryOpKind {
     Lte,
     Gt,
     Gte,
+    Pair,
 }
 
 impl From<Token> for BinaryOpKind {
@@ -136,6 +136,7 @@ impl From<Token> for BinaryOpKind {
             Token::Leq => Self::Lte,
             Token::Gt => Self::Gt,
             Token::Geq => Self::Gte,
+            Token::DoubleColon => Self::Pair,
             _ => unreachable!(),
         }
     }
@@ -156,6 +157,7 @@ impl ToString for BinaryOpKind {
             Self::Lte => "lte".to_string(),
             Self::Gt => "gt".to_string(),
             Self::Gte => "gte".to_string(),
+            Self::Pair => "pair".to_string(),
         }
     }
 }

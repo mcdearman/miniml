@@ -3,7 +3,7 @@ use self::{
     error::RuntimeError,
     value::{Lit, Value},
 };
-use crate::utils::{intern::InternedString, unique_id::UniqueId};
+use crate::utils::{intern::InternedString, list::List, unique_id::UniqueId};
 use std::{cell::RefCell, collections::HashMap, rc::Rc};
 
 pub mod env;
@@ -321,6 +321,36 @@ pub fn default_env(builtins: HashMap<UniqueId, InternedString>) -> Rc<RefCell<En
                                         format!("Expected number, found {:?}", args),
                                     )));
                                 }
+                            }
+                        }
+                    }),
+                );
+            }
+            "pair" => {
+                env.borrow_mut().insert(
+                    id,
+                    Value::NativeFn(|args| {
+                        if args.len() != 2 {
+                            return Err(RuntimeError::ArityError(2, args.len()));
+                        } else {
+                            match args.get(1).unwrap() {
+                                Value::List(List::Empty) => Ok(Value::List(List::Pair {
+                                    head: Box::new(args[0].clone()),
+                                    tail: Box::new(List::Empty),
+                                })),
+                                Value::List(tail @ List::Pair { .. }) => {
+                                    Ok(Value::List(List::Pair {
+                                        head: Box::new(args[0].clone()),
+                                        tail: Box::new(List::Pair {
+                                            head: Box::new(args[0].clone()),
+                                            tail: Box::new(tail.clone()),
+                                        }),
+                                    }))
+                                }
+                                _ => Err(RuntimeError::TypeError(InternedString::from(format!(
+                                    "Expected list, found {:?}",
+                                    args
+                                )))),
                             }
                         }
                     }),

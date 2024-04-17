@@ -27,7 +27,7 @@ impl Resolver {
             "not", "neg", "add", "sub",
             "mul", "div", "rem", "pow",
             "eq", "neq", "lt", "lte",
-            "gt", "gte", "println",
+            "gt", "gte", "println", "pair",
         ];
 
         let mut builtins = HashMap::new();
@@ -242,10 +242,6 @@ impl Resolver {
                         .map(|e| self.resolve_expr(e))
                         .collect::<ResResult<Vec<Expr>>>()?,
                 ),
-                expr.span,
-            )),
-            ast::ExprKind::Pair(head, tail) => Ok(Expr::new(
-                ExprKind::Pair(self.resolve_expr(&head)?, self.resolve_expr(&tail)?),
                 expr.span,
             )),
             ast::ExprKind::Unit => Ok(Expr::new(ExprKind::Unit, expr.span)),

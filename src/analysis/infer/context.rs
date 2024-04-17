@@ -57,10 +57,7 @@ impl Context {
                         *id,
                         Scheme::new(
                             vec![],
-                            Type::Lambda(
-                                vec![Type::Int, Type::Int],
-                                Box::new(Type::Int),
-                            ),
+                            Type::Lambda(vec![Type::Int, Type::Int], Box::new(Type::Int)),
                         ),
                     );
                 }
@@ -69,10 +66,7 @@ impl Context {
                         *id,
                         Scheme::new(
                             vec![],
-                            Type::Lambda(
-                                vec![Type::Int, Type::Int],
-                                Box::new(Type::Int),
-                            ),
+                            Type::Lambda(vec![Type::Int, Type::Int], Box::new(Type::Int)),
                         ),
                     );
                 }
@@ -183,6 +177,17 @@ impl Context {
                         Scheme::new(
                             vec![var],
                             Type::Lambda(vec![Type::Var(var)], Box::new(Type::Unit)),
+                        ),
+                    );
+                }
+                "pair" => {
+                    let var = TyVar::fresh();
+                    let ty = Type::Var(var);
+                    frame.insert(
+                        *id,
+                        Scheme::new(
+                            vec![var],
+                            Type::Lambda(vec![ty.clone()], Box::new(Type::List(Box::new(ty)))),
                         ),
                     );
                 }

@@ -51,7 +51,6 @@ pub enum ExprKind {
     Fn(ScopedIdent, Vec<ScopedIdent>, Expr, Expr),
     If(Expr, Expr, Expr),
     List(Vec<Expr>),
-    Pair(Expr, Expr),
     Unit,
 }
 
