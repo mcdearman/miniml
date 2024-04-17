@@ -79,7 +79,7 @@ impl Type {
     }
 
     pub fn unify(&self, other: &Self) -> InferResult<Substitution> {
-        println!("unify: {:?} and {:?}", self, other);
+        log::debug!("unify: {:?} and {:?}", self, other);
         match (self, other) {
             (Type::Byte, Type::Byte)
             | (Type::Int, Type::Int)

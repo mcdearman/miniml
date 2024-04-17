@@ -2,7 +2,7 @@ use crate::{analysis::infer::tir, lex::token_iter::TokenIter, parse::parse, runt
 use analysis::infer::TypeSolver;
 use rename::resolver::Resolver;
 use runtime::default_env;
-use std::io::{self, Write};
+use std::io::{self, Read, Write};
 
 mod analysis;
 mod lex;
@@ -24,6 +24,7 @@ fn main() {
         print!("> ");
         io::stdout().flush().unwrap();
         std::io::stdin().read_line(&mut src).unwrap();
+        std::io::stdin().read(buf)
         if src.trim() == "sub" {
             println!("{:#?}", solver.sub());
             src.clear();

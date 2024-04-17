@@ -125,9 +125,3 @@ let fib : Int -> Int =
   | 0 = 0
   | fib 1 = 1
   | fib n = fib (n - 1) + fib (n - 2)
-
-let fib_iter n =
-  let loop a b i =
-    if i = 0 then a
-    else loop b (a + b) (i - 1)
-  in loop 0 1 n

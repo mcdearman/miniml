@@ -68,7 +68,6 @@ impl TypeSolver {
         nir: &nir::Root,
     ) -> (Option<Root>, Vec<TypeError>) {
         self.src = src.into();
-        println!("src: {:?}", self.src);
         let mut decls = vec![];
         let mut errors = vec![];
         for decl in &nir.decls {

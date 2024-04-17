@@ -341,10 +341,7 @@ pub fn default_env(builtins: HashMap<UniqueId, InternedString>) -> Rc<RefCell<En
                                 Value::List(tail @ List::Pair { .. }) => {
                                     Ok(Value::List(List::Pair {
                                         head: Box::new(args[0].clone()),
-                                        tail: Box::new(List::Pair {
-                                            head: Box::new(args[0].clone()),
-                                            tail: Box::new(tail.clone()),
-                                        }),
+                                        tail: Box::new(tail.clone()),
                                     }))
                                 }
                                 _ => Err(RuntimeError::TypeError(InternedString::from(format!(
