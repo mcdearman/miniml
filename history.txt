@@ -4,3 +4,8 @@
 1;; 
 1;;
 1 + 1\n;;
+1\n;;
+1 + 2;;
+let fib n =\n    let loop a b i =\n      if i = 0 then a\n      else loop b (a + b) (i - 1)\n    in loop 0 1 n;;
+fib 10;;
+fib 20;;
