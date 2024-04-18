@@ -4,9 +4,10 @@ use std::fmt::Display;
 #[derive(Debug, Clone, PartialEq)]
 pub enum RuntimeError {
     ParseError(Vec<InternedString>),
-    ResError(Vec<RuntimeError>),
+    ResError(Vec<InternedString>),
     ArityError(usize, usize),
     TypeError(InternedString),
+    InferenceError(Vec<InternedString>),
     UnboundIdent(InternedString, Span),
     Overflow,
     DivisionByZero,
@@ -37,6 +38,13 @@ impl Display for RuntimeError {
                 )
             }
             RuntimeError::TypeError(err) => write!(f, "Type error: {}", err),
+            RuntimeError::InferenceError(errs) => {
+                write!(f, "Inference error:\n")?;
+                for err in errs {
+                    write!(f, "{}\n", err)?;
+                }
+                Ok(())
+            }
             RuntimeError::UnboundIdent(ident, span) => {
                 write!(f, "Unbound identifier: {} @ {}", ident, span)
             }

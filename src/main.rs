@@ -1,12 +1,7 @@
-use crate::{analysis::infer::tir, lex::token_iter::TokenIter, parse::parse, runtime::eval::eval};
-use analysis::infer::TypeSolver;
-use rename::resolver::Resolver;
-use runtime::default_env;
+use runtime::interpreter::Interpreter;
 use rustyline::{
-    error::ReadlineError, validate::Validator, Completer, DefaultEditor, Editor, Helper,
-    Highlighter, Hinter,
+    error::ReadlineError, validate::Validator, Completer, Editor, Helper, Highlighter, Hinter,
 };
-use std::io::{self, Read, Write};
 
 mod analysis;
 mod lex;
@@ -39,6 +34,7 @@ fn main() {
     if rl.load_history("history.txt").is_err() {
         println!("No previous history.");
     }
+    let mut interpreter = Interpreter::new();
 
     loop {
         let readline = rl.readline("> ");
@@ -46,6 +42,10 @@ fn main() {
             Ok(line) => {
                 rl.add_history_entry(line.as_str())
                     .expect("Failed to add history entry");
+                match interpreter.run(line.trim().strip_suffix(";;").unwrap_or(&*line)) {
+                    Ok(val) => println!("{}", val),
+                    Err(err) => println!("{}", err),
+                }
             }
             Err(ReadlineError::Interrupted) => {
                 println!("CTRL-C");
@@ -63,23 +63,4 @@ fn main() {
     }
     rl.save_history("history.txt")
         .expect("Failed to save history");
-    // loop {
-    //     print!("> ");
-    //     io::stdout().flush().unwrap();
-    //     std::io::stdin().read_line(&mut src).unwrap();
-    //     // std::io::stdin().read(buf)
-    //     if src.trim() == "sub" {
-    //         println!("{:#?}", solver.sub());
-    //         src.clear();
-    //         continue;
-    //     }
-
-    //     if src.trim().ends_with(";;") {
-    //         src = src
-    //             .trim()
-    //             .strip_suffix(";;")
-    //             .expect("Failed to strip suffix")
-    //             .to_string();
-
-    // }
 }

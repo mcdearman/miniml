@@ -8,7 +8,7 @@ use crate::{
     utils::list::List,
 };
 use itertools::Itertools;
-use std::{cell::RefCell, collections::HashMap, rc::Rc};
+use std::{cell::RefCell, rc::Rc};
 
 pub fn eval<'src>(src: &'src str, env: Rc<RefCell<Env>>, tir: Root) -> RuntimeResult<Value> {
     // let mut types = HashMap::new();

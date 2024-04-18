@@ -1,6 +1,16 @@
-use super::{default_env, env::Env};
+use itertools::Itertools;
+
+use super::{
+    default_env,
+    env::Env,
+    error::{RuntimeError, RuntimeResult},
+    eval::eval,
+    value::Value,
+};
 use crate::{
     analysis::infer::TypeSolver,
+    lex::token_iter::TokenIter,
+    parse::parse,
     rename::resolver::Resolver,
     utils::{intern::InternedString, scoped_intern::ScopedInterner, unique_id::UniqueId},
 };
@@ -8,7 +18,6 @@ use std::{cell::RefCell, collections::HashMap, rc::Rc};
 
 #[derive(Debug)]
 pub struct Interpreter {
-    src: String,
     res: Resolver,
     builtins: HashMap<UniqueId, InternedString>,
     scoped_interner: ScopedInterner,
@@ -23,14 +32,8 @@ impl Interpreter {
         let scoped_interner = res.env().dump_to_interner();
         let type_solver = TypeSolver::new(builtins.clone(), scoped_interner.clone());
         let env = default_env(builtins.clone());
-        // let mut src = String::new();
-        // let mut res = Resolver::new();
-        // let builtins = res.builtins();
-        // let scoped_interner = res.env().dump_to_interner();
-        // let mut solver = TypeSolver::new(builtins.clone(), scoped_interner);
-        // let env = default_env(builtins.clone());
+
         Self {
-            src: String::new(),
             res,
             builtins,
             scoped_interner,
@@ -39,50 +42,54 @@ impl Interpreter {
         }
     }
 
-    pub fn run() {
+    pub fn run(&mut self, src: &str) -> RuntimeResult<Value> {
+        let stream = TokenIter::new(&src);
 
-        //         let stream = TokenIter::new(&src);
-        //         // let (ast, parse_errors) = parse(stream, true);
-        //         let ast = match parse(stream, true) {
-        //             (Some(root), _) => {
-        //                 log::debug!("{:#?}", root);
-        //                 root
-        //             }
-        //             (_, errors) => {
-        //                 println!("{:#?}", errors);
-        //                 src.clear();
-        //                 continue;
-        //             }
-        //         };
+        let ast = match parse(stream, true) {
+            (Some(ast), _) => {
+                log::debug!("AST: {:#?}", ast);
+                ast
+            }
+            (None, parse_errors) => {
+                return Err(RuntimeError::ParseError(
+                    parse_errors
+                        .iter()
+                        .map(|e| InternedString::from(e.to_string()))
+                        .collect_vec(),
+                ));
+            }
+        };
 
-        //         let nir = match res.resolve(&ast) {
-        //             (Some(nir), _) => {
-        //                 log::debug!("{:#?}", nir);
-        //                 nir
-        //             }
-        //             (_, errors) => {
-        //                 println!("{:#?}", errors);
-        //                 src.clear();
-        //                 continue;
-        //             }
-        //         };
+        let nir = match self.res.resolve(&ast) {
+            (Some(nir), _) => {
+                log::debug!("NIR: {:#?}", nir);
+                nir
+            }
+            (None, res_errors) => {
+                return Err(RuntimeError::ResError(
+                    res_errors
+                        .iter()
+                        .map(|e| InternedString::from(e.to_string()))
+                        .collect_vec(),
+                ));
+            }
+        };
 
-        //         let tir = match solver.infer(&src, &nir) {
-        //             (Some(tir), _) => {
-        //                 log::debug!("{:#?}", tir);
-        //                 tir
-        //             }
-        //             (_, errors) => {
-        //                 println!("Error: {:#?}", errors);
-        //                 src.clear();
-        //                 continue;
-        //             }
-        //         };
-        //         match eval(&src, env.clone(), tir) {
-        //             Ok(val) => println!("{}", val),
-        //             Err(err) => println!("Error: {:#?}", err),
-        //         }
-        //         src.clear();
-        //     }
+        let tir = match self.type_solver.infer(&src, &nir) {
+            (Some(tir), _) => {
+                log::debug!("{:#?}", tir);
+                tir
+            }
+            (None, errors) => {
+                return Err(RuntimeError::InferenceError(
+                    errors
+                        .iter()
+                        .map(|e| InternedString::from(e.to_string()))
+                        .collect_vec(),
+                ));
+            }
+        };
+
+        eval(&src, self.env.clone(), tir)
     }
 }
