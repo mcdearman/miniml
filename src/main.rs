@@ -2,7 +2,10 @@ use crate::{analysis::infer::tir, lex::token_iter::TokenIter, parse::parse, runt
 use analysis::infer::TypeSolver;
 use rename::resolver::Resolver;
 use runtime::default_env;
-use rustyline::{error::ReadlineError, validate::Validator, DefaultEditor};
+use rustyline::{
+    error::ReadlineError, validate::Validator, Completer, DefaultEditor, Editor, Helper,
+    Highlighter, Hinter,
+};
 use std::io::{self, Read, Write};
 
 mod analysis;
@@ -12,6 +15,7 @@ mod rename;
 mod runtime;
 mod utils;
 
+#[derive(Completer, Helper, Highlighter, Hinter)]
 struct TermValidator;
 
 impl Validator for TermValidator {
@@ -29,14 +33,9 @@ impl Validator for TermValidator {
 
 fn main() {
     env_logger::init();
-    let mut src = String::new();
-    let mut res = Resolver::new();
-    let builtins = res.builtins();
-    let scoped_interner = res.env().dump_to_interner();
-    let mut solver = TypeSolver::new(builtins.clone(), scoped_interner);
-    let env = default_env(builtins.clone());
-
-    let mut rl = DefaultEditor::new().expect("Failed to create editor");
+    let h = TermValidator;
+    let mut rl = Editor::new().expect("Failed to create editor");
+    rl.set_helper(Some(h));
     if rl.load_history("history.txt").is_err() {
         println!("No previous history.");
     }

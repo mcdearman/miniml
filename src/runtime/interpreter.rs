@@ -1,4 +1,4 @@
-use super::env::Env;
+use super::{default_env, env::Env};
 use crate::{
     analysis::infer::TypeSolver,
     rename::resolver::Resolver,
@@ -17,6 +17,28 @@ pub struct Interpreter {
 }
 
 impl Interpreter {
+    pub fn new() -> Self {
+        let res = Resolver::new();
+        let builtins = res.builtins().clone();
+        let scoped_interner = res.env().dump_to_interner();
+        let type_solver = TypeSolver::new(builtins.clone(), scoped_interner.clone());
+        let env = default_env(builtins.clone());
+        // let mut src = String::new();
+        // let mut res = Resolver::new();
+        // let builtins = res.builtins();
+        // let scoped_interner = res.env().dump_to_interner();
+        // let mut solver = TypeSolver::new(builtins.clone(), scoped_interner);
+        // let env = default_env(builtins.clone());
+        Self {
+            src: String::new(),
+            res,
+            builtins,
+            scoped_interner,
+            type_solver,
+            env,
+        }
+    }
+
     pub fn run() {
 
         //         let stream = TokenIter::new(&src);
