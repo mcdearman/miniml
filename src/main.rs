@@ -1,7 +1,8 @@
-use crate::{analysis::infer::tir, lex::token_iter::TokenIter, parse::parse, runtime::interpreter::eval};
+use crate::{analysis::infer::tir, lex::token_iter::TokenIter, parse::parse, runtime::eval::eval};
 use analysis::infer::TypeSolver;
 use rename::resolver::Resolver;
 use runtime::default_env;
+use rustyline::{error::ReadlineError, validate::Validator, DefaultEditor};
 use std::io::{self, Read, Write};
 
 mod analysis;
@@ -10,6 +11,21 @@ mod parse;
 mod rename;
 mod runtime;
 mod utils;
+
+struct TermValidator;
+
+impl Validator for TermValidator {
+    fn validate(
+        &self,
+        ctx: &mut rustyline::validate::ValidationContext,
+    ) -> rustyline::Result<rustyline::validate::ValidationResult> {
+        if ctx.input().trim().ends_with(";;") {
+            Ok(rustyline::validate::ValidationResult::Valid(None))
+        } else {
+            Ok(rustyline::validate::ValidationResult::Incomplete)
+        }
+    }
+}
 
 fn main() {
     env_logger::init();
@@ -20,58 +36,51 @@ fn main() {
     let mut solver = TypeSolver::new(builtins.clone(), scoped_interner);
     let env = default_env(builtins.clone());
 
-    loop {
-        print!("> ");
-        io::stdout().flush().unwrap();
-        std::io::stdin().read_line(&mut src).unwrap();
-        std::io::stdin().read(buf)
-        if src.trim() == "sub" {
-            println!("{:#?}", solver.sub());
-            src.clear();
-            continue;
-        }
-
-        let stream = TokenIter::new(&src);
-        // let (ast, parse_errors) = parse(stream, true);
-        let ast = match parse(stream, true) {
-            (Some(root), _) => {
-                log::debug!("{:#?}", root);
-                root
-            }
-            (_, errors) => {
-                println!("{:#?}", errors);
-                src.clear();
-                continue;
-            }
-        };
-
-        let nir = match res.resolve(&ast) {
-            (Some(nir), _) => {
-                log::debug!("{:#?}", nir);
-                nir
-            }
-            (_, errors) => {
-                println!("{:#?}", errors);
-                src.clear();
-                continue;
-            }
-        };
-
-        let tir = match solver.infer(&src, &nir) {
-            (Some(tir), _) => {
-                log::debug!("{:#?}", tir);
-                tir
-            }
-            (_, errors) => {
-                println!("Error: {:#?}", errors);
-                src.clear();
-                continue;
-            }
-        };
-        match eval(&src, env.clone(), tir) {
-            Ok(val) => println!("{}", val),
-            Err(err) => println!("Error: {:#?}", err),
-        }
-        src.clear();
+    let mut rl = DefaultEditor::new().expect("Failed to create editor");
+    if rl.load_history("history.txt").is_err() {
+        println!("No previous history.");
     }
+
+    loop {
+        let readline = rl.readline("> ");
+        match readline {
+            Ok(line) => {
+                rl.add_history_entry(line.as_str())
+                    .expect("Failed to add history entry");
+            }
+            Err(ReadlineError::Interrupted) => {
+                println!("CTRL-C");
+                break;
+            }
+            Err(ReadlineError::Eof) => {
+                println!("CTRL-D");
+                break;
+            }
+            Err(err) => {
+                println!("Error: {:?}", err);
+                break;
+            }
+        }
+    }
+    rl.save_history("history.txt")
+        .expect("Failed to save history");
+    // loop {
+    //     print!("> ");
+    //     io::stdout().flush().unwrap();
+    //     std::io::stdin().read_line(&mut src).unwrap();
+    //     // std::io::stdin().read(buf)
+    //     if src.trim() == "sub" {
+    //         println!("{:#?}", solver.sub());
+    //         src.clear();
+    //         continue;
+    //     }
+
+    //     if src.trim().ends_with(";;") {
+    //         src = src
+    //             .trim()
+    //             .strip_suffix(";;")
+    //             .expect("Failed to strip suffix")
+    //             .to_string();
+
+    // }
 }
