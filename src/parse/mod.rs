@@ -48,11 +48,10 @@ fn repl_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
         .map(|e| {
             DeclKind::Fn(
                 Ident::new(InternedString::from("main"), e.span),
-                vec![
-                    Ident::new(InternedString::from("args"), e.span),
-                    // TypeHint::new(TypeHintKind::Unit, e.span().clone()),
-                ],
-                // TypeHint::new(TypeHintKind::Unit, e.span().clone()),
+                vec![Pattern::new(
+                    PatternKind::Ident(Ident::new(InternedString::from("args"), e.span), None),
+                    e.span,
+                )],
                 e.clone(),
             )
         })
@@ -92,14 +91,14 @@ fn decl_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
     //     });
 
     let let_ = just(Token::Let)
-        .ignore_then(ident_parser())
+        .ignore_then(pattern_parser())
         .then_ignore(just(Token::Eq))
         .then(expr_parser())
-        .map(|(name, expr)| DeclKind::Let(name, expr));
+        .map(|(pat, expr)| DeclKind::Let(pat, expr));
 
     let fn_ = just(Token::Let)
         .ignore_then(ident_parser())
-        .then(ident_parser().repeated().at_least(1).collect())
+        .then(pattern_parser().repeated().at_least(1).collect())
         .then_ignore(just(Token::Eq))
         .then(expr_parser())
         .map(|((name, params), expr)| DeclKind::Fn(name, params, expr));
@@ -133,7 +132,7 @@ fn expr_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
             .boxed();
 
         let lambda = just(Token::Backslash)
-            .ignore_then(ident_parser().repeated().at_least(1).collect())
+            .ignore_then(pattern_parser().repeated().at_least(1).collect())
             .then_ignore(just(Token::RArrow))
             .then(expr.clone())
             .map(|(params, expr)| ExprKind::Lambda(params, expr));
@@ -147,16 +146,16 @@ fn expr_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
             .map(|((cond, then), else_)| ExprKind::If(cond, then, else_));
 
         let let_ = just(Token::Let)
-            .ignore_then(ident_parser())
+            .ignore_then(pattern_parser())
             .then_ignore(just(Token::Eq))
             .then(expr.clone())
             .then_ignore(just(Token::In))
             .then(expr.clone())
-            .map(|((name, expr), body)| ExprKind::Let(name, expr, body));
+            .map(|((pat, expr), body)| ExprKind::Let(pat, expr, body));
 
         let fn_ = just(Token::Let)
             .ignore_then(ident_parser())
-            .then(ident_parser().repeated().at_least(1).collect())
+            .then(pattern_parser().repeated().at_least(1).collect())
             .then_ignore(just(Token::Eq))
             .then(expr.clone())
             .then_ignore(just(Token::In))
@@ -362,6 +361,28 @@ fn expr_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
             .boxed();
 
         or
+    })
+}
+
+fn pattern_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
+) -> impl ChumskyParser<'a, I, Pattern, extra::Err<Rich<'a, Token, Span>>> {
+    recursive(|pat| {
+        let list = just(Token::LBrack)
+            .ignore_then(
+                pat.clone()
+                    .separated_by(just(Token::Comma))
+                    .allow_trailing()
+                    .collect(),
+            )
+            .then_ignore(just(Token::RBrack))
+            .map(|patterns| PatternKind::List(patterns));
+
+        just(Token::Wildcard)
+            .map(|_| PatternKind::Wildcard)
+            .or(ident_parser().map(|ident| PatternKind::Ident(ident, None)))
+            .or(list)
+            .map_with(|kind, e| Pattern::new(kind, e.span()))
+            .boxed()
     })
 }
 

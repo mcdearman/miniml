@@ -20,8 +20,8 @@ pub struct Decl {
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum DeclKind {
-    Let(ScopedIdent, Expr),
-    Fn(ScopedIdent, Vec<ScopedIdent>, Expr),
+    Let(Pattern, Expr),
+    Fn(ScopedIdent, Vec<Pattern>, Expr),
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -44,13 +44,68 @@ pub enum ExprKind {
     Lit(Lit),
     Var(ScopedIdent),
     Apply(Expr, Vec<Expr>),
-    Lambda(Vec<ScopedIdent>, Expr),
+    Lambda(Vec<Pattern>, Expr),
     Or(Expr, Expr),
     And(Expr, Expr),
-    Let(ScopedIdent, Expr, Expr),
-    Fn(ScopedIdent, Vec<ScopedIdent>, Expr, Expr),
+    Let(Pattern, Expr, Expr),
+    Fn(ScopedIdent, Vec<Pattern>, Expr, Expr),
     If(Expr, Expr, Expr),
     List(Vec<Expr>),
+    Unit,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct Pattern {
+    pub kind: Box<PatternKind>,
+    pub span: Span,
+}
+
+impl Pattern {
+    pub fn new(kind: PatternKind, span: Span) -> Self {
+        Self {
+            kind: Box::new(kind),
+            span,
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum PatternKind {
+    Wildcard,
+    Lit(Lit),
+    Ident(ScopedIdent, Option<TypeHint>),
+    List(Vec<Pattern>),
+    Pair(Pattern, Pattern),
+    Unit,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct TypeHint {
+    pub kind: Box<TypeHintKind>,
+    pub span: Span,
+}
+
+impl TypeHint {
+    pub fn new(kind: TypeHintKind, span: Span) -> Self {
+        Self {
+            kind: Box::new(kind),
+            span,
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum TypeHintKind {
+    Byte,
+    Int,
+    Rational,
+    Real,
+    Bool,
+    String,
+    Char,
+    Ident(ScopedIdent),
+    Fn(Vec<TypeHint>, TypeHint),
+    List(TypeHint),
     Unit,
 }
 

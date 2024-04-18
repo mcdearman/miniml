@@ -19,8 +19,8 @@ pub struct Decl {
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum DeclKind {
-    Let(Ident, Expr),
-    Fn(Ident, Vec<Ident>, Expr),
+    Let(Pattern, Expr),
+    Fn(Ident, Vec<Pattern>, Expr),
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -43,13 +43,13 @@ pub enum ExprKind {
     Lit(Lit),
     Var(Ident),
     Apply(Expr, Vec<Expr>),
-    Lambda(Vec<Ident>, Expr),
+    Lambda(Vec<Pattern>, Expr),
     UnaryOp(UnaryOp, Expr),
     BinaryOp(BinaryOp, Expr, Expr),
     Or(Expr, Expr),
     And(Expr, Expr),
-    Let(Ident, Expr, Expr),
-    Fn(Ident, Vec<Ident>, Expr, Expr),
+    Let(Pattern, Expr, Expr),
+    Fn(Ident, Vec<Pattern>, Expr, Expr),
     If(Expr, Expr, Expr),
     List(Vec<Expr>),
     Unit,
@@ -168,12 +168,20 @@ pub struct Pattern {
     pub span: Span,
 }
 
+impl Pattern {
+    pub fn new(kind: PatternKind, span: Span) -> Self {
+        Self {
+            kind: Box::new(kind),
+            span,
+        }
+    }
+}
+
 #[derive(Debug, Clone, PartialEq)]
 pub enum PatternKind {
     Wildcard,
     Lit(Lit),
-    Ident(Ident),
-    IdentHint(Ident, TypeHint),
+    Ident(Ident, Option<TypeHint>),
     List(Vec<Pattern>),
     Pair(Pattern, Pattern),
     Unit,

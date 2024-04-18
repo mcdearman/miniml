@@ -64,7 +64,7 @@ where
         write!(f, "[")?;
         for (i, s) in self.iter().enumerate() {
             if i != 0 {
-                write!(f, " ")?;
+                write!(f, ", ")?;
             }
             write!(f, "{}", s)?;
         }

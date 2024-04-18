@@ -15,8 +15,12 @@ use self::{
 use crate::{
     rename::nir,
     utils::{
-        ident::ScopedIdent, intern::InternedString, list::List, scoped_intern::ScopedInterner,
-        span::Span, unique_id::UniqueId,
+        ident::ScopedIdent,
+        intern::InternedString,
+        list::{self, List},
+        scoped_intern::ScopedInterner,
+        span::Span,
+        unique_id::UniqueId,
     },
 };
 use std::{collections::HashMap, vec};
@@ -131,20 +135,22 @@ impl TypeSolver {
 
     fn infer_decl(&mut self, decl: &nir::Decl) -> InferResult<Decl> {
         match &decl.kind {
-            nir::DeclKind::Let(name, let_expr) => {
-                log::debug!("infer let ({:?}) = {:#?}", name, let_expr);
+            nir::DeclKind::Let(pat, let_expr) => {
+                log::debug!("infer let ({:?}) = {:#?}", pat, let_expr);
                 // to show that Γ ⊢ let x = e0 in e1 : T' we need to show that
                 // Γ ⊢ e0 : T
                 let solved_expr = self.infer_expr(let_expr)?;
                 log::debug!("let_solved_expr: {:?}", solved_expr);
 
                 // Γ, x: gen(T) ⊢ e1 : T'
-                let scheme = solved_expr.ty.generalize(&self.ctx);
-                log::debug!("let_scheme: {:?}", scheme);
-                self.ctx.insert(name.id, scheme);
+                // let scheme = solved_expr.ty.generalize(&self.ctx);
+                // log::debug!("let_scheme: {:?}", scheme);
+                // self.ctx.insert(name.id, scheme);
+                let solved_pat = self.infer_pattern(pat)?;
+                self.sub = self.sub.compose(&solved_pat.ty.unify(&solved_expr.ty)?);
 
                 Ok(Decl {
-                    kind: DeclKind::Let(*name, solved_expr.clone()),
+                    kind: DeclKind::Let(solved_pat, solved_expr.clone()),
                     ty: solved_expr.ty,
                     span: decl.span,
                 })
@@ -163,9 +169,12 @@ impl TypeSolver {
 
                 self.ctx.insert(name.id, Scheme::new(vec![], fn_ty.clone()));
                 self.ctx.push();
-                params.iter().zip(param_tys.iter()).for_each(|(param, ty)| {
-                    self.ctx.insert(param.id, Scheme::new(vec![], ty.clone()));
-                });
+                let mut solved_params = vec![];
+                for (ty, param) in param_tys.iter().zip(params.iter()) {
+                    let solved_pat = self.infer_pattern(param)?;
+                    solved_params.push(solved_pat.clone());
+                    self.sub = self.sub.compose(&solved_pat.ty.unify(ty)?);
+                }
                 let solved_expr = self.infer_expr(fn_expr)?;
                 self.sub = self.sub.compose(
                     &solved_expr
@@ -178,7 +187,7 @@ impl TypeSolver {
                 self.ctx.pop();
 
                 Ok(Decl {
-                    kind: DeclKind::Fn(*name, params.clone(), solved_expr.clone()),
+                    kind: DeclKind::Fn(*name, solved_params, solved_expr.clone()),
                     ty: fn_ty,
                     span: decl.span,
                 })
@@ -251,8 +260,11 @@ impl TypeSolver {
                 let param_types = vec![Type::Var(TyVar::fresh()); params.len()];
                 log::debug!("lambda_param_types: {:?}", param_types);
                 self.ctx.push();
+                let mut solved_params = vec![];
                 for (param, ty) in params.iter().zip(param_types.iter()) {
-                    self.ctx.insert(param.id, Scheme::new(vec![], ty.clone()));
+                    let solved_pat = self.infer_pattern(param)?;
+                    solved_params.push(solved_pat.clone());
+                    self.sub = self.sub.compose(&solved_pat.ty.unify(ty)?);
                 }
                 // log::debug!("abs_ctx: {:?}", self.ctx);
                 let solved_expr = self.infer_expr(fn_expr)?;
@@ -262,7 +274,7 @@ impl TypeSolver {
                 self.ctx.pop();
 
                 Ok(Expr::new(
-                    ExprKind::Lambda(params.clone(), solved_expr),
+                    ExprKind::Lambda(solved_params, solved_expr),
                     fun_ty,
                     expr.span,
                 ))
@@ -330,22 +342,22 @@ impl TypeSolver {
                     expr.span,
                 ))
             }
-            nir::ExprKind::Let(name, let_expr, body) => {
-                log::debug!("infer let ({:?}) = {:#?} in {:#?}", name, let_expr, body);
+            nir::ExprKind::Let(pat, let_expr, body) => {
+                log::debug!("infer let ({:?}) = {:#?} in {:#?}", pat, let_expr, body);
                 // to show that Γ ⊢ let x = e0 in e1 : T' we need to show that
                 // Γ ⊢ e0 : T
                 let solved_expr = self.infer_expr(let_expr)?;
                 log::debug!("let_solved_expr: {:?}", solved_expr);
 
                 // Γ, x: T ⊢ e1 : T'
-                let scheme = Scheme::new(vec![], solved_expr.ty.clone());
-                log::debug!("let_scheme: {:?}", scheme);
-                self.ctx.insert(name.id, scheme);
+                let solved_pat = self.infer_pattern(pat)?;
+                self.sub = self.sub.compose(&solved_pat.ty.unify(&solved_expr.ty)?);
+
                 let solved_body = self.infer_expr(body)?;
                 log::debug!("let_solved_body: {:?}", solved_body);
 
                 Ok(Expr::new(
-                    ExprKind::Let(*name, solved_expr, solved_body.clone()),
+                    ExprKind::Let(solved_pat, solved_expr, solved_body.clone()),
                     solved_body.ty,
                     expr.span,
                 ))
@@ -363,9 +375,13 @@ impl TypeSolver {
 
                 self.ctx.push();
                 self.ctx.insert(name.id, Scheme::new(vec![], fn_ty.clone()));
-                param_tys.iter().zip(params.iter()).for_each(|(ty, param)| {
-                    self.ctx.insert(param.id, Scheme::new(vec![], ty.clone()));
-                });
+                let mut solved_params = vec![];
+                for (ty, pat) in param_tys.iter().zip(params.iter()) {
+                    let solved_pat = self.infer_pattern(pat)?;
+                    solved_params.push(solved_pat.clone());
+                    self.sub = self.sub.compose(&solved_pat.ty.unify(ty)?);
+                }
+
                 let solved_expr = self.infer_expr(expr)?;
                 log::debug!("fn_solved_expr: {:?}", solved_expr);
 
@@ -374,7 +390,7 @@ impl TypeSolver {
                 self.ctx.pop();
 
                 Ok(Expr::new(
-                    ExprKind::Fn(*name, params.clone(), solved_expr, solved_body.clone()),
+                    ExprKind::Fn(*name, solved_params, solved_expr, solved_body.clone()),
                     solved_body.ty,
                     expr.span,
                 ))
@@ -410,13 +426,94 @@ impl TypeSolver {
         }
     }
 
-    // fn pretty_print_ctx(&self) {
-    //     let mut ctx = HashMap::new();
-    //     for (uid, scm) in self.ctx.iter() {
-    //         let name = self.builtins.get(uid).map(|s| s.to_string());
-    //         ctx.insert(name.unwrap_or_else(|| format!("{:?}", uid)), scm.clone());
-    //     }
+    fn infer_pattern(&mut self, pat: &nir::Pattern) -> InferResult<Pattern> {
+        match pat.kind.as_ref() {
+            nir::PatternKind::Wildcard => Ok(Pattern::new(
+                PatternKind::Wildcard,
+                Type::Var(TyVar::fresh()),
+                pat.span,
+            )),
+            nir::PatternKind::Ident(name, hint) => {
+                let ty = Type::Var(TyVar::fresh());
+                self.ctx.insert(name.id, Scheme::new(vec![], ty.clone()));
+                Ok(Pattern::new(PatternKind::Ident(*name), ty, pat.span))
+            }
+            nir::PatternKind::Lit(lit) => match *lit {
+                nir::Lit::Byte(b) => Ok(Pattern::new(
+                    PatternKind::Lit(Lit::Byte(b)),
+                    Type::Byte,
+                    pat.span,
+                )),
+                nir::Lit::Int(n) => Ok(Pattern::new(
+                    PatternKind::Lit(Lit::Int(n)),
+                    Type::Int,
+                    pat.span,
+                )),
+                nir::Lit::Rational(r) => Ok(Pattern::new(
+                    PatternKind::Lit(Lit::Rational(r)),
+                    Type::Rational,
+                    pat.span,
+                )),
+                nir::Lit::Real(r) => Ok(Pattern::new(
+                    PatternKind::Lit(Lit::Real(r)),
+                    Type::Real,
+                    pat.span,
+                )),
+                nir::Lit::Bool(b) => Ok(Pattern::new(
+                    PatternKind::Lit(Lit::Bool(b)),
+                    Type::Bool,
+                    pat.span,
+                )),
+                nir::Lit::String(s) => Ok(Pattern::new(
+                    PatternKind::Lit(Lit::String(s.clone())),
+                    Type::String,
+                    pat.span,
+                )),
+                nir::Lit::Char(c) => Ok(Pattern::new(
+                    PatternKind::Lit(Lit::Char(c)),
+                    Type::Char,
+                    pat.span,
+                )),
+            },
+            nir::PatternKind::List(pats) => {
+                let ty = Type::Var(TyVar::fresh());
+                let solved_pats = pats
+                    .iter()
+                    .map(|pat| self.infer_pattern(pat))
+                    .collect::<InferResult<Vec<Pattern>>>()?;
 
-    //     println!("ctx: {:#?}", ctx);
-    // }
+                Ok(Pattern::new(
+                    PatternKind::List(solved_pats),
+                    Type::List(Box::new(ty)),
+                    pat.span,
+                ))
+            }
+            nir::PatternKind::Pair(lhs, rhs) => {
+                let ty = Type::Var(TyVar::fresh());
+                let list_ty = Type::List(Box::new(ty.clone()));
+                let solved_lhs = self.infer_pattern(lhs)?;
+                let solved_rhs = self.infer_pattern(rhs)?;
+
+                self.sub = self.sub.compose(&solved_lhs.ty.unify(&ty)?);
+                self.sub = self.sub.compose(&solved_rhs.ty.unify(&list_ty)?);
+
+                Ok(Pattern::new(
+                    PatternKind::Pair(solved_lhs, solved_rhs),
+                    list_ty,
+                    pat.span,
+                ))
+            }
+            nir::PatternKind::Unit => Ok(Pattern::new(PatternKind::Unit, Type::Unit, pat.span)),
+        }
+
+        // fn pretty_print_ctx(&self) {
+        //     let mut ctx = HashMap::new();
+        //     for (uid, scm) in self.ctx.iter() {
+        //         let name = self.builtins.get(uid).map(|s| s.to_string());
+        //         ctx.insert(name.unwrap_or_else(|| format!("{:?}", uid)), scm.clone());
+        //     }
+
+        //     println!("ctx: {:#?}", ctx);
+        // }
+    }
 }

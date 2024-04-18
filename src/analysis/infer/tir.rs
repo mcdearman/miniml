@@ -52,8 +52,8 @@ impl Decl {
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum DeclKind {
-    Let(ScopedIdent, Expr),
-    Fn(ScopedIdent, Vec<ScopedIdent>, Expr),
+    Let(Pattern, Expr),
+    Fn(ScopedIdent, Vec<Pattern>, Expr),
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -228,13 +228,40 @@ pub enum ExprKind {
     Lit(Lit),
     Var(ScopedIdent),
     Apply(Expr, Vec<Expr>),
-    Lambda(Vec<ScopedIdent>, Expr),
+    Lambda(Vec<Pattern>, Expr),
     Or(Expr, Expr),
     And(Expr, Expr),
-    Let(ScopedIdent, Expr, Expr),
-    Fn(ScopedIdent, Vec<ScopedIdent>, Expr, Expr),
+    Let(Pattern, Expr, Expr),
+    Fn(ScopedIdent, Vec<Pattern>, Expr, Expr),
     If(Expr, Expr, Expr),
     List(Vec<Expr>),
+    Unit,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct Pattern {
+    pub kind: Box<PatternKind>,
+    pub ty: Type,
+    pub span: Span,
+}
+
+impl Pattern {
+    pub fn new(kind: PatternKind, ty: Type, span: Span) -> Self {
+        Self {
+            kind: Box::new(kind),
+            ty,
+            span,
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum PatternKind {
+    Wildcard,
+    Lit(Lit),
+    Ident(ScopedIdent),
+    List(Vec<Pattern>),
+    Pair(Pattern, Pattern),
     Unit,
 }
 

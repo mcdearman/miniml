@@ -18,7 +18,7 @@ pub fn eval<'src>(src: &'src str, env: Rc<RefCell<Env>>, tir: Root) -> RuntimeRe
             // DeclKind::DataType(dt) => {
             //     types.insert(dt.name().id(), dt.kind().clone());
             // }
-            DeclKind::Let(name, expr) => {
+            DeclKind::Let(pattern, expr) => {
                 val = eval_expr(src, env.clone(), expr.clone())?;
                 env.borrow_mut().insert(name.id, val.clone());
             }
@@ -149,13 +149,6 @@ fn eval_expr<'src>(
                 params.iter().map(|p| p.id).collect_vec(),
                 lam_expr.clone(),
             ),
-            // ExprKind::List(exprs) => {
-            //     let mut list = Vec::new();
-            //     for expr in exprs.iter() {
-            //         list.push(eval_expr(src, env.clone(), expr.clone())?);
-            //     }
-            //     Value::List(list.into())
-            // }
             // ExprKind::Record { name, fields } => {
             //     let mut record = vec![];
             //     for (name, expr) in fields.iter() {
@@ -194,3 +187,5 @@ fn eval_expr<'src>(
     }
     Ok(val)
 }
+
+fn destructure_pattern() {}
