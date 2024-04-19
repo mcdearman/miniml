@@ -114,7 +114,7 @@ let f : (Int, Int) -> Int = \x y -> x + y
 let map f xs =
   match xs
   | [] -> []
-  | x :: xs -> f x :: map f xs
+  | (x :: xs) -> f x :: map f xs
 
 let map : (a -> b, [a]) -> [b] =
   | f [] = []

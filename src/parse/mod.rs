@@ -391,10 +391,18 @@ fn pattern_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
             .then_ignore(just(Token::RBrack))
             .map(|patterns| PatternKind::List(patterns));
 
+        let pair = pat
+            .clone()
+            .then_ignore(just(Token::DoubleColon))
+            .then(pat.clone())
+            .delimited_by(just(Token::LParen), just(Token::RParen))
+            .map(|(ident, pat)| PatternKind::Pair(ident, pat));
+
         just(Token::Wildcard)
             .map(|_| PatternKind::Wildcard)
             .or(ident_parser().map(|ident| PatternKind::Ident(ident, None)))
             .or(list)
+            .or(pair)
             .map_with(|kind, e| Pattern::new(kind, e.span()))
             .boxed()
     })

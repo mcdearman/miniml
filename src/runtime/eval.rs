@@ -23,7 +23,7 @@ pub fn eval<'src>(src: &'src str, env: Rc<RefCell<Env>>, tir: Root) -> RuntimeRe
                 // env.borrow_mut().insert(name.id, val.clone());
                 if !destructure_pattern(src, env.clone(), pat, &val) {
                     return Err(RuntimeError::PatternMismatch(
-                        format!("Pattern mismatch: {:?}", pat).into(),
+                        format!("let decl{:?}", pat).into(),
                         pat.span,
                     ));
                 }
@@ -78,7 +78,7 @@ fn eval_expr<'src>(
                         // arg_env.borrow_mut().insert(*p, arg.clone());
                         if !destructure_pattern(src, arg_env.clone(), p, arg) {
                             return Err(RuntimeError::PatternMismatch(
-                                format!("Pattern mismatch: {:?}", p).into(),
+                                format!("apply {:?}", p).into(),
                                 p.span,
                             ));
                         }
@@ -120,7 +120,7 @@ fn eval_expr<'src>(
                 // let_env.borrow_mut().insert(name.id, value);
                 if !destructure_pattern(src, let_env.clone(), pat, &value) {
                     return Err(RuntimeError::PatternMismatch(
-                        format!("Pattern mismatch: {:?}", pat).into(),
+                        format!("let {:?}", pat).into(),
                         pat.span,
                     ));
                 }
@@ -165,7 +165,7 @@ fn eval_expr<'src>(
                     }
                 }
                 return Err(RuntimeError::PatternMismatch(
-                    format!("Pattern mismatch: {:?}", match_val).into(),
+                    format!("match {:?}", match_val).into(),
                     match_expr.span,
                 ));
             }
@@ -213,12 +213,7 @@ fn eval_expr<'src>(
     Ok(val)
 }
 
-fn destructure_pattern(
-    src: &str,
-    mut env: Rc<RefCell<Env>>,
-    pat: &tir::Pattern,
-    val: &Value,
-) -> bool {
+fn destructure_pattern(src: &str, env: Rc<RefCell<Env>>, pat: &tir::Pattern, val: &Value) -> bool {
     match pat.kind.as_ref() {
         PatternKind::Wildcard => true,
         PatternKind::Lit(lit) => {
@@ -248,20 +243,31 @@ fn destructure_pattern(
             false
         }
         PatternKind::Pair(head, tail) => {
-            todo!()
-            // if let Value::List(vals) = val {
-            //     if vals.len() != 2 {
-            //         return false;
-            //     }
-            //     if !destructure_pattern(src, env.clone(), head, &vals[0]) {
-            //         return false;
-            //     }
-            //     if !destructure_pattern(src, env.clone(), tail, &vals[1]) {
-            //         return false;
-            //     }
-            //     return true;
-            // }
-            // false
+            if let Value::List(vals) = val {
+                return destructure_pattern(
+                    src,
+                    env.clone(),
+                    head,
+                    &vals
+                        .head()
+                        .ok_or(RuntimeError::PatternMismatch(
+                            "List has no values".into(),
+                            pat.span,
+                        ))
+                        .unwrap(),
+                ) && destructure_pattern(
+                    src,
+                    env.clone(),
+                    tail,
+                    &match vals.tail() {
+                        Some(tail) => Value::List(tail.clone()),
+                        None => {
+                            return false;
+                        }
+                    },
+                );
+            }
+            false
         }
         PatternKind::Unit => true,
     }
