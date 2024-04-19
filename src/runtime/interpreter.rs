@@ -48,7 +48,7 @@ impl Interpreter {
         let ast = match parse(stream, true) {
             (Some(ast), _) => {
                 log::debug!("AST: {:#?}", ast);
-                println!("AST: {:#?}", ast);
+                // println!("AST: {:#?}", ast);
                 ast
             }
             (None, parse_errors) => {

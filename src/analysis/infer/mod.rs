@@ -440,7 +440,11 @@ impl TypeSolver {
                     self.sub = self.sub.compose(&expr.ty.unify(&ty)?);
                 }
 
-                Ok(Expr::new(ExprKind::List(solved_exprs), ty, expr.span))
+                Ok(Expr::new(
+                    ExprKind::List(solved_exprs),
+                    Type::List(Box::new(ty)),
+                    expr.span,
+                ))
             }
             nir::ExprKind::Unit => Ok(Expr::new(ExprKind::Unit, Type::Unit, expr.span)),
         }

@@ -65,3 +65,7 @@ map (\\x -> x) [1/2, 3];;
 map (\\x -> x) [1/2, 3/3];;
 map (\\x -> x) [1/2, 3/4];;
 map (\\x -> x) [1/2, "string"];;
+let map f xs =\n    match xs\n    | [] -> []\n    | (x :: xs) -> f x :: map f xs;;
+let double x = x + x;;
+map double [1, 2, 3];;
+[1, 1/2];;
