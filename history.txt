@@ -10,3 +10,13 @@ let fib n =\n    let loop a b i =\n      if i = 0 then a\n      else loop b (a +
 fib 10;;
 fib 20;;
 let fib n =\n    let loop a b i =\n      if i = 0 then a\n      else loop b (a + b) (i - 1)\n    in loop 0 1 n;;
+1 + 1;;
+1+ 1\n;;
+let [a, b] = [1, 2];;
+a;;
+b;;
+let a = 1;;
+a\n;;
+let a = 2;;
+a;;
+let [a, b] = 1;;

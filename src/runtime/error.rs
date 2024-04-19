@@ -9,6 +9,7 @@ pub enum RuntimeError {
     TypeError(InternedString),
     InferenceError(Vec<InternedString>),
     UnboundIdent(InternedString, Span),
+    PatternMismatch(String, Span),
     Overflow,
     DivisionByZero,
 }
@@ -47,6 +48,9 @@ impl Display for RuntimeError {
             }
             RuntimeError::UnboundIdent(ident, span) => {
                 write!(f, "Unbound identifier: {} @ {}", ident, span)
+            }
+            RuntimeError::PatternMismatch(msg, span) => {
+                write!(f, "Pattern mismatch: {} @ {}", msg, span)
             }
             RuntimeError::Overflow => write!(f, "Overflow"),
             RuntimeError::DivisionByZero => write!(f, "Division by zero"),

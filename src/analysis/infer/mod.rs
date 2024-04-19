@@ -410,6 +410,26 @@ impl TypeSolver {
                     expr.span,
                 ))
             }
+            nir::ExprKind::Match(expr, arms) => {
+                let solved_expr = self.infer_expr(expr)?;
+                let ty = Type::Var(TyVar::fresh());
+                let mut solved_arms = vec![];
+                for (pat, body) in arms {
+                    self.ctx.push();
+                    let solved_pat = self.infer_pattern(pat)?;
+                    self.sub = self.sub.compose(&solved_pat.ty.unify(&solved_expr.ty)?);
+                    let solved_body = self.infer_expr(body)?;
+                    self.sub = self.sub.compose(&solved_body.ty.unify(&ty)?);
+                    solved_arms.push((solved_pat, solved_body));
+                    self.ctx.pop();
+                }
+
+                Ok(Expr::new(
+                    ExprKind::Match(solved_expr, solved_arms),
+                    ty,
+                    expr.span,
+                ))
+            }
             nir::ExprKind::List(exprs) => {
                 let ty = Type::Var(TyVar::fresh());
                 let solved_exprs = exprs

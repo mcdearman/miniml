@@ -25,6 +25,21 @@ impl<T> List<T> {
         }
     }
 
+    pub fn len(&self) -> usize {
+        let mut len = 0;
+        let mut list = self;
+        loop {
+            match list {
+                Self::Empty => break,
+                Self::Pair { tail, .. } => {
+                    len += 1;
+                    list = tail;
+                }
+            }
+        }
+        len
+    }
+
     pub fn push_front(&mut self, head: T) {
         let tail = std::mem::replace(self, Self::Empty);
         *self = Self::Pair {

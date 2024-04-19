@@ -256,6 +256,18 @@ impl Resolver {
                 ),
                 expr.span,
             )),
+            ast::ExprKind::Match(expr, arms) => {
+                let res_expr = self.resolve_expr(&expr)?;
+                let mut res_arms = vec![];
+                for (pat, body) in arms {
+                    self.env.push();
+                    let res_pat = self.resolve_pattern(pat)?;
+                    let res_body = self.resolve_expr(body)?;
+                    self.env.pop();
+                    res_arms.push((res_pat, res_body));
+                }
+                Ok(Expr::new(ExprKind::Match(res_expr, res_arms), expr.span))
+            }
             ast::ExprKind::List(exprs) => Ok(Expr::new(
                 ExprKind::List(
                     exprs
@@ -272,23 +284,34 @@ impl Resolver {
     fn resolve_pattern(&mut self, pat: &ast::Pattern) -> ResResult<Pattern> {
         match pat.kind.as_ref() {
             ast::PatternKind::Ident(ident, hint) => {
-                if let Some(name) = self.env.find(&ident.key) {
-                    Ok(Pattern::new(
-                        PatternKind::Ident(ScopedIdent::new(name, ident.key, ident.span), {
-                            if let Some(hint) = hint {
-                                Some(self.resolve_hint(hint)?)
-                            } else {
-                                None
-                            }
-                        }),
-                        pat.span,
-                    ))
-                } else {
-                    Err(ResError::new(
-                        ResErrorKind::UnboundName(ident.key),
-                        ident.span,
-                    ))
-                }
+                let id = self.env.define(ident.key);
+                Ok(Pattern::new(
+                    PatternKind::Ident(ScopedIdent::new(id, ident.key, ident.span), {
+                        if let Some(hint) = hint {
+                            Some(self.resolve_hint(hint)?)
+                        } else {
+                            None
+                        }
+                    }),
+                    pat.span,
+                ))
+                // if let Some(name) = self.env.find(&ident.key) {
+                //     Ok(Pattern::new(
+                //         PatternKind::Ident(ScopedIdent::new(name, ident.key, ident.span), {
+                //             if let Some(hint) = hint {
+                //                 Some(self.resolve_hint(hint)?)
+                //             } else {
+                //                 None
+                //             }
+                //         }),
+                //         pat.span,
+                //     ))
+                // } else {
+                //     Err(ResError::new(
+                //         ResErrorKind::UnboundName(ident.key),
+                //         ident.span,
+                //     ))
+                // }
             }
             ast::PatternKind::Wildcard => Ok(Pattern::new(PatternKind::Wildcard, pat.span)),
             // ast::PatternKind::Tuple(pats) => Ok(Pattern::new(

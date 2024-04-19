@@ -92,9 +92,6 @@ let fib n =
     else loop b (a + b) (i - 1)
   in loop 0 1 n
 
-let fib_iter n = let loop a b i = if i = 0 then a else loop b (a + b) (i - 1) in loop 0 1 n
-let gcd a b = if b = 0 then a else gcd b (a % b)
-
 -- pattern match
 let [a, b, c] = [1, 2, 3]
 

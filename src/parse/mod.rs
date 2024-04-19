@@ -145,6 +145,19 @@ fn expr_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
             .then(expr.clone())
             .map(|((cond, then), else_)| ExprKind::If(cond, then, else_));
 
+        let match_ = just(Token::Match)
+            .ignore_then(expr.clone())
+            .then(
+                just(Token::Bar)
+                    .ignore_then(pattern_parser())
+                    .then_ignore(just(Token::RArrow))
+                    .then(expr.clone())
+                    .repeated()
+                    .at_least(1)
+                    .collect(),
+            )
+            .map(|(expr, arms)| ExprKind::Match(expr, arms));
+
         let let_ = just(Token::Let)
             .ignore_then(pattern_parser())
             .then_ignore(just(Token::Eq))
@@ -176,6 +189,7 @@ fn expr_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
             .or(fn_)
             .or(lambda)
             .or(if_)
+            .or(match_)
             .or(list)
             .map_with(|kind, e| Expr::new(kind, e.span()))
             .or(simple)

@@ -135,6 +135,16 @@ impl Expr {
                 self.ty.apply_subst(subst),
                 self.span,
             ),
+            ExprKind::Match(expr, arms) => Expr::new(
+                ExprKind::Match(
+                    expr.apply_subst(subst),
+                    arms.iter()
+                        .map(|(pat, arm)| (pat.clone(), arm.apply_subst(subst)))
+                        .collect_vec(),
+                ),
+                self.ty.apply_subst(subst),
+                self.span,
+            ),
             ExprKind::List(exprs) => Expr::new(
                 ExprKind::List(
                     exprs
@@ -234,6 +244,7 @@ pub enum ExprKind {
     Let(Pattern, Expr, Expr),
     Fn(ScopedIdent, Vec<Pattern>, Expr, Expr),
     If(Expr, Expr, Expr),
+    Match(Expr, Vec<(Pattern, Expr)>),
     List(Vec<Expr>),
     Unit,
 }

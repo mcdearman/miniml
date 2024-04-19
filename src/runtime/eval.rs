@@ -18,16 +18,18 @@ pub fn eval<'src>(src: &'src str, env: Rc<RefCell<Env>>, tir: Root) -> RuntimeRe
             // DeclKind::DataType(dt) => {
             //     types.insert(dt.name().id(), dt.kind().clone());
             // }
-            DeclKind::Let(pattern, expr) => {
+            DeclKind::Let(pat, expr) => {
                 val = eval_expr(src, env.clone(), expr.clone())?;
-                env.borrow_mut().insert(name.id, val.clone());
+                // env.borrow_mut().insert(name.id, val.clone());
+                if !destructure_pattern(src, env.clone(), pat, &val) {
+                    return Err(RuntimeError::PatternMismatch(
+                        format!("Pattern mismatch: {:?}", pat).into(),
+                        pat.span,
+                    ));
+                }
             }
             DeclKind::Fn(name, params, expr, ..) => {
-                let value = Value::Lambda(
-                    env.clone(),
-                    params.iter().map(|p| p.id).collect_vec(),
-                    expr.clone(),
-                );
+                let value = Value::Lambda(env.clone(), params.clone(), expr.clone());
                 env.borrow_mut().insert(name.id, value);
                 if name.key.to_string() == "main" {
                     val = eval_expr(src, env.clone(), expr.clone())?;
@@ -72,9 +74,15 @@ fn eval_expr<'src>(
                         .map(|arg| eval_expr(src, env.clone(), arg.clone()))
                         .collect::<RuntimeResult<Vec<Value>>>()?;
                     let arg_env = Env::new_with_parent(lam_env.clone());
-                    vargs.iter().zip(params.iter()).for_each(|(arg, p)| {
-                        arg_env.borrow_mut().insert(*p, arg.clone());
-                    });
+                    for (arg, p) in vargs.iter().zip(params.iter()) {
+                        // arg_env.borrow_mut().insert(*p, arg.clone());
+                        if !destructure_pattern(src, arg_env.clone(), p, arg) {
+                            return Err(RuntimeError::PatternMismatch(
+                                format!("Pattern mismatch: {:?}", p).into(),
+                                p.span,
+                            ));
+                        }
+                    }
                     expr = lam_expr;
                     env = arg_env;
                     continue 'tco;
@@ -106,21 +114,23 @@ fn eval_expr<'src>(
                     eval_expr(src, env.clone(), rhs.clone())?
                 }
             }
-            ExprKind::Let(name, let_expr, body) => {
+            ExprKind::Let(pat, let_expr, body) => {
                 let value = eval_expr(src, env.clone(), let_expr.clone())?;
                 let let_env = Env::new_with_parent(env.clone());
-                let_env.borrow_mut().insert(name.id, value);
+                // let_env.borrow_mut().insert(name.id, value);
+                if !destructure_pattern(src, let_env.clone(), pat, &value) {
+                    return Err(RuntimeError::PatternMismatch(
+                        format!("Pattern mismatch: {:?}", pat).into(),
+                        pat.span,
+                    ));
+                }
                 expr = body.clone();
                 env = let_env;
                 continue 'tco;
             }
             ExprKind::Fn(name, params, fn_expr, body) => {
                 let lam_env = Env::new_with_parent(env.clone());
-                let value = Value::Lambda(
-                    lam_env.clone(),
-                    params.iter().map(|p| p.id).collect_vec(),
-                    fn_expr.clone(),
-                );
+                let value = Value::Lambda(lam_env.clone(), params.clone(), fn_expr.clone());
                 env.borrow_mut().insert(name.id, value);
                 expr = body.clone();
                 env = lam_env;
@@ -144,9 +154,24 @@ fn eval_expr<'src>(
                     }
                 }
             }
+            ExprKind::Match(match_expr, arms) => {
+                let match_val = eval_expr(src, env.clone(), match_expr.clone())?;
+                for (pat, arm_expr) in arms.iter() {
+                    let arm_env = Env::new_with_parent(env.clone());
+                    if destructure_pattern(src, arm_env.clone(), pat, &match_val) {
+                        expr = arm_expr.clone();
+                        env = arm_env;
+                        continue 'tco;
+                    }
+                }
+                return Err(RuntimeError::PatternMismatch(
+                    format!("Pattern mismatch: {:?}", match_val).into(),
+                    match_expr.span,
+                ));
+            }
             ExprKind::Lambda(params, lam_expr) => Value::Lambda(
                 Env::new_with_parent(env.clone()),
-                params.iter().map(|p| p.id).collect_vec(),
+                params.clone(),
                 lam_expr.clone(),
             ),
             // ExprKind::Record { name, fields } => {
@@ -188,4 +213,56 @@ fn eval_expr<'src>(
     Ok(val)
 }
 
-fn destructure_pattern() {}
+fn destructure_pattern(
+    src: &str,
+    mut env: Rc<RefCell<Env>>,
+    pat: &tir::Pattern,
+    val: &Value,
+) -> bool {
+    match pat.kind.as_ref() {
+        PatternKind::Wildcard => true,
+        PatternKind::Lit(lit) => {
+            if let Value::Lit(l) = val {
+                if lit == l {
+                    return true;
+                }
+            }
+            return false;
+        }
+        PatternKind::Ident(ident) => {
+            env.borrow_mut().insert(ident.id, val.clone());
+            true
+        }
+        PatternKind::List(list) => {
+            if let Value::List(vals) = val {
+                if list.len() != vals.len() {
+                    return false;
+                }
+                for (pat, val) in list.iter().zip(vals.iter()) {
+                    if !destructure_pattern(src, env.clone(), pat, val) {
+                        return false;
+                    }
+                }
+                return true;
+            }
+            false
+        }
+        PatternKind::Pair(head, tail) => {
+            todo!()
+            // if let Value::List(vals) = val {
+            //     if vals.len() != 2 {
+            //         return false;
+            //     }
+            //     if !destructure_pattern(src, env.clone(), head, &vals[0]) {
+            //         return false;
+            //     }
+            //     if !destructure_pattern(src, env.clone(), tail, &vals[1]) {
+            //         return false;
+            //     }
+            //     return true;
+            // }
+            // false
+        }
+        PatternKind::Unit => true,
+    }
+}

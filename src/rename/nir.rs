@@ -50,6 +50,7 @@ pub enum ExprKind {
     Let(Pattern, Expr, Expr),
     Fn(ScopedIdent, Vec<Pattern>, Expr, Expr),
     If(Expr, Expr, Expr),
+    Match(Expr, Vec<(Pattern, Expr)>),
     List(Vec<Expr>),
     Unit,
 }

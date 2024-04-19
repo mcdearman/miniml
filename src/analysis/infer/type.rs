@@ -100,6 +100,7 @@ impl Type {
                 let s2 = b1.apply_subst(&s1).unify(&b2.apply_subst(&s1))?;
                 Ok(s1.compose(&s2))
             }
+            (Type::List(t1), Type::List(t2)) => t1.unify(&t2),
             (_, Type::Var(var)) => var.bind(self.clone()),
             (Type::Var(var), _) => var.bind(other.clone()),
             _ => Err(TypeError::from(format!(

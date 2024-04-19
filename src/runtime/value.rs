@@ -2,7 +2,7 @@ use num_rational::Rational64;
 
 use super::{env::Env, error::RuntimeResult};
 use crate::{
-    analysis::infer::tir::Expr,
+    analysis::infer::tir::{self, Expr, Pattern},
     utils::{intern::InternedString, list::List, unique_id::UniqueId},
 };
 use std::{cell::RefCell, fmt::Display, rc::Rc};
@@ -10,7 +10,7 @@ use std::{cell::RefCell, fmt::Display, rc::Rc};
 #[derive(Debug, Clone, PartialEq)]
 pub enum Value {
     Lit(Lit),
-    Lambda(Rc<RefCell<Env>>, Vec<UniqueId>, Expr),
+    Lambda(Rc<RefCell<Env>>, Vec<Pattern>, Expr),
     NativeFn(fn(Vec<Value>) -> RuntimeResult<Value>),
     List(List<Value>),
     Record(Record),
@@ -92,6 +92,21 @@ impl Display for Lit {
             Lit::Bool(b) => write!(f, "{}", b),
             Lit::String(s) => write!(f, "{}", s),
             Lit::Char(c) => write!(f, "{}", c),
+        }
+    }
+}
+
+impl PartialEq<Lit> for tir::Lit {
+    fn eq(&self, other: &Lit) -> bool {
+        match (self, other) {
+            (tir::Lit::Byte(a), Lit::Byte(b)) => a == b,
+            (tir::Lit::Int(a), Lit::Int(b)) => a == b,
+            (tir::Lit::Rational(a), Lit::Rational(b)) => a == b,
+            (tir::Lit::Real(a), Lit::Real(b)) => a == b,
+            (tir::Lit::Bool(a), Lit::Bool(b)) => a == b,
+            (tir::Lit::String(a), Lit::String(b)) => a == b,
+            (tir::Lit::Char(a), Lit::Char(b)) => a == b,
+            _ => false,
         }
     }
 }
