@@ -9,6 +9,11 @@ use std::fmt::{Debug, Display};
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct TyVar(UniqueId);
 
+// pub enum TyVar {
+//     Unbound(UniqueId),
+//     Bound(Type),
+// }
+
 impl TyVar {
     pub fn fresh() -> Self {
         Self(UniqueId::gen())
