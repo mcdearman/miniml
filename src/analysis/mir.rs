@@ -5,11 +5,9 @@
  * and returns.
  */
 
-use num_rational::Rational64;
-
-use crate::utils::{ident::ScopedIdent, intern::InternedString, span::Span};
-
 use super::infer::r#type::Type;
+use crate::utils::{ident::ScopedIdent, intern::InternedString, span::Span};
+use num_rational::Rational64;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Root {

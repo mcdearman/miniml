@@ -118,9 +118,9 @@ let map f xs =
 
 let map : (a -> b, [a]) -> [b] =
   | f [] = []
-  | map f (x :: xs) = f x :: map f xs
+  | f (x :: xs) = f x :: map f xs
 
 let fib : Int -> Int =
   | 0 = 0
-  | fib 1 = 1
-  | fib n = fib (n - 1) + fib (n - 2)
+  | 1 = 1
+  | n = fib (n - 1) + fib (n - 2)
