@@ -248,13 +248,11 @@ fn destructure_pattern(src: &str, env: Rc<RefCell<Env>>, pat: &tir::Pattern, val
                     src,
                     env.clone(),
                     head,
-                    &vals
-                        .head()
-                        .ok_or(RuntimeError::PatternMismatch(
-                            "List has no values".into(),
-                            pat.span,
-                        ))
-                        .unwrap(),
+                    if let Some(head) = vals.head() {
+                        head
+                    } else {
+                        return false;
+                    },
                 ) && destructure_pattern(
                     src,
                     env.clone(),
