@@ -72,3 +72,7 @@ map double [1, 2, 3];;
 [1, 2];;
 [1/2, "strin"];;
 [1/2, 2/3];;
+let map f xs =\n    match xs\n    | [] -> []\n    | (x :: xs) -> f x :: map f xs;;
+let fib n =\n    let loop a b i =\n      if i = 0 then a\n      else loop b (a + b) (i - 1)\n    in loop 0 1 n;;
+map fib [1, 2, 3];;
+map fib [10, 20, 30];;
