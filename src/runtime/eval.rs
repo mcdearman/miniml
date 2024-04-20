@@ -244,7 +244,7 @@ fn destructure_pattern(src: &str, env: Rc<RefCell<Env>>, pat: &tir::Pattern, val
         }
         PatternKind::Pair(head, tail) => {
             if let Value::List(vals) = val {
-                return destructure_pattern(
+                destructure_pattern(
                     src,
                     env.clone(),
                     head,
@@ -263,9 +263,10 @@ fn destructure_pattern(src: &str, env: Rc<RefCell<Env>>, pat: &tir::Pattern, val
                             return false;
                         }
                     },
-                );
+                )
+            } else {
+                false
             }
-            false
         }
         PatternKind::Unit => true,
     }

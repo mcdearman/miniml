@@ -400,6 +400,7 @@ fn pattern_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
 
         just(Token::Wildcard)
             .map(|_| PatternKind::Wildcard)
+            .or(lit_parser().map(PatternKind::Lit))
             .or(ident_parser().map(|ident| PatternKind::Ident(ident, None)))
             .or(list)
             .or(pair)
