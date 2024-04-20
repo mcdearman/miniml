@@ -439,8 +439,13 @@ impl TypeSolver {
                     .collect::<InferResult<Vec<Expr>>>()?;
 
                 for expr in &solved_exprs {
-                    println!("expr: {:?}", expr.ty);
-                    self.sub = self.sub.compose(&ty.unify(&expr.ty)?);
+                    // println!("expr: {:?}", expr.ty);
+                    self.sub = self.sub.compose(
+                        &expr
+                            .ty
+                            .apply_subst(&self.sub)
+                            .unify(&ty.apply_subst(&self.sub))?,
+                    );
                 }
 
                 Ok(Expr::new(

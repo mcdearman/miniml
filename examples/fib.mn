@@ -3,10 +3,10 @@ let fib n =
   else fib (n - 1) + fib (n - 2)
 
 let fib_iter n =
-  let loop i a b =
+  let loop a b i =
     if i = n then a
-    else loop (i + 1) b (a + b)
-  in loop 0 0 1
+    else loop b (a + b) (i - 1)
+  in loop 0 1 n
 
 let main args = 
   let loop n =
