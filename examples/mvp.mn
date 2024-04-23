@@ -108,19 +108,17 @@ let gcd a b =
   | (a, b) if a > b -> gcd b (a % b)
   | (a, b) -> gcd a (b % a)
 
-let f : (Int, Int) -> Int = \x y -> x + y
--- ((Int, Int) -> Int), Int -> Int
-
 let map f xs =
   match xs
   | [] -> []
   | (x :: xs) -> f x :: map f xs
 
-let map : (a -> b, [a]) -> [b] =
-  | f [] = []
-  | f (x :: xs) = f x :: map f xs
-
-let fib : Int -> Int =
-  | 0 = 0
-  | 1 = 1
-  | n = fib (n - 1) + fib (n - 2)
+let binary_search n xs =
+  let loop l r =
+    if l > r then -1
+    else
+      let m = (l + r) / 2 in
+      if xs[m] = n then m
+      else if xs[m] < n then loop (m + 1) r
+      else loop l (m - 1)
+  in loop 0 (length xs - 1)
