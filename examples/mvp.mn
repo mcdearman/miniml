@@ -118,7 +118,7 @@ let binary_search n xs =
     if l > r then -1
     else
       let m = (l + r) / 2 in
-      if xs[m] = n then m
-      else if xs[m] < n then loop (m + 1) r
+      if Array.get xs m  = n then m
+      else if Array.get xs m < n then loop (m + 1) r
       else loop l (m - 1)
-  in loop 0 (length xs - 1)
+  in loop 0 (Array.len xs - 1)
