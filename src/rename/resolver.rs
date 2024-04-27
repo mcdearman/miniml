@@ -223,6 +223,7 @@ impl Resolver {
             ast::ExprKind::Fn(name, params, fn_expr, body) => {
                 self.env.push();
                 let res_name = self.env.define(name.key);
+                self.env.push();
                 let mut res_params = vec![];
                 for p in params {
                     match self.resolve_pattern(p) {
@@ -234,6 +235,7 @@ impl Resolver {
                     }
                 }
                 let res_expr = self.resolve_expr(fn_expr)?;
+                self.env.pop();
                 let res_body = self.resolve_expr(body)?;
                 self.env.pop();
 
