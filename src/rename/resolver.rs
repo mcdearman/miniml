@@ -11,7 +11,6 @@ use crate::{
         unique_id::UniqueId,
     },
 };
-use log::trace;
 use std::collections::HashMap;
 
 #[derive(Debug)]
