@@ -311,11 +311,11 @@ impl TypeSolver {
                 // unify(T0, T1 -> T')
                 let ty_args = solved_args.iter().map(|arg| arg.ty.clone()).collect_vec();
                 log::debug!("app_ty_args: {:?}", ty_args);
-                self.sub = self.sub.compose(
-                    &solved_fun
-                        .ty
-                        .unify(&Type::Lambda(ty_args, Box::new(ty_ret.clone())))?,
-                );
+                self.sub = self
+                    .sub
+                    .compose(&solved_fun.ty.apply_subst(&self.sub).unify(
+                        &Type::Lambda(ty_args, Box::new(ty_ret.clone())).apply_subst(&self.sub),
+                    )?);
                 log::debug!("app_sub: {:?}", self.sub);
 
                 Ok(Expr::new(
@@ -328,8 +328,12 @@ impl TypeSolver {
                 let solved_lhs = self.infer_expr(lhs)?;
                 let solved_rhs = self.infer_expr(rhs)?;
 
-                self.sub = self.sub.compose(&solved_lhs.ty.unify(&Type::Bool)?);
-                self.sub = self.sub.compose(&solved_rhs.ty.unify(&Type::Bool)?);
+                self.sub = self
+                    .sub
+                    .compose(&solved_lhs.ty.apply_subst(&self.sub).unify(&Type::Bool)?);
+                self.sub = self
+                    .sub
+                    .compose(&solved_rhs.ty.apply_subst(&self.sub).unify(&Type::Bool)?);
 
                 Ok(Expr::new(
                     ExprKind::Or(solved_lhs, solved_rhs),
@@ -341,7 +345,9 @@ impl TypeSolver {
                 let solved_lhs = self.infer_expr(lhs)?;
                 let solved_rhs = self.infer_expr(rhs)?;
 
-                self.sub = self.sub.compose(&solved_lhs.ty.unify(&Type::Bool)?);
+                self.sub = self
+                    .sub
+                    .compose(&solved_lhs.ty.apply_subst(&self.sub).unify(&Type::Bool)?);
                 self.sub = self
                     .sub
                     .compose(&solved_rhs.ty.apply_subst(&self.sub).unify(&Type::Bool)?);
@@ -412,7 +418,6 @@ impl TypeSolver {
                         .apply_subst(&self.sub)
                         .unify(&ty_ret.apply_subst(&self.sub))?,
                 );
-
                 self.ctx.pop();
 
                 let solved_body = self.infer_expr(body)?;
@@ -500,6 +505,10 @@ impl TypeSolver {
                 let ty = Type::Var(TyVar::fresh());
                 log::debug!("infer_ident_ty: {:?}", ty);
                 self.ctx.insert(name.id, Scheme::new(vec![], ty.clone()));
+                // if let Some(hint) = hint {
+                //     let hint_ty = self.reg.get(hint).unwrap();
+                //     self.sub = self.sub.compose(&ty.unify(hint_ty.clone())?);
+                // }
                 Ok(Pattern::new(PatternKind::Ident(*name), ty, pat.span))
             }
             nir::PatternKind::Lit(lit) => match *lit {
