@@ -71,6 +71,7 @@ impl TypeSolver {
         src: &'src str,
         nir: &nir::Root,
     ) -> (Option<Root>, Vec<TypeError>) {
+        log::debug!("infer: {:?}", nir.span);
         self.src = src.into();
         let mut decls = vec![];
         let mut errors = vec![];
@@ -136,7 +137,7 @@ impl TypeSolver {
     fn infer_decl(&mut self, decl: &nir::Decl) -> InferResult<Decl> {
         match &decl.kind {
             nir::DeclKind::Let(pat, let_expr) => {
-                log::debug!("infer let ({:?}) = {:#?}", pat, let_expr);
+                log::debug!("infer let ({:?})", pat);
                 // to show that Γ ⊢ let x = e0 in e1 : T' we need to show that
                 // Γ ⊢ e0 : T
                 let solved_expr = self.infer_expr(let_expr)?;
@@ -161,7 +162,7 @@ impl TypeSolver {
                 })
             }
             nir::DeclKind::Fn(name, params, fn_expr) => {
-                log::debug!("infer fn decl ({:?}) = {:#?}", name, fn_expr);
+                log::debug!("infer fn decl ({:?})", name);
                 // to show that Γ ⊢ fn x = e0 in e1 : T' we need to show that
                 // Γ, x: gen(T) ⊢ e1 : T'
                 let param_tys = params
@@ -261,7 +262,7 @@ impl TypeSolver {
                 }
             }
             nir::ExprKind::Lambda(params, fn_expr) => {
-                log::debug!("infer lambda: {:?} and {:?}", params, fn_expr);
+                log::debug!("infer lambda");
                 // to show that Γ ⊢ λx.e : T -> T' we need to show that
                 // T = newvar
                 // let param_ty = Type::Var(TyVar::fresh());
@@ -290,7 +291,7 @@ impl TypeSolver {
                 ))
             }
             nir::ExprKind::Apply(fun, args) => {
-                log::debug!("infer app: {:?} and {:?}", fun, args);
+                log::debug!("infer app");
                 // to show that Γ ⊢ e0 e1 : T' we need to show that
                 // Γ ⊢ e0 : T0
                 let solved_fun = self.infer_expr(fun)?;
@@ -359,7 +360,7 @@ impl TypeSolver {
                 ))
             }
             nir::ExprKind::Let(pat, let_expr, body) => {
-                log::debug!("infer let ({:?}) = {:#?} in {:#?}", pat, let_expr, body);
+                log::debug!("infer let ({:?})", pat);
                 // to show that Γ ⊢ let x = e0 in e1 : T' we need to show that
                 // Γ ⊢ e0 : T
                 let solved_expr = self.infer_expr(let_expr)?;
@@ -384,7 +385,7 @@ impl TypeSolver {
                 ))
             }
             nir::ExprKind::Fn(name, params, expr, body) => {
-                log::debug!("infer fn ({:?}) = {:#?}", name, expr);
+                log::debug!("infer fn ({:?})", name);
                 // to show that Γ ⊢ fn x = e0 in e1 : T' we need to show that
                 // Γ, x: gen(T) ⊢ e1 : T'
                 let param_tys = params
@@ -431,7 +432,7 @@ impl TypeSolver {
                 ))
             }
             nir::ExprKind::If(cond, then, else_) => {
-                log::debug!("infer if: {:?} and {:?}", cond, then);
+                log::debug!("infer if");
                 let solved_cond = self.infer_expr(cond)?;
                 let solved_then = self.infer_expr(then)?;
                 let solved_else = self.infer_expr(else_)?;
@@ -446,6 +447,7 @@ impl TypeSolver {
                 ))
             }
             nir::ExprKind::Match(expr, arms) => {
+                log::debug!("infer match");
                 let solved_expr = self.infer_expr(expr)?;
                 let ty = Type::Var(TyVar::fresh());
                 let mut solved_arms = vec![];
