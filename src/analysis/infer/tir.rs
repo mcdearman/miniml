@@ -39,10 +39,14 @@ impl Decl {
     pub fn apply_subst(&self, subst: &Substitution) -> Self {
         Self {
             kind: match &self.kind {
-                DeclKind::Let(name, expr) => DeclKind::Let(name.clone(), expr.apply_subst(subst)),
-                DeclKind::Fn(name, params, expr) => {
-                    DeclKind::Fn(name.clone(), params.clone(), expr.apply_subst(subst))
+                DeclKind::Let(name, expr) => {
+                    DeclKind::Let(name.apply_subst(subst), expr.apply_subst(subst))
                 }
+                DeclKind::Fn(name, params, expr) => DeclKind::Fn(
+                    name.clone(),
+                    params.iter().map(|p| p.apply_subst(subst)).collect_vec(),
+                    expr.apply_subst(subst),
+                ),
             },
             ty: self.ty.apply_subst(subst),
             span: self.span,
@@ -104,7 +108,7 @@ impl Expr {
             ),
             ExprKind::Let(name, expr, body) => Expr::new(
                 ExprKind::Let(
-                    name.clone(),
+                    name.apply_subst(subst),
                     expr.apply_subst(subst),
                     body.apply_subst(subst),
                 ),
@@ -114,7 +118,7 @@ impl Expr {
             ExprKind::Fn(name, params, expr, body) => Expr::new(
                 ExprKind::Fn(
                     name.clone(),
-                    params.clone(),
+                    params.iter().map(|p| p.apply_subst(subst)).collect_vec(),
                     expr.apply_subst(subst),
                     body.apply_subst(subst),
                 ),
@@ -139,7 +143,7 @@ impl Expr {
                 ExprKind::Match(
                     expr.apply_subst(subst),
                     arms.iter()
-                        .map(|(pat, arm)| (pat.clone(), arm.apply_subst(subst)))
+                        .map(|(pat, arm)| (pat.apply_subst(subst), arm.apply_subst(subst)))
                         .collect_vec(),
                 ),
                 self.ty.apply_subst(subst),
@@ -262,6 +266,26 @@ impl Pattern {
             kind: Box::new(kind),
             ty,
             span,
+        }
+    }
+
+    pub fn apply_subst(&self, subst: &Substitution) -> Self {
+        Self {
+            kind: match self.kind.as_ref() {
+                PatternKind::Wildcard => Box::new(PatternKind::Wildcard),
+                PatternKind::Lit(l) => Box::new(PatternKind::Lit(l.clone())),
+                PatternKind::Ident(ident) => Box::new(PatternKind::Ident(ident.clone())),
+                PatternKind::List(pats) => Box::new(PatternKind::List(
+                    pats.iter().map(|pat| pat.apply_subst(subst)).collect_vec(),
+                )),
+                PatternKind::Pair(lhs, rhs) => Box::new(PatternKind::Pair(
+                    lhs.apply_subst(subst),
+                    rhs.apply_subst(subst),
+                )),
+                PatternKind::Unit => Box::new(PatternKind::Unit),
+            },
+            ty: self.ty.apply_subst(subst),
+            span: self.span,
         }
     }
 }

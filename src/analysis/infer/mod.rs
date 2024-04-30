@@ -165,6 +165,7 @@ impl TypeSolver {
                 log::debug!("infer fn decl ({:?})", name);
                 // to show that Γ ⊢ fn x = e0 in e1 : T' we need to show that
                 // Γ, x: gen(T) ⊢ e1 : T'
+
                 let param_tys = params
                     .iter()
                     .map(|_| Type::Var(TyVar::fresh()))
@@ -199,7 +200,7 @@ impl TypeSolver {
 
                 Ok(Decl {
                     kind: DeclKind::Fn(*name, solved_params, solved_expr.clone()),
-                    ty: fn_ty,
+                    ty: fn_ty.apply_subst(&self.sub),
                     span: decl.span,
                 })
             }
@@ -388,10 +389,8 @@ impl TypeSolver {
                 log::debug!("infer fn ({:?})", name);
                 // to show that Γ ⊢ fn x = e0 in e1 : T' we need to show that
                 // Γ, x: gen(T) ⊢ e1 : T'
-                let param_tys = params
-                    .iter()
-                    .map(|_| Type::Var(TyVar::fresh()))
-                    .collect_vec();
+
+                let param_tys = vec![Type::Var(TyVar::fresh()); params.len()];
                 let ty_ret = Type::Var(TyVar::fresh());
                 let fn_ty = Type::Lambda(param_tys.clone(), Box::new(ty_ret.clone()));
                 log::debug!("fn_ty: {:?}", fn_ty);
@@ -437,8 +436,15 @@ impl TypeSolver {
                 let solved_then = self.infer_expr(then)?;
                 let solved_else = self.infer_expr(else_)?;
 
-                let sub = self.sub.compose(&solved_cond.ty.unify(&Type::Bool)?);
-                self.sub = sub.compose(&solved_then.ty.unify(&solved_else.ty)?);
+                let sub = self
+                    .sub
+                    .compose(&solved_cond.ty.apply_subst(&self.sub).unify(&Type::Bool)?);
+                self.sub = sub.compose(
+                    &solved_then
+                        .ty
+                        .apply_subst(&self.sub)
+                        .unify(&solved_else.ty.apply_subst(&self.sub))?,
+                );
 
                 Ok(Expr::new(
                     ExprKind::If(solved_cond, solved_then.clone(), solved_else),
@@ -454,9 +460,19 @@ impl TypeSolver {
                 for (pat, body) in arms {
                     self.ctx.push();
                     let solved_pat = self.infer_pattern(pat)?;
-                    self.sub = self.sub.compose(&solved_pat.ty.unify(&solved_expr.ty)?);
+                    self.sub = self.sub.compose(
+                        &solved_pat
+                            .ty
+                            .apply_subst(&self.sub)
+                            .unify(&solved_expr.ty.apply_subst(&self.sub))?,
+                    );
                     let solved_body = self.infer_expr(body)?;
-                    self.sub = self.sub.compose(&solved_body.ty.unify(&ty)?);
+                    self.sub = self.sub.compose(
+                        &solved_body
+                            .ty
+                            .apply_subst(&self.sub)
+                            .unify(&ty.apply_subst(&self.sub))?,
+                    );
                     solved_arms.push((solved_pat, solved_body));
                     self.ctx.pop();
                 }
@@ -503,7 +519,7 @@ impl TypeSolver {
                 pat.span,
             )),
             nir::PatternKind::Ident(name, hint) => {
-                log::debug!("infer ident: {:?}", name.id);
+                log::debug!("infer pattern ident: {:?}", name.id);
                 let ty = Type::Var(TyVar::fresh());
                 log::debug!("infer_ident_ty: {:?}", ty);
                 self.ctx.insert(name.id, Scheme::new(vec![], ty.clone()));
