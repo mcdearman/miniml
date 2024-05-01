@@ -8,7 +8,7 @@ use super::{
     value::Value,
 };
 use crate::{
-    analysis::infer::TypeSolver,
+    analysis::infer::{r#type::Type, TypeSolver},
     lex::token_iter::TokenIter,
     parse::parse,
     rename::resolver::Resolver,
@@ -42,7 +42,7 @@ impl Interpreter {
         }
     }
 
-    pub fn run(&mut self, src: &str) -> RuntimeResult<Value> {
+    pub fn run(&mut self, src: &str) -> RuntimeResult<(Value, Type)> {
         let stream = TokenIter::new(&src);
 
         let ast = match parse(stream, true) {

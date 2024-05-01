@@ -43,7 +43,7 @@ fn main() {
                 rl.add_history_entry(line.as_str())
                     .expect("Failed to add history entry");
                 match interpreter.run(line.trim().strip_suffix(";;").unwrap_or(&*line)) {
-                    Ok(val) => println!("{}\n", val),
+                    Ok((val, ty)) => println!("{} : {}\n", val, ty),
                     Err(err) => println!("{}", err),
                 }
             }
