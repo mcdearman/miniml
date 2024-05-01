@@ -193,9 +193,11 @@ impl Display for Type {
             Self::Var(n) => write!(f, "{}", n),
             Self::Lambda(params, body) => {
                 if params.len() == 1 {
+                    // println!("1");
                     write!(f, "{:?} -> {:?}", params[0], body)
                 } else {
-                    write!(f, "({:?}) -> {:?}", params.iter().format(", "), body)
+                    // println!("2");
+                    write!(f, "({}) -> {:?}", params.iter().format(", "), body)
                 }
             }
             Self::List(ty) => write!(f, "[{:?}]", ty),
