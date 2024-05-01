@@ -18,7 +18,7 @@ impl Validator for TermValidator {
         &self,
         ctx: &mut rustyline::validate::ValidationContext,
     ) -> rustyline::Result<rustyline::validate::ValidationResult> {
-        if ctx.input().trim().ends_with(";;") {
+        if ctx.input().ends_with("\n") {
             Ok(rustyline::validate::ValidationResult::Valid(None))
         } else {
             Ok(rustyline::validate::ValidationResult::Incomplete)
