@@ -8,7 +8,7 @@ use crate::{
         r#type::Type,
         tir::{self, *},
     },
-    utils::list::List,
+    utils::{intern::InternedString, list::List},
 };
 use itertools::Itertools;
 use std::{cell::RefCell, rc::Rc};
@@ -17,10 +17,11 @@ pub fn eval<'src>(
     src: &'src str,
     env: Rc<RefCell<Env>>,
     tir: Root,
-) -> RuntimeResult<(Value, Type)> {
+) -> RuntimeResult<(Vec<InternedString>, Value, Type)> {
     // let mut types = HashMap::new();
     let mut val = Value::Unit;
     let mut ty = Type::Unit;
+    let mut name = None;
     for decl in &tir.decls {
         match &decl.kind {
             // DeclKind::DataType(dt) => {
@@ -28,7 +29,6 @@ pub fn eval<'src>(
             // }
             DeclKind::Let(pat, expr) => {
                 val = eval_expr(src, env.clone(), expr.clone())?;
-                ty = expr.ty.clone();
                 // env.borrow_mut().insert(name.id, val.clone());
                 if !destructure_pattern(src, env.clone(), pat, &val) {
                     return Err(RuntimeError::PatternMismatch(
@@ -36,6 +36,8 @@ pub fn eval<'src>(
                         pat.span,
                     ));
                 }
+                ty = expr.ty.clone();
+                
             }
             DeclKind::Fn(name, params, expr, ..) => {
                 let value = Value::Lambda(env.clone(), params.clone(), expr.clone());
