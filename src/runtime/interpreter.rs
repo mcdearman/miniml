@@ -42,7 +42,7 @@ impl Interpreter {
         }
     }
 
-    pub fn run(&mut self, src: &str) -> RuntimeResult<(Value, Type)> {
+    pub fn run(&mut self, src: &str) -> RuntimeResult<Vec<(InternedString, Value, Type)>> {
         let stream = TokenIter::new(&src);
 
         let ast = match parse(stream, true) {
