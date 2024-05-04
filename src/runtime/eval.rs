@@ -33,7 +33,6 @@ pub fn eval<'src>(
 ) -> RuntimeResult<RuntimePayload> {
     // let mut types = HashMap::new();
     let mut payload = RuntimePayload::default();
-    let env = Env::new_with_parent(env);
 
     for decl in &tir.decls {
         match &decl.kind {
@@ -277,6 +276,8 @@ fn destructure_pattern(src: &str, env: Rc<RefCell<Env>>, pat: &tir::Pattern, val
                 },
                 val.clone(),
             );
+            log::debug!("inserted {:?} -> {:?}", ident, val);
+            log::debug!("env: {:?}", env.borrow().dump_frame());
             true
         }
         PatternKind::List(list) => match val {

@@ -31,7 +31,7 @@ impl Interpreter {
         let builtins = res.builtins().clone();
         let scoped_interner = res.env().dump_to_interner();
         let type_solver = TypeSolver::new(builtins.clone(), scoped_interner.clone());
-        let env = default_env(builtins.clone());
+        let env = Env::new_with_parent(default_env(builtins.clone()));
 
         Self {
             res,
