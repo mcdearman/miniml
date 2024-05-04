@@ -259,7 +259,7 @@ fn destructure_pattern(
         PatternKind::List(list) => {
             if let Value::List(vals) = val {
                 if list.len() != vals.len() {
-                    return (false, None);
+                    return (false, bindings);
                 }
                 let mut ret = HashMap::new();
                 for (pat, val) in list.iter().zip(vals.iter()) {
