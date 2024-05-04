@@ -1,3 +1,4 @@
+use chumsky::combinator::PaddedBy;
 use runtime::interpreter::Interpreter;
 use rustyline::{
     error::ReadlineError, validate::Validator, Completer, Editor, Helper, Highlighter, Hinter,
@@ -43,7 +44,17 @@ fn main() {
                 rl.add_history_entry(line.as_str())
                     .expect("Failed to add history entry");
                 match interpreter.run(line.trim().strip_suffix(";;").unwrap_or(&*line)) {
-                    Ok((names, val, ty)) => println!("{} : {}\n", val, ty),
+                    Ok(payload) => match payload {
+                        runtime::eval::RuntimePayload::Type(ty) => println!("{}", ty),
+                        runtime::eval::RuntimePayload::Bindings(bindings) => {
+                            for (name, value, ty) in bindings {
+                                println!("{} : {} = {}", name, ty, value);
+                            }
+                        }
+                        runtime::eval::RuntimePayload::Value(val, ty) => {
+                            println!("- : {} = {}", ty, val)
+                        }
+                    },
                     Err(err) => println!("{}", err),
                 }
             }

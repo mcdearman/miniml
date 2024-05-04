@@ -17,7 +17,7 @@ impl Ident {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct ScopedIdent {
     pub id: UniqueId,
     pub key: InternedString,

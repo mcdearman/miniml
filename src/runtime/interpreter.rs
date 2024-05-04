@@ -4,7 +4,7 @@ use super::{
     default_env,
     env::Env,
     error::{RuntimeError, RuntimeResult},
-    eval::eval,
+    eval::{eval, RuntimePayload},
     value::Value,
 };
 use crate::{
@@ -42,7 +42,7 @@ impl Interpreter {
         }
     }
 
-    pub fn run(&mut self, src: &str) -> RuntimeResult<Vec<(InternedString, Value, Type)>> {
+    pub fn run(&mut self, src: &str) -> RuntimeResult<RuntimePayload> {
         let stream = TokenIter::new(&src);
 
         let ast = match parse(stream, true) {

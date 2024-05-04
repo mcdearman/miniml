@@ -1,9 +1,11 @@
 use self::{
-    env::Env,
+    env::{Env, EnvIdent},
     error::RuntimeError,
     value::{Lit, Value},
 };
-use crate::utils::{intern::InternedString, list::List, unique_id::UniqueId};
+use crate::utils::{
+    ident::ScopedIdent, intern::InternedString, list::List, span::Span, unique_id::UniqueId,
+};
 use std::{cell::RefCell, collections::HashMap, rc::Rc};
 
 pub mod env;
@@ -18,7 +20,7 @@ pub fn default_env(builtins: HashMap<UniqueId, InternedString>) -> Rc<RefCell<En
         match name.as_ref() {
             "println" => {
                 env.borrow_mut().insert(
-                    id,
+                    EnvIdent { id, name },
                     Value::NativeFn(|args| {
                         if let Some(arg) = args.get(0) {
                             println!("{}", arg);
@@ -31,7 +33,7 @@ pub fn default_env(builtins: HashMap<UniqueId, InternedString>) -> Rc<RefCell<En
             }
             "neg" => {
                 env.borrow_mut().insert(
-                    id,
+                    EnvIdent { id, name },
                     Value::NativeFn(|args| {
                         if args.len() != 1 {
                             Err(RuntimeError::ArityError(1, args.len()))
@@ -49,7 +51,7 @@ pub fn default_env(builtins: HashMap<UniqueId, InternedString>) -> Rc<RefCell<En
             }
             "not" => {
                 env.borrow_mut().insert(
-                    id,
+                    EnvIdent { id, name },
                     Value::NativeFn(|args| {
                         if args.len() != 1 {
                             return Err(RuntimeError::ArityError(1, args.len()));
@@ -67,7 +69,7 @@ pub fn default_env(builtins: HashMap<UniqueId, InternedString>) -> Rc<RefCell<En
             }
             "add" => {
                 env.borrow_mut().insert(
-                    id,
+                    EnvIdent { id, name },
                     Value::NativeFn(|args| {
                         if args.len() != 2 {
                             return Err(RuntimeError::ArityError(2, args.len()));
@@ -91,7 +93,7 @@ pub fn default_env(builtins: HashMap<UniqueId, InternedString>) -> Rc<RefCell<En
             }
             "sub" => {
                 env.borrow_mut().insert(
-                    id,
+                    EnvIdent { id, name },
                     Value::NativeFn(|args| {
                         if args.len() != 2 {
                             return Err(RuntimeError::ArityError(2, args.len()));
@@ -115,7 +117,7 @@ pub fn default_env(builtins: HashMap<UniqueId, InternedString>) -> Rc<RefCell<En
             }
             "mul" => {
                 env.borrow_mut().insert(
-                    id,
+                    EnvIdent { id, name },
                     Value::NativeFn(|args| {
                         if args.len() != 2 {
                             return Err(RuntimeError::ArityError(2, args.len()));
@@ -139,7 +141,7 @@ pub fn default_env(builtins: HashMap<UniqueId, InternedString>) -> Rc<RefCell<En
             }
             "div" => {
                 env.borrow_mut().insert(
-                    id,
+                    EnvIdent { id, name },
                     Value::NativeFn(|args| {
                         if args.len() != 2 {
                             return Err(RuntimeError::ArityError(2, args.len()));
@@ -166,7 +168,7 @@ pub fn default_env(builtins: HashMap<UniqueId, InternedString>) -> Rc<RefCell<En
             }
             "rem" => {
                 env.borrow_mut().insert(
-                    id,
+                    EnvIdent { id, name },
                     Value::NativeFn(|args| {
                         if args.len() != 2 {
                             return Err(RuntimeError::ArityError(2, args.len()));
@@ -190,7 +192,7 @@ pub fn default_env(builtins: HashMap<UniqueId, InternedString>) -> Rc<RefCell<En
             }
             "pow" => {
                 env.borrow_mut().insert(
-                    id,
+                    EnvIdent { id, name },
                     Value::NativeFn(|args| {
                         if args.len() != 2 {
                             return Err(RuntimeError::ArityError(2, args.len()));
@@ -217,7 +219,7 @@ pub fn default_env(builtins: HashMap<UniqueId, InternedString>) -> Rc<RefCell<En
             }
             "eq" => {
                 env.borrow_mut().insert(
-                    id,
+                    EnvIdent { id, name },
                     Value::NativeFn(|args| {
                         if args.len() != 2 {
                             return Err(RuntimeError::ArityError(2, args.len()));
@@ -231,7 +233,7 @@ pub fn default_env(builtins: HashMap<UniqueId, InternedString>) -> Rc<RefCell<En
             }
             "neq" => {
                 env.borrow_mut().insert(
-                    id,
+                    EnvIdent { id, name },
                     Value::NativeFn(|args| {
                         if args.len() != 2 {
                             return Err(RuntimeError::ArityError(2, args.len()));
@@ -245,7 +247,7 @@ pub fn default_env(builtins: HashMap<UniqueId, InternedString>) -> Rc<RefCell<En
             }
             "lt" => {
                 env.borrow_mut().insert(
-                    id,
+                    EnvIdent { id, name },
                     Value::NativeFn(|args| {
                         if args.len() != 2 {
                             return Err(RuntimeError::ArityError(2, args.len()));
@@ -266,7 +268,7 @@ pub fn default_env(builtins: HashMap<UniqueId, InternedString>) -> Rc<RefCell<En
             }
             "lte" => {
                 env.borrow_mut().insert(
-                    id,
+                    EnvIdent { id, name },
                     Value::NativeFn(|args| {
                         if args.len() != 2 {
                             return Err(RuntimeError::ArityError(2, args.len()));
@@ -287,7 +289,7 @@ pub fn default_env(builtins: HashMap<UniqueId, InternedString>) -> Rc<RefCell<En
             }
             "gt" => {
                 env.borrow_mut().insert(
-                    id,
+                    EnvIdent { id, name },
                     Value::NativeFn(|args| {
                         if args.len() != 2 {
                             return Err(RuntimeError::ArityError(2, args.len()));
@@ -308,7 +310,7 @@ pub fn default_env(builtins: HashMap<UniqueId, InternedString>) -> Rc<RefCell<En
             }
             "gte" => {
                 env.borrow_mut().insert(
-                    id,
+                    EnvIdent { id, name },
                     Value::NativeFn(|args| {
                         if args.len() != 2 {
                             return Err(RuntimeError::ArityError(2, args.len()));
@@ -329,7 +331,7 @@ pub fn default_env(builtins: HashMap<UniqueId, InternedString>) -> Rc<RefCell<En
             }
             "pair" => {
                 env.borrow_mut().insert(
-                    id,
+                    EnvIdent { id, name },
                     Value::NativeFn(|args| {
                         if args.len() != 2 {
                             return Err(RuntimeError::ArityError(2, args.len()));

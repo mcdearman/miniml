@@ -1,5 +1,5 @@
 use super::{
-    env::Env,
+    env::{Env, EnvIdent},
     error::{RuntimeError, RuntimeResult},
     value::{Lit, Record, Value},
 };
@@ -20,46 +20,64 @@ pub enum RuntimePayload {
     Value(Value, Type),
 }
 
+impl Default for RuntimePayload {
+    fn default() -> Self {
+        Self::Value(Value::Unit, Type::Unit)
+    }
+}
+
 pub fn eval<'src>(
     src: &'src str,
     env: Rc<RefCell<Env>>,
     tir: Root,
 ) -> RuntimeResult<RuntimePayload> {
     // let mut types = HashMap::new();
-    let mut val = Value::Unit;
-    let mut ty = Type::Unit;
-    let mut name = None;
+    let mut payload = RuntimePayload::default();
+    let env = Env::new_with_parent(env);
+
     for decl in &tir.decls {
         match &decl.kind {
             // DeclKind::DataType(dt) => {
             //     types.insert(dt.name().id(), dt.kind().clone());
             // }
             DeclKind::Let(pat, expr) => {
-                val = eval_expr(src, env.clone(), expr.clone())?;
+                let val = eval_expr(src, env.clone(), expr.clone())?;
                 if !destructure_pattern(src, env.clone(), pat, &val) {
                     return Err(RuntimeError::PatternMismatch(
                         format!("let decl{:?}", pat).into(),
                         pat.span,
                     ));
                 }
-                ty = expr.ty.clone();
+                let ty = expr.ty.clone();
+                let names = env.borrow().dump_frame();
+                payload = RuntimePayload::Bindings(
+                    names
+                        .into_iter()
+                        .map(|(ident, value)| (ident.name, value, ty.clone()))
+                        .collect(),
+                );
             }
-            DeclKind::Fn(name, params, expr, ..) => {
+            DeclKind::Fn(ident, params, expr, ..) => {
                 let value = Value::Lambda(env.clone(), params.clone(), expr.clone());
-                env.borrow_mut().insert(name.id, value);
-                if name.key.to_string() == "main" {
+                env.borrow_mut().insert(
+                    EnvIdent {
+                        id: ident.id,
+                        name: ident.key,
+                    },
+                    value,
+                );
+                if ident.key.to_string() == "main" {
                     return Ok(RuntimePayload::Value(
                         eval_expr(src, env.clone(), expr.clone())?,
                         expr.ty.clone(),
                     ));
                 } else {
-                    val = Value::Unit;
-                    ty = decl.ty.clone();
+                    payload = RuntimePayload::default();
                 }
             }
         }
     }
-    Ok((val, ty))
+    Ok(payload)
 }
 
 fn eval_expr<'src>(
@@ -79,13 +97,16 @@ fn eval_expr<'src>(
                 tir::Lit::String(s) => Value::Lit(Lit::String(*s)),
                 tir::Lit::Char(c) => Value::Lit(Lit::Char(*c)),
             },
-            ExprKind::Var(name) => {
-                if let Some(value) = env.borrow().get(&name.id) {
+            ExprKind::Var(ident) => {
+                if let Some(value) = env.borrow().get(&EnvIdent {
+                    id: ident.id,
+                    name: ident.key,
+                }) {
                     value
                 } else {
                     return Err(RuntimeError::UnboundIdent(
-                        src[name.span].trim().into(),
-                        name.span,
+                        src[ident.span].trim().into(),
+                        ident.span,
                     ));
                 }
             }
@@ -150,10 +171,16 @@ fn eval_expr<'src>(
                 env = let_env;
                 continue 'tco;
             }
-            ExprKind::Fn(name, params, fn_expr, body) => {
+            ExprKind::Fn(ident, params, fn_expr, body) => {
                 let lam_env = Env::new_with_parent(env.clone());
                 let value = Value::Lambda(lam_env.clone(), params.clone(), fn_expr.clone());
-                env.borrow_mut().insert(name.id, value);
+                env.borrow_mut().insert(
+                    EnvIdent {
+                        id: ident.id,
+                        name: ident.key,
+                    },
+                    value,
+                );
                 expr = body.clone();
                 env = lam_env;
                 continue 'tco;
@@ -243,7 +270,13 @@ fn destructure_pattern(src: &str, env: Rc<RefCell<Env>>, pat: &tir::Pattern, val
             _ => false,
         },
         PatternKind::Ident(ident) => {
-            env.borrow_mut().insert(ident.id, val.clone());
+            env.borrow_mut().insert(
+                EnvIdent {
+                    id: ident.id,
+                    name: ident.key,
+                },
+                val.clone(),
+            );
             true
         }
         PatternKind::List(list) => match val {
@@ -268,7 +301,12 @@ fn destructure_pattern(src: &str, env: Rc<RefCell<Env>>, pat: &tir::Pattern, val
                     && vals
                         .tail()
                         .map(|tail_val| {
-                            destructure_pattern(src, env.clone(), tail, &Value::List(*tail_val))
+                            destructure_pattern(
+                                src,
+                                env.clone(),
+                                tail,
+                                &Value::List(tail_val.clone()),
+                            )
                         })
                         .is_some()
             }
