@@ -33,6 +33,18 @@ impl Env {
             .as_ref()
             .and_then(|parent| parent.borrow().get(id).clone()))
     }
+
+    pub fn dump(&self) -> HashMap<UniqueId, Value> {
+        let mut map = self.bindings.clone();
+        if let Some(parent) = &self.parent {
+            map.extend(parent.borrow().dump());
+        }
+        map
+    }
+
+    pub fn dump_frame(&self) -> HashMap<UniqueId, Value> {
+        self.bindings.clone()
+    }
 }
 
 impl Debug for Env {

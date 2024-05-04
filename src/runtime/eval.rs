@@ -48,8 +48,10 @@ pub fn eval<'src>(
                 let value = Value::Lambda(env.clone(), params.clone(), expr.clone());
                 env.borrow_mut().insert(name.id, value);
                 if name.key.to_string() == "main" {
-                    val = eval_expr(src, env.clone(), expr.clone())?;
-                    ty = expr.ty.clone();
+                    return Ok(RuntimePayload::Value(
+                        eval_expr(src, env.clone(), expr.clone())?,
+                        expr.ty.clone(),
+                    ));
                 } else {
                     val = Value::Unit;
                     ty = decl.ty.clone();
@@ -96,7 +98,7 @@ fn eval_expr<'src>(
                     let arg_env = Env::new_with_parent(lam_env.clone());
                     for (arg, p) in vargs.iter().zip(params.iter()) {
                         // arg_env.borrow_mut().insert(*p, arg.clone());
-                        if !destructure_pattern(src, arg_env.clone(), p, arg).0 {
+                        if !destructure_pattern(src, arg_env.clone(), p, arg) {
                             return Err(RuntimeError::PatternMismatch(
                                 format!("apply {:?}", p).into(),
                                 p.span,
@@ -138,7 +140,7 @@ fn eval_expr<'src>(
                 let value = eval_expr(src, env.clone(), let_expr.clone())?;
                 let let_env = Env::new_with_parent(env.clone());
                 // let_env.borrow_mut().insert(name.id, value);
-                if !destructure_pattern(src, let_env.clone(), pat, &value).0 {
+                if !destructure_pattern(src, let_env.clone(), pat, &value) {
                     return Err(RuntimeError::PatternMismatch(
                         format!("let {:?}", pat).into(),
                         pat.span,
@@ -178,7 +180,7 @@ fn eval_expr<'src>(
                 let match_val = eval_expr(src, env.clone(), match_expr.clone())?;
                 for (pat, arm_expr) in arms.iter() {
                     let arm_env = Env::new_with_parent(env.clone());
-                    if destructure_pattern(src, arm_env.clone(), pat, &match_val).0 {
+                    if destructure_pattern(src, arm_env.clone(), pat, &match_val) {
                         expr = arm_expr.clone();
                         env = arm_env;
                         continue 'tco;
@@ -233,79 +235,48 @@ fn eval_expr<'src>(
     Ok(val)
 }
 
-fn destructure_pattern(
-    src: &str,
-    env: Rc<RefCell<Env>>,
-    pat: &tir::Pattern,
-    val: &Value,
-) -> (bool, HashMap<InternedString, Value>) {
-    let mut bindings = HashMap::new();
-
+fn destructure_pattern(src: &str, env: Rc<RefCell<Env>>, pat: &tir::Pattern, val: &Value) -> bool {
     match pat.kind.as_ref() {
-        PatternKind::Wildcard => (true, bindings.clone()),
-        PatternKind::Lit(lit) => {
-            if let Value::Lit(l) = val {
-                if lit == l {
-                    return (true, bindings);
-                }
-            }
-            return (false, bindings.clone());
-        }
+        PatternKind::Wildcard => true,
+        PatternKind::Lit(lit) => match val {
+            Value::Lit(l) => lit == l,
+            _ => false,
+        },
         PatternKind::Ident(ident) => {
             env.borrow_mut().insert(ident.id, val.clone());
-            bindings.insert(ident.key, val.clone());
-            (true, bindings.clone())
+            true
         }
-        PatternKind::List(list) => {
-            if let Value::List(vals) = val {
+        PatternKind::List(list) => match val {
+            Value::List(vals) => {
                 if list.len() != vals.len() {
-                    return (false, bindings);
+                    return false;
                 }
-                let mut ret = HashMap::new();
                 for (pat, val) in list.iter().zip(vals.iter()) {
-                    let d = destructure_pattern(src, env.clone(), pat, val);
-                    if !d.0 {
-                        return (false, None);
+                    if !destructure_pattern(src, env.clone(), pat, val) {
+                        return false;
                     }
                 }
-                return true;
+                true
             }
-            false
-        }
-        PatternKind::Pair(head, tail) => {
-            if let Value::List(vals) = val {
-                (
-                    destructure_pattern(
-                        src,
-                        env.clone(),
-                        head,
-                        if let Some(head) = vals.head() {
-                            head
-                        } else {
-                            return false;
-                        },
-                    ) && destructure_pattern(
-                        src,
-                        env.clone(),
-                        tail,
-                        &match vals.tail() {
-                            Some(tail) => Value::List(tail.clone()),
-                            None => {
-                                return false;
-                            }
-                        },
-                    ),
-                    None,
-                )
-            } else {
-                (false, None)
+            _ => false,
+        },
+        PatternKind::Pair(head, tail) => match val {
+            Value::List(vals) => {
+                vals.head()
+                    .map(|head_val| destructure_pattern(src, env.clone(), head, head_val))
+                    .is_some()
+                    && vals
+                        .tail()
+                        .map(|tail_val| {
+                            destructure_pattern(src, env.clone(), tail, &Value::List(*tail_val))
+                        })
+                        .is_some()
             }
-        }
-        PatternKind::Unit => {
-            if let Value::Unit = val {
-                return (true, None);
-            }
-            (false, None)
-        }
+            _ => false,
+        },
+        PatternKind::Unit => match val {
+            Value::Unit => true,
+            _ => false,
+        },
     }
 }
