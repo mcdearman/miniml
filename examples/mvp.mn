@@ -122,3 +122,15 @@ let binary_search n xs =
       else if Array.get xs m < n then loop (m + 1) r
       else loop l (m - 1)
   in loop 0 (Array.len xs - 1)
+
+-- type alias
+type Point = (Int, Int)
+
+-- records
+type Person = { name : String, age : Int }
+let p = { name = "Alice", age = 30 }
+
+-- sum types
+type Option a = None | Some a
+
+type List a = Empty | Pair a (List a)

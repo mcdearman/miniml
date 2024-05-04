@@ -1,17 +1,11 @@
 use super::value::Value;
-use crate::utils::{intern::InternedString, unique_id::UniqueId};
+use crate::utils::unique_id::UniqueId;
 use std::{cell::RefCell, collections::HashMap, fmt::Debug, rc::Rc};
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub struct EnvIdent {
-    pub id: UniqueId,
-    pub name: InternedString,
-}
 
 #[derive(Clone, PartialEq)]
 pub struct Env {
     parent: Option<Rc<RefCell<Env>>>,
-    bindings: HashMap<EnvIdent, Value>,
+    bindings: HashMap<UniqueId, Value>,
 }
 
 impl Env {
@@ -29,27 +23,15 @@ impl Env {
         }))
     }
 
-    pub fn insert(&mut self, id: EnvIdent, value: Value) {
+    pub fn insert(&mut self, id: UniqueId, value: Value) {
         self.bindings.insert(id, value);
     }
 
-    pub fn get(&self, ident: &EnvIdent) -> Option<Value> {
+    pub fn get(&self, ident: &UniqueId) -> Option<Value> {
         self.bindings.get(ident).cloned().or(self
             .parent
             .as_ref()
             .and_then(|parent| parent.borrow().get(ident).clone()))
-    }
-
-    pub fn dump(&self) -> HashMap<EnvIdent, Value> {
-        let mut map = self.bindings.clone();
-        if let Some(parent) = &self.parent {
-            map.extend(parent.borrow().dump());
-        }
-        map
-    }
-
-    pub fn dump_frame(&self) -> HashMap<EnvIdent, Value> {
-        self.bindings.clone()
     }
 }
 

@@ -1,5 +1,5 @@
 use super::{
-    env::{Env, EnvIdent},
+    env::Env,
     error::{RuntimeError, RuntimeResult},
     value::{Lit, Record, Value},
 };
@@ -11,7 +11,8 @@ use crate::{
     utils::{intern::InternedString, list::List},
 };
 use itertools::Itertools;
-use std::{cell::RefCell, collections::HashMap, rc::Rc};
+use libc::bind;
+use std::{cell::RefCell, collections::HashMap, hash::Hash, rc::Rc};
 
 #[derive(Debug, Clone)]
 pub enum RuntimePayload {
@@ -41,30 +42,24 @@ pub fn eval<'src>(
             // }
             DeclKind::Let(pat, expr) => {
                 let val = eval_expr(src, env.clone(), expr.clone())?;
-                if !destructure_pattern(src, env.clone(), pat, &val) {
+                let (matched, bindings) = destructure_pattern(src, env.clone(), pat, &val);
+                if !matched {
                     return Err(RuntimeError::PatternMismatch(
                         format!("let decl{:?}", pat).into(),
                         pat.span,
                     ));
                 }
                 let ty = expr.ty.clone();
-                let names = env.borrow().dump_frame();
                 payload = RuntimePayload::Bindings(
-                    names
+                    bindings
                         .into_iter()
-                        .map(|(ident, value)| (ident.name, value, ty.clone()))
+                        .map(|(ident, value)| (ident, value, ty.clone()))
                         .collect(),
                 );
             }
             DeclKind::Fn(ident, params, expr, ..) => {
                 let value = Value::Lambda(env.clone(), params.clone(), expr.clone());
-                env.borrow_mut().insert(
-                    EnvIdent {
-                        id: ident.id,
-                        name: ident.key,
-                    },
-                    value,
-                );
+                env.borrow_mut().insert(ident.id, value);
                 if ident.key.to_string() == "main" {
                     return Ok(RuntimePayload::Value(
                         eval_expr(src, env.clone(), expr.clone())?,
@@ -97,10 +92,7 @@ fn eval_expr<'src>(
                 tir::Lit::Char(c) => Value::Lit(Lit::Char(*c)),
             },
             ExprKind::Var(ident) => {
-                if let Some(value) = env.borrow().get(&EnvIdent {
-                    id: ident.id,
-                    name: ident.key,
-                }) {
+                if let Some(value) = env.borrow().get(&ident.id) {
                     value
                 } else {
                     return Err(RuntimeError::UnboundIdent(
@@ -118,7 +110,7 @@ fn eval_expr<'src>(
                     let arg_env = Env::new_with_parent(lam_env.clone());
                     for (arg, p) in vargs.iter().zip(params.iter()) {
                         // arg_env.borrow_mut().insert(*p, arg.clone());
-                        if !destructure_pattern(src, arg_env.clone(), p, arg) {
+                        if !destructure_pattern(src, arg_env.clone(), p, arg).0 {
                             return Err(RuntimeError::PatternMismatch(
                                 format!("apply {:?}", p).into(),
                                 p.span,
@@ -160,7 +152,7 @@ fn eval_expr<'src>(
                 let value = eval_expr(src, env.clone(), let_expr.clone())?;
                 let let_env = Env::new_with_parent(env.clone());
                 // let_env.borrow_mut().insert(name.id, value);
-                if !destructure_pattern(src, let_env.clone(), pat, &value) {
+                if !destructure_pattern(src, let_env.clone(), pat, &value).0 {
                     return Err(RuntimeError::PatternMismatch(
                         format!("let {:?}", pat).into(),
                         pat.span,
@@ -173,13 +165,7 @@ fn eval_expr<'src>(
             ExprKind::Fn(ident, params, fn_expr, body) => {
                 let lam_env = Env::new_with_parent(env.clone());
                 let value = Value::Lambda(lam_env.clone(), params.clone(), fn_expr.clone());
-                env.borrow_mut().insert(
-                    EnvIdent {
-                        id: ident.id,
-                        name: ident.key,
-                    },
-                    value,
-                );
+                env.borrow_mut().insert(ident.id, value);
                 expr = body.clone();
                 env = lam_env;
                 continue 'tco;
@@ -206,7 +192,7 @@ fn eval_expr<'src>(
                 let match_val = eval_expr(src, env.clone(), match_expr.clone())?;
                 for (pat, arm_expr) in arms.iter() {
                     let arm_env = Env::new_with_parent(env.clone());
-                    if destructure_pattern(src, arm_env.clone(), pat, &match_val) {
+                    if destructure_pattern(src, arm_env.clone(), pat, &match_val).0 {
                         expr = arm_expr.clone();
                         env = arm_env;
                         continue 'tco;
@@ -261,61 +247,101 @@ fn eval_expr<'src>(
     Ok(val)
 }
 
-fn destructure_pattern(src: &str, env: Rc<RefCell<Env>>, pat: &tir::Pattern, val: &Value) -> bool {
-    match pat.kind.as_ref() {
-        PatternKind::Wildcard => true,
-        PatternKind::Lit(lit) => match val {
-            Value::Lit(l) => lit == l,
-            _ => false,
-        },
-        PatternKind::Ident(ident) => {
-            env.borrow_mut().insert(
-                EnvIdent {
-                    id: ident.id,
-                    name: ident.key,
+fn destructure_pattern(
+    src: &str,
+    env: Rc<RefCell<Env>>,
+    pat: &tir::Pattern,
+    val: &Value,
+) -> (bool, HashMap<InternedString, Value>) {
+    fn inner(
+        src: &str,
+        env: Rc<RefCell<Env>>,
+        pat: &tir::Pattern,
+        val: &Value,
+        bindings: &mut HashMap<InternedString, Value>,
+    ) -> (bool, HashMap<InternedString, Value>) {
+        match pat.kind.as_ref() {
+            PatternKind::Wildcard => (true, bindings.clone()),
+            PatternKind::Lit(lit) => (
+                match val {
+                    Value::Lit(l) => lit == l,
+                    _ => false,
                 },
-                val.clone(),
-            );
-            log::debug!("inserted {:?} -> {:?}", ident, val);
-            log::debug!("env: {:?}", env.borrow().dump_frame());
-            true
-        }
-        PatternKind::List(list) => match val {
-            Value::List(vals) => {
-                if list.len() != vals.len() {
-                    return false;
-                }
-                for (pat, val) in list.iter().zip(vals.iter()) {
-                    if !destructure_pattern(src, env.clone(), pat, val) {
-                        return false;
+                bindings.clone(),
+            ),
+            PatternKind::Ident(ident) => {
+                env.borrow_mut().insert(ident.id, val.clone());
+                log::debug!("inserted {:?} -> {:?}", ident, val);
+                bindings.insert(ident.key, val.clone());
+                (true, bindings.clone())
+            }
+            PatternKind::List(list) => match val {
+                Value::List(vals) => {
+                    if list.len() != vals.len() {
+                        return (false, bindings.clone());
                     }
+                    for (pat, val) in list.iter().zip(vals.iter()) {
+                        let (res, new_bindings) = inner(src, env.clone(), pat, val, bindings);
+                        if !res {
+                            return (false, bindings.clone());
+                        }
+                        bindings.extend(new_bindings.clone())
+                    }
+                    (true, bindings.clone())
                 }
-                true
-            }
-            _ => false,
-        },
-        PatternKind::Pair(head, tail) => match val {
-            Value::List(vals) => {
-                vals.head()
-                    .map(|head_val| destructure_pattern(src, env.clone(), head, head_val))
-                    .is_some()
-                    && vals
-                        .tail()
-                        .map(|tail_val| {
-                            destructure_pattern(
-                                src,
-                                env.clone(),
-                                tail,
-                                &Value::List(tail_val.clone()),
-                            )
-                        })
-                        .is_some()
-            }
-            _ => false,
-        },
-        PatternKind::Unit => match val {
-            Value::Unit => true,
-            _ => false,
-        },
+                _ => (false, bindings.clone()),
+            },
+            PatternKind::Pair(head, tail) => match val {
+                Value::List(vals) => {
+                    // vals.head()
+                    //     .map(|head_val| destructure_pattern(src, env.clone(), head, head_val))
+                    //     .is_some()
+                    //     && vals
+                    //         .tail()
+                    //         .map(|tail_val| {
+                    //             destructure_pattern(
+                    //                 src,
+                    //                 env.clone(),
+                    //                 tail,
+                    //                 &Value::List(tail_val.clone()),
+                    //             )
+                    //         })
+                    //         .is_some()
+                    if let Some(val_head) = vals.head() {
+                        let (res_head, new_bindings_head) =
+                            inner(src, env.clone(), head, val_head, bindings);
+                        if !res_head {
+                            return (false, bindings.clone());
+                        }
+                        bindings.extend(new_bindings_head.clone());
+                    }
+                    if let Some(val_tail) = vals.tail() {
+                        let (res_tail, new_bindings_tail) = inner(
+                            src,
+                            env.clone(),
+                            tail,
+                            &Value::List(val_tail.clone()),
+                            bindings,
+                        );
+                        if !res_tail {
+                            return (false, bindings.clone());
+                        }
+                        bindings.extend(new_bindings_tail.clone());
+                    }
+                    (true, bindings.clone())
+                }
+                _ => (false, bindings.clone()),
+            },
+            PatternKind::Unit => (
+                match val {
+                    Value::Unit => true,
+                    _ => false,
+                },
+                bindings.clone(),
+            ),
+        }
     }
+
+    let mut bindings = HashMap::new();
+    inner(src, env, pat, val, &mut bindings)
 }

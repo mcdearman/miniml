@@ -10,7 +10,7 @@ pub static mut INTERNER: Lazy<ThreadedRodeo> = Lazy::new(|| ThreadedRodeo::defau
 
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
 pub struct InternedString {
-    key: Spur,
+    pub key: Spur,
 }
 
 impl From<Spur> for InternedString {
