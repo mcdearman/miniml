@@ -144,9 +144,7 @@ impl TypeSolver {
                 // log::debug!("let_solved_expr: {:?}", solved_expr);
 
                 // Γ, x: gen(T) ⊢ e1 : T'
-                // let scheme = solved_expr.ty.generalize(&self.ctx);
-                // log::debug!("let_scheme: {:?}", scheme);
-                // self.ctx.insert(name.id, scheme);
+                let scheme = solved_expr.ty.generalize(&self.ctx);
                 let solved_pat = self.infer_pattern(pat)?;
                 self.sub = self.sub.compose(
                     &solved_pat
@@ -166,15 +164,15 @@ impl TypeSolver {
                 // to show that Γ ⊢ fn x = e0 in e1 : T' we need to show that
                 // Γ, x: gen(T) ⊢ e1 : T'
 
-                let param_tys = params
-                    .iter()
-                    .map(|_| Type::Var(TyVar::fresh()))
-                    .collect_vec();
+                let param_vars = params.iter().map(|_| TyVar::fresh()).collect_vec();
+                let param_tys = param_vars.iter().map(|var| Type::Var(*var)).collect_vec();
+
                 let ty_ret = Type::Var(TyVar::fresh());
                 let fn_ty = Type::Lambda(param_tys.clone(), Box::new(ty_ret.clone()));
                 log::debug!("decl_fn_ty: {:?}", fn_ty);
 
-                self.ctx.insert(name.id, Scheme::new(vec![], fn_ty.clone()));
+                self.ctx
+                    .insert(name.id, Scheme::new(param_vars.clone(), fn_ty.clone()));
                 self.ctx.push();
                 let mut solved_params = vec![];
                 for (ty, param) in param_tys.iter().zip(params.iter()) {
