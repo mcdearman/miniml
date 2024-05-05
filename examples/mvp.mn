@@ -108,6 +108,7 @@ let gcd a b =
   | (a, b) if a > b -> gcd b (a % b)
   | (a, b) -> gcd a (b % a)
 
+map : (a -> b) -> List a -> List b
 let map f xs =
   match xs
   | [] -> []

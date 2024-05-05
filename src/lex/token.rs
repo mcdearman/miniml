@@ -206,3 +206,7 @@ impl Display for Token {
         }
     }
 }
+
+// Src -> Lexical analysis -> Parse -> Rename -> Type check -> Desugar -> Lower -> Codegen
+
+

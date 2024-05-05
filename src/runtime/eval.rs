@@ -49,13 +49,7 @@ pub fn eval<'src>(
                         pat.span,
                     ));
                 }
-                let ty = expr.ty.clone();
-                payload = RuntimePayload::Bindings(
-                    bindings
-                        .into_iter()
-                        .map(|(ident, value)| (ident, value, ty.clone()))
-                        .collect(),
-                );
+                payload = RuntimePayload::Bindings(bindings);
             }
             DeclKind::Fn(ident, params, expr, ..) => {
                 let value = Value::Lambda(env.clone(), params.clone(), expr.clone());
@@ -252,14 +246,14 @@ fn destructure_pattern(
     env: Rc<RefCell<Env>>,
     pat: &tir::Pattern,
     val: &Value,
-) -> (bool, HashMap<InternedString, Value>) {
+) -> (bool, Vec<(InternedString, Value, Type)>) {
     fn inner(
         src: &str,
         env: Rc<RefCell<Env>>,
         pat: &tir::Pattern,
         val: &Value,
-        bindings: &mut HashMap<InternedString, Value>,
-    ) -> (bool, HashMap<InternedString, Value>) {
+        bindings: &mut Vec<(InternedString, Value, Type)>,
+    ) -> (bool, Vec<(InternedString, Value, Type)>) {
         match pat.kind.as_ref() {
             PatternKind::Wildcard => (true, bindings.clone()),
             PatternKind::Lit(lit) => (
@@ -272,7 +266,7 @@ fn destructure_pattern(
             PatternKind::Ident(ident) => {
                 env.borrow_mut().insert(ident.id, val.clone());
                 log::debug!("inserted {:?} -> {:?}", ident, val);
-                bindings.insert(ident.key, val.clone());
+                bindings.push((ident.key, val.clone(), pat.ty.clone()));
                 (true, bindings.clone())
             }
             PatternKind::List(list) => match val {
@@ -285,6 +279,7 @@ fn destructure_pattern(
                         if !res {
                             return (false, bindings.clone());
                         }
+                        println!("{:?}", new_bindings.clone());
                         bindings.extend(new_bindings.clone())
                     }
                     (true, bindings.clone())
@@ -293,20 +288,6 @@ fn destructure_pattern(
             },
             PatternKind::Pair(head, tail) => match val {
                 Value::List(vals) => {
-                    // vals.head()
-                    //     .map(|head_val| destructure_pattern(src, env.clone(), head, head_val))
-                    //     .is_some()
-                    //     && vals
-                    //         .tail()
-                    //         .map(|tail_val| {
-                    //             destructure_pattern(
-                    //                 src,
-                    //                 env.clone(),
-                    //                 tail,
-                    //                 &Value::List(tail_val.clone()),
-                    //             )
-                    //         })
-                    //         .is_some()
                     if let Some(val_head) = vals.head() {
                         let (res_head, new_bindings_head) =
                             inner(src, env.clone(), head, val_head, bindings);
@@ -342,6 +323,6 @@ fn destructure_pattern(
         }
     }
 
-    let mut bindings = HashMap::new();
+    let mut bindings = vec![];
     inner(src, env, pat, val, &mut bindings)
 }
