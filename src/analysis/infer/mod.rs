@@ -503,7 +503,7 @@ impl TypeSolver {
 
                 Ok(Expr::new(
                     ExprKind::List(solved_exprs),
-                    Type::List(Box::new(ty)),
+                    Type::List(Box::new(ty.apply_subst(&self.sub))),
                     expr.span,
                 ))
             }
@@ -575,7 +575,7 @@ impl TypeSolver {
 
                 Ok(Pattern::new(
                     PatternKind::List(solved_pats),
-                    Type::List(Box::new(ty)),
+                    Type::List(Box::new(ty.apply_subst(&self.sub))),
                     pat.span,
                 ))
             }
@@ -585,8 +585,18 @@ impl TypeSolver {
                 let solved_lhs = self.infer_pattern(lhs)?;
                 let solved_rhs = self.infer_pattern(rhs)?;
 
-                self.sub = self.sub.compose(&solved_lhs.ty.unify(&ty)?);
-                self.sub = self.sub.compose(&solved_rhs.ty.unify(&list_ty)?);
+                self.sub = self.sub.compose(
+                    &solved_lhs
+                        .ty
+                        .apply_subst(&self.sub)
+                        .unify(&ty.apply_subst(&self.sub))?,
+                );
+                self.sub = self.sub.compose(
+                    &solved_rhs
+                        .ty
+                        .apply_subst(&self.sub)
+                        .unify(&list_ty.apply_subst(&self.sub))?,
+                );
 
                 Ok(Pattern::new(
                     PatternKind::Pair(solved_lhs, solved_rhs),
@@ -596,15 +606,5 @@ impl TypeSolver {
             }
             nir::PatternKind::Unit => Ok(Pattern::new(PatternKind::Unit, Type::Unit, pat.span)),
         }
-
-        // fn pretty_print_ctx(&self) {
-        //     let mut ctx = HashMap::new();
-        //     for (uid, scm) in self.ctx.iter() {
-        //         let name = self.builtins.get(uid).map(|s| s.to_string());
-        //         ctx.insert(name.unwrap_or_else(|| format!("{:?}", uid)), scm.clone());
-        //     }
-
-        //     println!("ctx: {:#?}", ctx);
-        // }
     }
 }

@@ -247,82 +247,67 @@ fn destructure_pattern(
     pat: &tir::Pattern,
     val: &Value,
 ) -> (bool, Vec<(InternedString, Value, Type)>) {
-    fn inner(
-        src: &str,
-        env: Rc<RefCell<Env>>,
-        pat: &tir::Pattern,
-        val: &Value,
-        bindings: &mut Vec<(InternedString, Value, Type)>,
-    ) -> (bool, Vec<(InternedString, Value, Type)>) {
-        match pat.kind.as_ref() {
-            PatternKind::Wildcard => (true, bindings.clone()),
-            PatternKind::Lit(lit) => (
-                match val {
-                    Value::Lit(l) => lit == l,
-                    _ => false,
-                },
-                bindings.clone(),
-            ),
-            PatternKind::Ident(ident) => {
-                env.borrow_mut().insert(ident.id, val.clone());
-                log::debug!("inserted {:?} -> {:?}", ident, val);
-                bindings.push((ident.key, val.clone(), pat.ty.clone()));
-                (true, bindings.clone())
-            }
-            PatternKind::List(list) => match val {
-                Value::List(vals) => {
-                    if list.len() != vals.len() {
+    let mut bindings = vec![];
+
+    match pat.kind.as_ref() {
+        PatternKind::Wildcard => (true, vec![]),
+        PatternKind::Lit(lit) => (
+            match val {
+                Value::Lit(l) => lit == l,
+                _ => false,
+            },
+            vec![],
+        ),
+        PatternKind::Ident(ident) => {
+            env.borrow_mut().insert(ident.id, val.clone());
+            log::debug!("inserted {:?} -> {:?}", ident, val);
+            bindings.push((ident.key, val.clone(), pat.ty.clone()));
+            (true, bindings)
+        }
+        PatternKind::List(list) => match val {
+            Value::List(vals) => {
+                if list.len() != vals.len() {
+                    return (false, bindings.clone());
+                }
+                for (pat, val) in list.iter().zip(vals.iter()) {
+                    let (res, new_bindings) = destructure_pattern(src, env.clone(), pat, val);
+                    if !res {
                         return (false, bindings.clone());
                     }
-                    for (pat, val) in list.iter().zip(vals.iter()) {
-                        let (res, new_bindings) = inner(src, env.clone(), pat, val, bindings);
-                        if !res {
-                            return (false, bindings.clone());
-                        }
-                        println!("{:?}", new_bindings.clone());
-                        bindings.extend(new_bindings.clone())
-                    }
-                    (true, bindings.clone())
+                    bindings.extend(new_bindings.clone());
                 }
-                _ => (false, bindings.clone()),
-            },
-            PatternKind::Pair(head, tail) => match val {
-                Value::List(vals) => {
-                    if let Some(val_head) = vals.head() {
-                        let (res_head, new_bindings_head) =
-                            inner(src, env.clone(), head, val_head, bindings);
-                        if !res_head {
-                            return (false, bindings.clone());
-                        }
-                        bindings.extend(new_bindings_head.clone());
+                (true, bindings.clone())
+            }
+            _ => (false, bindings.clone()),
+        },
+        PatternKind::Pair(head, tail) => match val {
+            Value::List(vals) => {
+                if let Some(val_head) = vals.head() {
+                    let (res_head, new_bindings_head) =
+                        destructure_pattern(src, env.clone(), head, val_head);
+                    if !res_head {
+                        return (false, bindings.clone());
                     }
-                    if let Some(val_tail) = vals.tail() {
-                        let (res_tail, new_bindings_tail) = inner(
-                            src,
-                            env.clone(),
-                            tail,
-                            &Value::List(val_tail.clone()),
-                            bindings,
-                        );
-                        if !res_tail {
-                            return (false, bindings.clone());
-                        }
-                        bindings.extend(new_bindings_tail.clone());
-                    }
-                    (true, bindings.clone())
+                    bindings.extend(new_bindings_head.clone());
                 }
-                _ => (false, bindings.clone()),
+                if let Some(val_tail) = vals.tail() {
+                    let (res_tail, new_bindings_tail) =
+                        destructure_pattern(src, env.clone(), tail, &Value::List(val_tail.clone()));
+                    if !res_tail {
+                        return (false, bindings.clone());
+                    }
+                    bindings.extend(new_bindings_tail.clone());
+                }
+                (true, bindings.clone())
+            }
+            _ => (false, bindings.clone()),
+        },
+        PatternKind::Unit => (
+            match val {
+                Value::Unit => true,
+                _ => false,
             },
-            PatternKind::Unit => (
-                match val {
-                    Value::Unit => true,
-                    _ => false,
-                },
-                bindings.clone(),
-            ),
-        }
+            bindings.clone(),
+        ),
     }
-
-    let mut bindings = vec![];
-    inner(src, env, pat, val, &mut bindings)
 }
