@@ -1,53 +1,43 @@
 use super::{
     error::{InferResult, TypeError},
     r#type::Type,
-    substitution::Substitution,
 };
 use crate::utils::unique_id::UniqueId;
-use std::fmt::{Debug, Display};
+use std::{
+    fmt::{Debug, Display},
+    ops::Bound,
+};
 
-#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub struct TyVar(UniqueId);
-
-// pub enum TyVar {
-//     Unbound(UniqueId),
-//     Bound(Type),
-// }
+#[derive(Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub enum TyVar {
+    Bound(Box<Type>),
+    Unbound(UniqueId),
+}
 
 impl TyVar {
     pub fn fresh() -> Self {
-        Self(UniqueId::gen())
+        Self::Unbound(UniqueId::gen())
     }
 
-    pub fn id(&self) -> UniqueId {
-        self.0
+    pub fn id(&self) -> Option<UniqueId> {
+        match self {
+            Self::Bound(_) => None,
+            Self::Unbound(id) => Some(*id),
+        }
     }
 
-    pub fn bind(&self, ty: Type) -> InferResult<Substitution> {
+    pub fn bind(&self, ty: Type) -> InferResult<()> {
         if ty.clone() == Type::Var(self.clone()) {
-            Ok(Substitution::new())
+            Ok(())
         } else if ty.free_vars().contains(self) {
             Err(TypeError::from(format!(
                 "occurs check failed: {} occurs in {:?}",
                 self, ty
             )))
         } else {
-            let mut subst = Substitution::new();
-            subst.insert(*self, ty.clone());
-            Ok(subst)
+            *self = Self::Bound(Box::new(ty));
+            Ok(())
         }
-    }
-}
-
-impl From<UniqueId> for TyVar {
-    fn from(id: UniqueId) -> Self {
-        Self(id)
-    }
-}
-
-impl From<usize> for TyVar {
-    fn from(id: usize) -> Self {
-        Self(UniqueId::from(id))
     }
 }
 
@@ -68,16 +58,21 @@ const ALPHABET: &[char] = &[
 
 impl Display for TyVar {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let id = usize::from(self.0);
-        if id < ALPHABET.len() {
-            write!(f, "{}", ALPHABET[id])
-        } else {
-            write!(
-                f,
-                "{}{}",
-                ALPHABET[id / ALPHABET.len() - 1],
-                (id + 1) % ALPHABET.len()
-            )
+        match self {
+            Self::Bound(ty) => write!(f, "{}", ty),
+            Self::Unbound(id) => {
+                let id = usize::from(*id);
+                if id < ALPHABET.len() {
+                    write!(f, "{}", ALPHABET[id])
+                } else {
+                    write!(
+                        f,
+                        "{}{}",
+                        ALPHABET[id / ALPHABET.len() - 1],
+                        (id + 1) % ALPHABET.len()
+                    )
+                }
+            }
         }
     }
 }

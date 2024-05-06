@@ -1,4 +1,4 @@
-use super::{r#type::Type, scheme::Scheme, substitution::Substitution, ty_var::TyVar};
+use super::{r#type::Type, scheme::Scheme, ty_var::TyVar};
 use crate::utils::{intern::InternedString, unique_id::UniqueId};
 use std::collections::{HashMap, HashSet};
 
@@ -222,16 +222,6 @@ impl Context {
         }
     }
 
-    pub(super) fn apply_subst(&self, subst: &Substitution) -> Self {
-        Self {
-            frames: self
-                .frames
-                .iter()
-                .map(|frame| frame.apply_subst(subst))
-                .collect(),
-        }
-    }
-
     pub(super) fn free_vars(&self) -> HashSet<TyVar> {
         self.frames
             .iter()
@@ -264,17 +254,6 @@ impl Frame {
 
     pub fn insert(&mut self, id: UniqueId, scheme: Scheme) {
         self.bindings.insert(id, scheme);
-    }
-
-    pub(super) fn apply_subst(&self, subst: &Substitution) -> Self {
-        Self {
-            bindings: self
-                .bindings
-                .clone()
-                .into_iter()
-                .map(|(id, scheme)| (id, scheme.apply_subst(subst)))
-                .collect(),
-        }
     }
 
     pub(super) fn free_vars(&self) -> HashSet<TyVar> {

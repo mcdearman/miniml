@@ -1,4 +1,4 @@
-use super::{r#type::Type, substitution::Substitution, ty_var::TyVar};
+use super::{r#type::Type, ty_var::TyVar};
 use std::collections::HashSet;
 
 #[derive(Debug, Clone, PartialEq)]
@@ -12,17 +12,6 @@ impl Scheme {
         Self { vars, ty }
     }
 
-    pub fn apply_subst(&self, subst: &Substitution) -> Self {
-        let mut new_sub = subst.clone();
-        for var in &self.vars {
-            new_sub.remove(var);
-        }
-        Scheme {
-            vars: self.vars.clone(),
-            ty: self.ty.apply_subst(&new_sub),
-        }
-    }
-
     pub fn free_vars(&self) -> HashSet<TyVar> {
         self.ty
             .free_vars()
@@ -32,7 +21,6 @@ impl Scheme {
     }
 
     pub fn instantiate(&self) -> Type {
-        let mut subst = Substitution::new();
         for var in self.clone().vars {
             subst.insert(var, Type::Var(TyVar::fresh()));
         }

@@ -5,7 +5,6 @@ use super::{
     context::Context,
     error::{InferResult, TypeError},
     scheme::Scheme,
-    substitution::Substitution,
     ty_var::TyVar,
 };
 use crate::utils::{intern::InternedString, unique_id::UniqueId};
@@ -14,7 +13,7 @@ use std::{
     fmt::{Debug, Display},
 };
 
-#[derive(Clone, PartialEq, Eq)]
+#[derive(Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum Type {
     Byte,
     Int,
@@ -39,32 +38,6 @@ impl Type {
         }
     }
 
-    pub(super) fn apply_subst(&self, subst: &Substitution) -> Type {
-        match self {
-            Self::Byte
-            | Self::Int
-            | Self::Rational
-            | Self::Real
-            | Self::Bool
-            | Self::String
-            | Self::Char
-            | Self::Unit => self.clone(),
-            Self::Var(n) => subst.get(&n).cloned().unwrap_or(self.clone()),
-            Self::Lambda(params, body) => Self::Lambda(
-                params.iter().map(|ty| ty.apply_subst(subst)).collect(),
-                Box::new(body.apply_subst(subst)),
-            ),
-            Self::List(ty) => Self::List(Box::new(ty.apply_subst(subst))),
-            Self::Record(name, fields) => Self::Record(
-                *name,
-                fields
-                    .iter()
-                    .map(|(k, v)| (k.clone(), v.apply_subst(subst)))
-                    .collect(),
-            ),
-        }
-    }
-
     pub fn generalize(&self, ctx: &Context) -> Scheme {
         log::debug!("generalize: {:?}", self);
         log::debug!("free vars: {:?}", self.free_vars());
@@ -78,7 +51,7 @@ impl Type {
         )
     }
 
-    pub fn unify(&self, other: &Self) -> InferResult<Substitution> {
+    pub fn unify(&self, other: &Self) -> InferResult<()> {
         log::debug!("unify: {:?} and {:?}", self, other);
         match (self, other) {
             (Type::Byte, Type::Byte)
@@ -88,17 +61,18 @@ impl Type {
             | (Type::Bool, Type::Bool)
             | (Type::String, Type::String)
             | (Type::Char, Type::Char)
-            | (Type::Unit, Type::Unit) => Ok(Substitution::new()),
+            | (Type::Unit, Type::Unit) => Ok(()),
             (Type::Lambda(p1, b1), Type::Lambda(p2, b2)) => {
-                let s1 = p1.iter().zip(p2.iter()).try_fold(
-                    Substitution::new(),
-                    |s, (t1, t2)| match t1.apply_subst(&s).unify(&t2.apply_subst(&s)) {
-                        Ok(sub) => Ok(s.compose(&sub)),
-                        err => err,
-                    },
-                )?;
-                let s2 = b1.apply_subst(&s1).unify(&b2.apply_subst(&s1))?;
-                Ok(s1.compose(&s2))
+                // let s1 = p1.iter().zip(p2.iter()).try_fold(
+                //     Substitution::new(),
+                //     |s, (t1, t2)| match t1.apply_subst(&s).unify(&t2.apply_subst(&s)) {
+                //         Ok(sub) => Ok(s.compose(&sub)),
+                //         err => err,
+                //     },
+                // )?;
+                // let s2 = b1.apply_subst(&s1).unify(&b2.apply_subst(&s1))?;
+                // Ok(s1.compose(&s2))
+                todo!()
             }
             (Type::List(t1), Type::List(t2)) => t1.unify(&t2),
             (_, Type::Var(var)) => var.bind(self.clone()),

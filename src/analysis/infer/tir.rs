@@ -1,7 +1,7 @@
 use itertools::Itertools;
 use num_rational::Rational64;
 
-use super::{r#type::Type, substitution::Substitution};
+use super::r#type::Type;
 use crate::utils::{
     ident::{Ident, ScopedIdent},
     intern::InternedString,
@@ -15,43 +15,11 @@ pub struct Root {
     pub span: Span,
 }
 
-impl Root {
-    pub fn apply_subst(&self, subst: &Substitution) -> Self {
-        Self {
-            decls: self
-                .decls
-                .iter()
-                .map(|decl| decl.apply_subst(subst))
-                .collect_vec(),
-            span: self.span,
-        }
-    }
-}
-
 #[derive(Debug, Clone, PartialEq)]
 pub struct Decl {
     pub kind: DeclKind,
     pub ty: Type,
     pub span: Span,
-}
-
-impl Decl {
-    pub fn apply_subst(&self, subst: &Substitution) -> Self {
-        Self {
-            kind: match &self.kind {
-                DeclKind::Let(name, expr) => {
-                    DeclKind::Let(name.apply_subst(subst), expr.apply_subst(subst))
-                }
-                DeclKind::Fn(name, params, expr) => DeclKind::Fn(
-                    name.clone(),
-                    params.iter().map(|p| p.apply_subst(subst)).collect_vec(),
-                    expr.apply_subst(subst),
-                ),
-            },
-            ty: self.ty.apply_subst(subst),
-            span: self.span,
-        }
-    }
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -73,93 +41,6 @@ impl Expr {
             kind: Box::new(kind),
             ty,
             span,
-        }
-    }
-
-    pub fn apply_subst(&self, subst: &Substitution) -> Self {
-        match self.kind.as_ref() {
-            ExprKind::Lit(l) => Expr::new(
-                ExprKind::Lit(l.clone()),
-                self.ty.apply_subst(subst),
-                self.span,
-            ),
-            ExprKind::Var(name) => Expr::new(
-                ExprKind::Var(name.clone()),
-                self.ty.apply_subst(subst),
-                self.span,
-            ),
-            ExprKind::Apply(fun, args) => Expr::new(
-                ExprKind::Apply(
-                    fun.apply_subst(subst),
-                    args.iter().map(|arg| arg.apply_subst(subst)).collect_vec(),
-                ),
-                self.ty.apply_subst(subst),
-                self.span,
-            ),
-            ExprKind::Or(lhs, rhs) => Expr::new(
-                ExprKind::Or(lhs.apply_subst(subst), rhs.apply_subst(subst)),
-                self.ty.apply_subst(subst),
-                self.span,
-            ),
-            ExprKind::And(lhs, rhs) => Expr::new(
-                ExprKind::And(lhs.apply_subst(subst), rhs.apply_subst(subst)),
-                self.ty.apply_subst(subst),
-                self.span,
-            ),
-            ExprKind::Let(name, expr, body) => Expr::new(
-                ExprKind::Let(
-                    name.apply_subst(subst),
-                    expr.apply_subst(subst),
-                    body.apply_subst(subst),
-                ),
-                self.ty.apply_subst(subst),
-                self.span,
-            ),
-            ExprKind::Fn(name, params, expr, body) => Expr::new(
-                ExprKind::Fn(
-                    name.clone(),
-                    params.iter().map(|p| p.apply_subst(subst)).collect_vec(),
-                    expr.apply_subst(subst),
-                    body.apply_subst(subst),
-                ),
-                self.ty.apply_subst(subst),
-                self.span,
-            ),
-            ExprKind::Lambda(params, expr) => Expr::new(
-                ExprKind::Lambda(params.clone(), expr.apply_subst(subst)),
-                self.ty.apply_subst(subst),
-                self.span,
-            ),
-            ExprKind::If(cond, then, else_) => Expr::new(
-                ExprKind::If(
-                    cond.apply_subst(subst),
-                    then.apply_subst(subst),
-                    else_.apply_subst(subst),
-                ),
-                self.ty.apply_subst(subst),
-                self.span,
-            ),
-            ExprKind::Match(expr, arms) => Expr::new(
-                ExprKind::Match(
-                    expr.apply_subst(subst),
-                    arms.iter()
-                        .map(|(pat, arm)| (pat.apply_subst(subst), arm.apply_subst(subst)))
-                        .collect_vec(),
-                ),
-                self.ty.apply_subst(subst),
-                self.span,
-            ),
-            ExprKind::List(exprs) => Expr::new(
-                ExprKind::List(
-                    exprs
-                        .iter()
-                        .map(|expr| expr.apply_subst(subst))
-                        .collect_vec(),
-                ),
-                self.ty.apply_subst(subst),
-                self.span,
-            ),
-            ExprKind::Unit => self.clone(),
         }
     }
 }
@@ -266,26 +147,6 @@ impl Pattern {
             kind: Box::new(kind),
             ty,
             span,
-        }
-    }
-
-    pub fn apply_subst(&self, subst: &Substitution) -> Self {
-        Self {
-            kind: match self.kind.as_ref() {
-                PatternKind::Wildcard => Box::new(PatternKind::Wildcard),
-                PatternKind::Lit(l) => Box::new(PatternKind::Lit(l.clone())),
-                PatternKind::Ident(ident) => Box::new(PatternKind::Ident(ident.clone())),
-                PatternKind::List(pats) => Box::new(PatternKind::List(
-                    pats.iter().map(|pat| pat.apply_subst(subst)).collect_vec(),
-                )),
-                PatternKind::Pair(lhs, rhs) => Box::new(PatternKind::Pair(
-                    lhs.apply_subst(subst),
-                    rhs.apply_subst(subst),
-                )),
-                PatternKind::Unit => Box::new(PatternKind::Unit),
-            },
-            ty: self.ty.apply_subst(subst),
-            span: self.span,
         }
     }
 }

@@ -8,7 +8,7 @@ use self::{
     r#type::Type,
     registry::Registry,
     scheme::Scheme,
-    substitution::Substitution,
+    // substitution::Substitution,
     tir::*,
     ty_var::TyVar,
 };
@@ -57,13 +57,8 @@ impl TypeSolver {
             reg: Registry::new(),
             builtins,
             constraints: vec![],
-            sub: Substitution::new(),
             scoped_interner,
         }
-    }
-
-    pub fn sub(&self) -> &Substitution {
-        &self.sub
     }
 
     pub fn infer<'src>(
@@ -310,14 +305,15 @@ impl TypeSolver {
                 // unify(T0, T1 -> T')
                 let ty_args = solved_args
                     .iter()
-                    .map(|arg| arg.ty.apply_subst(&self.sub).clone())
+                    .map(|arg| arg.ty.apply_subst(&self.sub))
                     .collect_vec();
                 log::debug!("app_ty_args: {:?}", ty_args);
-                self.sub = self
-                    .sub
-                    .compose(&solved_fun.ty.apply_subst(&self.sub).unify(
-                        &Type::Lambda(ty_args, Box::new(ty_ret.clone())).apply_subst(&self.sub),
-                    )?);
+                self.sub = self.sub.compose(
+                    &solved_fun.ty.apply_subst(&self.sub).unify(
+                        &Type::Lambda(ty_args, Box::new(ty_ret.apply_subst(&self.sub)))
+                            .apply_subst(&self.sub),
+                    )?,
+                );
                 log::debug!("app_sub: {:?}", self.sub);
 
                 Ok(Expr::new(
