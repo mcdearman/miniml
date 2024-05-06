@@ -144,8 +144,7 @@ impl TypeSolver {
                 // log::debug!("let_solved_expr: {:?}", solved_expr);
 
                 // Γ, x: gen(T) ⊢ e1 : T'
-                let scheme = solved_expr.ty.generalize(&self.ctx);
-                let solved_pat = self.infer_pattern(pat)?;
+                let solved_pat = self.infer_pattern(pat, &solved_expr.ty, true)?;
                 self.sub = self.sub.compose(
                     &solved_pat
                         .ty
@@ -176,7 +175,7 @@ impl TypeSolver {
                 self.ctx.push();
                 let mut solved_params = vec![];
                 for (ty, param) in param_tys.iter().zip(params.iter()) {
-                    let solved_pat = self.infer_pattern(param)?;
+                    let solved_pat = self.infer_pattern(param, ty, false)?;
                     solved_params.push(solved_pat.clone());
                     self.sub = self.sub.compose(
                         &solved_pat
@@ -272,7 +271,7 @@ impl TypeSolver {
                 self.ctx.push();
                 let mut solved_params = vec![];
                 for (param, ty) in params.iter().zip(param_types.iter()) {
-                    let solved_pat = self.infer_pattern(param)?;
+                    let solved_pat = self.infer_pattern(param, ty, false)?;
                     solved_params.push(solved_pat.clone());
                     self.sub = self.sub.compose(&solved_pat.ty.unify(ty)?);
                 }
@@ -309,7 +308,10 @@ impl TypeSolver {
                 log::debug!("app_ty_ret: {:?}", ty_ret);
 
                 // unify(T0, T1 -> T')
-                let ty_args = solved_args.iter().map(|arg| arg.ty.clone()).collect_vec();
+                let ty_args = solved_args
+                    .iter()
+                    .map(|arg| arg.ty.apply_subst(&self.sub).clone())
+                    .collect_vec();
                 log::debug!("app_ty_args: {:?}", ty_args);
                 self.sub = self
                     .sub
@@ -366,7 +368,7 @@ impl TypeSolver {
                 // log::debug!("let_solved_expr: {:?}", solved_expr);
 
                 // Γ, x: T ⊢ e1 : T'
-                let solved_pat = self.infer_pattern(pat)?;
+                let solved_pat = self.infer_pattern(pat, &solved_expr.ty, false)?;
                 self.sub = self.sub.compose(
                     &solved_pat
                         .ty
@@ -398,7 +400,7 @@ impl TypeSolver {
                 self.ctx.push();
                 let mut solved_params = vec![];
                 for (ty, pat) in param_tys.iter().zip(params.iter()) {
-                    let solved_pat = self.infer_pattern(pat)?;
+                    let solved_pat = self.infer_pattern(pat, ty, false)?;
                     solved_params.push(solved_pat.clone());
                     self.sub = self.sub.compose(
                         &solved_pat
@@ -457,7 +459,7 @@ impl TypeSolver {
                 let mut solved_arms = vec![];
                 for (pat, body) in arms {
                     self.ctx.push();
-                    let solved_pat = self.infer_pattern(pat)?;
+                    let solved_pat = self.infer_pattern(pat, &ty, false)?;
                     self.sub = self.sub.compose(
                         &solved_pat
                             .ty
@@ -509,7 +511,12 @@ impl TypeSolver {
         }
     }
 
-    fn infer_pattern(&mut self, pat: &nir::Pattern) -> InferResult<Pattern> {
+    fn infer_pattern(
+        &mut self,
+        pat: &nir::Pattern,
+        ty: &Type,
+        generalize: bool,
+    ) -> InferResult<Pattern> {
         match pat.kind.as_ref() {
             nir::PatternKind::Wildcard => Ok(Pattern::new(
                 PatternKind::Wildcard,
@@ -518,14 +525,24 @@ impl TypeSolver {
             )),
             nir::PatternKind::Ident(name, hint) => {
                 log::debug!("infer pattern ident: {:?}", name.id);
-                let ty = Type::Var(TyVar::fresh());
-                log::debug!("infer_ident_ty: {:?}", ty);
-                self.ctx.insert(name.id, Scheme::new(vec![], ty.clone()));
+                if generalize {
+                    self.ctx.insert(name.id, ty.generalize(&self.ctx));
+                } else {
+                    self.ctx.insert(name.id, Scheme::new(vec![], ty.clone()));
+                }
+                // self.ctx.insert(id, scheme)
+                // let ty = Type::Var(TyVar::fresh());
+                // log::debug!("infer_ident_ty: {:?}", ty);
+                // self.ctx.insert(name.id, Scheme::new(vec![], ty.clone()));
                 // if let Some(hint) = hint {
                 //     let hint_ty = self.reg.get(hint).unwrap();
                 //     self.sub = self.sub.compose(&ty.unify(hint_ty.clone())?);
                 // }
-                Ok(Pattern::new(PatternKind::Ident(*name), ty, pat.span))
+                Ok(Pattern::new(
+                    PatternKind::Ident(*name),
+                    ty.clone(),
+                    pat.span,
+                ))
             }
             nir::PatternKind::Lit(lit) => match *lit {
                 nir::Lit::Byte(b) => Ok(Pattern::new(
@@ -566,22 +583,23 @@ impl TypeSolver {
             },
             nir::PatternKind::List(pats) => {
                 let ty = Type::Var(TyVar::fresh());
+                let list_ty = Type::List(Box::new(ty.clone()));
                 let solved_pats = pats
                     .iter()
-                    .map(|pat| self.infer_pattern(pat))
+                    .map(|pat| self.infer_pattern(pat, &ty, generalize))
                     .collect::<InferResult<Vec<Pattern>>>()?;
 
                 Ok(Pattern::new(
                     PatternKind::List(solved_pats),
-                    Type::List(Box::new(ty.apply_subst(&self.sub))),
+                    list_ty.apply_subst(&self.sub),
                     pat.span,
                 ))
             }
             nir::PatternKind::Pair(lhs, rhs) => {
                 let ty = Type::Var(TyVar::fresh());
                 let list_ty = Type::List(Box::new(ty.clone()));
-                let solved_lhs = self.infer_pattern(lhs)?;
-                let solved_rhs = self.infer_pattern(rhs)?;
+                let solved_lhs = self.infer_pattern(lhs, &ty, generalize)?;
+                let solved_rhs = self.infer_pattern(rhs, &list_ty, generalize)?;
 
                 self.sub = self.sub.compose(
                     &solved_lhs
