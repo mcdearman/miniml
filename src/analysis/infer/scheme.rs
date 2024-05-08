@@ -21,9 +21,9 @@ impl Scheme {
     }
 
     pub fn instantiate(&self) -> Type {
-        for var in self.clone().vars {
-            subst.insert(var, Type::Var(TyVar::fresh()));
-        }
-        self.ty.apply_subst(&subst)
-    }
+    //     for var in self.clone().vars {
+    //         subst.insert(var, Type::Var(TyVar::fresh()));
+    //     }
+    //     self.ty.apply_subst(&subst)
+    // }
 }

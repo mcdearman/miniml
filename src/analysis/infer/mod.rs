@@ -42,7 +42,6 @@ pub struct TypeSolver {
     reg: Registry,
     builtins: HashMap<UniqueId, InternedString>,
     constraints: Vec<Constraint>,
-    sub: Substitution,
     scoped_interner: ScopedInterner,
 }
 
