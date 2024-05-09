@@ -3,12 +3,9 @@ use super::{
     r#type::Type,
 };
 use crate::utils::unique_id::UniqueId;
-use std::{
-    fmt::{Debug, Display},
-    ops::Bound,
-};
+use std::fmt::{Debug, Display};
 
-#[derive(Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub enum TyVar {
     Bound(Box<Type>),
     Unbound(UniqueId),
@@ -26,7 +23,7 @@ impl TyVar {
         }
     }
 
-    pub fn bind(&self, ty: Type) -> InferResult<()> {
+    pub fn bind(&mut self, ty: Type) -> InferResult<()> {
         if ty.clone() == Type::Var(self.clone()) {
             Ok(())
         } else if ty.free_vars().contains(self) {

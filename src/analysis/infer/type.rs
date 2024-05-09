@@ -9,11 +9,13 @@ use super::{
 };
 use crate::utils::{intern::InternedString, unique_id::UniqueId};
 use std::{
+    cell::RefCell,
     collections::{HashMap, HashSet},
     fmt::{Debug, Display},
+    rc::Rc,
 };
 
-#[derive(Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub enum Type {
     Byte,
     Int,
@@ -22,7 +24,7 @@ pub enum Type {
     Bool,
     String,
     Char,
-    Var(TyVar),
+    Var(Rc<RefCell<TyVar>>),
     Lambda(Vec<Self>, Box<Self>),
     // Qual(Box<Constraint>, Box<Self>),
     List(Box<Self>),
@@ -51,7 +53,7 @@ impl Type {
         )
     }
 
-    pub fn unify(&self, other: &Self) -> InferResult<()> {
+    pub fn unify(&mut self, other: &mut Self) -> InferResult<()> {
         log::debug!("unify: {:?} and {:?}", self, other);
         match (self, other) {
             (Type::Byte, Type::Byte)
@@ -74,7 +76,7 @@ impl Type {
                 // Ok(s1.compose(&s2))
                 todo!()
             }
-            (Type::List(t1), Type::List(t2)) => t1.unify(&t2),
+            (Type::List(t1), Type::List(t2)) => t1.unify(t2),
             (_, Type::Var(var)) => var.bind(self.clone()),
             (Type::Var(var), _) => var.bind(other.clone()),
             _ => Err(TypeError::from(format!(
@@ -133,7 +135,7 @@ impl Display for Type {
                 | Type::Unit => ty,
                 Type::Var(var) => {
                     if let Some(v) = vars.get(&var) {
-                        Type::Var(*v)
+                        Type::Var(v.clone())
                     } else {
                         let ty = TyVar::Unbound(UniqueId::new(vars.len()));
                         vars.insert(var, ty.clone());
