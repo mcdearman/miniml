@@ -131,13 +131,13 @@ impl Display for Type {
                 | Type::String
                 | Type::Char
                 | Type::Unit => ty,
-                Type::Var(name) => {
-                    if let Some(n) = vars.get(&name) {
-                        Type::Var(*n)
+                Type::Var(var) => {
+                    if let Some(v) = vars.get(&var) {
+                        Type::Var(*v)
                     } else {
-                        let n = vars.len();
-                        vars.insert(name, TyVar::from(n));
-                        Type::Var(TyVar::from(n))
+                        let ty = TyVar::Unbound(UniqueId::new(vars.len()));
+                        vars.insert(var, ty.clone());
+                        Type::Var(ty)
                     }
                 }
                 Type::Lambda(params, body) => Type::Lambda(

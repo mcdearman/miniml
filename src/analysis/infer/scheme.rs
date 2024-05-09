@@ -21,9 +21,7 @@ impl Scheme {
     }
 
     pub fn instantiate(&self) -> Type {
-    //     for var in self.clone().vars {
-    //         subst.insert(var, Type::Var(TyVar::fresh()));
-    //     }
-    //     self.ty.apply_subst(&subst)
-    // }
+        let new_vars = self.vars.iter().map(|_| TyVar::fresh()).collect();
+        todo!()
+    }
 }
