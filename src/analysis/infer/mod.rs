@@ -1,6 +1,3 @@
-use insta::internals::AutoName;
-use itertools::Itertools;
-
 use self::{
     constraint::Constraint,
     context::Context,
@@ -23,11 +20,13 @@ use crate::{
         unique_id::UniqueId,
     },
 };
+use itertools::Itertools;
 use std::{collections::HashMap, vec};
 
 mod constraint;
-pub mod context;
+mod context;
 pub mod error;
+mod meta_context;
 pub mod registry;
 mod scheme;
 pub mod tir;

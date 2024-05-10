@@ -15,7 +15,7 @@ use std::{
     rc::Rc,
 };
 
-#[derive(Clone, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum Type {
     Byte,
     Int,
@@ -24,7 +24,7 @@ pub enum Type {
     Bool,
     String,
     Char,
-    Var(Rc<RefCell<TyVar>>),
+    Var(TyVar),
     Lambda(Vec<Self>, Box<Self>),
     // Qual(Box<Constraint>, Box<Self>),
     List(Box<Self>),
