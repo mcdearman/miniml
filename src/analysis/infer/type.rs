@@ -4,8 +4,8 @@ use super::{
     constraint::Constraint,
     context::Context,
     error::{InferResult, TypeError},
+    meta::Meta,
     scheme::Scheme,
-    ty_var::TyVar,
 };
 use crate::utils::{intern::InternedString, unique_id::UniqueId};
 use std::{
@@ -24,7 +24,7 @@ pub enum Type {
     Bool,
     String,
     Char,
-    Var(TyVar),
+    Var(Meta),
     Lambda(Vec<Self>, Box<Self>),
     // Qual(Box<Constraint>, Box<Self>),
     List(Box<Self>),
@@ -55,7 +55,7 @@ impl Type {
 
     pub fn unify(&mut self, other: &mut Self) -> InferResult<()> {
         log::debug!("unify: {:?} and {:?}", self, other);
-        match (self, other) {
+        match (&self, &other) {
             (Type::Byte, Type::Byte)
             | (Type::Int, Type::Int)
             | (Type::Rational, Type::Rational)
@@ -76,7 +76,7 @@ impl Type {
                 // Ok(s1.compose(&s2))
                 todo!()
             }
-            (Type::List(t1), Type::List(t2)) => t1.unify(t2),
+            (Type::List(t1), Type::List(t2)) => t1.unify(t2.as_mut()),
             (_, Type::Var(var)) => var.bind(self.clone()),
             (Type::Var(var), _) => var.bind(other.clone()),
             _ => Err(TypeError::from(format!(
@@ -86,7 +86,7 @@ impl Type {
         }
     }
 
-    pub(super) fn free_vars(&self) -> HashSet<TyVar> {
+    pub(super) fn free_vars(&self) -> HashSet<Meta> {
         match self {
             Self::Var(n) => vec![n.clone()].into_iter().collect(),
             Self::Lambda(params, body) => params
@@ -123,7 +123,7 @@ impl Debug for Type {
 
 impl Display for Type {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        fn lower(ty: Type, vars: &mut HashMap<TyVar, TyVar>) -> Type {
+        fn lower(ty: Type, vars: &mut HashMap<Meta, Meta>) -> Type {
             match ty {
                 Type::Byte
                 | Type::Int
@@ -137,7 +137,7 @@ impl Display for Type {
                     if let Some(v) = vars.get(&var) {
                         Type::Var(v.clone())
                     } else {
-                        let ty = TyVar::Unbound(UniqueId::new(vars.len()));
+                        let ty = Meta::Unbound(UniqueId::new(vars.len()));
                         vars.insert(var, ty.clone());
                         Type::Var(ty)
                     }

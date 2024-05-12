@@ -5,13 +5,13 @@ use super::{
 use crate::utils::unique_id::UniqueId;
 use std::fmt::{Debug, Display};
 
-#[derive(Clone, PartialEq, Eq, PartialOrd, Ord)]
-pub enum TyVar {
+#[derive(Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub enum Meta {
     Bound(Box<Type>),
     Unbound(UniqueId),
 }
 
-impl TyVar {
+impl Meta {
     pub fn fresh() -> Self {
         Self::Unbound(UniqueId::gen())
     }
@@ -38,7 +38,7 @@ impl TyVar {
     }
 }
 
-impl Debug for TyVar {
+impl Debug for Meta {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}", self)
     }
@@ -53,7 +53,7 @@ const ALPHABET: &[char] = &[
     'y', 'z',
 ];
 
-impl Display for TyVar {
+impl Display for Meta {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Self::Bound(ty) => write!(f, "{}", ty),

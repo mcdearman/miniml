@@ -2,12 +2,12 @@ use self::{
     constraint::Constraint,
     context::Context,
     error::{InferResult, TypeError},
+    meta::Meta,
     r#type::Type,
     registry::Registry,
     scheme::Scheme,
     // substitution::Substitution,
     tir::*,
-    ty_var::TyVar,
 };
 use crate::{
     rename::nir,
@@ -26,11 +26,11 @@ use std::{collections::HashMap, vec};
 mod constraint;
 mod context;
 pub mod error;
+mod meta;
 mod meta_context;
 pub mod registry;
 mod scheme;
 pub mod tir;
-mod ty_var;
 pub mod r#type;
 
 #[derive(Debug, Clone)]
@@ -113,10 +113,10 @@ impl TypeSolver {
                 // to show that Γ ⊢ fn x = e0 in e1 : T' we need to show that
                 // Γ, x: gen(T) ⊢ e1 : T'
 
-                let mut param_vars = params.iter().map(|_| TyVar::fresh()).collect_vec();
+                let mut param_vars = params.iter().map(|_| Meta::fresh()).collect_vec();
                 let mut param_tys = param_vars.iter().map(|var| Type::Var(*var)).collect_vec();
 
-                let mut ty_ret = Type::Var(TyVar::fresh());
+                let mut ty_ret = Type::Var(Meta::fresh());
                 let mut fn_ty = Type::Lambda(param_tys.clone(), Box::new(ty_ret.clone()));
                 log::debug!("decl_fn_ty: {:?}", fn_ty);
 
@@ -205,7 +205,7 @@ impl TypeSolver {
                 // let param_ty = Type::Var(TyVar::fresh());
 
                 // Γ, x : T ⊢ e : T'
-                let param_types = vec![Type::Var(TyVar::fresh()); params.len()];
+                let param_types = vec![Type::Var(Meta::fresh()); params.len()];
                 log::debug!("lambda_param_types: {:?}", param_types);
                 self.ctx.push();
                 let mut solved_params = vec![];
@@ -243,7 +243,7 @@ impl TypeSolver {
                 // log::debug!("app_solved_args: {:?}", solved_args);
 
                 // T' = newvar
-                let ty_ret = Type::Var(TyVar::fresh());
+                let ty_ret = Type::Var(Meta::fresh());
                 log::debug!("app_ty_ret: {:?}", ty_ret);
 
                 // unify(T0, T1 -> T')
@@ -310,8 +310,8 @@ impl TypeSolver {
                 // to show that Γ ⊢ fn x = e0 in e1 : T' we need to show that
                 // Γ, x: gen(T) ⊢ e1 : T'
 
-                let param_tys = vec![Type::Var(TyVar::fresh()); params.len()];
-                let mut ty_ret = Type::Var(TyVar::fresh());
+                let param_tys = vec![Type::Var(Meta::fresh()); params.len()];
+                let mut ty_ret = Type::Var(Meta::fresh());
                 let fn_ty = Type::Lambda(param_tys.clone(), Box::new(ty_ret.clone()));
                 log::debug!("fn_ty: {:?}", fn_ty);
 
@@ -358,7 +358,7 @@ impl TypeSolver {
             nir::ExprKind::Match(expr, arms) => {
                 log::debug!("infer match");
                 let mut solved_expr = self.infer_expr(expr)?;
-                let mut ty = Type::Var(TyVar::fresh());
+                let mut ty = Type::Var(Meta::fresh());
                 let mut solved_arms = vec![];
                 for (pat, body) in arms {
                     self.ctx.push();
@@ -377,7 +377,7 @@ impl TypeSolver {
                 ))
             }
             nir::ExprKind::List(exprs) => {
-                let mut ty = Type::Var(TyVar::fresh());
+                let mut ty = Type::Var(Meta::fresh());
 
                 let solved_exprs = exprs
                     .iter()
@@ -408,7 +408,7 @@ impl TypeSolver {
         match pat.kind.as_ref() {
             nir::PatternKind::Wildcard => Ok(Pattern::new(
                 PatternKind::Wildcard,
-                Type::Var(TyVar::fresh()),
+                Type::Var(Meta::fresh()),
                 pat.span,
             )),
             nir::PatternKind::Ident(name, hint) => {
@@ -470,7 +470,7 @@ impl TypeSolver {
                 )),
             },
             nir::PatternKind::List(pats) => {
-                let ty = Type::Var(TyVar::fresh());
+                let ty = Type::Var(Meta::fresh());
                 let list_ty = Type::List(Box::new(ty.clone()));
                 let solved_pats = pats
                     .iter()
@@ -484,7 +484,7 @@ impl TypeSolver {
                 ))
             }
             nir::PatternKind::Pair(lhs, rhs) => {
-                let mut ty = Type::Var(TyVar::fresh());
+                let mut ty = Type::Var(Meta::fresh());
                 let mut list_ty = Type::List(Box::new(ty.clone()));
                 let mut solved_lhs = self.infer_pattern(lhs, &ty, generalize)?;
                 let mut solved_rhs = self.infer_pattern(rhs, &list_ty, generalize)?;

@@ -1,4 +1,4 @@
-use super::{r#type::Type, scheme::Scheme, ty_var::TyVar};
+use super::{meta::Meta, r#type::Type, scheme::Scheme};
 use crate::utils::{intern::InternedString, unique_id::UniqueId};
 use std::collections::{HashMap, HashSet};
 
@@ -19,7 +19,7 @@ impl Context {
         for (id, name) in builtins {
             match name.as_ref() {
                 "neg" => {
-                    let var = TyVar::fresh();
+                    let var = Meta::fresh();
                     frame.insert(
                         *id,
                         Scheme::new(
@@ -80,7 +80,7 @@ impl Context {
                     );
                 }
                 "pow" => {
-                    let var = TyVar::fresh();
+                    let var = Meta::fresh();
                     frame.insert(
                         *id,
                         Scheme::new(
@@ -93,7 +93,7 @@ impl Context {
                     );
                 }
                 "eq" => {
-                    let var = TyVar::fresh();
+                    let var = Meta::fresh();
                     frame.insert(
                         *id,
                         Scheme::new(
@@ -106,7 +106,7 @@ impl Context {
                     );
                 }
                 "neq" => {
-                    let var = TyVar::fresh();
+                    let var = Meta::fresh();
                     frame.insert(
                         *id,
                         Scheme::new(
@@ -119,7 +119,7 @@ impl Context {
                     );
                 }
                 "lt" => {
-                    let var = TyVar::fresh();
+                    let var = Meta::fresh();
                     frame.insert(
                         *id,
                         Scheme::new(
@@ -132,7 +132,7 @@ impl Context {
                     );
                 }
                 "lte" => {
-                    let var = TyVar::fresh();
+                    let var = Meta::fresh();
                     frame.insert(
                         *id,
                         Scheme::new(
@@ -145,7 +145,7 @@ impl Context {
                     );
                 }
                 "gt" => {
-                    let var = TyVar::fresh();
+                    let var = Meta::fresh();
                     frame.insert(
                         *id,
                         Scheme::new(
@@ -158,7 +158,7 @@ impl Context {
                     );
                 }
                 "gte" => {
-                    let var = TyVar::fresh();
+                    let var = Meta::fresh();
                     frame.insert(
                         *id,
                         Scheme::new(
@@ -171,7 +171,7 @@ impl Context {
                     );
                 }
                 "println" => {
-                    let var = TyVar::fresh();
+                    let var = Meta::fresh();
                     frame.insert(
                         *id,
                         Scheme::new(
@@ -181,7 +181,7 @@ impl Context {
                     );
                 }
                 "pair" => {
-                    let var = TyVar::fresh();
+                    let var = Meta::fresh();
                     let ty = Type::Var(var);
                     frame.insert(
                         *id,
@@ -222,7 +222,7 @@ impl Context {
         }
     }
 
-    pub(super) fn free_vars(&self) -> HashSet<TyVar> {
+    pub(super) fn free_vars(&self) -> HashSet<Meta> {
         self.frames
             .iter()
             .map(|frame| frame.free_vars())
@@ -256,7 +256,7 @@ impl Frame {
         self.bindings.insert(id, scheme);
     }
 
-    pub(super) fn free_vars(&self) -> HashSet<TyVar> {
+    pub(super) fn free_vars(&self) -> HashSet<Meta> {
         self.clone()
             .bindings
             .into_iter()
