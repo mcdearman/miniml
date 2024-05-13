@@ -3,10 +3,10 @@ use self::{
     context::Context,
     error::{InferResult, TypeError},
     meta::Meta,
+    meta_context::MetaContext,
     r#type::Type,
     registry::Registry,
     scheme::Scheme,
-    // substitution::Substitution,
     tir::*,
 };
 use crate::{
@@ -37,6 +37,7 @@ pub mod r#type;
 pub struct TypeSolver {
     src: InternedString,
     ctx: Context,
+    meta_ctx: MetaContext,
     reg: Registry,
     builtins: HashMap<UniqueId, InternedString>,
     constraints: Vec<Constraint>,
@@ -51,6 +52,7 @@ impl TypeSolver {
         Self {
             src: "".into(),
             ctx: Context::from_builtins(&builtins),
+            meta_ctx: MetaContext::new(),
             reg: Registry::new(),
             builtins,
             constraints: vec![],
@@ -67,6 +69,7 @@ impl TypeSolver {
         self.src = src.into();
         let mut decls = vec![];
         let mut errors = vec![];
+
         for decl in &nir.decls {
             match self.infer_decl(decl) {
                 Ok(decl) => {

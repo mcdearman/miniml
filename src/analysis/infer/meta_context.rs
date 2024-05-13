@@ -27,8 +27,4 @@ impl MetaContext {
     pub fn get_mut(&mut self, id: UniqueId) -> Option<&mut Meta> {
         self.bindings.get_mut(&id)
     }
-
-    pub fn remove(&mut self, id: UniqueId) -> Option<Meta> {
-        self.bindings.remove(&id)
-    }
 }
