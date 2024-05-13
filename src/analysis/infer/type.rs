@@ -24,7 +24,7 @@ pub enum Type {
     Bool,
     String,
     Char,
-    Var(Meta),
+    Var(UniqueId),
     Lambda(Vec<Self>, Box<Self>),
     // Qual(Box<Constraint>, Box<Self>),
     List(Box<Self>),
@@ -53,40 +53,7 @@ impl Type {
         )
     }
 
-    pub fn unify(&mut self, other: &mut Self) -> InferResult<()> {
-        log::debug!("unify: {:?} and {:?}", self, other);
-        match (&self, &other) {
-            (Type::Byte, Type::Byte)
-            | (Type::Int, Type::Int)
-            | (Type::Rational, Type::Rational)
-            | (Type::Real, Type::Real)
-            | (Type::Bool, Type::Bool)
-            | (Type::String, Type::String)
-            | (Type::Char, Type::Char)
-            | (Type::Unit, Type::Unit) => Ok(()),
-            (Type::Lambda(p1, b1), Type::Lambda(p2, b2)) => {
-                // let s1 = p1.iter().zip(p2.iter()).try_fold(
-                //     Substitution::new(),
-                //     |s, (t1, t2)| match t1.apply_subst(&s).unify(&t2.apply_subst(&s)) {
-                //         Ok(sub) => Ok(s.compose(&sub)),
-                //         err => err,
-                //     },
-                // )?;
-                // let s2 = b1.apply_subst(&s1).unify(&b2.apply_subst(&s1))?;
-                // Ok(s1.compose(&s2))
-                todo!()
-            }
-            (Type::List(t1), Type::List(t2)) => t1.unify(t2.as_mut()),
-            (_, Type::Var(var)) => var.bind(self.clone()),
-            (Type::Var(var), _) => var.bind(other.clone()),
-            _ => Err(TypeError::from(format!(
-                "cannot unify {:?} and {:?}",
-                self, other,
-            ))),
-        }
-    }
-
-    pub(super) fn free_vars(&self) -> HashSet<Meta> {
+    pub(super) fn free_vars(&self) -> HashSet<UniqueId> {
         match self {
             Self::Var(n) => vec![n.clone()].into_iter().collect(),
             Self::Lambda(params, body) => params

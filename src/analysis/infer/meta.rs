@@ -1,5 +1,6 @@
 use super::{
     error::{InferResult, TypeError},
+    meta_context::MetaContext,
     r#type::Type,
 };
 use crate::utils::unique_id::UniqueId;
@@ -20,20 +21,6 @@ impl Meta {
         match self {
             Self::Bound(_) => None,
             Self::Unbound(id) => Some(*id),
-        }
-    }
-
-    pub fn bind(&mut self, ty: Type) -> InferResult<()> {
-        if ty.clone() == Type::Var(self.clone()) {
-            Ok(())
-        } else if ty.free_vars().contains(self) {
-            Err(TypeError::from(format!(
-                "occurs check failed: {} occurs in {:?}",
-                self, ty
-            )))
-        } else {
-            *self = Self::Bound(Box::new(ty));
-            Ok(())
         }
     }
 }

@@ -1,20 +1,20 @@
 use crate::utils::unique_id::UniqueId;
 
-use super::{meta::Meta, r#type::Type};
+use super::{meta::Meta, meta_context::MetaContext, r#type::Type};
 use std::collections::{HashMap, HashSet};
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Scheme {
-    vars: Vec<Meta>,
+    vars: Vec<UniqueId>,
     ty: Type,
 }
 
 impl Scheme {
-    pub fn new(vars: Vec<Meta>, ty: Type) -> Self {
+    pub fn new(vars: Vec<UniqueId>, ty: Type) -> Self {
         Self { vars, ty }
     }
 
-    pub fn free_vars(&self) -> HashSet<Meta> {
+    pub fn free_vars(&self) -> HashSet<UniqueId> {
         self.ty
             .free_vars()
             .difference(&self.vars.iter().cloned().collect())
@@ -22,8 +22,8 @@ impl Scheme {
             .collect()
     }
 
-    pub fn instantiate(&self) -> Type {
-        fn replace_tvs(ty: &Type, from: &Meta, to: &Type) -> Type {
+    pub fn instantiate(&self, meta_ctx: &mut MetaContext) -> Type {
+        fn replace_tvs(ty: &Type, from: &UniqueId, to: &Type) -> Type {
             match ty {
                 Type::Var(tv) if tv == from => to.clone(),
                 Type::Lambda(params, body) => {
@@ -45,13 +45,9 @@ impl Scheme {
 
         let mut tvs_to_replace = HashMap::new();
         for tv in self.vars.iter() {
-            tvs_to_replace.insert(tv.clone(), Type::Var(Meta::fresh()));
+            tvs_to_replace.insert(tv.clone(), Type::Var(meta_ctx.fresh()));
         }
 
-        replace_tvs(
-            &self.ty,
-            &Meta::Unbound(UniqueId::new(0)),
-            &Type::Var(Meta::fresh()),
-        )
+        replace_tvs(&self.ty, &UniqueId::new(0), &Type::Var(meta_ctx.fresh()))
     }
 }

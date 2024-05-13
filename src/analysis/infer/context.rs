@@ -1,4 +1,4 @@
-use super::{meta::Meta, r#type::Type, scheme::Scheme};
+use super::{meta::Meta, meta_context::MetaContext, r#type::Type, scheme::Scheme};
 use crate::utils::{intern::InternedString, unique_id::UniqueId};
 use std::collections::{HashMap, HashSet};
 
@@ -14,17 +14,20 @@ impl Context {
         }
     }
 
-    pub fn from_builtins(builtins: &HashMap<UniqueId, InternedString>) -> Self {
+    pub fn from_builtins(
+        builtins: &HashMap<UniqueId, InternedString>,
+        meta_ctx: &mut MetaContext,
+    ) -> Self {
         let mut frame = Frame::new();
         for (id, name) in builtins {
             match name.as_ref() {
                 "neg" => {
-                    let var = Meta::fresh();
+                    let key = meta_ctx.fresh();
                     frame.insert(
                         *id,
                         Scheme::new(
-                            vec![var],
-                            Type::Lambda(vec![Type::Var(var)], Box::new(Type::Var(var))),
+                            vec![key],
+                            Type::Lambda(vec![Type::Var(key)], Box::new(Type::Var(key))),
                         ),
                     );
                 }
@@ -222,7 +225,7 @@ impl Context {
         }
     }
 
-    pub(super) fn free_vars(&self) -> HashSet<Meta> {
+    pub(super) fn free_vars(&self) -> HashSet<UniqueId> {
         self.frames
             .iter()
             .map(|frame| frame.free_vars())
@@ -256,7 +259,7 @@ impl Frame {
         self.bindings.insert(id, scheme);
     }
 
-    pub(super) fn free_vars(&self) -> HashSet<Meta> {
+    pub(super) fn free_vars(&self) -> HashSet<UniqueId> {
         self.clone()
             .bindings
             .into_iter()
