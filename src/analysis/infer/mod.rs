@@ -6,7 +6,7 @@ use self::{
     meta_context::MetaContext,
     r#type::Type,
     registry::Registry,
-    scheme::Scheme,
+    scheme::PolyType,
     tir::*,
 };
 use crate::{
@@ -117,14 +117,14 @@ impl TypeSolver {
                 // Γ, x: gen(T) ⊢ e1 : T'
 
                 let mut param_vars = params.iter().map(|_| self.meta_ctx.fresh()).collect_vec();
-                let mut param_tys = param_vars.iter().map(|var| Type::Var(*var)).collect_vec();
+                let mut param_tys = param_vars.iter().map(|var| Type::Meta(*var)).collect_vec();
 
-                let mut ty_ret = Type::Var(self.meta_ctx.fresh());
+                let mut ty_ret = Type::Meta(self.meta_ctx.fresh());
                 let mut fn_ty = Type::Lambda(param_tys.clone(), Box::new(ty_ret.clone()));
                 log::debug!("decl_fn_ty: {:?}", fn_ty);
 
                 self.ctx
-                    .insert(name.id, Scheme::new(param_vars.clone(), fn_ty.clone()));
+                    .insert(name.id, PolyType::new(param_vars.clone(), fn_ty.clone()));
                 self.ctx.push();
 
                 let mut solved_params = vec![];
@@ -208,7 +208,7 @@ impl TypeSolver {
                 // T = newvar
 
                 // Γ, x : T ⊢ e : T'
-                let param_types = vec![Type::Var(self.meta_ctx.fresh()); params.len()];
+                let param_types = vec![Type::Meta(self.meta_ctx.fresh()); params.len()];
                 log::debug!("lambda_param_types: {:?}", param_types);
                 self.ctx.push();
                 let mut solved_params = vec![];
@@ -244,7 +244,7 @@ impl TypeSolver {
                 // log::debug!("app_solved_args: {:?}", solved_args);
 
                 // T' = newvar
-                let ty_ret = Type::Var(self.meta_ctx.fresh());
+                let ty_ret = Type::Meta(self.meta_ctx.fresh());
                 log::debug!("app_ty_ret: {:?}", ty_ret);
 
                 // unify(T0, T1 -> T')
@@ -313,13 +313,14 @@ impl TypeSolver {
                 // to show that Γ ⊢ fn x = e0 in e1 : T' we need to show that
                 // Γ, x: gen(T) ⊢ e1 : T'
 
-                let param_tys = vec![Type::Var(self.meta_ctx.fresh()); params.len()];
-                let mut ty_ret = Type::Var(self.meta_ctx.fresh());
+                let param_tys = vec![Type::Meta(self.meta_ctx.fresh()); params.len()];
+                let mut ty_ret = Type::Meta(self.meta_ctx.fresh());
                 let fn_ty = Type::Lambda(param_tys.clone(), Box::new(ty_ret.clone()));
                 log::debug!("fn_ty: {:?}", fn_ty);
 
                 self.ctx.push();
-                self.ctx.insert(name.id, Scheme::new(vec![], fn_ty.clone()));
+                self.ctx
+                    .insert(name.id, PolyType::new(vec![], fn_ty.clone()));
                 self.ctx.push();
                 let mut solved_params = vec![];
                 for (mut ty, pat) in param_tys.iter().zip(params.iter()) {
@@ -361,7 +362,7 @@ impl TypeSolver {
             nir::ExprKind::Match(expr, arms) => {
                 log::debug!("infer match");
                 let mut solved_expr = self.infer_expr(expr)?;
-                let mut ty = Type::Var(self.meta_ctx.fresh());
+                let mut ty = Type::Meta(self.meta_ctx.fresh());
                 let mut solved_arms = vec![];
                 for (pat, body) in arms {
                     self.ctx.push();
@@ -382,7 +383,7 @@ impl TypeSolver {
                 ))
             }
             nir::ExprKind::List(exprs) => {
-                let mut ty = Type::Var(self.meta_ctx.fresh());
+                let mut ty = Type::Meta(self.meta_ctx.fresh());
 
                 let solved_exprs = exprs
                     .iter()
@@ -413,7 +414,7 @@ impl TypeSolver {
         match pat.kind.as_ref() {
             nir::PatternKind::Wildcard => Ok(Pattern::new(
                 PatternKind::Wildcard,
-                Type::Var(self.meta_ctx.fresh()),
+                Type::Meta(self.meta_ctx.fresh()),
                 pat.span,
             )),
             nir::PatternKind::Ident(name, hint) => {
@@ -421,7 +422,7 @@ impl TypeSolver {
                 if generalize {
                     self.ctx.insert(name.id, ty.generalize(&self.ctx));
                 } else {
-                    self.ctx.insert(name.id, Scheme::new(vec![], ty.clone()));
+                    self.ctx.insert(name.id, PolyType::new(vec![], ty.clone()));
                 }
                 // self.ctx.insert(id, scheme)
                 // let ty = Type::Var(TyVar::fresh());
@@ -475,7 +476,7 @@ impl TypeSolver {
                 )),
             },
             nir::PatternKind::List(pats) => {
-                let ty = Type::Var(self.meta_ctx.fresh());
+                let ty = Type::Meta(self.meta_ctx.fresh());
                 let list_ty = Type::List(Box::new(ty.clone()));
                 let solved_pats = pats
                     .iter()
@@ -489,7 +490,7 @@ impl TypeSolver {
                 ))
             }
             nir::PatternKind::Pair(lhs, rhs) => {
-                let mut ty = Type::Var(self.meta_ctx.fresh());
+                let mut ty = Type::Meta(self.meta_ctx.fresh());
                 let mut list_ty = Type::List(Box::new(ty.clone()));
                 let mut solved_lhs = self.infer_pattern(lhs, &ty, generalize)?;
                 let mut solved_rhs = self.infer_pattern(rhs, &list_ty, generalize)?;
@@ -531,8 +532,8 @@ impl TypeSolver {
                 todo!()
             }
             (Type::List(l1), Type::List(l2)) => self.unify(l1, l2),
-            (_, Type::Var(key)) => self.meta_ctx.bind(key, t1),
-            (Type::Var(key), _) => self.meta_ctx.bind(key, t2),
+            (_, Type::Meta(key)) => self.meta_ctx.bind(key, t1),
+            (Type::Meta(key), _) => self.meta_ctx.bind(key, t2),
             _ => Err(TypeError::from(format!(
                 "cannot unify {:?} and {:?}",
                 t1, t2,

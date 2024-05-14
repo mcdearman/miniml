@@ -1,4 +1,4 @@
-use super::{meta::Meta, meta_context::MetaContext, r#type::Type, scheme::Scheme};
+use super::{meta::Meta, meta_context::MetaContext, r#type::Type, scheme::PolyType};
 use crate::utils::{intern::InternedString, unique_id::UniqueId};
 use std::collections::{HashMap, HashSet};
 
@@ -25,22 +25,22 @@ impl Context {
                     let key = meta_ctx.fresh();
                     frame.insert(
                         *id,
-                        Scheme::new(
+                        PolyType::new(
                             vec![key],
-                            Type::Lambda(vec![Type::Var(key)], Box::new(Type::Var(key))),
+                            Type::Lambda(vec![Type::Meta(key)], Box::new(Type::Meta(key))),
                         ),
                     );
                 }
                 "not" => {
                     frame.insert(
                         *id,
-                        Scheme::new(vec![], Type::Lambda(vec![Type::Bool], Box::new(Type::Bool))),
+                        PolyType::new(vec![], Type::Lambda(vec![Type::Bool], Box::new(Type::Bool))),
                     );
                 }
                 "add" => {
                     frame.insert(
                         *id,
-                        Scheme::new(
+                        PolyType::new(
                             vec![],
                             Type::Lambda(vec![Type::Int, Type::Int], Box::new(Type::Int)),
                         ),
@@ -49,7 +49,7 @@ impl Context {
                 "sub" => {
                     frame.insert(
                         *id,
-                        Scheme::new(
+                        PolyType::new(
                             vec![],
                             Type::Lambda(vec![Type::Int, Type::Int], Box::new(Type::Int)),
                         ),
@@ -58,7 +58,7 @@ impl Context {
                 "mul" => {
                     frame.insert(
                         *id,
-                        Scheme::new(
+                        PolyType::new(
                             vec![],
                             Type::Lambda(vec![Type::Int, Type::Int], Box::new(Type::Int)),
                         ),
@@ -67,7 +67,7 @@ impl Context {
                 "div" => {
                     frame.insert(
                         *id,
-                        Scheme::new(
+                        PolyType::new(
                             vec![],
                             Type::Lambda(vec![Type::Int, Type::Int], Box::new(Type::Int)),
                         ),
@@ -76,7 +76,7 @@ impl Context {
                 "rem" => {
                     frame.insert(
                         *id,
-                        Scheme::new(
+                        PolyType::new(
                             vec![],
                             Type::Lambda(vec![Type::Int, Type::Int], Box::new(Type::Int)),
                         ),
@@ -86,11 +86,11 @@ impl Context {
                     let var = Meta::fresh();
                     frame.insert(
                         *id,
-                        Scheme::new(
+                        PolyType::new(
                             vec![var],
                             Type::Lambda(
-                                vec![Type::Var(var), Type::Var(var)],
-                                Box::new(Type::Var(var)),
+                                vec![Type::Meta(var), Type::Meta(var)],
+                                Box::new(Type::Meta(var)),
                             ),
                         ),
                     );
@@ -99,10 +99,10 @@ impl Context {
                     let var = Meta::fresh();
                     frame.insert(
                         *id,
-                        Scheme::new(
+                        PolyType::new(
                             vec![var],
                             Type::Lambda(
-                                vec![Type::Var(var), Type::Var(var)],
+                                vec![Type::Meta(var), Type::Meta(var)],
                                 Box::new(Type::Bool),
                             ),
                         ),
@@ -112,10 +112,10 @@ impl Context {
                     let var = Meta::fresh();
                     frame.insert(
                         *id,
-                        Scheme::new(
+                        PolyType::new(
                             vec![var],
                             Type::Lambda(
-                                vec![Type::Var(var), Type::Var(var)],
+                                vec![Type::Meta(var), Type::Meta(var)],
                                 Box::new(Type::Bool),
                             ),
                         ),
@@ -125,10 +125,10 @@ impl Context {
                     let var = Meta::fresh();
                     frame.insert(
                         *id,
-                        Scheme::new(
+                        PolyType::new(
                             vec![var],
                             Type::Lambda(
-                                vec![Type::Var(var), Type::Var(var)],
+                                vec![Type::Meta(var), Type::Meta(var)],
                                 Box::new(Type::Bool),
                             ),
                         ),
@@ -138,10 +138,10 @@ impl Context {
                     let var = Meta::fresh();
                     frame.insert(
                         *id,
-                        Scheme::new(
+                        PolyType::new(
                             vec![var],
                             Type::Lambda(
-                                vec![Type::Var(var), Type::Var(var)],
+                                vec![Type::Meta(var), Type::Meta(var)],
                                 Box::new(Type::Bool),
                             ),
                         ),
@@ -151,10 +151,10 @@ impl Context {
                     let var = Meta::fresh();
                     frame.insert(
                         *id,
-                        Scheme::new(
+                        PolyType::new(
                             vec![var],
                             Type::Lambda(
-                                vec![Type::Var(var), Type::Var(var)],
+                                vec![Type::Meta(var), Type::Meta(var)],
                                 Box::new(Type::Bool),
                             ),
                         ),
@@ -164,10 +164,10 @@ impl Context {
                     let var = Meta::fresh();
                     frame.insert(
                         *id,
-                        Scheme::new(
+                        PolyType::new(
                             vec![var],
                             Type::Lambda(
-                                vec![Type::Var(var), Type::Var(var)],
+                                vec![Type::Meta(var), Type::Meta(var)],
                                 Box::new(Type::Bool),
                             ),
                         ),
@@ -177,18 +177,18 @@ impl Context {
                     let var = Meta::fresh();
                     frame.insert(
                         *id,
-                        Scheme::new(
+                        PolyType::new(
                             vec![var],
-                            Type::Lambda(vec![Type::Var(var)], Box::new(Type::Unit)),
+                            Type::Lambda(vec![Type::Meta(var)], Box::new(Type::Unit)),
                         ),
                     );
                 }
                 "pair" => {
                     let var = Meta::fresh();
-                    let ty = Type::Var(var);
+                    let ty = Type::Meta(var);
                     frame.insert(
                         *id,
-                        Scheme::new(
+                        PolyType::new(
                             vec![var],
                             Type::Lambda(vec![ty.clone()], Box::new(Type::List(Box::new(ty)))),
                         ),
@@ -211,11 +211,11 @@ impl Context {
         self.frames.pop();
     }
 
-    pub fn get(&self, id: &UniqueId) -> Option<Scheme> {
+    pub fn get(&self, id: &UniqueId) -> Option<PolyType> {
         self.frames.iter().rev().find_map(|frame| frame.get(id))
     }
 
-    pub fn insert(&mut self, id: UniqueId, scheme: Scheme) {
+    pub fn insert(&mut self, id: UniqueId, scheme: PolyType) {
         if let Some(frame) = self.frames.last_mut() {
             frame.insert(id, scheme);
         } else {
@@ -237,7 +237,7 @@ impl Context {
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Frame {
-    bindings: HashMap<UniqueId, Scheme>,
+    bindings: HashMap<UniqueId, PolyType>,
 }
 
 impl Frame {
@@ -247,15 +247,15 @@ impl Frame {
         }
     }
 
-    pub fn iter(&self) -> impl Iterator<Item = (&UniqueId, &Scheme)> {
+    pub fn iter(&self) -> impl Iterator<Item = (&UniqueId, &PolyType)> {
         self.bindings.iter()
     }
 
-    pub fn get(&self, id: &UniqueId) -> Option<Scheme> {
+    pub fn get(&self, id: &UniqueId) -> Option<PolyType> {
         self.bindings.get(id).cloned()
     }
 
-    pub fn insert(&mut self, id: UniqueId, scheme: Scheme) {
+    pub fn insert(&mut self, id: UniqueId, scheme: PolyType) {
         self.bindings.insert(id, scheme);
     }
 

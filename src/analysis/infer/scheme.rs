@@ -1,17 +1,23 @@
-use crate::utils::unique_id::UniqueId;
-
 use super::{meta::Meta, meta_context::MetaContext, r#type::Type};
-use std::collections::{HashMap, HashSet};
+use crate::utils::unique_id::UniqueId;
+use itertools::join;
+use std::{
+    collections::{HashMap, HashSet},
+    fmt::Display,
+};
 
-#[derive(Debug, Clone, PartialEq)]
-pub struct Scheme {
-    vars: Vec<UniqueId>,
-    ty: Type,
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct PolyType {
+    vars: Vec<Meta>,
+    ty: Box<Type>,
 }
 
-impl Scheme {
-    pub fn new(vars: Vec<UniqueId>, ty: Type) -> Self {
-        Self { vars, ty }
+impl PolyType {
+    pub fn new(vars: Vec<Meta>, ty: Type) -> Self {
+        Self {
+            vars,
+            ty: Box::new(ty),
+        }
     }
 
     pub fn free_vars(&self) -> HashSet<UniqueId> {
@@ -25,7 +31,7 @@ impl Scheme {
     pub fn instantiate(&self, meta_ctx: &mut MetaContext) -> Type {
         fn replace_tvs(ty: &Type, from: &UniqueId, to: &Type) -> Type {
             match ty {
-                Type::Var(tv) if tv == from => to.clone(),
+                Type::Meta(tv) if tv == from => to.clone(),
                 Type::Lambda(params, body) => {
                     let new_params = params.iter().map(|ty| replace_tvs(ty, from, to)).collect();
                     let new_body = Box::new(replace_tvs(body, from, to));
@@ -45,9 +51,19 @@ impl Scheme {
 
         let mut tvs_to_replace = HashMap::new();
         for tv in self.vars.iter() {
-            tvs_to_replace.insert(tv.clone(), Type::Var(meta_ctx.fresh()));
+            tvs_to_replace.insert(tv.clone(), Type::Meta(meta_ctx.fresh()));
         }
 
-        replace_tvs(&self.ty, &UniqueId::new(0), &Type::Var(meta_ctx.fresh()))
+        replace_tvs(&self.ty, &UniqueId::new(0), &Type::Meta(meta_ctx.fresh()))
+    }
+}
+
+impl Display for PolyType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        if self.vars.is_empty() {
+            write!(f, "{}", self.ty)
+        } else {
+            write!(f, "{}. {}", join(self.vars, " "), self.ty)
+        }
     }
 }

@@ -1,10 +1,10 @@
-use super::scheme::Scheme;
+use super::scheme::PolyType;
 use crate::utils::unique_id::UniqueId;
 use std::collections::HashMap;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Registry {
-    vars: HashMap<UniqueId, Scheme>,
+    vars: HashMap<UniqueId, PolyType>,
 }
 
 impl Registry {
@@ -14,15 +14,15 @@ impl Registry {
         }
     }
 
-    pub fn insert(&mut self, id: UniqueId, scheme: Scheme) {
+    pub fn insert(&mut self, id: UniqueId, scheme: PolyType) {
         self.vars.insert(id, scheme);
     }
 
-    pub fn get(&self, id: &UniqueId) -> Option<&Scheme> {
+    pub fn get(&self, id: &UniqueId) -> Option<&PolyType> {
         self.vars.get(id)
     }
 
-    pub fn iter(&self) -> impl Iterator<Item = (&UniqueId, &Scheme)> {
+    pub fn iter(&self) -> impl Iterator<Item = (&UniqueId, &PolyType)> {
         self.vars.iter()
     }
 }

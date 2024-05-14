@@ -44,7 +44,7 @@ impl MetaContext {
             .get_mut(key)
             .ok_or(TypeError::from(format!("unbound meta variable: {}", key)))?;
 
-        if *ty == Type::Var(*key) {
+        if *ty == Type::Meta(*key) {
             Ok(())
         } else if ty.free_vars().contains(key) {
             Err(TypeError::from(format!(

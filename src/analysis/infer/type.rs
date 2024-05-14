@@ -5,7 +5,7 @@ use super::{
     context::Context,
     error::{InferResult, TypeError},
     meta::Meta,
-    scheme::Scheme,
+    scheme::PolyType,
 };
 use crate::utils::{intern::InternedString, unique_id::UniqueId};
 use std::{
@@ -24,7 +24,8 @@ pub enum Type {
     Bool,
     String,
     Char,
-    Var(UniqueId),
+    Meta(UniqueId),
+    Poly(PolyType),
     Lambda(Vec<Self>, Box<Self>),
     // Qual(Box<Constraint>, Box<Self>),
     List(Box<Self>),
@@ -40,11 +41,11 @@ impl Type {
         }
     }
 
-    pub fn generalize(&self, ctx: &Context) -> Scheme {
+    pub fn generalize(&self, ctx: &Context) -> PolyType {
         log::debug!("generalize: {:?}", self);
         log::debug!("free vars: {:?}", self.free_vars());
         log::debug!("ctx free vars: {:?}", ctx.free_vars());
-        Scheme::new(
+        PolyType::new(
             self.free_vars()
                 .difference(&ctx.free_vars())
                 .cloned()
@@ -55,7 +56,7 @@ impl Type {
 
     pub(super) fn free_vars(&self) -> HashSet<UniqueId> {
         match self {
-            Self::Var(n) => vec![n.clone()].into_iter().collect(),
+            Self::Meta(n) => vec![n.clone()].into_iter().collect(),
             Self::Lambda(params, body) => params
                 .iter()
                 .fold(HashSet::new(), |acc, ty| {
@@ -79,7 +80,7 @@ impl Debug for Type {
             Self::Bool => write!(f, "Bool"),
             Self::String => write!(f, "String"),
             Self::Char => write!(f, "Char"),
-            Self::Var(n) => write!(f, "{:?}", n),
+            Self::Meta(n) => write!(f, "{:?}", n),
             Self::Lambda(params, body) => write!(f, "{:?} -> {:?}", params, body),
             Self::List(ty) => write!(f, "[{:?}]", ty),
             Self::Record(name, fields) => write!(f, "{:?} = {:?}", name, fields),
@@ -100,15 +101,16 @@ impl Display for Type {
                 | Type::String
                 | Type::Char
                 | Type::Unit => ty,
-                Type::Var(var) => {
+                Type::Meta(var) => {
                     if let Some(v) = vars.get(&var) {
-                        Type::Var(v.clone())
+                        Type::Meta(v.clone())
                     } else {
                         let ty = Meta::Unbound(UniqueId::new(vars.len()));
                         vars.insert(var, ty.clone());
-                        Type::Var(ty)
+                        Type::Meta(ty)
                     }
                 }
+                Type::Poly(poly) => todo!(),
                 Type::Lambda(params, body) => Type::Lambda(
                     params.iter().map(|p| lower(p.clone(), vars)).collect_vec(),
                     Box::new(lower(*body, vars)),
@@ -133,7 +135,8 @@ impl Display for Type {
             Self::Bool => write!(f, "Bool"),
             Self::String => write!(f, "String"),
             Self::Char => write!(f, "Char"),
-            Self::Var(n) => write!(f, "{}", n),
+            Self::Meta(n) => write!(f, "{}", n),
+            Self::Poly(poly) => write!(f, "{}", poly),
             Self::Lambda(params, body) => {
                 if params.len() == 1 {
                     // println!("1");
