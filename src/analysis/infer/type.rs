@@ -9,10 +9,8 @@ use super::{
 };
 use crate::utils::{intern::InternedString, unique_id::UniqueId};
 use std::{
-    cell::RefCell,
     collections::{HashMap, HashSet},
     fmt::{Debug, Display},
-    rc::Rc,
 };
 
 #[derive(Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -24,7 +22,7 @@ pub enum Type {
     Bool,
     String,
     Char,
-    Meta(UniqueId),
+    Meta(Meta),
     Poly(PolyType),
     Lambda(Vec<Self>, Box<Self>),
     // Qual(Box<Constraint>, Box<Self>),
