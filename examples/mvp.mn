@@ -95,31 +95,37 @@ let fib n =
 -- pattern match
 let [a, b, c] = [1, 2, 3]
 
-let fib n = 
+fib n = 
   match n
   | 0 -> 0
   | 1 -> 1
   | n -> fib (n - 1) + fib (n - 2)
 
+let fib 0 = 0
+  | fib 1 = 1
+  | fib n = fib (n - 1) + fib (n - 2)
+
 -- with guards
-let gcd a b = 
+gcd a b = 
   match (a, b)
   | (a, 0) -> a
   | (a, b) if a > b -> gcd b (a % b)
   | (a, b) -> gcd a (b % a)
 
+gcd : Int -> Int -> Int
+let gcd a 0 = a
+  | gcd a b = gcd b (a % b)
+
 map : (a -> b, [a]) -> [b]
-let map f xs =
-  match xs
-  | [] -> []
-  | (x :: xs) -> f x :: map f xs
+let map f [] = []
+  | map f (x :: xs) = f x :: map f xs
 
 let binary_search n xs =
   let loop l r =
     if l > r then -1
     else
       let m = (l + r) / 2 in
-      if Array.get xs m  = n then m
+      if Array.get xs m = n then m
       else if Array.get xs m < n then loop (m + 1) r
       else loop l (m - 1)
   in loop 0 (Array.len xs - 1)
