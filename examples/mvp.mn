@@ -95,7 +95,7 @@ let fib n =
 -- pattern match
 let [a, b, c] = [1, 2, 3]
 
-fib n = 
+let fib n = 
   match n
   | 0 -> 0
   | 1 -> 1
@@ -106,13 +106,13 @@ let fib 0 = 0
   | fib n = fib (n - 1) + fib (n - 2)
 
 -- with guards
-gcd a b = 
+let gcd a b = 
   match (a, b)
   | (a, 0) -> a
   | (a, b) if a > b -> gcd b (a % b)
   | (a, b) -> gcd a (b % a)
 
-gcd : Int -> Int -> Int
+gcd : Int Int -> Int
 let gcd a 0 = a
   | gcd a b = gcd b (a % b)
 

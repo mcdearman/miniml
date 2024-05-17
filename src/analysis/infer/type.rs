@@ -79,6 +79,7 @@ impl Debug for Type {
             Self::String => write!(f, "String"),
             Self::Char => write!(f, "Char"),
             Self::Meta(n) => write!(f, "{:?}", n),
+            Self::Poly(poly) => write!(f, "{:?}", poly),
             Self::Lambda(params, body) => write!(f, "{:?} -> {:?}", params, body),
             Self::List(ty) => write!(f, "[{:?}]", ty),
             Self::Record(name, fields) => write!(f, "{:?} = {:?}", name, fields),
