@@ -116,7 +116,7 @@ gcd : (Int, Int) -> Int
 let gcd a 0 = a
   | gcd a b = gcd b (a % b)
 
-map : (a -> b, [a]) -> [b]
+map : a b. (a -> b, [a]) -> [b]
 let map f [] = []
   | map f (x :: xs) = f x :: map f xs
 
