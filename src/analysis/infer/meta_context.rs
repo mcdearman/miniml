@@ -31,20 +31,21 @@ impl MetaContext {
     }
 
     pub fn bind(&mut self, meta: &Meta, ty: &Type) -> InferResult<()> {
-        let binding = self
-            .bindings
-            .get_mut(&meta.id())
-            .ok_or(TypeError::from(format!("unbound meta variable: {}", meta)))?;
-
-        if *ty == Type::Meta(meta.clone()) {
-            Ok(())
-        } else if ty.free_vars().contains(meta) {
-            Err(TypeError::from(format!(
-                "occurs check failed: {} occurs in {:?}",
-                meta, ty
-            )))
+        if let Some(binding) = self.bindings.get_mut(&meta.id()) {
+            if *ty == Type::Meta(meta.clone()) {
+                Ok(())
+            } else if ty.free_vars().contains(meta) {
+                Err(TypeError::from(format!(
+                    "occurs check failed: {} occurs in {:?}",
+                    meta, ty
+                )))
+            } else {
+                *binding = ty.clone();
+                Ok(())
+            }
         } else {
-            *binding = ty.clone();
+            self.insert(meta.id(), ty.clone());
+            // Err(TypeError::from(format!("unbound meta variable: {}", meta)))
             Ok(())
         }
     }

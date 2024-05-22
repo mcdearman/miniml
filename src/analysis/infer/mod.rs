@@ -82,10 +82,10 @@ impl TypeSolver {
 
         if errors.is_empty() {
             (
-                Some(Root {
+                Some(self.zonk(&Root {
                     decls,
                     span: nir.span,
-                }),
+                })),
                 errors,
             )
         } else {
@@ -523,16 +523,10 @@ impl TypeSolver {
             | (Type::Char, Type::Char)
             | (Type::Unit, Type::Unit) => Ok(()),
             (Type::Lambda(p1, b1), Type::Lambda(p2, b2)) => {
-                // let s1 = p1.iter().zip(p2.iter()).try_fold(
-                //     Substitution::new(),
-                //     |s, (t1, t2)| match t1.apply_subst(&s).unify(&t2.apply_subst(&s)) {
-                //         Ok(sub) => Ok(s.compose(&sub)),
-                //         err => err,
-                //     },
-                // )?;
-                // let s2 = b1.apply_subst(&s1).unify(&b2.apply_subst(&s1))?;
-                // Ok(s1.compose(&s2))
-                todo!()
+                for (t1, t2) in p1.iter().zip(p2.iter()) {
+                    self.unify(t1, t2)?;
+                }
+                self.unify(b1, b2)
             }
             (Type::List(l1), Type::List(l2)) => self.unify(l1, l2),
             (_, Type::Meta(key)) => self.meta_ctx.bind(key, t1),
@@ -541,6 +535,219 @@ impl TypeSolver {
                 "cannot unify {:?} and {:?}",
                 t1, t2,
             ))),
+        }
+    }
+
+    fn zonk(&self, root: &Root) -> Root {
+        let decls = root
+            .decls
+            .iter()
+            .map(|decl| self.zonk_decl(decl))
+            .collect_vec();
+        Root {
+            decls,
+            span: root.span,
+        }
+    }
+
+    fn zonk_decl(&self, decl: &Decl) -> Decl {
+        match &decl.kind {
+            DeclKind::Let(pat, let_expr) => {
+                let zonked_pat = self.zonk_pattern(pat);
+                let zonked_expr = self.zonk_expr(let_expr);
+                Decl {
+                    kind: DeclKind::Let(zonked_pat, zonked_expr),
+                    ty: self.zonk_type(&decl.ty),
+                    span: decl.span,
+                }
+            }
+            DeclKind::Fn(name, params, fn_expr) => {
+                let zonked_params = params
+                    .iter()
+                    .map(|param| self.zonk_pattern(param))
+                    .collect_vec();
+                let zonked_expr = self.zonk_expr(fn_expr);
+                Decl {
+                    kind: DeclKind::Fn(*name, zonked_params, zonked_expr),
+                    ty: self.zonk_type(&decl.ty),
+                    span: decl.span,
+                }
+            }
+        }
+    }
+
+    fn zonk_expr(&self, expr: &Expr) -> Expr {
+        match expr.kind.as_ref() {
+            ExprKind::Lit(lit) => Expr::new(
+                ExprKind::Lit(lit.clone()),
+                self.zonk_type(&expr.ty),
+                expr.span,
+            ),
+            ExprKind::Var(name) => {
+                Expr::new(ExprKind::Var(*name), self.zonk_type(&expr.ty), expr.span)
+            }
+            ExprKind::Lambda(params, fn_expr) => {
+                let zonked_params = params
+                    .iter()
+                    .map(|param| self.zonk_pattern(param))
+                    .collect_vec();
+                let zonked_expr = self.zonk_expr(fn_expr);
+                Expr::new(
+                    ExprKind::Lambda(zonked_params, zonked_expr),
+                    self.zonk_type(&expr.ty),
+                    expr.span,
+                )
+            }
+            ExprKind::Apply(fun, args) => {
+                let zonked_fun = self.zonk_expr(fun);
+                let zonked_args = args.iter().map(|arg| self.zonk_expr(arg)).collect_vec();
+                Expr::new(
+                    ExprKind::Apply(zonked_fun, zonked_args),
+                    self.zonk_type(&expr.ty),
+                    expr.span,
+                )
+            }
+            ExprKind::Or(lhs, rhs) => {
+                let zonked_lhs = self.zonk_expr(lhs);
+                let zonked_rhs = self.zonk_expr(rhs);
+                Expr::new(
+                    ExprKind::Or(zonked_lhs, zonked_rhs),
+                    self.zonk_type(&expr.ty),
+                    expr.span,
+                )
+            }
+            ExprKind::And(lhs, rhs) => {
+                let zonked_lhs = self.zonk_expr(lhs);
+                let zonked_rhs = self.zonk_expr(rhs);
+                Expr::new(
+                    ExprKind::And(zonked_lhs, zonked_rhs),
+                    self.zonk_type(&expr.ty),
+                    expr.span,
+                )
+            }
+            ExprKind::Let(pat, let_expr, body) => {
+                let zonked_pat = self.zonk_pattern(pat);
+                let zonked_let_expr = self.zonk_expr(let_expr);
+                let zonked_body = self.zonk_expr(body);
+                Expr::new(
+                    ExprKind::Let(zonked_pat, zonked_let_expr, zonked_body),
+                    self.zonk_type(&expr.ty),
+                    expr.span,
+                )
+            }
+            ExprKind::Fn(name, params, expr, body) => {
+                let zonked_params = params
+                    .iter()
+                    .map(|param| self.zonk_pattern(param))
+                    .collect_vec();
+                let zonked_expr = self.zonk_expr(expr);
+                let zonked_body = self.zonk_expr(body);
+                Expr::new(
+                    ExprKind::Fn(*name, zonked_params, zonked_expr, zonked_body),
+                    self.zonk_type(&expr.ty),
+                    expr.span,
+                )
+            }
+            ExprKind::If(cond, then, else_) => {
+                let zonked_cond = self.zonk_expr(cond);
+                let zonked_then = self.zonk_expr(then);
+                let zonked_else = self.zonk_expr(else_);
+                Expr::new(
+                    ExprKind::If(zonked_cond, zonked_then, zonked_else),
+                    self.zonk_type(&expr.ty),
+                    expr.span,
+                )
+            }
+            ExprKind::Match(expr, arms) => {
+                let zonked_expr = self.zonk_expr(expr);
+                let zonked_arms = arms
+                    .iter()
+                    .map(|(pat, body)| {
+                        let zonked_pat = self.zonk_pattern(pat);
+                        let zonked_body = self.zonk_expr(body);
+                        (zonked_pat, zonked_body)
+                    })
+                    .collect_vec();
+                Expr::new(
+                    ExprKind::Match(zonked_expr, zonked_arms),
+                    self.zonk_type(&expr.ty),
+                    expr.span,
+                )
+            }
+            ExprKind::List(exprs) => {
+                let zonked_exprs = exprs.iter().map(|expr| self.zonk_expr(expr)).collect_vec();
+                Expr::new(
+                    ExprKind::List(zonked_exprs),
+                    self.zonk_type(&expr.ty),
+                    expr.span,
+                )
+            }
+            ExprKind::Unit => Expr::new(ExprKind::Unit, self.zonk_type(&expr.ty), expr.span),
+        }
+    }
+
+    fn zonk_pattern(&self, pat: &Pattern) -> Pattern {
+        match pat.kind.as_ref() {
+            PatternKind::Wildcard => {
+                Pattern::new(PatternKind::Wildcard, self.zonk_type(&pat.ty), pat.span)
+            }
+            PatternKind::Ident(name) => {
+                Pattern::new(PatternKind::Ident(*name), self.zonk_type(&pat.ty), pat.span)
+            }
+            PatternKind::Lit(lit) => Pattern::new(
+                PatternKind::Lit(lit.clone()),
+                self.zonk_type(&pat.ty),
+                pat.span,
+            ),
+            PatternKind::List(pats) => {
+                let zonked_pats = pats.iter().map(|pat| self.zonk_pattern(pat)).collect_vec();
+                Pattern::new(
+                    PatternKind::List(zonked_pats),
+                    self.zonk_type(&pat.ty),
+                    pat.span,
+                )
+            }
+            PatternKind::Pair(lhs, rhs) => {
+                let zonked_lhs = self.zonk_pattern(lhs);
+                let zonked_rhs = self.zonk_pattern(rhs);
+                Pattern::new(
+                    PatternKind::Pair(zonked_lhs, zonked_rhs),
+                    self.zonk_type(&pat.ty),
+                    pat.span,
+                )
+            }
+            PatternKind::Unit => Pattern::new(PatternKind::Unit, self.zonk_type(&pat.ty), pat.span),
+        }
+    }
+
+    fn zonk_type(&self, ty: &Type) -> Type {
+        match ty {
+            Type::Byte => Type::Byte,
+            Type::Int => Type::Int,
+            Type::Rational => Type::Rational,
+            Type::Real => Type::Real,
+            Type::Bool => Type::Bool,
+            Type::String => Type::String,
+            Type::Char => Type::Char,
+            Type::Unit => Type::Unit,
+            Type::Meta(meta) => self
+                .meta_ctx
+                .get(&meta.id())
+                .cloned()
+                .unwrap_or_else(|| ty.clone()),
+            Type::Lambda(params, body) => Type::Lambda(
+                params.iter().map(|ty| self.zonk_type(ty)).collect_vec(),
+                Box::new(self.zonk_type(body)),
+            ),
+            Type::List(ty) => Type::List(Box::new(self.zonk_type(ty))),
+            Type::Record(id, fields) => Type::Record(
+                *id,
+                fields
+                    .iter()
+                    .map(|(name, ty)| (name.clone(), self.zonk_type(ty)))
+                    .collect(),
+            ),
+            Type::Poly(poly) => Type::Poly(poly.clone()),
         }
     }
 }
