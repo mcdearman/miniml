@@ -8,7 +8,7 @@ use std::collections::HashMap;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct MetaContext {
-    bindings: HashMap<UniqueId, Meta>,
+    bindings: HashMap<UniqueId, Type>,
 }
 
 impl MetaContext {
@@ -18,41 +18,33 @@ impl MetaContext {
         }
     }
 
-    pub fn fresh(&mut self) -> UniqueId {
-        let key = UniqueId::gen();
-        self.bindings.insert(key, Meta::fresh());
-        key
+    pub fn insert(&mut self, id: UniqueId, ty: Type) {
+        self.bindings.insert(id, ty);
     }
 
-    pub fn insert(&mut self, meta: Meta) -> UniqueId {
-        let id = UniqueId::gen();
-        self.bindings.insert(id, meta);
-        id
+    pub fn get(&self, id: &UniqueId) -> Option<&Type> {
+        self.bindings.get(id)
     }
 
-    pub fn insert_or_update(&mut self, id: UniqueId, meta: Meta) {
-        self.bindings.insert(id, meta);
+    pub fn get_mut(&mut self, id: &UniqueId) -> Option<&mut Type> {
+        self.bindings.get_mut(id)
     }
 
-    pub fn get_mut(&mut self, id: UniqueId) -> Option<&mut Meta> {
-        self.bindings.get_mut(&id)
-    }
-
-    pub fn bind(&mut self, key: &UniqueId, ty: &Type) -> InferResult<()> {
-        let meta = self
+    pub fn bind(&mut self, meta: &Meta, ty: &Type) -> InferResult<()> {
+        let binding = self
             .bindings
-            .get_mut(key)
-            .ok_or(TypeError::from(format!("unbound meta variable: {}", key)))?;
+            .get_mut(&meta.id())
+            .ok_or(TypeError::from(format!("unbound meta variable: {}", meta)))?;
 
-        if *ty == Type::Meta(*key) {
+        if *ty == Type::Meta(meta.clone()) {
             Ok(())
-        } else if ty.free_vars().contains(key) {
+        } else if ty.free_vars().contains(meta) {
             Err(TypeError::from(format!(
                 "occurs check failed: {} occurs in {:?}",
                 meta, ty
             )))
         } else {
-            *meta = Meta::Bound(Box::new(*ty));
+            *binding = ty.clone();
             Ok(())
         }
     }

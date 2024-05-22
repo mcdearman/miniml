@@ -52,7 +52,7 @@ impl Type {
         )
     }
 
-    pub(super) fn free_vars(&self) -> HashSet<UniqueId> {
+    pub(super) fn free_vars(&self) -> HashSet<Meta> {
         match self {
             Self::Meta(n) => vec![n.clone()].into_iter().collect(),
             Self::Lambda(params, body) => params
@@ -101,12 +101,12 @@ impl Display for Type {
                 | Type::Char
                 | Type::Unit => ty,
                 Type::Meta(var) => {
-                    if let Some(v) = vars.get(&var) {
-                        Type::Meta(v.clone())
+                    if let Some(lowered) = vars.get(&var) {
+                        Type::Meta(lowered.clone())
                     } else {
-                        let ty = Meta::Unbound(UniqueId::new(vars.len()));
-                        vars.insert(var, ty.clone());
-                        Type::Meta(ty)
+                        let new_meta = Meta::fresh();
+                        vars.insert(var, new_meta.clone());
+                        Type::Meta(new_meta)
                     }
                 }
                 Type::Poly(poly) => todo!(),

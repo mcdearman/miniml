@@ -20,7 +20,7 @@ impl PolyType {
         }
     }
 
-    pub fn free_vars(&self) -> HashSet<UniqueId> {
+    pub fn free_vars(&self) -> HashSet<Meta> {
         self.ty
             .free_vars()
             .difference(&self.vars.iter().cloned().collect())
@@ -31,7 +31,7 @@ impl PolyType {
     pub fn instantiate(&self, meta_ctx: &mut MetaContext) -> Type {
         fn replace_tvs(ty: &Type, from: &UniqueId, to: &Type) -> Type {
             match ty {
-                Type::Meta(tv) if tv == from => to.clone(),
+                Type::Meta(tv) if tv.id() == *from => to.clone(),
                 Type::Lambda(params, body) => {
                     let new_params = params.iter().map(|ty| replace_tvs(ty, from, to)).collect();
                     let new_body = Box::new(replace_tvs(body, from, to));
@@ -51,10 +51,10 @@ impl PolyType {
 
         let mut tvs_to_replace = HashMap::new();
         for tv in self.vars.iter() {
-            tvs_to_replace.insert(tv.clone(), Type::Meta(meta_ctx.fresh()));
+            tvs_to_replace.insert(tv.clone(), Type::Meta(Meta::fresh()));
         }
 
-        replace_tvs(&self.ty, &UniqueId::new(0), &Type::Meta(meta_ctx.fresh()))
+        replace_tvs(&self.ty, &UniqueId::new(0), &Type::Meta(Meta::fresh()))
     }
 }
 
@@ -63,7 +63,7 @@ impl Display for PolyType {
         if self.vars.is_empty() {
             write!(f, "{}", self.ty)
         } else {
-            write!(f, "{}. {}", join(self.vars, " "), self.ty)
+            write!(f, "{}. {}", join(&self.vars, " "), self.ty)
         }
     }
 }
