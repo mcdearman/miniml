@@ -99,10 +99,10 @@ impl TypeSolver {
                 log::debug!("infer let ({:?})", pat);
                 // to show that Γ ⊢ let x = e0 in e1 : T' we need to show that
                 // Γ ⊢ e0 : T
-                let mut solved_expr = self.infer_expr(let_expr)?;
+                let solved_expr = self.infer_expr(let_expr)?;
 
                 // Γ, x: gen(T) ⊢ e1 : T'
-                let mut solved_pat = self.infer_pattern(pat, &solved_expr.ty, true)?;
+                let solved_pat = self.infer_pattern(pat, &solved_expr.ty, true)?;
                 self.unify(&solved_pat.ty, &solved_expr.ty)?;
 
                 Ok(Decl {
@@ -116,14 +116,14 @@ impl TypeSolver {
                 // to show that Γ ⊢ fn x = e0 in e1 : T' we need to show that
                 // Γ, x: gen(T) ⊢ e1 : T'
 
-                let mut param_vars = params.iter().map(|_| Meta::fresh()).collect_vec();
-                let mut param_tys = param_vars
+                let param_vars = params.iter().map(|_| Meta::fresh()).collect_vec();
+                let param_tys = param_vars
                     .iter()
                     .map(|var| Type::Meta(var.clone()))
                     .collect_vec();
 
-                let mut ty_ret = Type::Meta(Meta::fresh());
-                let mut fn_ty = Type::Lambda(param_tys.clone(), Box::new(ty_ret.clone()));
+                let ty_ret = Type::Meta(Meta::fresh());
+                let fn_ty = Type::Lambda(param_tys.clone(), Box::new(ty_ret.clone()));
                 log::debug!("decl_fn_ty: {:?}", fn_ty);
 
                 self.ctx
@@ -131,12 +131,12 @@ impl TypeSolver {
                 self.ctx.push();
 
                 let mut solved_params = vec![];
-                for (mut ty, param) in param_tys.iter().zip(params.iter()) {
-                    let mut solved_pat = self.infer_pattern(param, ty, false)?;
+                for (ty, param) in param_tys.iter().zip(params.iter()) {
+                    let solved_pat = self.infer_pattern(param, ty, false)?;
                     solved_params.push(solved_pat.clone());
                     self.unify(&solved_pat.ty, &ty)?;
                 }
-                let mut solved_expr = self.infer_expr(fn_expr)?;
+                let solved_expr = self.infer_expr(fn_expr)?;
                 self.unify(&solved_expr.ty, &ty_ret)?;
 
                 self.ctx.pop();
@@ -215,8 +215,8 @@ impl TypeSolver {
                 log::debug!("lambda_param_types: {:?}", param_types);
                 self.ctx.push();
                 let mut solved_params = vec![];
-                for (param, mut ty) in params.iter().zip(param_types.iter()) {
-                    let mut solved_pat = self.infer_pattern(param, ty, false)?;
+                for (param, ty) in params.iter().zip(param_types.iter()) {
+                    let solved_pat = self.infer_pattern(param, ty, false)?;
                     solved_params.push(solved_pat.clone());
                     self.unify(&solved_pat.ty, &ty)?;
                 }
@@ -235,7 +235,7 @@ impl TypeSolver {
                 log::debug!("infer app");
                 // to show that Γ ⊢ e0 e1 : T' we need to show that
                 // Γ ⊢ e0 : T0
-                let mut solved_fun = self.infer_expr(fun)?;
+                let solved_fun = self.infer_expr(fun)?;
                 // log::debug!("app_solved_fun: {:?}", solved_fun);
 
                 // Γ ⊢ e1 : T1
@@ -297,10 +297,10 @@ impl TypeSolver {
                 log::debug!("infer let ({:?})", pat);
                 // to show that Γ ⊢ let x = e0 in e1 : T' we need to show that
                 // Γ ⊢ e0 : T
-                let mut solved_expr = self.infer_expr(let_expr)?;
+                let solved_expr = self.infer_expr(let_expr)?;
 
                 // Γ, x: T ⊢ e1 : T'
-                let mut solved_pat = self.infer_pattern(pat, &solved_expr.ty, false)?;
+                let solved_pat = self.infer_pattern(pat, &solved_expr.ty, false)?;
                 self.unify(&solved_pat.ty, &solved_expr.ty)?;
 
                 let solved_body = self.infer_expr(body)?;
@@ -317,7 +317,7 @@ impl TypeSolver {
                 // Γ, x: gen(T) ⊢ e1 : T'
 
                 let param_tys = vec![Type::Meta(Meta::fresh()); params.len()];
-                let mut ty_ret = Type::Meta(Meta::fresh());
+                let ty_ret = Type::Meta(Meta::fresh());
                 let fn_ty = Type::Lambda(param_tys.clone(), Box::new(ty_ret.clone()));
                 log::debug!("fn_ty: {:?}", fn_ty);
 
@@ -326,13 +326,13 @@ impl TypeSolver {
                     .insert(name.id, PolyType::new(vec![], fn_ty.clone()));
                 self.ctx.push();
                 let mut solved_params = vec![];
-                for (mut ty, pat) in param_tys.iter().zip(params.iter()) {
-                    let mut solved_pat = self.infer_pattern(pat, ty, false)?;
+                for (ty, pat) in param_tys.iter().zip(params.iter()) {
+                    let solved_pat = self.infer_pattern(pat, ty, false)?;
                     solved_params.push(solved_pat.clone());
                     self.unify(&solved_pat.ty, &ty)?;
                 }
 
-                let mut solved_expr = self.infer_expr(expr)?;
+                let solved_expr = self.infer_expr(expr)?;
                 log::debug!("fn_solved_expr: {:?}", solved_expr.ty);
                 self.unify(&solved_expr.ty, &ty_ret)?;
                 self.ctx.pop();
@@ -349,9 +349,9 @@ impl TypeSolver {
             }
             nir::ExprKind::If(cond, then, else_) => {
                 log::debug!("infer if");
-                let mut solved_cond = self.infer_expr(cond)?;
-                let mut solved_then = self.infer_expr(then)?;
-                let mut solved_else = self.infer_expr(else_)?;
+                let solved_cond = self.infer_expr(cond)?;
+                let solved_then = self.infer_expr(then)?;
+                let solved_else = self.infer_expr(else_)?;
 
                 self.unify(&solved_cond.ty, &Type::Bool)?;
                 self.unify(&solved_then.ty, &solved_else.ty)?;
@@ -364,15 +364,15 @@ impl TypeSolver {
             }
             nir::ExprKind::Match(expr, arms) => {
                 log::debug!("infer match");
-                let mut solved_expr = self.infer_expr(expr)?;
-                let mut ty = Type::Meta(Meta::fresh());
+                let solved_expr = self.infer_expr(expr)?;
+                let ty = Type::Meta(Meta::fresh());
                 let mut solved_arms = vec![];
                 for (pat, body) in arms {
                     self.ctx.push();
-                    let mut solved_pat = self.infer_pattern(pat, &ty, false)?;
+                    let solved_pat = self.infer_pattern(pat, &ty, false)?;
                     // solved_pat.ty.unify(&mut solved_expr.ty)?;
                     self.unify(&solved_pat.ty, &solved_expr.ty)?;
-                    let mut solved_body = self.infer_expr(body)?;
+                    let solved_body = self.infer_expr(body)?;
                     // solved_body.ty.unify(&mut ty)?;
                     self.unify(&solved_body.ty, &ty)?;
                     solved_arms.push((solved_pat, solved_body));
@@ -386,14 +386,14 @@ impl TypeSolver {
                 ))
             }
             nir::ExprKind::List(exprs) => {
-                let mut ty = Type::Meta(Meta::fresh());
+                let ty = Type::Meta(Meta::fresh());
 
                 let solved_exprs = exprs
                     .iter()
                     .map(|expr| self.infer_expr(expr))
                     .collect::<InferResult<Vec<Expr>>>()?;
 
-                for mut expr in &solved_exprs {
+                for expr in &solved_exprs {
                     // println!("expr: {:?}", expr.ty);
                     self.unify(&expr.ty, &ty)?;
                 }
@@ -493,10 +493,10 @@ impl TypeSolver {
                 ))
             }
             nir::PatternKind::Pair(lhs, rhs) => {
-                let mut ty = Type::Meta(Meta::fresh());
-                let mut list_ty = Type::List(Box::new(ty.clone()));
-                let mut solved_lhs = self.infer_pattern(lhs, &ty, generalize)?;
-                let mut solved_rhs = self.infer_pattern(rhs, &list_ty, generalize)?;
+                let ty = Type::Meta(Meta::fresh());
+                let list_ty = Type::List(Box::new(ty.clone()));
+                let solved_lhs = self.infer_pattern(lhs, &ty, generalize)?;
+                let solved_rhs = self.infer_pattern(rhs, &list_ty, generalize)?;
 
                 self.unify(&solved_lhs.ty, &ty)?;
                 self.unify(&solved_rhs.ty, &list_ty)?;
