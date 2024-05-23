@@ -45,7 +45,6 @@ impl MetaContext {
             }
         } else {
             self.insert(meta.id(), ty.clone());
-            // Err(TypeError::from(format!("unbound meta variable: {}", meta)))
             Ok(())
         }
     }
