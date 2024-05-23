@@ -19,15 +19,22 @@ impl MetaContext {
     }
 
     pub fn insert(&mut self, id: UniqueId, ty: Type) {
-        self.bindings.insert(id, ty);
+        match &ty {
+            Type::Meta(meta) => {
+                if let Some(ty) = self.bindings.get(&meta.id()) {
+                    self.bindings.insert(id, ty.clone());
+                } else {
+                    self.bindings.insert(id, ty);
+                }
+            }
+            _ => {
+                self.bindings.insert(id, ty);
+            }
+        }
     }
 
     pub fn get(&self, id: &UniqueId) -> Option<&Type> {
         self.bindings.get(id)
-    }
-
-    pub fn get_mut(&mut self, id: &UniqueId) -> Option<&mut Type> {
-        self.bindings.get_mut(id)
     }
 
     pub fn bind(&mut self, meta: &Meta, ty: &Type) -> InferResult<()> {
