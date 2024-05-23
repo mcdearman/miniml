@@ -369,13 +369,15 @@ impl TypeSolver {
                 let mut solved_arms = vec![];
                 for (pat, body) in arms {
                     self.ctx.push();
+
                     let solved_pat = self.infer_pattern(pat, &ty, false)?;
-                    // solved_pat.ty.unify(&mut solved_expr.ty)?;
                     self.unify(&solved_pat.ty, &solved_expr.ty)?;
+
                     let solved_body = self.infer_expr(body)?;
-                    // solved_body.ty.unify(&mut ty)?;
                     self.unify(&solved_body.ty, &ty)?;
+
                     solved_arms.push((solved_pat, solved_body));
+
                     self.ctx.pop();
                 }
 
