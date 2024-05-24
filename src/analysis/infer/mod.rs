@@ -105,7 +105,7 @@ impl TypeSolver {
 
                 // Γ, x: gen(T) ⊢ e1 : T'
                 let solved_pat = self.infer_pattern(pat, &solved_expr.ty, true)?;
-                self.unify(&solved_pat.ty, &solved_expr.ty)?;
+                // self.unify(&solved_pat.ty, &solved_expr.ty)?;
 
                 Ok(Decl {
                     kind: DeclKind::Let(solved_pat, solved_expr.clone()),
@@ -136,7 +136,7 @@ impl TypeSolver {
                 for (ty, param) in param_tys.iter().zip(params.iter()) {
                     let solved_pat = self.infer_pattern(param, ty, false)?;
                     solved_params.push(solved_pat.clone());
-                    self.unify(&solved_pat.ty, &ty)?;
+                    // self.unify(&solved_pat.ty, &ty)?;
                 }
                 let solved_expr = self.infer_expr(fn_expr)?;
                 self.unify(&solved_expr.ty, &ty_ret)?;
