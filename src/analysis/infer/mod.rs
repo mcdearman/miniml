@@ -80,6 +80,8 @@ impl TypeSolver {
             }
         }
 
+        log::debug!("meta_ctx: {:#?}", self.meta_ctx);
+
         if errors.is_empty() {
             (
                 Some(self.zonk(&Root {

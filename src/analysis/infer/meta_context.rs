@@ -4,9 +4,9 @@ use super::{
     r#type::Type,
 };
 use crate::utils::unique_id::UniqueId;
-use std::collections::HashMap;
+use std::{collections::HashMap, fmt::Debug};
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Clone, PartialEq)]
 pub struct MetaContext {
     bindings: HashMap<UniqueId, Type>,
 }
@@ -28,6 +28,11 @@ impl MetaContext {
                 }
             }
             _ => {
+                for (meta_id, meta_ty) in self.clone().bindings {
+                    if meta_ty == Type::Meta(Meta::new(id)) {
+                        self.bindings.insert(meta_id, ty.clone());
+                    }
+                }
                 self.bindings.insert(id, ty);
             }
         }
@@ -54,5 +59,15 @@ impl MetaContext {
             self.insert(meta.id(), ty.clone());
             Ok(())
         }
+    }
+}
+
+impl Debug for MetaContext {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let mut builder = f.debug_map();
+        for (id, ty) in self.bindings.iter() {
+            builder.entry(&Meta::new(*id), ty);
+        }
+        builder.finish()
     }
 }

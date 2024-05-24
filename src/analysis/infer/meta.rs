@@ -10,6 +10,10 @@ use std::fmt::{Debug, Display};
 pub struct Meta(UniqueId);
 
 impl Meta {
+    pub fn new(id: UniqueId) -> Self {
+        Self(id)
+    }
+
     pub fn fresh() -> Self {
         Self(UniqueId::gen())
     }
