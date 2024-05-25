@@ -120,6 +120,10 @@ map : a b. (a -> b, [a]) -> [b]
 let map f [] = []
   | map f (x :: xs) = f x :: map f xs
 
+let map f xs = match xs
+| [] -> []
+| x :: xs -> f x :: map f xs
+
 let binary_search n xs =
   let loop l r =
     if l > r then -1

@@ -49,12 +49,12 @@ impl PolyType {
             }
         }
 
-        let mut tvs_to_replace = HashMap::new();
+        // let mut tvs_to_replace = HashMap::new();
         for tv in self.vars.iter() {
-            tvs_to_replace.insert(tv.clone(), Type::Meta(Meta::fresh()));
+            replace_tvs(&self.ty, &tv.id(), &Type::Meta(Meta::fresh()));
         }
 
-        replace_tvs(&self.ty, &UniqueId::new(0), &Type::Meta(Meta::fresh()))
+        // replace_tvs(&self.ty, &UniqueId::new(0), &Type::Meta(Meta::fresh()))
     }
 }
 
