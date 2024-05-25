@@ -117,6 +117,41 @@ impl Resolver {
                     span: decl.span,
                 })
             }
+            ast::DeclKind::FnMatch(arms) => {
+                if arms.is_empty() {
+                    return Err(ResError::new(ResErrorKind::EmptyFnMatch, decl.span));
+                }
+
+                let name = arms[0].0;
+                let res_name = self.env.define(name.key);
+
+                let param_len = arms[0].1.len();
+
+                let mut res_arms = vec![];
+                for (n, params, body) in arms {
+                    if *n != name {
+                        return Err(ResError::new(ResErrorKind::TooManyFnNames, decl.span));
+                    }
+                    if params.len() != param_len {
+                        return Err(ResError::new(ResErrorKind::FnArmParamMismatch, decl.span));
+                    }
+                    self.env.push();
+                    let mut res_params = vec![];
+                    for p in params {
+                        match self.resolve_pattern(p) {
+                            Ok(p) => res_params.push(p),
+                            Err(e) => {
+                                self.env.pop();
+                                return Err(e);
+                            }
+                        }
+                    }
+                    let res_body = self.resolve_expr(body)?;
+                    self.env.pop();
+                    res_arms.push((res_params, res_body));
+                }
+                todo!()
+            }
         }
     }
 

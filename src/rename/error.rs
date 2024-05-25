@@ -31,6 +31,9 @@ impl Display for ResError {
 pub enum ResErrorKind {
     UnboundName(InternedString),
     UnboundBuiltIn(InternedString),
+    EmptyFnMatch,
+    TooManyFnNames,
+    FnArmParamMismatch,
 }
 
 impl Display for ResErrorKind {
@@ -41,6 +44,15 @@ impl Display for ResErrorKind {
             }
             ResErrorKind::UnboundBuiltIn(name) => {
                 write!(f, "unbound built-in '{}'", name)
+            }
+            ResErrorKind::EmptyFnMatch => {
+                write!(f, "empty function match")
+            }
+            ResErrorKind::TooManyFnNames => {
+                write!(f, "too many function names in match")
+            }
+            ResErrorKind::FnArmParamMismatch => {
+                write!(f, "function arms have mismatched parameters")
             }
         }
     }
