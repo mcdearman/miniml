@@ -99,7 +99,7 @@ let fib n =
   match n
   | 0 -> 0
   | 1 -> 1
-  | n -> fib (n - 1) + fib (n - 2)
+  \ n -> fib (n - 1) + fib (n - 2)
 
 let fib 0 = 0
   | fib 1 = 1
@@ -116,13 +116,13 @@ gcd : (Int, Int) -> Int
 let gcd a 0 = a
   | gcd a b = gcd b (a % b)
 
-map : a b. (a -> b, [a]) -> [b]
+map : (a -> b, [a]) -> [b]
 let map f [] = []
   | map f (x :: xs) = f x :: map f xs
 
 let map f xs = match xs
 | [] -> []
-| x :: xs -> f x :: map f xs
+\ x :: xs -> f x :: map f xs
 
 let binary_search n xs =
   let loop l r =

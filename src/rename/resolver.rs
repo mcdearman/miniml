@@ -127,6 +127,7 @@ impl Resolver {
 
                 let param_len = arms[0].1.len();
 
+                // let mut res_params = vec![];
                 let mut res_arms = vec![];
                 for (n, params, body) in arms {
                     if *n != name {
@@ -150,6 +151,10 @@ impl Resolver {
                     self.env.pop();
                     res_arms.push((res_params, res_body));
                 }
+
+                // Ok(Decl {
+                //     kind: DeclKind::Fn(res_name,
+                // })
                 todo!()
             }
         }
