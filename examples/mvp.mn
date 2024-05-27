@@ -110,7 +110,7 @@ let gcd a b =
   match (a, b)
   | (a, 0) -> a
   | (a, b) if a > b -> gcd b (a % b)
-  | (a, b) -> gcd a (b % a)
+  \ (a, b) -> gcd a (b % a)
 
 gcd : (Int, Int) -> Int
 let gcd a 0 = a
