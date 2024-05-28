@@ -124,12 +124,15 @@ impl TypeSolver {
                     .map(|var| Type::Meta(var.clone()))
                     .collect_vec();
 
-                let ty_ret = Type::Meta(Meta::fresh());
+                let meta_ret = Meta::fresh();
+                let ty_ret = Type::Meta(meta_ret.clone());
                 let fn_ty = Type::Lambda(param_tys.clone(), Box::new(ty_ret.clone()));
                 log::debug!("decl_fn_ty: {:?}", fn_ty);
 
+                let mut vars = param_vars.iter().cloned().collect_vec();
+                vars.push(meta_ret.clone());
                 self.ctx
-                    .insert(name.id, PolyType::new(param_vars.clone(), fn_ty.clone()));
+                    .insert(name.id, PolyType::new(vars.clone(), fn_ty.clone()));
                 self.ctx.push();
 
                 let mut solved_params = vec![];
@@ -433,14 +436,6 @@ impl TypeSolver {
                 } else {
                     self.ctx.insert(name.id, PolyType::new(vec![], ty.clone()));
                 }
-                // self.ctx.insert(id, scheme)
-                // let ty = Type::Var(TyVar::fresh());
-                // log::debug!("infer_ident_ty: {:?}", ty);
-                // self.ctx.insert(name.id, Scheme::new(vec![], ty.clone()));
-                // if let Some(hint) = hint {
-                //     let hint_ty = self.reg.get(hint).unwrap();
-                //     ty.unify(hint_ty.clone())?);
-                // }
                 Ok(Pattern::new(
                     PatternKind::Ident(*name),
                     ty.clone(),
