@@ -1,7 +1,7 @@
 -- Bootstrapped compiler
 
 -- utils
-type Span = { start : Int }
+type Span = { start : Int, end : Int }
 
 let span_to_string span src = 
   let start = span.start

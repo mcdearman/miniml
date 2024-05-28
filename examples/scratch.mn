@@ -169,19 +169,3 @@ class Ord a <: Eq where
   (<=) : (a, a) -> Bool
   (>) : (a, a) -> Bool
   (>=) : (a, a) -> Bool
-
-(def (fib (n : Int) : Int)
-  (if (<= n 1)
-    n
-    (+ (fib (- n 1)) (fib (- n 2)))))
-
-(def (fib-iter (n : Int) : Int)
-  (let loop ((a 0) (b 1) (i n))
-    (if (= i 0)
-      a
-      (loop b (+ a b) (- i 1)))))
-
-(def (map (f : (a -> b)) (xs : [a]) : [b])
-  (match xs
-    ([] [])
-    ((x::xs) (Pair (f x) (map f xs)))))

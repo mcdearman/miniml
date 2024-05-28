@@ -196,7 +196,6 @@ impl Display for Token {
             In => write!(f, "In"),
             If => write!(f, "If"),
             Match => write!(f, "Match"),
-            With => write!(f, "With"),
             Then => write!(f, "Then"),
             Else => write!(f, "Else"),
             Type => write!(f, "Type"),
@@ -208,5 +207,3 @@ impl Display for Token {
 }
 
 // Src -> Lexical analysis -> Parse -> Rename -> Type check -> Desugar -> Lower -> Codegen
-
-
