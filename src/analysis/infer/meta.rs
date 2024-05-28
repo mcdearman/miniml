@@ -25,7 +25,7 @@ impl Meta {
 
 impl Debug for Meta {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self)
+        write!(f, "{} @ v{}", self, self.0)
     }
 }
 
@@ -41,7 +41,7 @@ const ALPHABET: &[char] = &[
 impl Display for Meta {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let id = usize::from(self.0);
-        if id < ALPHABET.len() {
+        if id <= ALPHABET.len() {
             write!(f, "{}", ALPHABET[id])
         } else {
             write!(

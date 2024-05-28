@@ -427,7 +427,9 @@ impl TypeSolver {
             nir::PatternKind::Ident(name, hint) => {
                 log::debug!("infer pattern ident: {:?}", name.id);
                 if generalize {
-                    self.ctx.insert(name.id, ty.generalize(&self.ctx));
+                    let scm = ty.generalize(&self.ctx);
+                    log::debug!("scm: {:?}", scm);
+                    self.ctx.insert(name.id, scm);
                 } else {
                     self.ctx.insert(name.id, PolyType::new(vec![], ty.clone()));
                 }
@@ -483,12 +485,15 @@ impl TypeSolver {
                 )),
             },
             nir::PatternKind::List(pats) => {
-                let ty = Type::Meta(Meta::fresh());
-                let list_ty = Type::List(Box::new(ty.clone()));
+                let elem_ty = Type::Meta(Meta::fresh());
+                log::debug!("infer list: {:?}", ty);
+                let list_ty = Type::List(Box::new(elem_ty.clone()));
                 let solved_pats = pats
                     .iter()
-                    .map(|pat| self.infer_pattern(pat, &ty, generalize))
+                    .map(|pat| self.infer_pattern(pat, &elem_ty, generalize))
                     .collect::<InferResult<Vec<Pattern>>>()?;
+                self.unify(ty, &list_ty)?;
+                log::debug!("solved_pats: {:?}", solved_pats);
 
                 Ok(Pattern::new(
                     PatternKind::List(solved_pats),
@@ -497,12 +502,13 @@ impl TypeSolver {
                 ))
             }
             nir::PatternKind::Pair(lhs, rhs) => {
-                let ty = Type::Meta(Meta::fresh());
-                let list_ty = Type::List(Box::new(ty.clone()));
-                let solved_lhs = self.infer_pattern(lhs, &ty, generalize)?;
+                let elem_ty = Type::Meta(Meta::fresh());
+                let list_ty = Type::List(Box::new(elem_ty.clone()));
+                let solved_lhs = self.infer_pattern(lhs, &elem_ty, generalize)?;
                 let solved_rhs = self.infer_pattern(rhs, &list_ty, generalize)?;
 
-                self.unify(&solved_lhs.ty, &ty)?;
+                self.unify(&solved_lhs.ty, &elem_ty)?;
+                self.unify(ty, &list_ty)?;
                 self.unify(&solved_rhs.ty, &list_ty)?;
 
                 Ok(Pattern::new(
