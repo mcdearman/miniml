@@ -193,7 +193,10 @@ impl Context {
                         *id,
                         PolyType::new(
                             vec![meta.clone()],
-                            Type::Lambda(vec![ty.clone()], Box::new(Type::List(Box::new(ty)))),
+                            Type::Lambda(
+                                vec![ty.clone(), Type::List(Box::new(ty.clone()))],
+                                Box::new(Type::List(Box::new(ty))),
+                            ),
                         ),
                     );
                 }

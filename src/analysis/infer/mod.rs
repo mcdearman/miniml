@@ -157,6 +157,7 @@ impl TypeSolver {
     }
 
     fn infer_expr(&mut self, expr: &nir::Expr) -> InferResult<Expr> {
+        log::debug!("infer expr: {:#?}", expr.kind);
         match expr.kind.as_ref() {
             nir::ExprKind::Lit(lit) => match *lit {
                 nir::Lit::Byte(b) => Ok(Expr::new(
@@ -269,6 +270,7 @@ impl TypeSolver {
                 let ty_fun = Type::Lambda(ty_args, Box::new(ty_ret.clone()));
                 log::debug!("app_ty_fun: {:?}", ty_fun);
                 self.unify(&solved_fun.ty, &ty_fun)?;
+                log::debug!("exit apply");
 
                 Ok(Expr::new(
                     ExprKind::Apply(solved_fun, solved_args),
@@ -563,8 +565,18 @@ impl TypeSolver {
                 self.unify(b1, b2)
             }
             (Type::List(l1), Type::List(l2)) => self.unify(l1, l2),
-            (_, Type::Meta(key)) => self.meta_ctx.bind(key, t1),
-            (Type::Meta(key), _) => self.meta_ctx.bind(key, t2),
+            (_, Type::Meta(key)) => {
+                self.meta_ctx.bind(key, t1)?;
+                log::debug!("bind: {:?} to {:?}", key, t1);
+                log::debug!("meta_ctx: {:#?}", self.meta_ctx);
+                Ok(())
+            }
+            (Type::Meta(key), _) => {
+                self.meta_ctx.bind(key, t2)?;
+                log::debug!("bind: {:?} to {:?}", key, t2);
+                log::debug!("meta_ctx: {:#?}", self.meta_ctx);
+                Ok(())
+            }
             _ => Err(TypeError::from(format!(
                 "cannot unify {:?} and {:?}",
                 t1, t2,
