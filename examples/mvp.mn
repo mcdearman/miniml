@@ -122,7 +122,7 @@ let map f [] = []
 
 let map f xs = match xs
 | [] -> []
-| x :: xs -> f x :: map f xs
+| (x::xs) -> f x :: map f xs
 
 let binary_search n xs =
   let loop l r =
