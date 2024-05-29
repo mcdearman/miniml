@@ -29,37 +29,36 @@ impl PolyType {
     }
 
     pub fn instantiate(&self, meta_ctx: &mut MetaContext) -> Type {
-        fn replace_tvs(ty: &Type, from: &UniqueId, to: &Type) -> Type {
+        fn substitute(ty: &Type, subst: &HashMap<Meta, Meta>) -> Type {
             match ty {
-                Type::Meta(tv) if tv.id() == *from => to.clone(),
-                Type::Lambda(params, body) => {
-                    let new_params = params.iter().map(|ty| replace_tvs(ty, from, to)).collect();
-                    let new_body = Box::new(replace_tvs(body, from, to));
-                    Type::Lambda(new_params, new_body)
-                }
-                Type::List(ty) => Type::List(Box::new(replace_tvs(ty, from, to))),
-                Type::Record(id, fields) => {
-                    let new_fields = fields
+                Type::Meta(tv) => subst
+                    .get(tv)
+                    .cloned()
+                    .map_or(ty.clone(), |tv| Type::Meta(tv)),
+                Type::Lambda(params, body) => Type::Lambda(
+                    params.iter().map(|ty| substitute(ty, subst)).collect(),
+                    Box::new(substitute(body, subst)),
+                ),
+                Type::List(ty) => Type::List(Box::new(substitute(ty, subst))),
+                Type::Record(id, fields) => Type::Record(
+                    *id,
+                    fields
                         .iter()
-                        .map(|(name, ty)| (name.clone(), replace_tvs(ty, from, to)))
-                        .collect();
-                    Type::Record(*id, new_fields)
-                }
+                        .map(|(name, ty)| (name.clone(), substitute(ty, subst)))
+                        .collect(),
+                ),
                 _ => ty.clone(),
             }
         }
 
-        // let mut ty = self.ty.as_ref().clone();
-        // for tv in self.vars.iter() {
-        //     let meta = Meta::fresh();
-        //     log::debug!("instantiate: replacing {:?} with {:?}", tv, meta);
-        //     ty = replace_tvs(&ty, &tv.id(), &Type::Meta(meta.clone()));
-        //     log::debug!("type after replacement: {:?}", ty);
-        //     meta_ctx.insert(meta.id(), Type::Meta(tv.clone()));
-        // }
+        let mut subst = HashMap::new();
+        for tv in self.vars.iter() {
+            let new_tv = Meta::fresh();
+            // meta_ctx.insert(new_tv.id(), Type::Meta(tv.clone()));
+            subst.insert(tv.clone(), new_tv);
+        }
 
-        // ty
-        replace_tvs(&self.ty, &UniqueId::new(0), &Type::Meta(Meta::fresh()))
+        substitute(&self.ty, &subst)
     }
 }
 
