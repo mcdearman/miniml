@@ -113,3 +113,7 @@ impl MetaContext {
         }
     }
 }
+
+// impl Debug for MetaContext {
+//     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {}
+// }

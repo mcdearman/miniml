@@ -172,9 +172,9 @@ impl Display for Type {
             Self::Poly(poly) => write!(f, "{}", poly),
             Self::Lambda(params, body) => {
                 if params.len() == 1 {
-                    write!(f, "{:?} -> {:?}", params[0], body)
+                    write!(f, "{} -> {}", params[0], body)
                 } else {
-                    write!(f, "({}) -> {:?}", params.iter().format(", "), body)
+                    write!(f, "({}) -> {}", params.iter().format(", "), body)
                 }
             }
             Self::List(ty) => write!(f, "[{:?}]", ty),
