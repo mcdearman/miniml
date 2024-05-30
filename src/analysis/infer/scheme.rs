@@ -8,28 +8,28 @@ use std::{
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct PolyType {
-    vars: Vec<Meta>,
+    metas: Vec<UniqueId>,
     ty: Box<Type>,
 }
 
 impl PolyType {
-    pub fn new(vars: Vec<Meta>, ty: Type) -> Self {
+    pub fn new(metas: Vec<UniqueId>, ty: Type) -> Self {
         Self {
-            vars,
+            metas,
             ty: Box::new(ty),
         }
     }
 
-    pub fn free_vars(&self) -> HashSet<Meta> {
+    pub fn free_vars(&self) -> HashSet<UniqueId> {
         self.ty
             .free_vars()
-            .difference(&self.vars.iter().cloned().collect())
+            .difference(&self.metas.iter().cloned().collect())
             .cloned()
             .collect()
     }
 
     pub fn instantiate(&self, meta_ctx: &mut MetaContext) -> Type {
-        fn substitute(ty: &Type, subst: &HashMap<Meta, Meta>) -> Type {
+        fn substitute(ty: &Type, subst: &HashMap<UniqueId, UniqueId>) -> Type {
             match ty {
                 Type::Meta(tv) => subst
                     .get(tv)
@@ -52,10 +52,9 @@ impl PolyType {
         }
 
         let mut subst = HashMap::new();
-        for tv in self.vars.iter() {
-            let new_tv = Meta::fresh();
-            // meta_ctx.insert(new_tv.id(), Type::Meta(tv.clone()));
-            subst.insert(tv.clone(), new_tv);
+        for m in self.metas.iter() {
+            let id = meta_ctx.fresh();
+            subst.insert(*m, id);
         }
 
         substitute(&self.ty, &subst)
@@ -64,10 +63,10 @@ impl PolyType {
 
 impl Display for PolyType {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        if self.vars.is_empty() {
+        if self.metas.is_empty() {
             write!(f, "{}", self.ty)
         } else {
-            write!(f, "{}. {}", join(&self.vars, " "), self.ty)
+            write!(f, "{}. {}", join(&self.metas, " "), self.ty)
         }
     }
 }

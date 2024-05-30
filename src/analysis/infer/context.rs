@@ -22,15 +22,12 @@ impl Context {
         for (id, name) in builtins {
             match name.as_ref() {
                 "neg" => {
-                    let meta = Meta::fresh();
+                    let vid = meta_ctx.fresh();
                     frame.insert(
-                        *id,
+                        vid,
                         PolyType::new(
-                            vec![meta.clone()],
-                            Type::Lambda(
-                                vec![Type::Meta(meta.clone())],
-                                Box::new(Type::Meta(meta.clone())),
-                            ),
+                            vec![vid],
+                            Type::Lambda(vec![Type::Meta(vid)], Box::new(Type::Meta(vid))),
                         ),
                     );
                 }
@@ -86,113 +83,113 @@ impl Context {
                     );
                 }
                 "pow" => {
-                    let meta = Meta::fresh();
+                    let vid = meta_ctx.fresh();
                     frame.insert(
-                        *id,
+                        vid,
                         PolyType::new(
-                            vec![meta.clone()],
+                            vec![vid],
                             Type::Lambda(
-                                vec![Type::Meta(meta.clone()), Type::Meta(meta.clone())],
-                                Box::new(Type::Meta(meta.clone())),
+                                vec![Type::Meta(vid), Type::Meta(vid)],
+                                Box::new(Type::Meta(vid)),
                             ),
                         ),
                     );
                 }
                 "eq" => {
-                    let meta = Meta::fresh();
+                    let vid = meta_ctx.fresh();
                     frame.insert(
                         *id,
                         PolyType::new(
-                            vec![meta.clone()],
+                            vec![vid],
                             Type::Lambda(
-                                vec![Type::Meta(meta.clone()), Type::Meta(meta.clone())],
+                                vec![Type::Meta(vid), Type::Meta(vid)],
                                 Box::new(Type::Bool),
                             ),
                         ),
                     );
                 }
                 "neq" => {
-                    let meta = Meta::fresh();
+                    let vid = meta_ctx.fresh();
                     frame.insert(
                         *id,
                         PolyType::new(
-                            vec![meta.clone()],
+                            vec![vid],
                             Type::Lambda(
-                                vec![Type::Meta(meta.clone()), Type::Meta(meta.clone())],
+                                vec![Type::Meta(vid), Type::Meta(vid)],
                                 Box::new(Type::Bool),
                             ),
                         ),
                     );
                 }
                 "lt" => {
-                    let meta = Meta::fresh();
+                    let vid = meta_ctx.fresh();
                     frame.insert(
                         *id,
                         PolyType::new(
-                            vec![meta.clone()],
+                            vec![vid],
                             Type::Lambda(
-                                vec![Type::Meta(meta.clone()), Type::Meta(meta.clone())],
+                                vec![Type::Meta(vid), Type::Meta(vid)],
                                 Box::new(Type::Bool),
                             ),
                         ),
                     );
                 }
                 "lte" => {
-                    let meta = Meta::fresh();
+                    let vid = meta_ctx.fresh();
                     frame.insert(
                         *id,
                         PolyType::new(
-                            vec![meta.clone()],
+                            vec![vid],
                             Type::Lambda(
-                                vec![Type::Meta(meta.clone()), Type::Meta(meta.clone())],
+                                vec![Type::Meta(vid), Type::Meta(vid)],
                                 Box::new(Type::Bool),
                             ),
                         ),
                     );
                 }
                 "gt" => {
-                    let meta = Meta::fresh();
+                    let vid = meta_ctx.fresh();
                     frame.insert(
                         *id,
                         PolyType::new(
-                            vec![meta.clone()],
+                            vec![vid],
                             Type::Lambda(
-                                vec![Type::Meta(meta.clone()), Type::Meta(meta.clone())],
+                                vec![Type::Meta(vid), Type::Meta(vid)],
                                 Box::new(Type::Bool),
                             ),
                         ),
                     );
                 }
                 "gte" => {
-                    let meta = Meta::fresh();
+                    let vid = meta_ctx.fresh();
                     frame.insert(
                         *id,
                         PolyType::new(
-                            vec![meta.clone()],
+                            vec![vid],
                             Type::Lambda(
-                                vec![Type::Meta(meta.clone()), Type::Meta(meta.clone())],
+                                vec![Type::Meta(vid), Type::Meta(vid)],
                                 Box::new(Type::Bool),
                             ),
                         ),
                     );
                 }
                 "println" => {
-                    let meta = Meta::fresh();
+                    let vid = meta_ctx.fresh();
                     frame.insert(
                         *id,
                         PolyType::new(
-                            vec![meta.clone()],
-                            Type::Lambda(vec![Type::Meta(meta.clone())], Box::new(Type::Unit)),
+                            vec![vid],
+                            Type::Lambda(vec![Type::Meta(vid)], Box::new(Type::Unit)),
                         ),
                     );
                 }
                 "pair" => {
-                    let meta = Meta::fresh();
-                    let ty = Type::Meta(meta.clone());
+                    let vid = meta_ctx.fresh();
+                    let ty = Type::Meta(vid);
                     frame.insert(
                         *id,
                         PolyType::new(
-                            vec![meta.clone()],
+                            vec![vid],
                             Type::Lambda(
                                 vec![ty.clone(), Type::List(Box::new(ty.clone()))],
                                 Box::new(Type::List(Box::new(ty))),
@@ -231,7 +228,7 @@ impl Context {
         }
     }
 
-    pub(super) fn free_vars(&self) -> HashSet<Meta> {
+    pub(super) fn free_vars(&self) -> HashSet<UniqueId> {
         self.frames
             .iter()
             .map(|frame| frame.free_vars())
@@ -265,7 +262,7 @@ impl Frame {
         self.bindings.insert(id, scheme);
     }
 
-    pub(super) fn free_vars(&self) -> HashSet<Meta> {
+    pub(super) fn free_vars(&self) -> HashSet<UniqueId> {
         self.clone()
             .bindings
             .into_iter()

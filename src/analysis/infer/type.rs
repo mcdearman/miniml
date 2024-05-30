@@ -22,7 +22,7 @@ pub enum Type {
     Bool,
     String,
     Char,
-    Meta(Meta),
+    Meta(UniqueId),
     Poly(PolyType),
     Lambda(Vec<Self>, Box<Self>),
     // Qual(Box<Constraint>, Box<Self>),
@@ -52,7 +52,7 @@ impl Type {
         )
     }
 
-    pub(super) fn free_vars(&self) -> HashSet<Meta> {
+    pub(super) fn free_vars(&self) -> HashSet<UniqueId> {
         match self {
             Self::Meta(n) => vec![n.clone()].into_iter().collect(),
             Self::Lambda(params, body) => params
@@ -96,7 +96,7 @@ impl Debug for Type {
 
 impl Display for Type {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        fn lower(ty: Type, vars: &mut HashMap<Meta, Meta>) -> Type {
+        fn lower(ty: Type, metas: &mut HashMap<UniqueId, UniqueId>) -> Type {
             match ty {
                 Type::Byte
                 | Type::Int
@@ -106,25 +106,25 @@ impl Display for Type {
                 | Type::String
                 | Type::Char
                 | Type::Unit => ty,
-                Type::Meta(var) => {
-                    if let Some(lowered) = vars.get(&var) {
+                Type::Meta(id) => {
+                    if let Some(lowered) = metas.get(&id) {
                         Type::Meta(lowered.clone())
                     } else {
-                        let new_meta = Meta::fresh();
-                        vars.insert(var, new_meta.clone());
-                        Type::Meta(new_meta)
+                        let new_id = UniqueId::gen();
+                        metas.insert(id, new_id);
+                        Type::Meta(id)
                     }
                 }
                 Type::Poly(poly) => todo!(),
                 Type::Lambda(params, body) => Type::Lambda(
-                    params.iter().map(|p| lower(p.clone(), vars)).collect_vec(),
-                    Box::new(lower(*body, vars)),
+                    params.iter().map(|p| lower(p.clone(), metas)).collect_vec(),
+                    Box::new(lower(*body, metas)),
                 ),
-                Type::List(list_ty) => Type::List(Box::new(lower(*list_ty, vars))),
+                Type::List(list_ty) => Type::List(Box::new(lower(*list_ty, metas))),
                 Type::Record(name, fields) => {
                     let mut lowered_fields = vec![];
                     for (k, v) in fields {
-                        lowered_fields.push((k.clone(), lower(v, vars)));
+                        lowered_fields.push((k.clone(), lower(v, metas)));
                     }
                     Type::Record(name, lowered_fields)
                 }
