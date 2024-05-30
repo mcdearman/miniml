@@ -271,4 +271,12 @@ impl Frame {
                 acc.union(&set).cloned().collect()
             })
     }
+
+    pub fn zonk(&self, meta_ctx: &mut MetaContext) -> Self {
+        let mut frame = Frame::new();
+        for (id, scheme) in self.iter() {
+            frame.insert(*id, scheme.zonk(meta_ctx));
+        }
+        frame
+    }
 }

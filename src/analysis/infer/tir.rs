@@ -1,7 +1,10 @@
 use itertools::{join, Itertools};
 use num_rational::Rational64;
 
-use super::r#type::Type;
+use super::{
+    meta_context::{self, MetaContext},
+    r#type::Type,
+};
 use crate::utils::{
     ident::{Ident, ScopedIdent},
     intern::InternedString,
@@ -13,6 +16,20 @@ use std::fmt::{Debug, Display};
 pub struct Root {
     pub decls: Vec<Decl>,
     pub span: Span,
+}
+
+impl Root {
+    pub fn zonk(&self, meta_ctx: &mut MetaContext) -> Root {
+        let decls = self
+            .decls
+            .iter()
+            .map(|decl| decl.zonk(meta_ctx))
+            .collect_vec();
+        Root {
+            decls,
+            span: self.span,
+        }
+    }
 }
 
 // impl Debug for Root {
@@ -30,6 +47,34 @@ pub struct Decl {
     pub kind: DeclKind,
     pub ty: Type,
     pub span: Span,
+}
+
+impl Decl {
+    fn zonk(&self, meta_ctx: &mut MetaContext) -> Decl {
+        match &self.kind {
+            DeclKind::Let(pat, let_expr) => {
+                let zonked_pat = pat.zonk(meta_ctx);
+                let zonked_expr = let_expr.zonk(meta_ctx);
+                Decl {
+                    kind: DeclKind::Let(zonked_pat, zonked_expr),
+                    ty: self.ty.zonk(meta_ctx),
+                    span: self.span,
+                }
+            }
+            DeclKind::Fn(name, params, fn_expr) => {
+                let zonked_params = params
+                    .iter()
+                    .map(|param| param.zonk(meta_ctx))
+                    .collect_vec();
+                let zonked_expr = fn_expr.zonk(meta_ctx);
+                Decl {
+                    kind: DeclKind::Fn(*name, zonked_params, zonked_expr),
+                    ty: self.ty.zonk(meta_ctx),
+                    span: self.span,
+                }
+            }
+        }
+    }
 }
 
 // impl Debug for Decl {
@@ -74,6 +119,116 @@ impl Expr {
             kind: Box::new(kind),
             ty,
             span,
+        }
+    }
+
+    fn zonk(&self, meta_ctx: &mut MetaContext) -> Expr {
+        match self.kind.as_ref() {
+            ExprKind::Lit(lit) => Expr::new(
+                ExprKind::Lit(lit.clone()),
+                self.ty.zonk(meta_ctx),
+                self.span,
+            ),
+            ExprKind::Var(name) => {
+                Expr::new(ExprKind::Var(*name), self.ty.zonk(meta_ctx), self.span)
+            }
+            ExprKind::Lambda(params, fn_expr) => {
+                let zonked_params = params
+                    .iter()
+                    .map(|param| param.zonk(meta_ctx))
+                    .collect_vec();
+                let zonked_expr = fn_expr.zonk(meta_ctx);
+                Expr::new(
+                    ExprKind::Lambda(zonked_params, zonked_expr),
+                    self.ty.zonk(meta_ctx),
+                    self.span,
+                )
+            }
+            ExprKind::Apply(fun, args) => {
+                let zonked_fun = fun.zonk(meta_ctx);
+                let zonked_args = args.iter().map(|arg| arg.zonk(meta_ctx)).collect_vec();
+                Expr::new(
+                    ExprKind::Apply(zonked_fun, zonked_args),
+                    self.ty.zonk(meta_ctx),
+                    self.span,
+                )
+            }
+            ExprKind::Or(lhs, rhs) => {
+                let zonked_lhs = lhs.zonk(meta_ctx);
+                let zonked_rhs = rhs.zonk(meta_ctx);
+                Expr::new(
+                    ExprKind::Or(zonked_lhs, zonked_rhs),
+                    self.ty.zonk(meta_ctx),
+                    self.span,
+                )
+            }
+            ExprKind::And(lhs, rhs) => {
+                let zonked_lhs = lhs.zonk(meta_ctx);
+                let zonked_rhs = rhs.zonk(meta_ctx);
+                Expr::new(
+                    ExprKind::And(zonked_lhs, zonked_rhs),
+                    self.ty.zonk(meta_ctx),
+                    self.span,
+                )
+            }
+            ExprKind::Let(pat, let_expr, body) => {
+                let zonked_pat = pat.zonk(meta_ctx);
+                let zonked_let_expr = let_expr.zonk(meta_ctx);
+                let zonked_body = body.zonk(meta_ctx);
+                Expr::new(
+                    ExprKind::Let(zonked_pat, zonked_let_expr, zonked_body),
+                    self.ty.zonk(meta_ctx),
+                    self.span,
+                )
+            }
+            ExprKind::Fn(name, params, expr, body) => {
+                let zonked_params = params
+                    .iter()
+                    .map(|param| param.zonk(meta_ctx))
+                    .collect_vec();
+                let zonked_expr = expr.zonk(meta_ctx);
+                let zonked_body = body.zonk(meta_ctx);
+                Expr::new(
+                    ExprKind::Fn(*name, zonked_params, zonked_expr, zonked_body),
+                    self.ty.zonk(meta_ctx),
+                    self.span,
+                )
+            }
+            ExprKind::If(cond, then, else_) => {
+                let zonked_cond = cond.zonk(meta_ctx);
+                let zonked_then = then.zonk(meta_ctx);
+                let zonked_else = else_.zonk(meta_ctx);
+                Expr::new(
+                    ExprKind::If(zonked_cond, zonked_then, zonked_else),
+                    self.ty.zonk(meta_ctx),
+                    self.span,
+                )
+            }
+            ExprKind::Match(expr, arms) => {
+                let zonked_expr = expr.zonk(meta_ctx);
+                let zonked_arms = arms
+                    .iter()
+                    .map(|(pat, body)| {
+                        let zonked_pat = pat.zonk(meta_ctx);
+                        let zonked_body = body.zonk(meta_ctx);
+                        (zonked_pat, zonked_body)
+                    })
+                    .collect_vec();
+                Expr::new(
+                    ExprKind::Match(zonked_expr, zonked_arms),
+                    self.ty.zonk(meta_ctx),
+                    self.span,
+                )
+            }
+            ExprKind::List(exprs) => {
+                let zonked_exprs = exprs.iter().map(|expr| expr.zonk(meta_ctx)).collect_vec();
+                Expr::new(
+                    ExprKind::List(zonked_exprs),
+                    self.ty.zonk(meta_ctx),
+                    self.span,
+                )
+            }
+            ExprKind::Unit => Expr::new(ExprKind::Unit, self.ty.zonk(meta_ctx), self.span),
         }
     }
 }
@@ -224,6 +379,40 @@ impl Pattern {
             kind: Box::new(kind),
             ty,
             span,
+        }
+    }
+
+    fn zonk(&self, meta_ctx: &mut MetaContext) -> Pattern {
+        match self.kind.as_ref() {
+            PatternKind::Wildcard => {
+                Pattern::new(PatternKind::Wildcard, self.ty.zonk(meta_ctx), self.span)
+            }
+            PatternKind::Ident(name) => {
+                Pattern::new(PatternKind::Ident(*name), self.ty.zonk(meta_ctx), self.span)
+            }
+            PatternKind::Lit(lit) => Pattern::new(
+                PatternKind::Lit(lit.clone()),
+                self.ty.zonk(meta_ctx),
+                self.span,
+            ),
+            PatternKind::List(pats) => {
+                let zonked_pats = pats.iter().map(|pat| pat.zonk(meta_ctx)).collect_vec();
+                Pattern::new(
+                    PatternKind::List(zonked_pats),
+                    self.ty.zonk(meta_ctx),
+                    self.span,
+                )
+            }
+            PatternKind::Pair(lhs, rhs) => {
+                let zonked_lhs = lhs.zonk(meta_ctx);
+                let zonked_rhs = rhs.zonk(meta_ctx);
+                Pattern::new(
+                    PatternKind::Pair(zonked_lhs, zonked_rhs),
+                    self.ty.zonk(meta_ctx),
+                    self.span,
+                )
+            }
+            PatternKind::Unit => Pattern::new(PatternKind::Unit, self.ty.zonk(meta_ctx), self.span),
         }
     }
 }

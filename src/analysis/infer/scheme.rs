@@ -20,6 +20,10 @@ impl PolyType {
         }
     }
 
+    pub fn zonk(&self, meta_ctx: &mut MetaContext) -> PolyType {
+        Self::new(self.metas.clone(), self.ty.zonk(meta_ctx))
+    }
+
     pub fn free_vars(&self) -> HashSet<UniqueId> {
         self.ty
             .free_vars()

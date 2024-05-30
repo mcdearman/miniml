@@ -5,6 +5,7 @@ use super::{
     context::Context,
     error::{InferResult, TypeError},
     meta::Meta,
+    meta_context::MetaContext,
     scheme::PolyType,
 };
 use crate::utils::{intern::InternedString, unique_id::UniqueId};
@@ -64,6 +65,33 @@ impl Type {
                 .cloned()
                 .collect(),
             _ => HashSet::new(),
+        }
+    }
+
+    pub fn zonk(&self, meta_ctx: &mut MetaContext) -> Type {
+        match self {
+            Type::Byte => Type::Byte,
+            Type::Int => Type::Int,
+            Type::Rational => Type::Rational,
+            Type::Real => Type::Real,
+            Type::Bool => Type::Bool,
+            Type::String => Type::String,
+            Type::Char => Type::Char,
+            Type::Unit => Type::Unit,
+            Type::Meta(id) => meta_ctx.get(id).unwrap_or(self.clone()),
+            Type::Lambda(params, body) => Type::Lambda(
+                params.iter().map(|ty| ty.zonk(meta_ctx)).collect_vec(),
+                Box::new(body.zonk(meta_ctx)),
+            ),
+            Type::List(ty) => Type::List(Box::new(ty.zonk(meta_ctx))),
+            Type::Record(id, fields) => Type::Record(
+                *id,
+                fields
+                    .iter()
+                    .map(|(name, ty)| (name.clone(), ty.zonk(meta_ctx)))
+                    .collect(),
+            ),
+            Type::Poly(poly) => Type::Poly(poly.clone()),
         }
     }
 }
