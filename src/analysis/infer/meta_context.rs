@@ -45,7 +45,7 @@ impl MetaContext {
     pub fn bind(&mut self, meta: &Meta, ty: &Type) -> InferResult<()> {
         if *ty == Type::Meta(meta.clone()) {
             Ok(())
-        } else if let Some(binding) = self.bindings.clone().get_mut(&meta.id()) {
+        } else if let Some(binding) = self.bindings.get_mut(&meta.id()) {
             if ty.free_vars().contains(meta) {
                 Err(TypeError::from(format!(
                     "occurs check failed: {} occurs in {:?}",
