@@ -1,12 +1,16 @@
 use super::r#type::Type;
-use crate::utils::unique_id::UniqueId;
-use std::fmt::{Debug, Display};
+use std::{
+    fmt::{Debug, Display},
+    sync::atomic::AtomicU32,
+};
 
 #[derive(Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum Meta {
     Bound(Type),
-    Unbound(UniqueId),
+    Unbound(u32),
 }
+
+static COUNTER: AtomicU32 = AtomicU32::new(0);
 
 impl Meta {
     pub fn new(ty: Type) -> Self {
@@ -14,10 +18,10 @@ impl Meta {
     }
 
     pub fn fresh() -> Self {
-        Self::Unbound(UniqueId::gen())
+        Self::Unbound(COUNTER.fetch_add(1, std::sync::atomic::Ordering::SeqCst))
     }
 
-    pub fn id(&self) -> Option<UniqueId> {
+    pub fn id(&self) -> Option<u32> {
         match self {
             Self::Bound(_) => None,
             Self::Unbound(id) => Some(*id),
@@ -45,7 +49,7 @@ impl Display for Meta {
         match self {
             Self::Bound(ty) => write!(f, "{}", ty),
             Self::Unbound(id) => {
-                let id = usize::from(*id);
+                let id = u32::from(*id) as usize;
                 if id <= ALPHABET.len() {
                     write!(f, "{}", ALPHABET[id])
                 } else {

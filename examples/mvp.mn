@@ -67,6 +67,10 @@ f 1
 -- nested let
 let x = 1 in let y = 2 in x + y
 
+-- function declaration
+id : a. a -> a
+let id x = x
+
 -- recursion
 let fib n = 
   if n <= 1 then n 
@@ -116,7 +120,7 @@ gcd : (Int, Int) -> Int
 let gcd a 0 = a
   | gcd a b = gcd b (a % b)
 
-map : (a -> b, [a]) -> [b]
+map : a b. (a -> b, [a]) -> [b]
 let map f [] = []
   | map f (x :: xs) = f x :: map f xs
 
