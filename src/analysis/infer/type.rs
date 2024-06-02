@@ -177,7 +177,7 @@ impl Display for Type {
                     write!(f, "({}) -> {}", params.iter().format(", "), body)
                 }
             }
-            Self::List(ty) => write!(f, "[{:?}]", ty),
+            Self::List(ty) => write!(f, "[{}]", ty),
             Self::Record(name, fields) => write!(f, "{:?} = {:?}", name, fields),
             Self::Unit => write!(f, "()"),
         }
