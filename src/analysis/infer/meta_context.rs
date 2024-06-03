@@ -97,13 +97,13 @@ impl MetaContext {
             (_, Type::Meta(key)) => {
                 self.bind(key, &t1)?;
                 log::debug!("bind: {:?} to {:?}", key, t1);
-                log::debug!("meta_ctx: {:#?}", self);
+                // log::debug!("meta_ctx: {:#?}", self);
                 Ok(())
             }
             (Type::Meta(key), _) => {
                 self.bind(key, &t2)?;
                 log::debug!("bind: {:?} to {:?}", key, t2);
-                log::debug!("meta_ctx: {:#?}", self);
+                // log::debug!("meta_ctx: {:#?}", self);
                 Ok(())
             }
             _ => Err(TypeError::from(format!(

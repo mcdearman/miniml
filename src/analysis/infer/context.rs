@@ -236,6 +236,16 @@ impl Context {
                 acc.union(&set).cloned().collect()
             })
     }
+
+    pub fn zonk(&self, meta_ctx: &mut MetaContext) -> Self {
+        Self {
+            frames: self
+                .frames
+                .iter()
+                .map(|frame| frame.zonk(meta_ctx))
+                .collect(),
+        }
+    }
 }
 
 #[derive(Debug, Clone, PartialEq)]

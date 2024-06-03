@@ -81,6 +81,7 @@ impl TypeSolver {
         }
 
         log::debug!("meta_ctx: {:#?}", self.meta_ctx);
+        self.ctx.zonk(&mut self.meta_ctx);
 
         if errors.is_empty() {
             (
@@ -157,7 +158,7 @@ impl TypeSolver {
     }
 
     fn infer_expr(&mut self, expr: &nir::Expr) -> InferResult<Expr> {
-        log::debug!("infer expr: {:#?}", expr.kind);
+        log::debug!("infer expr: {:?}", expr.span);
         match expr.kind.as_ref() {
             nir::ExprKind::Lit(lit) => match *lit {
                 nir::Lit::Byte(b) => Ok(Expr::new(
@@ -239,7 +240,7 @@ impl TypeSolver {
                 ))
             }
             nir::ExprKind::Apply(fun, args) => {
-                log::debug!("infer app");
+                log::debug!("infer app: {:?}", fun.span);
                 // to show that Γ ⊢ e0 e1 : T' we need to show that
                 // Γ ⊢ e0 : T0
                 let solved_fun = self.infer_expr(fun)?;
@@ -305,7 +306,7 @@ impl TypeSolver {
                 ))
             }
             nir::ExprKind::Let(pat, let_expr, body) => {
-                log::debug!("infer let ({:?})", pat);
+                log::debug!("infer let ({:?})", pat.span);
                 // to show that Γ ⊢ let x = e0 in e1 : T' we need to show that
                 // Γ ⊢ e0 : T
                 let solved_expr = self.infer_expr(let_expr)?;
