@@ -45,7 +45,7 @@ impl MetaContext {
         }
     }
 
-    fn force(&mut self, ty: &Type) -> Type {
+    pub fn force(&mut self, ty: &Type) -> Type {
         match ty {
             Type::Meta(id) => match self.clone().bindings.get(id) {
                 Some(Meta::Bound(ty)) => {
