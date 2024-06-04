@@ -48,7 +48,11 @@ impl MetaContext {
     fn force(&mut self, ty: &Type) -> Type {
         match ty {
             Type::Meta(id) => match self.clone().bindings.get(id) {
-                Some(Meta::Bound(ty)) => self.force(ty),
+                Some(Meta::Bound(ty)) => {
+                    let ty = self.force(ty);
+                    self.bindings.insert(*id, Meta::Bound(ty.clone()));
+                    ty
+                }
                 _ => ty.clone(),
             },
             Type::Lambda(params, body) => Type::Lambda(
