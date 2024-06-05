@@ -61,7 +61,7 @@ impl PolyType {
             subst.insert(*m, id);
         }
 
-        substitute(&self.ty, &subst)
+        substitute(&meta_ctx.force(&self.ty), &subst)
     }
 }
 
