@@ -79,6 +79,7 @@ impl Type {
             Type::Char => Type::Char,
             Type::Unit => Type::Unit,
             Type::Meta(id) => meta_ctx.get(id).unwrap_or(self.clone()),
+            Type::Poly(poly) => Type::Poly(poly.clone()),
             Type::Lambda(params, body) => Type::Lambda(
                 params.iter().map(|ty| ty.zonk(meta_ctx)).collect_vec(),
                 Box::new(body.zonk(meta_ctx)),
@@ -91,7 +92,6 @@ impl Type {
                     .map(|(name, ty)| (name.clone(), ty.zonk(meta_ctx)))
                     .collect(),
             ),
-            Type::Poly(poly) => Type::Poly(poly.clone()),
         }
     }
 }

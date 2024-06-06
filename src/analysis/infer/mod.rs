@@ -132,8 +132,9 @@ impl TypeSolver {
 
                 let mut vars = param_vars.iter().cloned().collect_vec();
                 vars.push(meta_ret.clone());
-                self.ctx
-                    .insert(name.id, PolyType::new(vars.clone(), fn_ty.clone()));
+                let fn_poly = PolyType::new(vars.clone(), fn_ty.clone());
+                let fn_ty = Type::Poly(fn_poly.clone());
+                self.ctx.insert(name.id, fn_poly.clone());
                 self.ctx.push();
 
                 let mut solved_params = vec![];
@@ -455,16 +456,21 @@ impl TypeSolver {
                 log::debug!("infer pattern ident: {:?}", name.id);
                 if generalize {
                     let scm = ty.generalize(&self.ctx);
-                    log::debug!("scm: {:?}", scm);
-                    self.ctx.insert(name.id, scm);
+                    log::debug!("gen scm: {:?}", scm);
+                    self.ctx.insert(name.id, scm.clone());
+                    Ok(Pattern::new(
+                        PatternKind::Ident(*name),
+                        Type::Poly(scm.clone()),
+                        pat.span,
+                    ))
                 } else {
                     self.ctx.insert(name.id, PolyType::new(vec![], ty.clone()));
+                    Ok(Pattern::new(
+                        PatternKind::Ident(*name),
+                        ty.clone(),
+                        pat.span,
+                    ))
                 }
-                Ok(Pattern::new(
-                    PatternKind::Ident(*name),
-                    ty.clone(),
-                    pat.span,
-                ))
             }
             nir::PatternKind::Lit(lit) => match *lit {
                 nir::Lit::Byte(b) => Ok(Pattern::new(

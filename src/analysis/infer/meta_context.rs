@@ -55,18 +55,18 @@ impl MetaContext {
                 }
                 _ => ty.clone(),
             },
-            Type::Lambda(params, body) => Type::Lambda(
-                params.into_iter().map(|ty| self.force(ty)).collect(),
-                Box::new(self.force(body.as_ref())),
-            ),
-            Type::List(ty) => Type::List(Box::new(self.force(ty.as_ref()))),
-            Type::Record(id, fields) => Type::Record(
-                *id,
-                fields
-                    .into_iter()
-                    .map(|(name, ty)| (*name, self.force(ty)))
-                    .collect(),
-            ),
+            // Type::Lambda(params, body) => Type::Lambda(
+            //     params.into_iter().map(|ty| self.force(ty)).collect(),
+            //     Box::new(self.force(body.as_ref())),
+            // ),
+            // Type::List(ty) => Type::List(Box::new(self.force(ty.as_ref()))),
+            // Type::Record(id, fields) => Type::Record(
+            //     *id,
+            //     fields
+            //         .into_iter()
+            //         .map(|(name, ty)| (*name, self.force(ty)))
+            //         .collect(),
+            // ),
             _ => ty.clone(),
         }
     }
