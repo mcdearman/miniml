@@ -143,7 +143,7 @@ impl Display for Type {
                         Type::Meta(id)
                     }
                 }
-                Type::Poly(poly) => todo!(),
+                Type::Poly(poly) => Type::Poly(poly),
                 Type::Lambda(params, body) => Type::Lambda(
                     params.iter().map(|p| lower(p.clone(), metas)).collect_vec(),
                     Box::new(lower(*body, metas)),

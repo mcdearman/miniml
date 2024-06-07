@@ -149,3 +149,7 @@ let p = { name = "Alice", age = 30 }
 type Option a = None | Some a
 
 type List a = Empty | Pair a (List a)
+
+(type (List a) 
+  (Empty)
+  (Pair a (List a)))
