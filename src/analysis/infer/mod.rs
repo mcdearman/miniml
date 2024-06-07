@@ -133,7 +133,7 @@ impl TypeSolver {
                 let mut vars = param_vars.iter().cloned().collect_vec();
                 vars.push(meta_ret.clone());
                 let fn_poly = PolyType::new(vars.clone(), fn_ty.clone());
-                let fn_ty = Type::Poly(fn_poly.clone());
+                // let fn_ty = Type::Poly(fn_poly.clone());
                 self.ctx.insert(name.id, fn_poly.clone());
                 self.ctx.push();
 
