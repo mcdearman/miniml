@@ -7,6 +7,9 @@ use crate::utils::unique_id::UniqueId;
 use std::{collections::HashMap, fmt::Debug};
 
 #[derive(Debug, Clone, PartialEq)]
+pub struct MetaId(usize);
+
+#[derive(Debug, Clone, PartialEq)]
 pub struct MetaContext {
     bindings: HashMap<UniqueId, Meta>,
 }
