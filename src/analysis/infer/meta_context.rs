@@ -113,6 +113,15 @@ impl MetaContext {
                 // log::debug!("meta_ctx: {:#?}", self);
                 Ok(())
             }
+            (Type::Poly(p1), Type::Poly(p2)) => todo!(),
+            (Type::Poly(p), _) => {
+                let p = p.instantiate(self);
+                self.unify(&p, &t2)
+            }
+            (_, Type::Poly(p)) => {
+                let p = p.instantiate(self);
+                self.unify(&t1, &p)
+            }
             _ => Err(TypeError::from(format!(
                 "cannot unify {:?} and {:?}",
                 t1, t2,

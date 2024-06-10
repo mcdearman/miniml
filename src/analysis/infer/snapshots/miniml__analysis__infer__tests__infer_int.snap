@@ -1,0 +1,40 @@
+---
+source: src/analysis/infer/tests.rs
+expression: tir
+---
+Root {
+    decls: [
+        Decl {
+            kind: Fn(
+                ScopedIdent {
+                    id: @16,
+                    key: InternedString(main),
+                    span: 0..2,
+                },
+                [
+                    Pattern {
+                        kind: Ident(
+                            ScopedIdent {
+                                id: @17,
+                                key: InternedString(args),
+                                span: 0..2,
+                            },
+                        ),
+                        ty: @28,
+                        span: 0..2,
+                    },
+                ],
+                Expr {
+                    kind: Lit(
+                        Int(42),
+                    ),
+                    ty: Int,
+                    span: 0..2,
+                },
+            ),
+            ty: @28 -> Int,
+            span: 0..2,
+        },
+    ],
+    span: 0..2,
+}

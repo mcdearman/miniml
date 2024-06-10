@@ -30,6 +30,7 @@ mod meta;
 mod meta_context;
 pub mod registry;
 mod scheme;
+pub mod tests;
 pub mod tir;
 pub mod r#type;
 
