@@ -1,3 +1,4 @@
+use super::tir;
 use crate::{
     analysis::infer::TypeSolver,
     lex::{token::Token, token_iter::TokenIter},
@@ -6,7 +7,7 @@ use crate::{
 };
 use logos::Logos;
 
-fn test_helper(src: &str) {
+fn test_helper(src: &str) -> tir::Root {
     let lexer = TokenIter::new(src);
     let (ast, errors) = parse(lexer, true);
     if !errors.is_empty() {
@@ -40,16 +41,15 @@ fn test_helper(src: &str) {
         }
         panic!("type inference failed");
     }
-    let tir = tir.unwrap();
-    insta::assert_debug_snapshot!(tir);
+    tir.unwrap()
 }
 
 #[test]
 fn test_infer_int() {
-    test_helper("42");
+    insta::assert_debug_snapshot!(test_helper("42"));
 }
 
 #[test]
 fn test_infer_let_decl() {
-    test_helper("let x = 42");
+    insta::assert_debug_snapshot!(test_helper("let x = 42"));
 }

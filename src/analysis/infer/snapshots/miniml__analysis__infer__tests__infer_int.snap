@@ -1,6 +1,6 @@
 ---
 source: src/analysis/infer/tests.rs
-expression: tir
+expression: "test_helper(\"42\")"
 ---
 Root {
     decls: [
@@ -20,7 +20,7 @@ Root {
                                 span: 0..2,
                             },
                         ),
-                        ty: @28,
+                        ty: @49,
                         span: 0..2,
                     },
                 ],
@@ -32,7 +32,7 @@ Root {
                     span: 0..2,
                 },
             ),
-            ty: @28 -> Int,
+            ty: @49 -> Int,
             span: 0..2,
         },
     ],
