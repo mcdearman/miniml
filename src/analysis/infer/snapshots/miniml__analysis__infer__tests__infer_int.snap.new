@@ -1,0 +1,41 @@
+---
+source: src/analysis/infer/tests.rs
+assertion_line: 49
+expression: "test_helper(\"42\")"
+---
+Root {
+    decls: [
+        Decl {
+            kind: Fn(
+                ScopedIdent {
+                    id: @16,
+                    key: InternedString(main),
+                    span: 0..2,
+                },
+                [
+                    Pattern {
+                        kind: Ident(
+                            ScopedIdent {
+                                id: @17,
+                                key: InternedString(args),
+                                span: 0..2,
+                            },
+                        ),
+                        ty: @55,
+                        span: 0..2,
+                    },
+                ],
+                Expr {
+                    kind: Lit(
+                        Int(42),
+                    ),
+                    ty: Int,
+                    span: 0..2,
+                },
+            ),
+            ty: @55 -> Int,
+            span: 0..2,
+        },
+    ],
+    span: 0..2,
+}

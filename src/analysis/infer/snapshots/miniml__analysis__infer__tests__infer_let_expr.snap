@@ -1,0 +1,68 @@
+---
+source: src/analysis/infer/tests.rs
+expression: "test_helper(\"let x = 42 in x\")"
+---
+Root {
+    decls: [
+        Decl {
+            kind: Fn(
+                ScopedIdent {
+                    id: @62,
+                    key: InternedString(main),
+                    span: 0..15,
+                },
+                [
+                    Pattern {
+                        kind: Ident(
+                            ScopedIdent {
+                                id: @63,
+                                key: InternedString(args),
+                                span: 0..15,
+                            },
+                        ),
+                        ty: @86,
+                        span: 0..15,
+                    },
+                ],
+                Expr {
+                    kind: Let(
+                        Pattern {
+                            kind: Ident(
+                                ScopedIdent {
+                                    id: @64,
+                                    key: InternedString(x),
+                                    span: 4..5,
+                                },
+                            ),
+                            ty: Int,
+                            span: 4..5,
+                        },
+                        Expr {
+                            kind: Lit(
+                                Int(42),
+                            ),
+                            ty: Int,
+                            span: 8..10,
+                        },
+                        Expr {
+                            kind: Var(
+                                ScopedIdent {
+                                    id: @64,
+                                    key: InternedString(x),
+                                    span: 14..15,
+                                },
+                            ),
+                            ty: Int,
+                            span: 14..15,
+                        },
+                    ),
+                    ty: Int,
+                    span: 0..15,
+                },
+            ),
+            ty: @86 -> Int,
+            span: 0..15,
+        },
+    ],
+    span: 0..15,
+}

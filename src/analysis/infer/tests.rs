@@ -50,6 +50,11 @@ fn test_infer_int() {
 }
 
 #[test]
+fn test_infer_let_expr() {
+    insta::assert_debug_snapshot!(test_helper("let x = 42 in x"));
+}
+
+#[test]
 fn test_infer_let_decl() {
     insta::assert_debug_snapshot!(test_helper("let x = 42"));
 }
