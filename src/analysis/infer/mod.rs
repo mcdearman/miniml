@@ -4,9 +4,9 @@ use self::{
     error::{InferResult, TypeError},
     meta::Meta,
     meta_context::MetaContext,
+    poly_type::PolyType,
     r#type::Type,
     registry::Registry,
-    poly_type::PolyType,
     tir::*,
 };
 use crate::{
@@ -28,8 +28,8 @@ mod context;
 pub mod error;
 mod meta;
 mod meta_context;
-pub mod registry;
 mod poly_type;
+pub mod registry;
 pub mod tests;
 pub mod tir;
 pub mod r#type;
@@ -104,12 +104,17 @@ impl TypeSolver {
         match &decl.kind {
             nir::DeclKind::Let(pat, let_expr) => {
                 log::debug!("infer let ({:?})", pat);
-                // to show that Γ ⊢ let x = e0 in e1 : T' we need to show that
+                // to show that Γ ⊢ let x = e0: T we need to show that
                 // Γ ⊢ e0 : T
                 let solved_expr = self.infer_expr(let_expr)?;
 
-                // Γ, x: gen(T) ⊢ e1 : T'
+                // Γ, x: gen(T) ⊢ e0 : T
                 let solved_pat = self.infer_pattern(pat, &solved_expr.ty, true)?;
+                log::debug!(
+                    "unify let pat: {:?} and {:?}",
+                    solved_pat.ty,
+                    solved_expr.ty
+                );
                 self.meta_ctx.unify(&solved_pat.ty, &solved_expr.ty)?;
 
                 Ok(Decl {
@@ -162,39 +167,44 @@ impl TypeSolver {
     fn infer_expr(&mut self, expr: &nir::Expr) -> InferResult<Expr> {
         log::debug!("infer expr: {:?}", expr.span);
         match expr.kind.as_ref() {
-            nir::ExprKind::Lit(lit) => match *lit {
-                nir::Lit::Byte(b) => Ok(Expr::new(
-                    ExprKind::Lit(Lit::Byte(b)),
-                    Type::Byte,
-                    expr.span,
-                )),
-                nir::Lit::Int(n) => Ok(Expr::new(ExprKind::Lit(Lit::Int(n)), Type::Int, expr.span)),
-                nir::Lit::Rational(r) => Ok(Expr::new(
-                    ExprKind::Lit(Lit::Rational(r)),
-                    Type::Rational,
-                    expr.span,
-                )),
-                nir::Lit::Real(r) => Ok(Expr::new(
-                    ExprKind::Lit(Lit::Real(r)),
-                    Type::Real,
-                    expr.span,
-                )),
-                nir::Lit::Bool(b) => Ok(Expr::new(
-                    ExprKind::Lit(Lit::Bool(b)),
-                    Type::Bool,
-                    expr.span,
-                )),
-                nir::Lit::String(s) => Ok(Expr::new(
-                    ExprKind::Lit(Lit::String(s.clone())),
-                    Type::String,
-                    expr.span,
-                )),
-                nir::Lit::Char(c) => Ok(Expr::new(
-                    ExprKind::Lit(Lit::Char(c)),
-                    Type::Char,
-                    expr.span,
-                )),
-            },
+            nir::ExprKind::Lit(lit) => {
+                log::debug!("infer lit");
+                match *lit {
+                    nir::Lit::Byte(b) => Ok(Expr::new(
+                        ExprKind::Lit(Lit::Byte(b)),
+                        Type::Byte,
+                        expr.span,
+                    )),
+                    nir::Lit::Int(n) => {
+                        Ok(Expr::new(ExprKind::Lit(Lit::Int(n)), Type::Int, expr.span))
+                    }
+                    nir::Lit::Rational(r) => Ok(Expr::new(
+                        ExprKind::Lit(Lit::Rational(r)),
+                        Type::Rational,
+                        expr.span,
+                    )),
+                    nir::Lit::Real(r) => Ok(Expr::new(
+                        ExprKind::Lit(Lit::Real(r)),
+                        Type::Real,
+                        expr.span,
+                    )),
+                    nir::Lit::Bool(b) => Ok(Expr::new(
+                        ExprKind::Lit(Lit::Bool(b)),
+                        Type::Bool,
+                        expr.span,
+                    )),
+                    nir::Lit::String(s) => Ok(Expr::new(
+                        ExprKind::Lit(Lit::String(s.clone())),
+                        Type::String,
+                        expr.span,
+                    )),
+                    nir::Lit::Char(c) => Ok(Expr::new(
+                        ExprKind::Lit(Lit::Char(c)),
+                        Type::Char,
+                        expr.span,
+                    )),
+                }
+            }
             nir::ExprKind::Var(name) => {
                 // to show that Γ ⊢ x : T we need to show that
 
