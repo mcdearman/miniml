@@ -1,0 +1,57 @@
+---
+source: src/analysis/infer/tests.rs
+assertion_line: 59
+expression: "test_helper(\"let id = \\\\x -> x\")"
+---
+Root {
+    decls: [
+        Decl {
+            kind: Let(
+                Pattern {
+                    kind: Ident(
+                        ScopedIdent {
+                            id: @70,
+                            key: InternedString(id),
+                            span: 4..6,
+                        },
+                    ),
+                    ty: [?44]. ?44 -> ?44,
+                    span: 4..6,
+                },
+                Expr {
+                    kind: Lambda(
+                        [
+                            Pattern {
+                                kind: Ident(
+                                    ScopedIdent {
+                                        id: @71,
+                                        key: InternedString(x),
+                                        span: 10..11,
+                                    },
+                                ),
+                                ty: ?45,
+                                span: 10..11,
+                            },
+                        ],
+                        Expr {
+                            kind: Var(
+                                ScopedIdent {
+                                    id: @71,
+                                    key: InternedString(x),
+                                    span: 15..16,
+                                },
+                            ),
+                            ty: ?45,
+                            span: 15..16,
+                        },
+                    ),
+                    ty: ?45 -> ?45,
+                    span: 9..16,
+                },
+            ),
+            ty: ?45 -> ?45,
+            span: 0..16,
+        },
+    ],
+    span: 0..16,
+}

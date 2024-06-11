@@ -1,6 +1,5 @@
 ---
 source: src/analysis/infer/tests.rs
-assertion_line: 59
 expression: "test_helper(\"let x = 42\")"
 ---
 Root {
@@ -10,12 +9,12 @@ Root {
                 Pattern {
                     kind: Ident(
                         ScopedIdent {
-                            id: @65,
+                            id: @38,
                             key: InternedString(x),
                             span: 4..5,
                         },
                     ),
-                    ty: PolyType { metas: [], ty: Int },
+                    ty: Int,
                     span: 4..5,
                 },
                 Expr {

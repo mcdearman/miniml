@@ -1,4 +1,4 @@
-use super::scheme::PolyType;
+use super::poly_type::PolyType;
 use crate::utils::unique_id::UniqueId;
 use std::collections::HashMap;
 

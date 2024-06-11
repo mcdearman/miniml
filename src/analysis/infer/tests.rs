@@ -55,6 +55,11 @@ fn test_infer_let_expr() {
 }
 
 #[test]
+fn test_infer_let_lambda() {
+    insta::assert_debug_snapshot!(test_helper("let id = \\x -> x"));
+}
+
+#[test]
 fn test_infer_let_decl() {
     insta::assert_debug_snapshot!(test_helper("let x = 42"));
 }

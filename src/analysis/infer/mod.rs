@@ -6,7 +6,7 @@ use self::{
     meta_context::MetaContext,
     r#type::Type,
     registry::Registry,
-    scheme::PolyType,
+    poly_type::PolyType,
     tir::*,
 };
 use crate::{
@@ -29,7 +29,7 @@ pub mod error;
 mod meta;
 mod meta_context;
 pub mod registry;
-mod scheme;
+mod poly_type;
 pub mod tests;
 pub mod tir;
 pub mod r#type;

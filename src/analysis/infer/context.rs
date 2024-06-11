@@ -1,4 +1,9 @@
-use super::{meta::Meta, meta_context::MetaContext, r#type::Type, scheme::PolyType};
+use super::{
+    meta::Meta,
+    meta_context::{MetaContext, MetaId},
+    r#type::Type,
+    poly_type::PolyType,
+};
 use crate::utils::{intern::InternedString, unique_id::UniqueId};
 use std::collections::{HashMap, HashSet};
 
@@ -24,7 +29,7 @@ impl Context {
                 "neg" => {
                     let vid = meta_ctx.fresh();
                     frame.insert(
-                        vid,
+                        *id,
                         PolyType::new(
                             vec![vid],
                             Type::Lambda(vec![Type::Meta(vid)], Box::new(Type::Meta(vid))),
@@ -85,7 +90,7 @@ impl Context {
                 "pow" => {
                     let vid = meta_ctx.fresh();
                     frame.insert(
-                        vid,
+                        *id,
                         PolyType::new(
                             vec![vid],
                             Type::Lambda(
@@ -228,7 +233,7 @@ impl Context {
         }
     }
 
-    pub(super) fn free_vars(&self) -> HashSet<UniqueId> {
+    pub(super) fn free_vars(&self) -> HashSet<MetaId> {
         self.frames
             .iter()
             .map(|frame| frame.free_vars())
@@ -272,7 +277,7 @@ impl Frame {
         self.bindings.insert(id, scheme);
     }
 
-    pub(super) fn free_vars(&self) -> HashSet<UniqueId> {
+    pub(super) fn free_vars(&self) -> HashSet<MetaId> {
         self.clone()
             .bindings
             .into_iter()

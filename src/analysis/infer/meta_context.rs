@@ -3,15 +3,38 @@ use super::{
     meta::Meta,
     r#type::Type,
 };
-use crate::utils::unique_id::UniqueId;
-use std::{collections::HashMap, fmt::Debug};
+use std::{
+    collections::HashMap,
+    fmt::{Debug, Display},
+    sync::atomic::AtomicUsize,
+};
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct MetaId(usize);
+
+impl MetaId {
+    pub fn gen() -> Self {
+        Self(COUNTER.fetch_add(1, std::sync::atomic::Ordering::SeqCst))
+    }
+}
+
+impl Debug for MetaId {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "?{}", self.0)
+    }
+}
+
+impl Display for MetaId {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "?{}", self.0)
+    }
+}
+
+static COUNTER: AtomicUsize = AtomicUsize::new(0);
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct MetaContext {
-    bindings: HashMap<UniqueId, Meta>,
+    bindings: HashMap<MetaId, Meta>,
 }
 
 impl MetaContext {
@@ -21,20 +44,20 @@ impl MetaContext {
         }
     }
 
-    pub fn fresh(&mut self) -> UniqueId {
-        let id = UniqueId::gen();
+    pub fn fresh(&mut self) -> MetaId {
+        let id = MetaId::gen();
         self.bindings.insert(id, Meta::fresh());
         id
     }
 
-    pub fn get(&self, id: &UniqueId) -> Option<Type> {
+    pub fn get(&self, id: &MetaId) -> Option<Type> {
         match self.bindings.get(id) {
             Some(Meta::Bound(ty)) => Some(ty.clone()),
             _ => None,
         }
     }
 
-    pub fn bind(&mut self, id: &UniqueId, ty: &Type) -> InferResult<()> {
+    pub fn bind(&mut self, id: &MetaId, ty: &Type) -> InferResult<()> {
         if *ty == Type::Meta(*id) {
             Ok(())
         } else if ty.free_vars().contains(&id) {

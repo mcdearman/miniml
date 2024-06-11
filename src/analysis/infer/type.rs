@@ -5,8 +5,8 @@ use super::{
     context::Context,
     error::{InferResult, TypeError},
     meta::Meta,
-    meta_context::MetaContext,
-    scheme::PolyType,
+    meta_context::{MetaContext, MetaId},
+    poly_type::PolyType,
 };
 use crate::utils::{intern::InternedString, unique_id::UniqueId};
 use std::{
@@ -23,7 +23,7 @@ pub enum Type {
     Bool,
     String,
     Char,
-    Meta(UniqueId),
+    Meta(MetaId),
     Poly(PolyType),
     Lambda(Vec<Self>, Box<Self>),
     // Qual(Box<Constraint>, Box<Self>),
@@ -53,7 +53,7 @@ impl Type {
         )
     }
 
-    pub(super) fn free_vars(&self) -> HashSet<UniqueId> {
+    pub(super) fn free_vars(&self) -> HashSet<MetaId> {
         match self {
             Self::Meta(n) => vec![n.clone()].into_iter().collect(),
             Self::Lambda(params, body) => params
@@ -124,7 +124,7 @@ impl Debug for Type {
 
 impl Display for Type {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        fn lower(ty: Type, metas: &mut HashMap<UniqueId, UniqueId>) -> Type {
+        fn lower(ty: Type, metas: &mut HashMap<MetaId, MetaId>) -> Type {
             match ty {
                 Type::Byte
                 | Type::Int
@@ -138,7 +138,7 @@ impl Display for Type {
                     if let Some(lowered) = metas.get(&id) {
                         Type::Meta(lowered.clone())
                     } else {
-                        let new_id = UniqueId::gen();
+                        let new_id = MetaId::gen();
                         metas.insert(id, new_id);
                         Type::Meta(id)
                     }

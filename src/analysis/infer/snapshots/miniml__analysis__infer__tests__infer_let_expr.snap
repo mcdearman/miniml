@@ -7,7 +7,7 @@ Root {
         Decl {
             kind: Fn(
                 ScopedIdent {
-                    id: @62,
+                    id: @51,
                     key: InternedString(main),
                     span: 0..15,
                 },
@@ -15,12 +15,12 @@ Root {
                     Pattern {
                         kind: Ident(
                             ScopedIdent {
-                                id: @63,
+                                id: @52,
                                 key: InternedString(args),
                                 span: 0..15,
                             },
                         ),
-                        ty: @86,
+                        ty: ?32,
                         span: 0..15,
                     },
                 ],
@@ -29,7 +29,7 @@ Root {
                         Pattern {
                             kind: Ident(
                                 ScopedIdent {
-                                    id: @64,
+                                    id: @53,
                                     key: InternedString(x),
                                     span: 4..5,
                                 },
@@ -47,7 +47,7 @@ Root {
                         Expr {
                             kind: Var(
                                 ScopedIdent {
-                                    id: @64,
+                                    id: @53,
                                     key: InternedString(x),
                                     span: 14..15,
                                 },
@@ -60,7 +60,7 @@ Root {
                     span: 0..15,
                 },
             ),
-            ty: @86 -> Int,
+            ty: ?32 -> Int,
             span: 0..15,
         },
     ],
