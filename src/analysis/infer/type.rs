@@ -69,7 +69,8 @@ impl Type {
     }
 
     pub fn zonk(&self, meta_ctx: &mut MetaContext) -> Type {
-        match self {
+        // log::debug!("zonk: {:?}", self);
+        match meta_ctx.force(self) {
             Type::Byte => Type::Byte,
             Type::Int => Type::Int,
             Type::Rational => Type::Rational,
@@ -78,7 +79,7 @@ impl Type {
             Type::String => Type::String,
             Type::Char => Type::Char,
             Type::Unit => Type::Unit,
-            Type::Meta(id) => meta_ctx.get(id).unwrap_or(self.clone()),
+            m @ Type::Meta(_) => m,
             Type::Poly(poly) => Type::Poly(poly.clone()),
             Type::Lambda(params, body) => Type::Lambda(
                 params.iter().map(|ty| ty.zonk(meta_ctx)).collect_vec(),
@@ -86,7 +87,7 @@ impl Type {
             ),
             Type::List(ty) => Type::List(Box::new(ty.zonk(meta_ctx))),
             Type::Record(id, fields) => Type::Record(
-                *id,
+                id,
                 fields
                     .iter()
                     .map(|(name, ty)| (name.clone(), ty.zonk(meta_ctx)))

@@ -110,12 +110,6 @@ impl TypeSolver {
 
                 // Γ, x: gen(T) ⊢ e0 : T
                 let solved_pat = self.infer_pattern(pat, &solved_expr.ty, true)?;
-                log::debug!(
-                    "unify let pat: {:?} and {:?}",
-                    solved_pat.ty,
-                    solved_expr.ty
-                );
-                self.meta_ctx.unify(&solved_pat.ty, &solved_expr.ty)?;
 
                 Ok(Decl {
                     kind: DeclKind::Let(solved_pat, solved_expr.clone()),
