@@ -11,7 +11,7 @@ use super::{
 use crate::utils::{intern::InternedString, unique_id::UniqueId};
 use std::{
     collections::{HashMap, HashSet},
-    fmt::{Debug, Display},
+    fmt::{write, Debug, Display},
 };
 
 #[derive(Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -99,28 +99,31 @@ impl Type {
 
 impl Debug for Type {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self.clone() {
-            Self::Byte => write!(f, "Byte"),
-            Self::Int => write!(f, "Int"),
-            Self::Rational => write!(f, "Rational"),
-            Self::Real => write!(f, "Real"),
-            Self::Bool => write!(f, "Bool"),
-            Self::String => write!(f, "String"),
-            Self::Char => write!(f, "Char"),
-            Self::Meta(n) => write!(f, "{:?}", n),
-            Self::Poly(poly) => write!(f, "{:?}", poly),
-            Self::Lambda(params, body) => {
-                if params.len() == 1 {
-                    write!(f, "{:?} -> {:?}", params[0], body)
-                } else {
-                    write!(f, "({:?}) -> {:?}", params.iter().format(", "), body)
-                }
-            }
-            Self::List(ty) => write!(f, "[{:?}]", ty),
-            Self::Record(name, fields) => write!(f, "{:?} = {:?}", name, fields),
-            Self::Unit => write!(f, "()"),
-        }
+        write!(f, "{}", self)
     }
+    // fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    //     match self.clone() {
+    //         Self::Byte => write!(f, "Byte"),
+    //         Self::Int => write!(f, "Int"),
+    //         Self::Rational => write!(f, "Rational"),
+    //         Self::Real => write!(f, "Real"),
+    //         Self::Bool => write!(f, "Bool"),
+    //         Self::String => write!(f, "String"),
+    //         Self::Char => write!(f, "Char"),
+    //         Self::Meta(n) => write!(f, "{:?}", n),
+    //         Self::Poly(poly) => write!(f, "{:?}", poly),
+    //         Self::Lambda(params, body) => {
+    //             if params.len() == 1 {
+    //                 write!(f, "{:?} -> {:?}", params[0], body)
+    //             } else {
+    //                 write!(f, "({:?}) -> {:?}", params.iter().format(", "), body)
+    //             }
+    //         }
+    //         Self::List(ty) => write!(f, "[{:?}]", ty),
+    //         Self::Record(name, fields) => write!(f, "{:?} = {:?}", name, fields),
+    //         Self::Unit => write!(f, "()"),
+    //     }
+    // }
 }
 
 impl Display for Type {
