@@ -114,20 +114,31 @@ let gcd a b =
   match (a, b)
   | (a, 0) -> a
   | (a, b) if a > b -> gcd b (a % b)
-  \ (a, b) -> gcd a (b % a)
+  | (a, b) -> gcd a (b % a)
 
 gcd : (Int, Int) -> Int
-let gcd a 0 = a
-  | gcd a b = gcd b (a % b)
+gcd a 0 = a
+gcd a b = gcd b (a % b)
 
 map : a b. (a -> b, [a]) -> [b]
-let map f [] = []
-  | map f (x :: xs) = f x :: map f xs
+map f [] = []
+map f (x :: xs) = f x :: map f xs
 
-let map f xs = match xs
-| [] -> []
-| (x::xs) -> f x :: map f xs
+map f xs = 
+  match xs
+  | [] -> []
+  | (x::xs) -> f x :: map f xs
 
+fold : a b. ((a, b) -> a, a, [b]) -> a
+fold f acc [] = acc
+fold f acc (x :: xs) = fold f (f acc x) xs
+
+let fold (f : (a, b) -> a) (acc : a) (xs : [b]) : a = 
+  match xs
+  | [] -> acc
+  | (x::xs) -> fold f (f acc x) xs
+
+binary_search : Int -> #[Int] -> Int
 let binary_search n xs =
   let loop l r =
     if l > r then -1
