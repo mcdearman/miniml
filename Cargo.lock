@@ -631,30 +631,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "6c8640c5d730cb13ebd907d8d04b52f55ac9a2eec55b440c8892f40d56c76c1d"
 
 [[package]]
-name = "miniml"
-version = "0.1.0"
-dependencies = [
- "chumsky",
- "clap",
- "cstree",
- "env_logger",
- "insta",
- "itertools",
- "lasso",
- "libc",
- "log",
- "logos",
- "notify",
- "num-bigint",
- "num-complex",
- "num-rational",
- "num-traits",
- "once_cell",
- "pretty",
- "rustyline",
-]
-
-[[package]]
 name = "mio"
 version = "0.8.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -920,6 +896,30 @@ name = "regex-syntax"
 version = "0.8.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "adad44e29e4c806119491a7f06f03de4d1af22c3a680dd47f1e6e179439d1f56"
+
+[[package]]
+name = "rml"
+version = "0.1.0"
+dependencies = [
+ "chumsky",
+ "clap",
+ "cstree",
+ "env_logger",
+ "insta",
+ "itertools",
+ "lasso",
+ "libc",
+ "log",
+ "logos",
+ "notify",
+ "num-bigint",
+ "num-complex",
+ "num-rational",
+ "num-traits",
+ "once_cell",
+ "pretty",
+ "rustyline",
+]
 
 [[package]]
 name = "rustix"
