@@ -1,162 +1,32 @@
--- main data types:
-42b -- Byte
-42 -- Int
-1/2 -- Rational
-1.0 -- Real
-"hello" -- String
-'a' -- Char
-true -- Bool
-() -- Unit
+-- arithmetic operators
+1 + 2
+1 - 2
+1 * 2
+1 / 2
 
--- Files are composed of declarations at the top level. In the notebook 
--- or repl, you can use expressions at the top level. You can think of 
--- this as a shorthand for `let main args = <expr>`. In files, the main 
--- function must be defined explicitly:
-let main (args : [String]) : () = ()
+-- value definition
+x = 1
 
--- Bindings are immutable by default.
-let x = 1
+-- lambda
+\a b -> a + b
 
--- ints
-1
-
--- booleans
-true
-
--- Binary operators
-1 + 2 * 3^2 - 4 / 5 % 10
-
--- Unary operators
--1
--- => -1
-
-not true
--- => false
-
--- Boolean operators
-true and false or true
--- => true
-
--- Comparison
-1 < 2 and 2 <= 3 and 3 > 2 and 3 >= 2 and 2 = 2 and 2 != 3
-
--- if-then-else
-if 1 < 2 then 1 else 2
-
--- let-in
-let x = 1 in x + 1
+-- lambda application
+(\a b -> a + b) 1 2
 
 -- function definition
-let f x = x + 1
-
--- this is equivalent to
-let f = \x -> x + 1
-
--- function expression
-let f x = x + 1 in f 1
+f x = x + 1
 
 -- function application
-f 1
+f x
 
--- closure
-\x -> x + 1
+-- negation
+-x
 
--- closure application
-(\x -> x + 1) 1
+-- not
+!x
 
--- nested let
-let x = 1 in let y = 2 in x + y
+-- let expression
+let x = 1 in x + 1
 
--- function declaration
-id : a. a -> a
-let id x = x
-
--- recursion
-let fib n = 
-  if n <= 1 then n 
-  else fib (n - 1) + fib (n - 2) 
-
-let gcd a b = 
-  if b = 0 then a 
-  else gcd b (a % b)
-
--- with type annotations
-let gcd (a : Int) (b : Int) : Int = 
-  if b = 0 then a 
-  else gcd b (a % b)
-
-let fib (n : Int) : Int = 
-  if n <= 1 then n 
-  else fib (n - 1) + fib (n - 2)
-
--- tail recursive fib
-let fib n = 
-  let loop a b i = 
-    if i = 0 then a 
-    else loop b (a + b) (i - 1)
-  in loop 0 1 n
-
--- pattern match
-let [a, b, c] = [1, 2, 3]
-
-let fib n = 
-  match n
-  | 0 -> 0
-  | 1 -> 1
-  \ n -> fib (n - 1) + fib (n - 2)
-
-let fib 0 = 0
-  | fib 1 = 1
-  | fib n = fib (n - 1) + fib (n - 2)
-
--- with guards
-let gcd a b = 
-  match (a, b)
-  | (a, 0) -> a
-  | (a, b) if a > b -> gcd b (a % b)
-  | (a, b) -> gcd a (b % a)
-
-gcd : (Int, Int) -> Int
-gcd a 0 = a
-gcd a b = gcd b (a % b)
-
-map : a b. (a -> b, [a]) -> [b]
-map f [] = []
-map f (x :: xs) = f x :: map f xs
-
-map f xs = 
-  match xs
-  | [] -> []
-  | (x::xs) -> f x :: map f xs
-
-fold : a b. ((a, b) -> a, a, [b]) -> a
-fold f acc [] = acc
-fold f acc (x :: xs) = fold f (f acc x) xs
-
-let fold (f : (a, b) -> a) (acc : a) (xs : [b]) : a = 
-  match xs
-  | [] -> acc
-  | (x::xs) -> fold f (f acc x) xs
-
-binary_search : Int -> #[Int] -> Int
-let binary_search n xs =
-  let loop l r =
-    if l > r then -1
-    else
-      let m = (l + r) / 2 in
-      if Array.get xs m = n then m
-      else if Array.get xs m < n then loop (m + 1) r
-      else loop l (m - 1)
-  in loop 0 (Array.len xs - 1)
-
--- type alias
-type Point = (Int, Int)
-
--- records
-type Person = { name : String, age : Int }
-let p = { name = "Alice", age = 30 }
-
--- sum types
-type Option a = None | Some a
-
-type List a = Empty | Pair a (List a)
+-- let expression function definition
+let f x = x + 1 in f 1
