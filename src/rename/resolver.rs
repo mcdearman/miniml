@@ -82,7 +82,7 @@ impl Resolver {
 
     fn resolve_decl(&mut self, decl: &ast::Decl) -> ResResult<Decl> {
         match &decl.kind {
-            ast::DeclKind::Let(ident, expr) => {
+            ast::DeclKind::Def(ident, expr) => {
                 let res_pat = self.resolve_pattern(&ident)?;
                 let res_expr = self.resolve_expr(&expr)?;
                 Ok(Decl {

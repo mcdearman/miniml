@@ -19,7 +19,7 @@ pub struct Decl {
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum DeclKind {
-    Let(Pattern, Expr),
+    Def(Pattern, Expr),
     Fn(Ident, Vec<Pattern>, Expr),
     FnMatch(Vec<(Ident, Vec<Pattern>, Expr)>),
 }

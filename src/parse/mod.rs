@@ -94,7 +94,7 @@ fn decl_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
         .ignore_then(pattern_parser())
         .then_ignore(just(Token::Eq))
         .then(expr_parser())
-        .map(|(pat, expr)| DeclKind::Let(pat, expr));
+        .map(|(pat, expr)| DeclKind::Def(pat, expr));
 
     let fn_ = just(Token::Let)
         .ignore_then(ident_parser())
