@@ -1,0 +1,14 @@
+---
+source: src/analysis/infer/tests.rs
+assertion_line: 59
+expression: "test_helper(\"let id = \\\\x -> x\")"
+---
+Root @ 0..16
+Let @ 0..16
+Var @ 4..6
+id
+Lambda @ 9..16
+  ScopedIdent @ 10..11
+    x
+  Var @ 15..16
+    x : 0x20

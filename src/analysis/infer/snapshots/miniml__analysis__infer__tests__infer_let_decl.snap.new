@@ -1,0 +1,11 @@
+---
+source: src/analysis/infer/tests.rs
+assertion_line: 64
+expression: "test_helper(\"let x = 42\")"
+---
+Root @ 0..10
+Let @ 0..10
+Var @ 4..5
+x
+Lit @ 8..10
+  42 : Int

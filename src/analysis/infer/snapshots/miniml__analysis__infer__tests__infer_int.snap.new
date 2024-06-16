@@ -1,0 +1,13 @@
+---
+source: src/analysis/infer/tests.rs
+assertion_line: 49
+expression: "test_helper(\"42\")"
+---
+Root @ 0..2
+Fn @ 0..2
+ScopedIdent @ 0..2
+main
+ScopedIdent @ 0..2
+args
+Lit @ 0..2
+  42 : Int

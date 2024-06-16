@@ -10,7 +10,10 @@ use crate::utils::{
     intern::InternedString,
     span::Span,
 };
-use std::fmt::{Debug, Display};
+use std::{
+    collections::HashMap,
+    fmt::{Debug, Display},
+};
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Root {
@@ -31,16 +34,6 @@ impl Root {
         }
     }
 }
-
-// impl Debug for Root {
-//     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-//         writeln!(f, "Root @ {}", self.span)?;
-//         for decl in &self.decls {
-//             writeln!(f, "{:?}", decl)?;
-//         }
-//         Ok(())
-//     }
-// }
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Decl {
@@ -77,33 +70,19 @@ impl Decl {
     }
 }
 
-// impl Debug for Decl {
-//     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-//         match &self.kind {
-//             DeclKind::Let(name, expr) => {
-//                 writeln!(f, "Let @ {}", self.span)?;
-//                 writeln!(f, "Var @ {}", name.span)?;
-//                 writeln!(f, "{}", name)?;
-//                 writeln!(f, "{:?}", expr)
-//             }
-//             DeclKind::Fn(name, params, fn_expr) => {
-//                 writeln!(f, "Fn @ {}", self.span)?;
-//                 writeln!(f, "ScopedIdent @ {}", name.span)?;
-//                 writeln!(f, "{}", name)?;
-//                 for param in params {
-//                     writeln!(f, "ScopedIdent @ {}", param.span)?;
-//                     writeln!(f, "{}", param)?;
-//                 }
-//                 writeln!(f, "{:?}", fn_expr)
-//             }
-//         }
-//     }
-// }
-
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Clone, PartialEq)]
 pub enum DeclKind {
     Let(Pattern, Expr),
     Fn(ScopedIdent, Vec<Pattern>, Expr),
+}
+
+impl Debug for DeclKind {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            DeclKind::Let(_, _) => todo!(),
+            DeclKind::Fn(_, _, _) => todo!(),
+        }
+    }
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -232,123 +211,6 @@ impl Expr {
         }
     }
 }
-
-// impl Debug for Expr {
-//     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-//         fn debug(
-//             f: &mut std::fmt::Formatter<'_>,
-//             mut indent: i32,
-//             expr: &Expr,
-//         ) -> std::fmt::Result {
-//             fn spaces(indent: i32) -> String {
-//                 "  ".repeat(indent as usize)
-//             }
-
-//             match expr.kind.as_ref() {
-//                 ExprKind::Lit(lit) => {
-//                     writeln!(f, "{}Lit @ {}", spaces(indent), expr.span)?;
-//                     indent += 1;
-//                     writeln!(f, "{}{} : {:?}", spaces(indent), lit, expr.ty)
-//                 }
-//                 ExprKind::Var(var) => {
-//                     writeln!(f, "{}Var @ {}", spaces(indent), var.span)?;
-//                     indent += 1;
-//                     writeln!(f, "{}{} : {:?}", spaces(indent), var, expr.ty)
-//                 }
-//                 ExprKind::Apply(fun, args) => {
-//                     writeln!(f, "{}Apply @ {}", spaces(indent), expr.span)?;
-//                     indent += 1;
-//                     debug(f, indent, fun)?;
-//                     // debug(f, indent, arg)
-//                     for arg in args {
-//                         debug(f, indent, arg)?;
-//                     }
-//                     Ok(())
-//                 }
-//                 ExprKind::Lambda(params, fn_expr) => {
-//                     writeln!(f, "{}Lambda @ {}", spaces(indent), expr.span)?;
-//                     indent += 1;
-//                     for param in params {
-//                         writeln!(f, "{}ScopedIdent @ {}", spaces(indent), param.span)?;
-//                     }
-//                     indent += 1;
-//                     writeln!(f, "{}{}", spaces(indent), join(params, ", "))?;
-//                     indent -= 1;
-//                     debug(f, indent, &fn_expr)
-//                 }
-//                 ExprKind::Or(lhs, rhs) => {
-//                     writeln!(f, "{}Or @ {}", spaces(indent), expr.span)?;
-//                     indent += 1;
-//                     debug(f, indent, lhs)?;
-//                     debug(f, indent, rhs)
-//                 }
-//                 ExprKind::And(lhs, rhs) => {
-//                     writeln!(f, "{}And @ {}", spaces(indent), expr.span)?;
-//                     indent += 1;
-//                     debug(f, indent, lhs)?;
-//                     debug(f, indent, rhs)
-//                 }
-//                 ExprKind::Let(name, let_expr, body) => {
-//                     writeln!(f, "{}Let @ {}", spaces(indent), expr.span)?;
-//                     indent += 1;
-//                     writeln!(f, "{}Var @ {}", spaces(indent), name.span)?;
-//                     indent += 1;
-//                     writeln!(f, "{}{}", spaces(indent), name)?;
-//                     indent -= 1;
-//                     debug(f, indent, let_expr)?;
-//                     debug(f, indent, body)
-//                 }
-//                 ExprKind::Fn(name, params, fn_expr, body) => {
-//                     writeln!(f, "{}Fn @ {}", spaces(indent), expr.span)?;
-//                     indent += 1;
-//                     writeln!(f, "{}ScopedIdent @ {}", spaces(indent), name.span)?;
-//                     indent += 1;
-//                     writeln!(f, "{}{}", spaces(indent), name)?;
-//                     indent -= 1;
-//                     for param in params {
-//                         writeln!(f, "{}ScopedIdent @ {}", spaces(indent), param.span)?;
-//                     }
-//                     indent += 1;
-//                     writeln!(f, "{}{}", spaces(indent), join(params, ", "))?;
-//                     indent -= 1;
-//                     debug(f, indent, fn_expr)?;
-//                     debug(f, indent, body)
-//                 }
-//                 ExprKind::If(cond, then_expr, else_expr) => {
-//                     writeln!(f, "{}If @ {}", spaces(indent), expr.span)?;
-//                     indent += 1;
-//                     debug(f, indent, cond)?;
-//                     debug(f, indent, then_expr)?;
-//                     debug(f, indent, else_expr)
-//                 }
-//                 ExprKind::Match(match_expr, arms) => {
-//                     writeln!(f, "{}Match @ {}", spaces(indent), expr.span)?;
-//                     indent += 1;
-//                     debug(f, indent, match_expr)?;
-//                     for (pat, arm) in arms {
-//                         writeln!(f, "{}Pattern @ {}", spaces(indent), pat.span)?;
-//                         indent += 1;
-//                         writeln!(f, "{}{}", spaces(indent), pat)?;
-//                         indent -= 1;
-//                         debug(f, indent, arm)?;
-//                     }
-//                     Ok(())
-//                 }
-//                 ExprKind::List(exprs) => {
-//                     writeln!(f, "{}List @ {}", spaces(indent), expr.span)?;
-//                     indent += 1;
-//                     for expr in exprs {
-//                         debug(f, indent, expr)?;
-//                     }
-//                     Ok(())
-//                 }
-//                 ExprKind::Unit => todo!(),
-//             }
-//         }
-
-//         debug(f, 0, &self)
-//     }
-// }
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum ExprKind {

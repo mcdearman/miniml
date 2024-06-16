@@ -1,0 +1,18 @@
+---
+source: src/analysis/infer/tests.rs
+assertion_line: 54
+expression: "test_helper(\"let x = 42 in x\")"
+---
+Root @ 0..15
+Fn @ 0..15
+ScopedIdent @ 0..15
+main
+ScopedIdent @ 0..15
+args
+Let @ 0..15
+  Var @ 4..5
+    x
+  Lit @ 8..10
+    42 : Int
+  Var @ 14..15
+    x : Int
