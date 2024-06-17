@@ -25,19 +25,6 @@ impl Env {
         }
     }
 
-    // pub fn dump_to_interner(&self) -> ScopedInterner {
-    //     ScopedInterner::from_iter(self.flatten().into_iter().map(|(k, v)| (v, k)))
-    // }
-
-    fn flatten(&self) -> HashMap<InternedString, UniqueId> {
-        self.frames
-            .iter()
-            .rev()
-            .flat_map(|frame| frame.bindings.iter())
-            .map(|(name, id)| (name.clone(), *id))
-            .collect()
-    }
-
     pub fn push(&mut self) {
         self.frames.push(Frame::new());
     }
