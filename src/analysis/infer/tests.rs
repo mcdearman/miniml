@@ -26,14 +26,14 @@ fn test_helper(src: &str) -> tir::Root {
     }
     let nir = nir.unwrap();
     let builtins = res.builtins();
-    let scoped_interner = res.env().dump_to_interner();
+    // let scoped_interner = res.env().dump_to_interner();
     if !errors.is_empty() {
         for e in errors {
             eprintln!("{}", e);
         }
         panic!("resolution failed");
     }
-    let mut solver = TypeSolver::new(builtins.clone(), scoped_interner);
+    let mut solver = TypeSolver::new(builtins.clone());
     let (tir, errors) = solver.infer(src, &nir);
     if !errors.is_empty() {
         for e in errors {

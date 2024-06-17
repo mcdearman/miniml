@@ -1,10 +1,10 @@
 use super::{
     meta::Meta,
     meta_context::{MetaContext, MetaId},
-    r#type::Type,
     poly_type::PolyType,
+    r#type::Type,
 };
-use crate::utils::{intern::InternedString, unique_id::UniqueId};
+use crate::utils::intern::InternedString;
 use std::collections::{HashMap, HashSet};
 
 #[derive(Debug, Clone, PartialEq)]
@@ -20,7 +20,7 @@ impl Context {
     }
 
     pub fn from_builtins(
-        builtins: &HashMap<UniqueId, InternedString>,
+        builtins: &HashMap<InternedString, InternedString>,
         meta_ctx: &mut MetaContext,
     ) -> Self {
         let mut frame = Frame::new();
@@ -219,11 +219,11 @@ impl Context {
         self.frames.pop();
     }
 
-    pub fn get(&self, id: &UniqueId) -> Option<PolyType> {
+    pub fn get(&self, id: &InternedString) -> Option<PolyType> {
         self.frames.iter().rev().find_map(|frame| frame.get(id))
     }
 
-    pub fn insert(&mut self, id: UniqueId, scheme: PolyType) {
+    pub fn insert(&mut self, id: InternedString, scheme: PolyType) {
         if let Some(frame) = self.frames.last_mut() {
             frame.insert(id, scheme);
         } else {
@@ -255,7 +255,7 @@ impl Context {
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Frame {
-    bindings: HashMap<UniqueId, PolyType>,
+    bindings: HashMap<InternedString, PolyType>,
 }
 
 impl Frame {
@@ -265,15 +265,15 @@ impl Frame {
         }
     }
 
-    pub fn iter(&self) -> impl Iterator<Item = (&UniqueId, &PolyType)> {
+    pub fn iter(&self) -> impl Iterator<Item = (&InternedString, &PolyType)> {
         self.bindings.iter()
     }
 
-    pub fn get(&self, id: &UniqueId) -> Option<PolyType> {
+    pub fn get(&self, id: &InternedString) -> Option<PolyType> {
         self.bindings.get(id).cloned()
     }
 
-    pub fn insert(&mut self, id: UniqueId, scheme: PolyType) {
+    pub fn insert(&mut self, id: InternedString, scheme: PolyType) {
         self.bindings.insert(id, scheme);
     }
 

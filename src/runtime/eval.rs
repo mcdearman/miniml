@@ -54,7 +54,7 @@ pub fn eval<'src>(
             DeclKind::Fn(ident, params, expr, ..) => {
                 let value = Value::Lambda(env.clone(), params.clone(), expr.clone());
                 env.borrow_mut().insert(ident.id, value);
-                if ident.key.to_string() == "main" {
+                if ident.str.to_string() == "main" {
                     return Ok(RuntimePayload::Value(
                         eval_expr(src, env.clone(), expr.clone())?,
                         expr.ty.clone(),
@@ -261,7 +261,7 @@ fn destructure_pattern(
         PatternKind::Ident(ident) => {
             env.borrow_mut().insert(ident.id, val.clone());
             log::debug!("inserted {:?} -> {:?}", ident, val);
-            bindings.push((ident.key, val.clone(), pat.ty.clone()));
+            bindings.push((ident.str, val.clone(), pat.ty.clone()));
             (true, bindings)
         }
         PatternKind::List(list) => match val {

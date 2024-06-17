@@ -1,4 +1,4 @@
-use crate::utils::{intern::InternedString, scoped_intern::ScopedInterner, unique_id::UniqueId};
+use crate::utils::{intern::InternedString, unique_id::UniqueId};
 use std::collections::HashMap;
 
 #[derive(Debug, Clone, PartialEq)]
@@ -25,9 +25,9 @@ impl Env {
         }
     }
 
-    pub fn dump_to_interner(&self) -> ScopedInterner {
-        ScopedInterner::from_iter(self.flatten().into_iter().map(|(k, v)| (v, k)))
-    }
+    // pub fn dump_to_interner(&self) -> ScopedInterner {
+    //     ScopedInterner::from_iter(self.flatten().into_iter().map(|(k, v)| (v, k)))
+    // }
 
     fn flatten(&self) -> HashMap<InternedString, UniqueId> {
         self.frames

@@ -5,11 +5,7 @@ use super::{
     meta_context::{self, MetaContext},
     r#type::Type,
 };
-use crate::utils::{
-    ident::{Ident, ScopedIdent},
-    intern::InternedString,
-    span::Span,
-};
+use crate::utils::{ident::Ident, intern::InternedString, span::Span};
 use std::{
     collections::HashMap,
     fmt::{Debug, Display},
@@ -73,7 +69,7 @@ impl Decl {
 #[derive(Clone, PartialEq)]
 pub enum DeclKind {
     Let(Pattern, Expr),
-    Fn(ScopedIdent, Vec<Pattern>, Expr),
+    Fn(Ident, Vec<Pattern>, Expr),
 }
 
 impl Debug for DeclKind {
@@ -215,13 +211,13 @@ impl Expr {
 #[derive(Debug, Clone, PartialEq)]
 pub enum ExprKind {
     Lit(Lit),
-    Var(ScopedIdent),
+    Var(Ident),
     Apply(Expr, Vec<Expr>),
     Lambda(Vec<Pattern>, Expr),
     Or(Expr, Expr),
     And(Expr, Expr),
     Let(Pattern, Expr, Expr),
-    Fn(ScopedIdent, Vec<Pattern>, Expr, Expr),
+    Fn(Ident, Vec<Pattern>, Expr, Expr),
     If(Expr, Expr, Expr),
     Match(Expr, Vec<(Pattern, Expr)>),
     List(Vec<Expr>),
@@ -296,7 +292,7 @@ impl Display for Pattern {
 pub enum PatternKind {
     Wildcard,
     Lit(Lit),
-    Ident(ScopedIdent),
+    Ident(Ident),
     List(Vec<Pattern>),
     Pair(Pattern, Pattern),
     Unit,

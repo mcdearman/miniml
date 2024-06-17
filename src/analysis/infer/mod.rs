@@ -12,10 +12,10 @@ use self::{
 use crate::{
     rename::nir,
     utils::{
-        ident::ScopedIdent,
+        // ident::ScopedIdent,
         intern::InternedString,
         list::{self, List},
-        scoped_intern::ScopedInterner,
+        // scoped_intern::ScopedInterner,
         span::Span,
         unique_id::UniqueId,
     },
@@ -42,13 +42,13 @@ pub struct TypeSolver {
     reg: Registry,
     builtins: HashMap<UniqueId, InternedString>,
     constraints: Vec<Constraint>,
-    scoped_interner: ScopedInterner,
+    // scoped_interner: ScopedInterner,
 }
 
 impl TypeSolver {
     pub fn new(
         builtins: HashMap<UniqueId, InternedString>,
-        scoped_interner: ScopedInterner,
+        // scoped_interner: ScopedInterner,
     ) -> Self {
         let mut meta_ctx = MetaContext::new();
         Self {
@@ -58,7 +58,7 @@ impl TypeSolver {
             reg: Registry::new(),
             builtins,
             constraints: vec![],
-            scoped_interner,
+            // scoped_interner,
         }
     }
 
@@ -134,7 +134,7 @@ impl TypeSolver {
                 vars.push(meta_ret.clone());
                 let fn_poly = PolyType::new(vars.clone(), fn_ty.clone());
                 // let fn_ty = Type::Poly(fn_poly.clone());
-                self.ctx.insert(name.id, fn_poly.clone());
+                self.ctx.insert(name, fn_poly.clone());
                 self.ctx.push();
 
                 let mut solved_params = vec![];

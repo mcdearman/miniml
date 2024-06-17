@@ -5,17 +5,12 @@ use super::{
 };
 use crate::{
     parse::ast,
-    utils::{
-        ident::{Ident, ScopedIdent},
-        intern::InternedString,
-        unique_id::UniqueId,
-    },
+    utils::{ident::Ident, intern::InternedString, unique_id::UniqueId},
 };
 use std::collections::HashMap;
 
 #[derive(Debug)]
 pub struct Resolver {
-    builtins: HashMap<UniqueId, InternedString>,
     env: Env,
 }
 
@@ -36,23 +31,19 @@ impl Resolver {
         }
 
         Self {
-            builtins: builtins.clone(),
             env: Env::new_with_builtins(builtins),
         }
     }
 
-    pub fn builtins(&self) -> &HashMap<UniqueId, InternedString> {
-        &self.builtins
-    }
 
-    fn get_builtin(&mut self, name: InternedString) -> Option<UniqueId> {
-        for (id, n) in &self.builtins {
-            if n == &name {
-                return Some(*id);
-            }
-        }
-        None
-    }
+    // fn get_builtin(&mut self, name: InternedString) -> Option<UniqueId> {
+    //     for (id, n) in &self.builtins {
+    //         if n == &name {
+    //             return Some(*id);
+    //         }
+    //     }
+    //     None
+    // }
 
     pub fn env(&self) -> &Env {
         &self.env
@@ -91,7 +82,7 @@ impl Resolver {
                 })
             }
             ast::DeclKind::Fn(ident, params, fn_expr) => {
-                let res_name = self.env.define(ident.key);
+                let res_name = self.env.define(ident.str);
 
                 self.env.push();
                 let mut res_params = vec![];
@@ -110,7 +101,7 @@ impl Resolver {
 
                 Ok(Decl {
                     kind: DeclKind::Fn(
-                        ScopedIdent::new(res_name, ident.key, ident.span),
+                        ScopedIdent::new(res_name, ident.str, ident.span),
                         res_params,
                         res_expr,
                     ),
@@ -123,7 +114,7 @@ impl Resolver {
                 }
 
                 let name = arms[0].0;
-                let res_name = self.env.define(name.key);
+                let res_name = self.env.define(name.str);
 
                 let param_len = arms[0].1.len();
 
@@ -172,14 +163,14 @@ impl Resolver {
                 ast::Lit::Char(c) => Ok(Expr::new(ExprKind::Lit(Lit::Char(*c)), expr.span)),
             },
             ast::ExprKind::Var(ident) => {
-                if let Some(name) = self.env.find(&ident.key) {
+                if let Some(name) = self.env.find(&ident.str) {
                     Ok(Expr::new(
-                        ExprKind::Var(ScopedIdent::new(name, ident.key, expr.span)),
+                        ExprKind::Var(ScopedIdent::new(name, ident.str, expr.span)),
                         expr.span.clone(),
                     ))
                 } else {
                     Err(ResError::new(
-                        ResErrorKind::UnboundName(ident.key),
+                        ResErrorKind::UnboundName(ident.str),
                         expr.span,
                     ))
                 }
@@ -262,7 +253,7 @@ impl Resolver {
             }
             ast::ExprKind::Fn(name, params, fn_expr, body) => {
                 self.env.push();
-                let res_name = self.env.define(name.key);
+                let res_name = self.env.define(name.str);
                 self.env.push();
                 let mut res_params = vec![];
                 for p in params {
@@ -281,7 +272,7 @@ impl Resolver {
 
                 Ok(Expr::new(
                     ExprKind::Fn(
-                        ScopedIdent::new(res_name, name.key, name.span),
+                        ScopedIdent::new(res_name, name.str, name.span),
                         res_params,
                         res_expr,
                         res_body,
@@ -325,9 +316,9 @@ impl Resolver {
     fn resolve_pattern(&mut self, pat: &ast::Pattern) -> ResResult<Pattern> {
         match pat.kind.as_ref() {
             ast::PatternKind::Ident(ident, hint) => {
-                let id = self.env.define(ident.key);
+                let id = self.env.define(ident.str);
                 Ok(Pattern::new(
-                    PatternKind::Ident(ScopedIdent::new(id, ident.key, ident.span), {
+                    PatternKind::Ident(ScopedIdent::new(id, ident.str, ident.span), {
                         if let Some(hint) = hint {
                             Some(self.resolve_hint(hint)?)
                         } else {
@@ -394,14 +385,14 @@ impl Resolver {
     fn resolve_hint(&mut self, hint: &ast::TypeHint) -> ResResult<TypeHint> {
         match hint.kind.as_ref() {
             ast::TypeHintKind::Ident(ident) => {
-                if let Some(name) = self.env.find(&ident.key) {
+                if let Some(name) = self.env.find(&ident.str) {
                     Ok(TypeHint::new(
-                        TypeHintKind::Ident(ScopedIdent::new(name, ident.key, ident.span)),
+                        TypeHintKind::Ident(ScopedIdent::new(name, ident.str, ident.span)),
                         hint.span,
                     ))
                 } else {
                     Err(ResError::new(
-                        ResErrorKind::UnboundName(ident.key),
+                        ResErrorKind::UnboundName(ident.str),
                         ident.span,
                     ))
                 }
