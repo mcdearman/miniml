@@ -1,17 +1,13 @@
-use itertools::Itertools;
-
 use super::{
-    constraint::Constraint,
     context::Context,
-    error::{InferResult, TypeError},
-    meta::Meta,
     meta_context::{MetaContext, MetaId},
     poly_type::PolyType,
 };
 use crate::utils::{intern::InternedString, unique_id::UniqueId};
+use itertools::Itertools;
 use std::{
     collections::{HashMap, HashSet},
-    fmt::{write, Debug, Display},
+    fmt::{Debug, Display},
 };
 
 #[derive(Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]

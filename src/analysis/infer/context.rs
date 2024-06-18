@@ -9,6 +9,7 @@ use std::collections::{HashMap, HashSet};
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Context {
+    // meta_ctx: MetaContext,
     frames: Vec<Frame>,
 }
 
@@ -16,198 +17,6 @@ impl Context {
     pub fn new() -> Self {
         Self {
             frames: vec![Frame::new()],
-        }
-    }
-
-    pub fn from_builtins(
-        builtins: &HashMap<InternedString, InternedString>,
-        meta_ctx: &mut MetaContext,
-    ) -> Self {
-        let mut frame = Frame::new();
-        for (id, name) in builtins {
-            match name.as_ref() {
-                "neg" => {
-                    let vid = meta_ctx.fresh();
-                    frame.insert(
-                        *id,
-                        PolyType::new(
-                            vec![vid],
-                            Type::Lambda(vec![Type::Meta(vid)], Box::new(Type::Meta(vid))),
-                        ),
-                    );
-                }
-                "not" => {
-                    frame.insert(
-                        *id,
-                        PolyType::new(vec![], Type::Lambda(vec![Type::Bool], Box::new(Type::Bool))),
-                    );
-                }
-                "add" => {
-                    frame.insert(
-                        *id,
-                        PolyType::new(
-                            vec![],
-                            Type::Lambda(vec![Type::Int, Type::Int], Box::new(Type::Int)),
-                        ),
-                    );
-                }
-                "sub" => {
-                    frame.insert(
-                        *id,
-                        PolyType::new(
-                            vec![],
-                            Type::Lambda(vec![Type::Int, Type::Int], Box::new(Type::Int)),
-                        ),
-                    );
-                }
-                "mul" => {
-                    frame.insert(
-                        *id,
-                        PolyType::new(
-                            vec![],
-                            Type::Lambda(vec![Type::Int, Type::Int], Box::new(Type::Int)),
-                        ),
-                    );
-                }
-                "div" => {
-                    frame.insert(
-                        *id,
-                        PolyType::new(
-                            vec![],
-                            Type::Lambda(vec![Type::Int, Type::Int], Box::new(Type::Int)),
-                        ),
-                    );
-                }
-                "rem" => {
-                    frame.insert(
-                        *id,
-                        PolyType::new(
-                            vec![],
-                            Type::Lambda(vec![Type::Int, Type::Int], Box::new(Type::Int)),
-                        ),
-                    );
-                }
-                "pow" => {
-                    let vid = meta_ctx.fresh();
-                    frame.insert(
-                        *id,
-                        PolyType::new(
-                            vec![vid],
-                            Type::Lambda(
-                                vec![Type::Meta(vid), Type::Meta(vid)],
-                                Box::new(Type::Meta(vid)),
-                            ),
-                        ),
-                    );
-                }
-                "eq" => {
-                    let vid = meta_ctx.fresh();
-                    frame.insert(
-                        *id,
-                        PolyType::new(
-                            vec![vid],
-                            Type::Lambda(
-                                vec![Type::Meta(vid), Type::Meta(vid)],
-                                Box::new(Type::Bool),
-                            ),
-                        ),
-                    );
-                }
-                "neq" => {
-                    let vid = meta_ctx.fresh();
-                    frame.insert(
-                        *id,
-                        PolyType::new(
-                            vec![vid],
-                            Type::Lambda(
-                                vec![Type::Meta(vid), Type::Meta(vid)],
-                                Box::new(Type::Bool),
-                            ),
-                        ),
-                    );
-                }
-                "lt" => {
-                    let vid = meta_ctx.fresh();
-                    frame.insert(
-                        *id,
-                        PolyType::new(
-                            vec![vid],
-                            Type::Lambda(
-                                vec![Type::Meta(vid), Type::Meta(vid)],
-                                Box::new(Type::Bool),
-                            ),
-                        ),
-                    );
-                }
-                "lte" => {
-                    let vid = meta_ctx.fresh();
-                    frame.insert(
-                        *id,
-                        PolyType::new(
-                            vec![vid],
-                            Type::Lambda(
-                                vec![Type::Meta(vid), Type::Meta(vid)],
-                                Box::new(Type::Bool),
-                            ),
-                        ),
-                    );
-                }
-                "gt" => {
-                    let vid = meta_ctx.fresh();
-                    frame.insert(
-                        *id,
-                        PolyType::new(
-                            vec![vid],
-                            Type::Lambda(
-                                vec![Type::Meta(vid), Type::Meta(vid)],
-                                Box::new(Type::Bool),
-                            ),
-                        ),
-                    );
-                }
-                "gte" => {
-                    let vid = meta_ctx.fresh();
-                    frame.insert(
-                        *id,
-                        PolyType::new(
-                            vec![vid],
-                            Type::Lambda(
-                                vec![Type::Meta(vid), Type::Meta(vid)],
-                                Box::new(Type::Bool),
-                            ),
-                        ),
-                    );
-                }
-                "println" => {
-                    let vid = meta_ctx.fresh();
-                    frame.insert(
-                        *id,
-                        PolyType::new(
-                            vec![vid],
-                            Type::Lambda(vec![Type::Meta(vid)], Box::new(Type::Unit)),
-                        ),
-                    );
-                }
-                "pair" => {
-                    let vid = meta_ctx.fresh();
-                    let ty = Type::Meta(vid);
-                    frame.insert(
-                        *id,
-                        PolyType::new(
-                            vec![vid],
-                            Type::Lambda(
-                                vec![ty.clone(), Type::List(Box::new(ty.clone()))],
-                                Box::new(Type::List(Box::new(ty))),
-                            ),
-                        ),
-                    );
-                }
-                _ => unreachable!("unknown builtin: {}", name),
-            }
-        }
-
-        Self {
-            frames: vec![frame],
         }
     }
 
@@ -269,12 +78,12 @@ impl Frame {
         self.bindings.iter()
     }
 
-    pub fn get(&self, id: &InternedString) -> Option<PolyType> {
-        self.bindings.get(id).cloned()
+    pub fn get(&self, name: &InternedString) -> Option<PolyType> {
+        self.bindings.get(name).cloned()
     }
 
-    pub fn insert(&mut self, id: InternedString, scheme: PolyType) {
-        self.bindings.insert(id, scheme);
+    pub fn insert(&mut self, name: InternedString, scheme: PolyType) {
+        self.bindings.insert(name, scheme);
     }
 
     pub(super) fn free_vars(&self) -> HashSet<MetaId> {
@@ -289,8 +98,8 @@ impl Frame {
 
     pub fn zonk(&self, meta_ctx: &mut MetaContext) -> Self {
         let mut frame = Frame::new();
-        for (id, scheme) in self.iter() {
-            frame.insert(*id, scheme.zonk(meta_ctx));
+        for (name, scheme) in self.iter() {
+            frame.insert(*name, scheme.zonk(meta_ctx));
         }
         frame
     }

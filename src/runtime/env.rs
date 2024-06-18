@@ -1,11 +1,11 @@
 use super::value::Value;
-use crate::utils::unique_id::UniqueId;
+use crate::utils::intern::InternedString;
 use std::{cell::RefCell, collections::HashMap, fmt::Debug, rc::Rc};
 
 #[derive(Clone, PartialEq)]
 pub struct Env {
     parent: Option<Rc<RefCell<Env>>>,
-    bindings: HashMap<UniqueId, Value>,
+    bindings: HashMap<InternedString, Value>,
 }
 
 impl Env {
@@ -23,15 +23,15 @@ impl Env {
         }))
     }
 
-    pub fn insert(&mut self, id: UniqueId, value: Value) {
-        self.bindings.insert(id, value);
+    pub fn insert(&mut self, name: InternedString, value: Value) {
+        self.bindings.insert(name, value);
     }
 
-    pub fn get(&self, ident: &UniqueId) -> Option<Value> {
-        self.bindings.get(ident).cloned().or(self
+    pub fn get(&self, name: &InternedString) -> Option<Value> {
+        self.bindings.get(name).cloned().or(self
             .parent
             .as_ref()
-            .and_then(|parent| parent.borrow().get(ident).clone()))
+            .and_then(|parent| parent.borrow().get(name).clone()))
     }
 }
 

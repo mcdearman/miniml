@@ -5,9 +5,8 @@ use super::{
 };
 use crate::{
     parse::ast,
-    utils::{ident::Ident, intern::InternedString, unique_id::UniqueId},
+    utils::{ident::Ident, intern::InternedString},
 };
-use std::collections::HashMap;
 
 #[derive(Debug)]
 pub struct Resolver {
@@ -16,34 +15,8 @@ pub struct Resolver {
 
 impl Resolver {
     pub fn new() -> Self {
-        #[rustfmt::skip]
-        let names = vec![
-            "not", "neg", "add", "sub",
-            "mul", "div", "rem", "pow",
-            "eq", "neq", "lt", "lte",
-            "gt", "gte", "println", "pair",
-        ];
-
-        let mut builtins = HashMap::new();
-        for n in names {
-            let id = UniqueId::gen();
-            builtins.insert(id, InternedString::from(n));
-        }
-
-        Self {
-            env: Env::new_with_builtins(builtins),
-        }
+        Self { env: Env::new() }
     }
-
-
-    // fn get_builtin(&mut self, name: InternedString) -> Option<UniqueId> {
-    //     for (id, n) in &self.builtins {
-    //         if n == &name {
-    //             return Some(*id);
-    //         }
-    //     }
-    //     None
-    // }
 
     pub fn env(&self) -> &Env {
         &self.env
@@ -74,7 +47,7 @@ impl Resolver {
     fn resolve_decl(&mut self, decl: &ast::Decl) -> ResResult<Decl> {
         match &decl.kind {
             ast::DeclKind::Def(ident, expr) => {
-                let res_pat = self.resolve_pattern(&ident)?;
+                let (res_pat, _) = self.resolve_pattern(&ident)?;
                 let res_expr = self.resolve_expr(&expr)?;
                 Ok(Decl {
                     kind: DeclKind::Let(res_pat, res_expr),
@@ -82,66 +55,69 @@ impl Resolver {
                 })
             }
             ast::DeclKind::Fn(ident, params, fn_expr) => {
-                let res_name = self.env.define(ident.str);
+                let res_name = self.env.push(ident.name);
 
-                self.env.push();
                 let mut res_params = vec![];
+                let mut idents = vec![];
                 for p in params {
                     match self.resolve_pattern(p) {
-                        Ok(p) => res_params.push(p),
+                        Ok((p, i)) => {
+                            res_params.push(p);
+                            idents.extend(i);
+                        }
                         Err(e) => {
-                            self.env.pop();
+                            for ident in idents {
+                                self.env.pop(ident.name);
+                            }
                             return Err(e);
                         }
                     }
                 }
 
                 let res_expr = self.resolve_expr(&fn_expr)?;
-                self.env.pop();
+                for ident in idents {
+                    self.env.pop(ident.name);
+                }
 
                 Ok(Decl {
-                    kind: DeclKind::Fn(
-                        ScopedIdent::new(res_name, ident.str, ident.span),
-                        res_params,
-                        res_expr,
-                    ),
+                    kind: DeclKind::Fn(Ident::new(res_name, ident.span), res_params, res_expr),
                     span: decl.span,
                 })
             }
             ast::DeclKind::FnMatch(arms) => {
-                if arms.is_empty() {
-                    return Err(ResError::new(ResErrorKind::EmptyFnMatch, decl.span));
-                }
+                // if arms.is_empty() {
+                //     return Err(ResError::new(ResErrorKind::EmptyFnMatch, decl.span));
+                // }
 
-                let name = arms[0].0;
-                let res_name = self.env.define(name.str);
+                // let name = arms[0].0;
+                // let res_name = self.env.define(name.str);
 
-                let param_len = arms[0].1.len();
+                // let param_len = arms[0].1.len();
 
-                // let mut res_params = vec![];
-                let mut res_arms = vec![];
-                for (n, params, body) in arms {
-                    if *n != name {
-                        return Err(ResError::new(ResErrorKind::TooManyFnNames, decl.span));
-                    }
-                    if params.len() != param_len {
-                        return Err(ResError::new(ResErrorKind::FnArmParamMismatch, decl.span));
-                    }
-                    self.env.push();
-                    let mut res_params = vec![];
-                    for p in params {
-                        match self.resolve_pattern(p) {
-                            Ok(p) => res_params.push(p),
-                            Err(e) => {
-                                self.env.pop();
-                                return Err(e);
-                            }
-                        }
-                    }
-                    let res_body = self.resolve_expr(body)?;
-                    self.env.pop();
-                    res_arms.push((res_params, res_body));
-                }
+                // // let mut res_params = vec![];
+                // let mut res_arms = vec![];
+                // for (n, params, body) in arms {
+                //     if *n != name {
+                //         return Err(ResError::new(ResErrorKind::TooManyFnNames, decl.span));
+                //     }
+                //     if params.len() != param_len {
+                //         return Err(ResError::new(ResErrorKind::FnArmParamMismatch, decl.span));
+                //     }
+                //     self.env.push();
+                //     let mut res_params = vec![];
+                //     for p in params {
+                //         match self.resolve_pattern(p) {
+                //             Ok(p) => res_params.push(p),
+                //             Err(e) => {
+                //                 self.env.pop();
+                //                 return Err(e);
+                //             }
+                //         }
+                //     }
+                //     let res_body = self.resolve_expr(body)?;
+                //     self.env.pop();
+                //     res_arms.push((res_params, res_body));
+                // }
 
                 // Ok(Decl {
                 //     kind: DeclKind::Fn(res_name,
@@ -163,34 +139,40 @@ impl Resolver {
                 ast::Lit::Char(c) => Ok(Expr::new(ExprKind::Lit(Lit::Char(*c)), expr.span)),
             },
             ast::ExprKind::Var(ident) => {
-                if let Some(name) = self.env.find(&ident.str) {
+                if let Some(name) = self.env.find(&ident.name) {
                     Ok(Expr::new(
-                        ExprKind::Var(ScopedIdent::new(name, ident.str, expr.span)),
+                        ExprKind::Var(Ident::new(name, expr.span)),
                         expr.span.clone(),
                     ))
                 } else {
                     Err(ResError::new(
-                        ResErrorKind::UnboundName(ident.str),
+                        ResErrorKind::UnboundName(ident.name),
                         expr.span,
                     ))
                 }
             }
             ast::ExprKind::Lambda(params, fn_expr) => {
-                self.env.push();
-
                 let mut res_params = vec![];
+                let mut idents = vec![];
                 for p in params {
                     match self.resolve_pattern(p) {
-                        Ok(p) => res_params.push(p),
+                        Ok((p, i)) => {
+                            res_params.push(p);
+                            idents.extend(i);
+                        }
                         Err(e) => {
-                            self.env.pop();
+                            for ident in idents {
+                                self.env.pop(ident.name);
+                            }
                             return Err(e);
                         }
                     }
                 }
 
                 let res_expr = self.resolve_expr(fn_expr)?;
-                self.env.pop();
+                for ident in idents {
+                    self.env.pop(ident.name);
+                }
 
                 Ok(Expr::new(ExprKind::Lambda(res_params, res_expr), expr.span))
             }
@@ -205,10 +187,7 @@ impl Resolver {
             )),
             ast::ExprKind::UnaryOp(op, op_expr) => {
                 let name = InternedString::from(*op);
-                let id = self
-                    .get_builtin(name)
-                    .ok_or(ResError::new(ResErrorKind::UnboundBuiltIn(name), op.span))?;
-                let ident = ScopedIdent::new(id, name, op.span);
+                let ident = Ident::new(name, op.span);
                 Ok(Expr::new(
                     ExprKind::Apply(
                         Expr::new(ExprKind::Var(ident.clone()), op.span),
@@ -219,10 +198,7 @@ impl Resolver {
             }
             ast::ExprKind::BinaryOp(op, lhs, rhs) => {
                 let name = InternedString::from(*op);
-                let id = self
-                    .get_builtin(name)
-                    .ok_or(ResError::new(ResErrorKind::UnboundBuiltIn(name), op.span))?;
-                let ident = ScopedIdent::new(id, name, op.span);
+                let ident = Ident::new(name, op.span);
                 Ok(Expr::new(
                     ExprKind::Apply(
                         Expr::new(ExprKind::Var(ident.clone()), op.span),
@@ -239,40 +215,50 @@ impl Resolver {
                 ExprKind::And(self.resolve_expr(lhs)?, self.resolve_expr(rhs)?),
                 expr.span,
             )),
-            ast::ExprKind::Let(name, let_expr, body) => {
+            ast::ExprKind::Let(pat, let_expr, body) => {
                 let res_expr = self.resolve_expr(&let_expr)?;
-                self.env.push();
-                let res_pat = self.resolve_pattern(name)?;
+                let (res_pat, idents) = self.resolve_pattern(pat)?;
                 let res_body = self.resolve_expr(&body)?;
-                self.env.pop();
+                for ident in idents {
+                    self.env.pop(ident.name);
+                }
 
                 Ok(Expr::new(
                     ExprKind::Let(res_pat, res_expr, res_body),
                     expr.span,
                 ))
             }
-            ast::ExprKind::Fn(name, params, fn_expr, body) => {
-                self.env.push();
-                let res_name = self.env.define(name.str);
-                self.env.push();
+            ast::ExprKind::Fn(ident, params, fn_expr, body) => {
+                let res_name = self.env.push(ident.name);
+
                 let mut res_params = vec![];
+                let mut idents = vec![];
                 for p in params {
                     match self.resolve_pattern(p) {
-                        Ok(p) => res_params.push(p),
+                        Ok((p, i)) => {
+                            res_params.push(p);
+                            idents.extend(i);
+                        }
                         Err(e) => {
-                            self.env.pop();
+                            for ident in idents {
+                                self.env.pop(ident.name);
+                            }
                             return Err(e);
                         }
                     }
                 }
+
                 let res_expr = self.resolve_expr(fn_expr)?;
-                self.env.pop();
+                for ident in idents {
+                    self.env.pop(ident.name);
+                }
+
                 let res_body = self.resolve_expr(body)?;
-                self.env.pop();
+                self.env.pop(res_name);
 
                 Ok(Expr::new(
                     ExprKind::Fn(
-                        ScopedIdent::new(res_name, name.str, name.span),
+                        Ident::new(res_name, ident.span),
                         res_params,
                         res_expr,
                         res_body,
@@ -292,10 +278,11 @@ impl Resolver {
                 let res_expr = self.resolve_expr(&expr)?;
                 let mut res_arms = vec![];
                 for (pat, body) in arms {
-                    self.env.push();
-                    let res_pat = self.resolve_pattern(pat)?;
+                    let (res_pat, idents) = self.resolve_pattern(pat)?;
                     let res_body = self.resolve_expr(body)?;
-                    self.env.pop();
+                    for ident in idents {
+                        self.env.pop(ident.name);
+                    }
                     res_arms.push((res_pat, res_body));
                 }
                 Ok(Expr::new(ExprKind::Match(res_expr, res_arms), expr.span))
@@ -313,89 +300,85 @@ impl Resolver {
         }
     }
 
-    fn resolve_pattern(&mut self, pat: &ast::Pattern) -> ResResult<Pattern> {
+    fn resolve_pattern(&mut self, pat: &ast::Pattern) -> ResResult<(Pattern, Vec<Ident>)> {
         match pat.kind.as_ref() {
             ast::PatternKind::Ident(ident, hint) => {
-                let id = self.env.define(ident.str);
-                Ok(Pattern::new(
-                    PatternKind::Ident(ScopedIdent::new(id, ident.str, ident.span), {
-                        if let Some(hint) = hint {
-                            Some(self.resolve_hint(hint)?)
-                        } else {
-                            None
-                        }
+                let res_name = self.env.push(ident.name);
+                Ok((
+                    Pattern::new(
+                        PatternKind::Ident(Ident::new(res_name, ident.span), {
+                            if let Some(hint) = hint {
+                                Some(self.resolve_hint(hint)?)
+                            } else {
+                                None
+                            }
+                        }),
+                        pat.span,
+                    ),
+                    vec![*ident],
+                ))
+            }
+            ast::PatternKind::Wildcard => {
+                Ok((Pattern::new(PatternKind::Wildcard, pat.span), vec![]))
+            }
+            ast::PatternKind::List(pats) => {
+                let mut solved_pats = vec![];
+                let mut idents = vec![];
+                for p in pats {
+                    let (res_pat, res_idents) = self.resolve_pattern(p)?;
+                    idents.extend(res_idents);
+                    solved_pats.push(res_pat);
+                }
+                Ok((
+                    Pattern::new(PatternKind::List(solved_pats), pat.span),
+                    idents,
+                ))
+            }
+            ast::PatternKind::Pair(head, tail) => {
+                let (res_head, head_idents) = self.resolve_pattern(head)?;
+                let (res_tail, tail_idents) = self.resolve_pattern(tail)?;
+                Ok((
+                    Pattern::new(PatternKind::Pair(res_head, res_tail), pat.span),
+                    head_idents
+                        .into_iter()
+                        .chain(tail_idents)
+                        .collect::<Vec<_>>(),
+                ))
+            }
+            ast::PatternKind::Lit(lit) => Ok((
+                Pattern::new(
+                    PatternKind::Lit(match lit {
+                        ast::Lit::Byte(b) => Lit::Byte(*b),
+                        ast::Lit::Int(n) => Lit::Int(*n),
+                        ast::Lit::Rational(r) => Lit::Rational(*r),
+                        ast::Lit::Real(r) => Lit::Real(*r),
+                        ast::Lit::Bool(b) => Lit::Bool(*b),
+                        ast::Lit::String(s) => Lit::String(*s),
+                        ast::Lit::Char(c) => Lit::Char(*c),
                     }),
                     pat.span,
-                ))
-                // if let Some(name) = self.env.find(&ident.key) {
-                //     Ok(Pattern::new(
-                //         PatternKind::Ident(ScopedIdent::new(name, ident.key, ident.span), {
-                //             if let Some(hint) = hint {
-                //                 Some(self.resolve_hint(hint)?)
-                //             } else {
-                //                 None
-                //             }
-                //         }),
-                //         pat.span,
-                //     ))
-                // } else {
-                //     Err(ResError::new(
-                //         ResErrorKind::UnboundName(ident.key),
-                //         ident.span,
-                //     ))
-                // }
-            }
-            ast::PatternKind::Wildcard => Ok(Pattern::new(PatternKind::Wildcard, pat.span)),
-            // ast::PatternKind::Tuple(pats) => Ok(Pattern::new(
-            //     PatternKind::Tuple(
-            //         pats.iter()
-            //             .map(|p| self.resolve_pattern(p))
-            //             .collect::<ResResult<Vec<Pattern>>>()?,
-            //     ),
-            //     pat.span,
-            // )),
-            ast::PatternKind::List(pats) => Ok(Pattern::new(
-                PatternKind::List(
-                    pats.iter()
-                        .map(|p| self.resolve_pattern(p))
-                        .collect::<ResResult<Vec<Pattern>>>()?,
                 ),
-                pat.span,
+                vec![],
             )),
-            ast::PatternKind::Pair(head, tail) => Ok(Pattern::new(
-                PatternKind::Pair(self.resolve_pattern(head)?, self.resolve_pattern(tail)?),
-                pat.span,
-            )),
-            ast::PatternKind::Lit(lit) => Ok(Pattern::new(
-                PatternKind::Lit(match lit {
-                    ast::Lit::Byte(b) => Lit::Byte(*b),
-                    ast::Lit::Int(n) => Lit::Int(*n),
-                    ast::Lit::Rational(r) => Lit::Rational(*r),
-                    ast::Lit::Real(r) => Lit::Real(*r),
-                    ast::Lit::Bool(b) => Lit::Bool(*b),
-                    ast::Lit::String(s) => Lit::String(*s),
-                    ast::Lit::Char(c) => Lit::Char(*c),
-                }),
-                pat.span,
-            )),
-            ast::PatternKind::Unit => Ok(Pattern::new(PatternKind::Unit, pat.span)),
+            ast::PatternKind::Unit => Ok((Pattern::new(PatternKind::Unit, pat.span), vec![])),
         }
     }
 
     fn resolve_hint(&mut self, hint: &ast::TypeHint) -> ResResult<TypeHint> {
         match hint.kind.as_ref() {
             ast::TypeHintKind::Ident(ident) => {
-                if let Some(name) = self.env.find(&ident.str) {
-                    Ok(TypeHint::new(
-                        TypeHintKind::Ident(ScopedIdent::new(name, ident.str, ident.span)),
-                        hint.span,
-                    ))
-                } else {
-                    Err(ResError::new(
-                        ResErrorKind::UnboundName(ident.str),
-                        ident.span,
-                    ))
-                }
+                todo!()
+                // if let Some(name) = self.env.find(&ident.name) {
+                //     Ok(TypeHint::new(
+                //         TypeHintKind::Ident(Ident::new(name, ident.name, ident.span)),
+                //         hint.span,
+                //     ))
+                // } else {
+                //     Err(ResError::new(
+                //         ResErrorKind::UnboundName(ident.name),
+                //         ident.span,
+                //     ))
+                // }
             }
             ast::TypeHintKind::Byte => Ok(TypeHint::new(TypeHintKind::Byte, hint.span)),
             ast::TypeHintKind::Int => Ok(TypeHint::new(TypeHintKind::Int, hint.span)),

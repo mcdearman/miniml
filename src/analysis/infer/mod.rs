@@ -1,29 +1,15 @@
 use self::{
-    constraint::Constraint,
     context::Context,
     error::{InferResult, TypeError},
-    meta::Meta,
     meta_context::MetaContext,
     poly_type::PolyType,
     r#type::Type,
     registry::Registry,
     tir::*,
 };
-use crate::{
-    rename::nir,
-    utils::{
-        // ident::ScopedIdent,
-        intern::InternedString,
-        list::{self, List},
-        // scoped_intern::ScopedInterner,
-        span::Span,
-        unique_id::UniqueId,
-    },
-};
+use crate::{rename::nir, utils::intern::InternedString};
 use itertools::Itertools;
-use std::{collections::HashMap, vec};
 
-mod constraint;
 mod context;
 pub mod error;
 mod meta;
@@ -40,25 +26,68 @@ pub struct TypeSolver {
     ctx: Context,
     meta_ctx: MetaContext,
     reg: Registry,
-    builtins: HashMap<UniqueId, InternedString>,
-    constraints: Vec<Constraint>,
-    // scoped_interner: ScopedInterner,
 }
 
 impl TypeSolver {
-    pub fn new(
-        builtins: HashMap<UniqueId, InternedString>,
-        // scoped_interner: ScopedInterner,
-    ) -> Self {
+    pub fn new() -> Self {
         let mut meta_ctx = MetaContext::new();
+        let mut ctx = Context::new();
+
+        ctx.insert(
+            "neg".into(),
+            PolyType::new(vec![], Type::Lambda(vec![Type::Int], Box::new(Type::Int))),
+        );
+
+        ctx.insert(
+            "not".into(),
+            PolyType::new(vec![], Type::Lambda(vec![Type::Bool], Box::new(Type::Bool))),
+        );
+
+        ctx.insert(
+            "add".into(),
+            PolyType::new(
+                vec![],
+                Type::Lambda(vec![Type::Int, Type::Int], Box::new(Type::Int)),
+            ),
+        );
+
+        ctx.insert(
+            "sub".into(),
+            PolyType::new(
+                vec![],
+                Type::Lambda(vec![Type::Int, Type::Int], Box::new(Type::Int)),
+            ),
+        );
+
+        ctx.insert(
+            "mul".into(),
+            PolyType::new(
+                vec![],
+                Type::Lambda(vec![Type::Int, Type::Int], Box::new(Type::Int)),
+            ),
+        );
+
+        ctx.insert(
+            "div".into(),
+            PolyType::new(
+                vec![],
+                Type::Lambda(vec![Type::Int, Type::Int], Box::new(Type::Int)),
+            ),
+        );
+
+        ctx.insert(
+            "rem".into(),
+            PolyType::new(
+                vec![],
+                Type::Lambda(vec![Type::Int, Type::Int], Box::new(Type::Int)),
+            ),
+        );
+
         Self {
             src: "".into(),
-            ctx: Context::from_builtins(&builtins, &mut meta_ctx),
+            ctx,
             meta_ctx,
             reg: Registry::new(),
-            builtins,
-            constraints: vec![],
-            // scoped_interner,
         }
     }
 
@@ -117,8 +146,8 @@ impl TypeSolver {
                     span: decl.span,
                 })
             }
-            nir::DeclKind::Fn(name, params, fn_expr) => {
-                log::debug!("infer fn decl ({:?})", name);
+            nir::DeclKind::Fn(ident, params, fn_expr) => {
+                log::debug!("infer fn decl ({:?})", ident);
                 // to show that Γ ⊢ fn x = e0 in e1 : T' we need to show that
                 // Γ, x: gen(T) ⊢ e1 : T'
 
@@ -134,7 +163,7 @@ impl TypeSolver {
                 vars.push(meta_ret.clone());
                 let fn_poly = PolyType::new(vars.clone(), fn_ty.clone());
                 // let fn_ty = Type::Poly(fn_poly.clone());
-                self.ctx.insert(name, fn_poly.clone());
+                self.ctx.insert(ident.name, fn_poly.clone());
                 self.ctx.push();
 
                 let mut solved_params = vec![];
@@ -150,7 +179,7 @@ impl TypeSolver {
                 self.ctx.pop();
 
                 Ok(Decl {
-                    kind: DeclKind::Fn(*name, solved_params, solved_expr.clone()),
+                    kind: DeclKind::Fn(*ident, solved_params, solved_expr.clone()),
                     ty: fn_ty,
                     span: decl.span,
                 })
@@ -199,23 +228,23 @@ impl TypeSolver {
                     )),
                 }
             }
-            nir::ExprKind::Var(name) => {
+            nir::ExprKind::Var(ident) => {
                 // to show that Γ ⊢ x : T we need to show that
 
                 // x : σ ∈ Γ
-                log::debug!("infer var: {:?}", name.id);
-                if let Some(scm) = self.ctx.get(&name.id) {
+                log::debug!("infer var: {:?}", ident.name);
+                if let Some(scm) = self.ctx.get(&ident.name) {
                     // T = inst(σ)
                     log::debug!("var_scm: {:?}", scm);
                     let ty = scm.instantiate(&mut self.meta_ctx);
                     log::debug!("var_ty: {:?}", ty);
 
-                    Ok(Expr::new(ExprKind::Var(*name), ty, expr.span))
+                    Ok(Expr::new(ExprKind::Var(*ident), ty, expr.span))
                 } else {
                     Err(TypeError::from(format!(
                         "unbound variable: {:?} - \"{}\"",
                         expr,
-                        self.src[name.span].to_string()
+                        self.src[ident.span].to_string()
                     )))
                 }
             }
@@ -334,8 +363,8 @@ impl TypeSolver {
                     expr.span,
                 ))
             }
-            nir::ExprKind::Fn(name, params, expr, body) => {
-                log::debug!("infer fn ({:?})", name);
+            nir::ExprKind::Fn(ident, params, expr, body) => {
+                log::debug!("infer fn ({:?})", ident);
                 // to show that Γ ⊢ fn x = e0 in e1 : T' we need to show that
                 // Γ, x: gen(T) ⊢ e1 : T'
 
@@ -346,7 +375,7 @@ impl TypeSolver {
 
                 self.ctx.push();
                 self.ctx
-                    .insert(name.id, PolyType::new(vec![], fn_ty.clone()));
+                    .insert(ident.name, PolyType::new(vec![], fn_ty.clone()));
                 self.ctx.push();
                 let mut solved_params = vec![];
                 for (ty, pat) in param_tys.iter().zip(params.iter()) {
@@ -367,7 +396,7 @@ impl TypeSolver {
                 self.ctx.pop();
 
                 Ok(Expr::new(
-                    ExprKind::Fn(*name, solved_params, solved_expr, solved_body.clone()),
+                    ExprKind::Fn(*ident, solved_params, solved_expr, solved_body.clone()),
                     solved_body.ty,
                     expr.span,
                 ))
@@ -457,21 +486,22 @@ impl TypeSolver {
                 Type::Meta(self.meta_ctx.fresh()),
                 pat.span,
             )),
-            nir::PatternKind::Ident(name, hint) => {
-                log::debug!("infer pattern ident: {:?}", name.id);
+            nir::PatternKind::Ident(ident, hint) => {
+                log::debug!("infer pattern ident: {:?}", ident.name);
                 if generalize {
                     let scm = ty.generalize(&self.ctx);
                     log::debug!("gen scm: {:?}", scm);
-                    self.ctx.insert(name.id, scm.clone());
+                    self.ctx.insert(ident.name, scm.clone());
                     Ok(Pattern::new(
-                        PatternKind::Ident(*name),
+                        PatternKind::Ident(*ident),
                         Type::Poly(scm.clone()),
                         pat.span,
                     ))
                 } else {
-                    self.ctx.insert(name.id, PolyType::new(vec![], ty.clone()));
+                    self.ctx
+                        .insert(ident.name, PolyType::new(vec![], ty.clone()));
                     Ok(Pattern::new(
-                        PatternKind::Ident(*name),
+                        PatternKind::Ident(*ident),
                         ty.clone(),
                         pat.span,
                     ))

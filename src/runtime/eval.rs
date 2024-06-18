@@ -53,8 +53,8 @@ pub fn eval<'src>(
             }
             DeclKind::Fn(ident, params, expr, ..) => {
                 let value = Value::Lambda(env.clone(), params.clone(), expr.clone());
-                env.borrow_mut().insert(ident.id, value);
-                if ident.str.to_string() == "main" {
+                env.borrow_mut().insert(ident.name, value);
+                if ident.name.to_string() == "main" {
                     return Ok(RuntimePayload::Value(
                         eval_expr(src, env.clone(), expr.clone())?,
                         expr.ty.clone(),
@@ -86,7 +86,7 @@ fn eval_expr<'src>(
                 tir::Lit::Char(c) => Value::Lit(Lit::Char(*c)),
             },
             ExprKind::Var(ident) => {
-                if let Some(value) = env.borrow().get(&ident.id) {
+                if let Some(value) = env.borrow().get(&ident.name) {
                     value
                 } else {
                     return Err(RuntimeError::UnboundIdent(
@@ -159,7 +159,7 @@ fn eval_expr<'src>(
             ExprKind::Fn(ident, params, fn_expr, body) => {
                 let lam_env = Env::new_with_parent(env.clone());
                 let value = Value::Lambda(lam_env.clone(), params.clone(), fn_expr.clone());
-                env.borrow_mut().insert(ident.id, value);
+                env.borrow_mut().insert(ident.name, value);
                 expr = body.clone();
                 env = lam_env;
                 continue 'tco;
@@ -259,9 +259,9 @@ fn destructure_pattern(
             vec![],
         ),
         PatternKind::Ident(ident) => {
-            env.borrow_mut().insert(ident.id, val.clone());
+            env.borrow_mut().insert(ident.name, val.clone());
             log::debug!("inserted {:?} -> {:?}", ident, val);
-            bindings.push((ident.str, val.clone(), pat.ty.clone()));
+            bindings.push((ident.name, val.clone(), pat.ty.clone()));
             (true, bindings)
         }
         PatternKind::List(list) => match val {

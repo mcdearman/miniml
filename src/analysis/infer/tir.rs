@@ -1,15 +1,8 @@
+use super::{meta_context::MetaContext, r#type::Type};
+use crate::utils::{ident::Ident, intern::InternedString, span::Span};
 use itertools::{join, Itertools};
 use num_rational::Rational64;
-
-use super::{
-    meta_context::{self, MetaContext},
-    r#type::Type,
-};
-use crate::utils::{ident::Ident, intern::InternedString, span::Span};
-use std::{
-    collections::HashMap,
-    fmt::{Debug, Display},
-};
+use std::fmt::{Debug, Display};
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Root {
@@ -66,19 +59,10 @@ impl Decl {
     }
 }
 
-#[derive(Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum DeclKind {
     Let(Pattern, Expr),
     Fn(Ident, Vec<Pattern>, Expr),
-}
-
-impl Debug for DeclKind {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            DeclKind::Let(_, _) => todo!(),
-            DeclKind::Fn(_, _, _) => todo!(),
-        }
-    }
 }
 
 #[derive(Debug, Clone, PartialEq)]

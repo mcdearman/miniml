@@ -3,45 +3,22 @@ use std::fmt::{Debug, Display};
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Ident {
-    pub key: InternedString,
+    pub name: InternedString,
     pub span: Span,
 }
 
 impl Ident {
-    pub fn new(key: InternedString, span: Span) -> Self {
-        Self { key, span }
+    pub fn new(name: InternedString, span: Span) -> Self {
+        Self { name, span }
     }
 
     pub fn as_str(&self) -> &str {
-        &self.key
+        &self.name
     }
 }
 
 impl Display for Ident {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self.key)
+        write!(f, "{}", self.name)
     }
 }
-
-// #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-// pub struct ScopedIdent {
-//     pub id: UniqueId,
-//     pub key: InternedString,
-//     pub span: Span,
-// }
-
-// impl ScopedIdent {
-//     pub fn new(id: UniqueId, key: InternedString, span: Span) -> Self {
-//         Self { id, key, span }
-//     }
-
-//     pub fn as_str(&self) -> &str {
-//         &self.key
-//     }
-// }
-
-// impl Display for ScopedIdent {
-//     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-//         write!(f, "{}", self.key)
-//     }
-// }

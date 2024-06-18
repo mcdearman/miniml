@@ -25,7 +25,7 @@ fn test_helper(src: &str) -> tir::Root {
         panic!("resolution failed");
     }
     let nir = nir.unwrap();
-    let builtins = res.builtins();
+    // let builtins = res.builtins();
     // let scoped_interner = res.env().dump_to_interner();
     if !errors.is_empty() {
         for e in errors {
@@ -33,7 +33,7 @@ fn test_helper(src: &str) -> tir::Root {
         }
         panic!("resolution failed");
     }
-    let mut solver = TypeSolver::new(builtins.clone());
+    let mut solver = TypeSolver::new();
     let (tir, errors) = solver.infer(src, &nir);
     if !errors.is_empty() {
         for e in errors {

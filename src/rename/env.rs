@@ -3,87 +3,39 @@ use std::collections::HashMap;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Env {
-    frames: Vec<Frame>,
+    bindings: HashMap<InternedString, usize>,
 }
 
 impl Env {
-    pub fn new() -> Self {
-        Self {
-            frames: vec![Frame::new()],
-        }
-    }
-
-    pub fn new_with_builtins(builtins: HashMap<UniqueId, InternedString>) -> Self {
-        let mut bindings = HashMap::new();
-
-        for (id, name) in builtins {
-            bindings.insert(name, id);
-        }
-
-        Self {
-            frames: vec![Frame { bindings }],
-        }
-    }
-
-    pub fn push(&mut self) {
-        self.frames.push(Frame::new());
-    }
-
-    pub fn pop(&mut self) {
-        self.frames.pop();
-    }
-
-    pub fn define(&mut self, name: InternedString) -> UniqueId {
-        if let Some(frame) = self.frames.last_mut() {
-            frame.define(name)
-        } else {
-            let mut frame = Frame::new();
-            let id = frame.define(name);
-            self.frames.push(frame);
-            id
-        }
-    }
-
-    pub fn push_and_define(&mut self, name: InternedString) -> UniqueId {
-        let mut frame = Frame::new();
-        let id = frame.define(name);
-        self.frames.push(frame);
-        id
-    }
-
-    pub fn find(&self, name: &InternedString) -> Option<UniqueId> {
-        for frame in self.frames.iter().rev() {
-            if let Some(id) = frame.get(name) {
-                return Some(id);
-            }
-        }
-        None
-    }
-}
-
-#[derive(Debug, Clone, PartialEq)]
-pub struct Frame {
-    bindings: HashMap<InternedString, UniqueId>,
-}
-
-impl Frame {
     pub fn new() -> Self {
         Self {
             bindings: HashMap::new(),
         }
     }
 
-    pub fn define(&mut self, name: InternedString) -> UniqueId {
-        let id = UniqueId::gen();
-        self.bindings.insert(name, id);
-        id
+    pub fn push(&mut self, name: InternedString) -> InternedString {
+        if let Some(level) = self.bindings.get_mut(&name) {
+            *level += 1;
+            format!("{}{}", name, level).into()
+        } else {
+            self.bindings.insert(name.clone(), 0);
+            format!("{}0", name).into()
+        }
     }
 
-    pub fn insert(&mut self, name: InternedString, id: UniqueId) {
-        self.bindings.insert(name, id);
+    pub fn pop(&mut self, name: InternedString) {
+        if let Some(level) = self.bindings.get_mut(&name) {
+            if *level == 0 {
+                self.bindings.remove(&name);
+            } else {
+                *level -= 1;
+            }
+        }
     }
 
-    pub fn get(&self, name: &InternedString) -> Option<UniqueId> {
-        self.bindings.get(name).copied()
+    pub fn find(&self, name: &InternedString) -> Option<InternedString> {
+        self.bindings
+            .get(name)
+            .map(|level| format!("{}{}", name, level).into())
     }
 }
