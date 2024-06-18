@@ -20,13 +20,13 @@ impl MetaId {
 
 impl Debug for MetaId {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{:#x}", self.0)
+        write!(f, "{:#08x}", self.0)
     }
 }
 
 impl Display for MetaId {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{:#x}", self.0)
+        write!(f, "{:#08x}", self.0)
     }
 }
 
@@ -50,11 +50,8 @@ impl MetaContext {
         id
     }
 
-    pub fn get(&self, id: &MetaId) -> Option<Type> {
-        match self.bindings.get(id) {
-            Some(Meta::Bound(ty)) => Some(ty.clone()),
-            _ => None,
-        }
+    pub fn get(&self, id: &MetaId) -> Option<Meta> {
+        self.bindings.get(id).cloned()
     }
 
     pub fn bind(&mut self, id: &MetaId, ty: &Type) -> InferResult<()> {
