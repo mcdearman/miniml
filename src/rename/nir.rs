@@ -1,6 +1,8 @@
 use num_rational::Rational64;
 
-use crate::utils::{ident::Ident, intern::InternedString, span::Span};
+use crate::utils::{intern::InternedString, span::Span};
+
+use super::scoped_ident::ScopedIdent;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Root {
@@ -17,7 +19,7 @@ pub struct Decl {
 #[derive(Debug, Clone, PartialEq)]
 pub enum DeclKind {
     Let(Pattern, Expr),
-    Fn(Ident, Vec<Pattern>, Expr),
+    Fn(ScopedIdent, Vec<Pattern>, Expr),
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -38,13 +40,13 @@ impl Expr {
 #[derive(Debug, Clone, PartialEq)]
 pub enum ExprKind {
     Lit(Lit),
-    Var(Ident),
+    Var(ScopedIdent),
     Apply(Expr, Vec<Expr>),
     Lambda(Vec<Pattern>, Expr),
     Or(Expr, Expr),
     And(Expr, Expr),
     Let(Pattern, Expr, Expr),
-    Fn(Ident, Vec<Pattern>, Expr, Expr),
+    Fn(ScopedIdent, Vec<Pattern>, Expr, Expr),
     If(Expr, Expr, Expr),
     Match(Expr, Vec<(Pattern, Expr)>),
     List(Vec<Expr>),
@@ -70,7 +72,7 @@ impl Pattern {
 pub enum PatternKind {
     Wildcard,
     Lit(Lit),
-    Ident(Ident, Option<TypeHint>),
+    Ident(ScopedIdent, Option<TypeHint>),
     List(Vec<Pattern>),
     Pair(Pattern, Pattern),
     Unit,
@@ -100,7 +102,7 @@ pub enum TypeHintKind {
     Bool,
     String,
     Char,
-    Ident(Ident),
+    ScopedIdent(ScopedIdent),
     Fn(Vec<TypeHint>, TypeHint),
     List(TypeHint),
     Unit,

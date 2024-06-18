@@ -1,4 +1,4 @@
-use crate::utils::{intern::InternedString, unique_id::UniqueId};
+use crate::utils::intern::InternedString;
 use std::collections::HashMap;
 
 #[derive(Debug, Clone, PartialEq)]
@@ -13,14 +13,18 @@ impl Env {
         }
     }
 
-    pub fn push(&mut self, name: InternedString) -> InternedString {
+    pub fn push(&mut self, name: InternedString) -> usize {
         if let Some(level) = self.bindings.get_mut(&name) {
             *level += 1;
-            format!("{}{}", name, level).into()
+            *level
         } else {
             self.bindings.insert(name.clone(), 0);
-            format!("{}0", name).into()
+            0
         }
+    }
+
+    pub fn overwrite(&mut self, name: InternedString) {
+        self.bindings.insert(name, 0);
     }
 
     pub fn pop(&mut self, name: InternedString) {
@@ -33,9 +37,7 @@ impl Env {
         }
     }
 
-    pub fn find(&self, name: &InternedString) -> Option<InternedString> {
-        self.bindings
-            .get(name)
-            .map(|level| format!("{}{}", name, level).into())
+    pub fn find(&self, name: &InternedString) -> Option<usize> {
+        self.bindings.get(name).map(|level| *level)
     }
 }

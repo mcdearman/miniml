@@ -1,4 +1,5 @@
+mod env;
 pub mod error;
 pub mod nir;
 pub mod resolver;
-mod env;
+pub mod scoped_ident;

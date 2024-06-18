@@ -2,6 +2,7 @@ use super::{
     env::Env,
     error::{ResError, ResErrorKind, ResResult},
     nir::*,
+    scoped_ident::ScopedIdent,
 };
 use crate::{
     parse::ast,
@@ -47,7 +48,7 @@ impl Resolver {
     fn resolve_decl(&mut self, decl: &ast::Decl) -> ResResult<Decl> {
         match &decl.kind {
             ast::DeclKind::Def(ident, expr) => {
-                let (res_pat, _) = self.resolve_pattern(&ident)?;
+                let (res_pat, _) = self.resolve_pattern(&ident, true)?;
                 let res_expr = self.resolve_expr(&expr)?;
                 Ok(Decl {
                     kind: DeclKind::Let(res_pat, res_expr),
@@ -55,12 +56,12 @@ impl Resolver {
                 })
             }
             ast::DeclKind::Fn(ident, params, fn_expr) => {
-                let res_name = self.env.push(ident.name);
+                self.env.overwrite(ident.name);
 
                 let mut res_params = vec![];
                 let mut idents = vec![];
                 for p in params {
-                    match self.resolve_pattern(p) {
+                    match self.resolve_pattern(p, false) {
                         Ok((p, i)) => {
                             res_params.push(p);
                             idents.extend(i);
@@ -80,7 +81,11 @@ impl Resolver {
                 }
 
                 Ok(Decl {
-                    kind: DeclKind::Fn(Ident::new(res_name, ident.span), res_params, res_expr),
+                    kind: DeclKind::Fn(
+                        ScopedIdent::new(ident.name, 0, ident.span),
+                        res_params,
+                        res_expr,
+                    ),
                     span: decl.span,
                 })
             }
@@ -139,9 +144,9 @@ impl Resolver {
                 ast::Lit::Char(c) => Ok(Expr::new(ExprKind::Lit(Lit::Char(*c)), expr.span)),
             },
             ast::ExprKind::Var(ident) => {
-                if let Some(name) = self.env.find(&ident.name) {
+                if let Some(level) = self.env.find(&ident.name) {
                     Ok(Expr::new(
-                        ExprKind::Var(Ident::new(name, expr.span)),
+                        ExprKind::Var(ScopedIdent::new(ident.name, level, expr.span)),
                         expr.span.clone(),
                     ))
                 } else {
@@ -155,7 +160,7 @@ impl Resolver {
                 let mut res_params = vec![];
                 let mut idents = vec![];
                 for p in params {
-                    match self.resolve_pattern(p) {
+                    match self.resolve_pattern(p, false) {
                         Ok((p, i)) => {
                             res_params.push(p);
                             idents.extend(i);
@@ -187,10 +192,10 @@ impl Resolver {
             )),
             ast::ExprKind::UnaryOp(op, op_expr) => {
                 let name = InternedString::from(*op);
-                let ident = Ident::new(name, op.span);
+                let ident = ScopedIdent::new(name, 0, op.span);
                 Ok(Expr::new(
                     ExprKind::Apply(
-                        Expr::new(ExprKind::Var(ident.clone()), op.span),
+                        Expr::new(ExprKind::Var(ident), op.span),
                         vec![self.resolve_expr(op_expr)?],
                     ),
                     expr.span,
@@ -198,10 +203,10 @@ impl Resolver {
             }
             ast::ExprKind::BinaryOp(op, lhs, rhs) => {
                 let name = InternedString::from(*op);
-                let ident = Ident::new(name, op.span);
+                let ident = ScopedIdent::new(name, 0, op.span);
                 Ok(Expr::new(
                     ExprKind::Apply(
-                        Expr::new(ExprKind::Var(ident.clone()), op.span),
+                        Expr::new(ExprKind::Var(ident), op.span),
                         vec![self.resolve_expr(lhs)?, self.resolve_expr(rhs)?],
                     ),
                     expr.span,
@@ -217,7 +222,7 @@ impl Resolver {
             )),
             ast::ExprKind::Let(pat, let_expr, body) => {
                 let res_expr = self.resolve_expr(&let_expr)?;
-                let (res_pat, idents) = self.resolve_pattern(pat)?;
+                let (res_pat, idents) = self.resolve_pattern(pat, false)?;
                 let res_body = self.resolve_expr(&body)?;
                 for ident in idents {
                     self.env.pop(ident.name);
@@ -229,12 +234,12 @@ impl Resolver {
                 ))
             }
             ast::ExprKind::Fn(ident, params, fn_expr, body) => {
-                let res_name = self.env.push(ident.name);
+                let level = self.env.push(ident.name);
 
                 let mut res_params = vec![];
                 let mut idents = vec![];
                 for p in params {
-                    match self.resolve_pattern(p) {
+                    match self.resolve_pattern(p, false) {
                         Ok((p, i)) => {
                             res_params.push(p);
                             idents.extend(i);
@@ -254,11 +259,11 @@ impl Resolver {
                 }
 
                 let res_body = self.resolve_expr(body)?;
-                self.env.pop(res_name);
+                self.env.pop(ident.name);
 
                 Ok(Expr::new(
                     ExprKind::Fn(
-                        Ident::new(res_name, ident.span),
+                        ScopedIdent::new(ident.name, level, ident.span),
                         res_params,
                         res_expr,
                         res_body,
@@ -278,7 +283,7 @@ impl Resolver {
                 let res_expr = self.resolve_expr(&expr)?;
                 let mut res_arms = vec![];
                 for (pat, body) in arms {
-                    let (res_pat, idents) = self.resolve_pattern(pat)?;
+                    let (res_pat, idents) = self.resolve_pattern(pat, false)?;
                     let res_body = self.resolve_expr(body)?;
                     for ident in idents {
                         self.env.pop(ident.name);
@@ -300,13 +305,23 @@ impl Resolver {
         }
     }
 
-    fn resolve_pattern(&mut self, pat: &ast::Pattern) -> ResResult<(Pattern, Vec<Ident>)> {
+    fn resolve_pattern(
+        &mut self,
+        pat: &ast::Pattern,
+        overwrite: bool,
+    ) -> ResResult<(Pattern, Vec<Ident>)> {
         match pat.kind.as_ref() {
             ast::PatternKind::Ident(ident, hint) => {
-                let res_name = self.env.push(ident.name);
+                let level = if overwrite {
+                    self.env.overwrite(ident.name);
+                    0
+                } else {
+                    self.env.push(ident.name)
+                };
+
                 Ok((
                     Pattern::new(
-                        PatternKind::Ident(Ident::new(res_name, ident.span), {
+                        PatternKind::Ident(ScopedIdent::new(ident.name, level, ident.span), {
                             if let Some(hint) = hint {
                                 Some(self.resolve_hint(hint)?)
                             } else {
@@ -325,7 +340,7 @@ impl Resolver {
                 let mut solved_pats = vec![];
                 let mut idents = vec![];
                 for p in pats {
-                    let (res_pat, res_idents) = self.resolve_pattern(p)?;
+                    let (res_pat, res_idents) = self.resolve_pattern(p, false)?;
                     idents.extend(res_idents);
                     solved_pats.push(res_pat);
                 }
@@ -335,8 +350,8 @@ impl Resolver {
                 ))
             }
             ast::PatternKind::Pair(head, tail) => {
-                let (res_head, head_idents) = self.resolve_pattern(head)?;
-                let (res_tail, tail_idents) = self.resolve_pattern(tail)?;
+                let (res_head, head_idents) = self.resolve_pattern(head, false)?;
+                let (res_tail, tail_idents) = self.resolve_pattern(tail, false)?;
                 Ok((
                     Pattern::new(PatternKind::Pair(res_head, res_tail), pat.span),
                     head_idents

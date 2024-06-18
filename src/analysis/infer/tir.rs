@@ -1,5 +1,8 @@
 use super::{meta_context::MetaContext, r#type::Type};
-use crate::utils::{ident::Ident, intern::InternedString, span::Span};
+use crate::{
+    rename::scoped_ident::ScopedIdent,
+    utils::{intern::InternedString, span::Span},
+};
 use itertools::{join, Itertools};
 use num_rational::Rational64;
 use std::fmt::{Debug, Display};
@@ -43,14 +46,14 @@ impl Decl {
                     span: self.span,
                 }
             }
-            DeclKind::Fn(name, params, fn_expr) => {
+            DeclKind::Fn(ident, params, fn_expr) => {
                 let zonked_params = params
                     .iter()
                     .map(|param| param.zonk(meta_ctx))
                     .collect_vec();
                 let zonked_expr = fn_expr.zonk(meta_ctx);
                 Decl {
-                    kind: DeclKind::Fn(*name, zonked_params, zonked_expr),
+                    kind: DeclKind::Fn(*ident, zonked_params, zonked_expr),
                     ty: self.ty.zonk(meta_ctx),
                     span: self.span,
                 }
@@ -62,7 +65,7 @@ impl Decl {
 #[derive(Debug, Clone, PartialEq)]
 pub enum DeclKind {
     Let(Pattern, Expr),
-    Fn(Ident, Vec<Pattern>, Expr),
+    Fn(ScopedIdent, Vec<Pattern>, Expr),
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -195,13 +198,13 @@ impl Expr {
 #[derive(Debug, Clone, PartialEq)]
 pub enum ExprKind {
     Lit(Lit),
-    Var(Ident),
+    Var(ScopedIdent),
     Apply(Expr, Vec<Expr>),
     Lambda(Vec<Pattern>, Expr),
     Or(Expr, Expr),
     And(Expr, Expr),
     Let(Pattern, Expr, Expr),
-    Fn(Ident, Vec<Pattern>, Expr, Expr),
+    Fn(ScopedIdent, Vec<Pattern>, Expr, Expr),
     If(Expr, Expr, Expr),
     Match(Expr, Vec<(Pattern, Expr)>),
     List(Vec<Expr>),
@@ -276,7 +279,7 @@ impl Display for Pattern {
 pub enum PatternKind {
     Wildcard,
     Lit(Lit),
-    Ident(Ident),
+    Ident(ScopedIdent),
     List(Vec<Pattern>),
     Pair(Pattern, Pattern),
     Unit,
