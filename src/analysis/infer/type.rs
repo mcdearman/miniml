@@ -4,7 +4,10 @@ use super::{
     meta_context::{MetaContext, MetaId},
     poly_type::PolyType,
 };
-use crate::utils::{intern::InternedString, unique_id::UniqueId};
+use crate::{
+    analysis::infer::meta_context::CTX,
+    utils::{intern::InternedString, unique_id::UniqueId},
+};
 use itertools::Itertools;
 use std::{
     collections::{HashMap, HashSet},
@@ -24,7 +27,6 @@ pub enum Type {
     Meta(Box<Meta>),
     Poly(PolyType),
     Lambda(Vec<Self>, Box<Self>),
-    // Qual(Box<Constraint>, Box<Self>),
     List(Box<Self>),
     Record(UniqueId, Vec<(InternedString, Self)>),
     Unit,
@@ -148,8 +150,10 @@ impl Display for Type {
                     }
                 },
                 Type::Poly(poly) => {
-                    for v in poly.metas {
-                         
+                    for mid in poly.metas {
+                        let tv = metas.len() as u32;
+                        let m = Meta::from(mid);
+                        metas.insert(tv, m);
                         // lowered_metas.push(lower(&Type::MetaRef(v), metas));
                     }
                     Type::Poly(PolyType::new(lowered_metas, lower(poly.ty.as_ref(), metas)))
@@ -171,7 +175,7 @@ impl Display for Type {
         }
 
         let mut vars = HashMap::new();
-        match lower(self.clone(), &mut vars) {
+        match lower(self, &mut vars) {
             Self::Byte => write!(f, "Byte"),
             Self::Int => write!(f, "Int"),
             Self::Rational => write!(f, "Rational"),
@@ -180,6 +184,7 @@ impl Display for Type {
             Self::String => write!(f, "String"),
             Self::Char => write!(f, "Char"),
             Self::MetaRef(n) => write!(f, "{}", n),
+            Self::Meta(m) => write!(f, "{:?}", m),
             Self::Poly(poly) => write!(f, "{}", poly),
             Self::Lambda(params, body) => {
                 if params.len() == 1 {

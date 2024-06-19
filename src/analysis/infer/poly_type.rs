@@ -2,10 +2,7 @@ use super::{
     meta_context::{MetaContext, MetaId},
     r#type::Type,
 };
-use crate::{
-    analysis::infer::meta::{self, Meta},
-    utils::unique_id::UniqueId,
-};
+use crate::analysis::infer::meta::Meta;
 use itertools::join;
 use std::{
     collections::{HashMap, HashSet},

@@ -1,3 +1,5 @@
+use once_cell::sync::Lazy;
+
 use super::{
     error::{InferResult, TypeError},
     meta::Meta,
@@ -30,7 +32,14 @@ impl Display for MetaId {
     }
 }
 
+impl From<MetaId> for Meta {
+    fn from(id: MetaId) -> Self {
+        unsafe { CTX.get(&id).expect("unbound meta id") }
+    }
+}
+
 static COUNTER: AtomicUsize = AtomicUsize::new(0);
+pub static mut CTX: Lazy<MetaContext> = Lazy::new(|| MetaContext::new());
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct MetaContext {
