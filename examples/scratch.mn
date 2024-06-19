@@ -129,14 +129,15 @@ map f xs =
   | [] -> []
   | (x::xs) -> f x :: map f xs
 
-fold : a b. ((a, b) -> a, a, [b]) -> a
-fold f acc [] = acc
-fold f acc (x :: xs) = fold f (f acc x) xs
+foldl : a b. ((a, b -> a), a, [b]) -> a
+foldl f acc [] = acc
+foldl f acc (x :: xs) = foldl f (f acc x) xs
 
-let fold (f : (a, b) -> a) (acc : a) (xs : [b]) : a = 
-  match xs
-  | [] -> acc
-  | (x::xs) -> fold f (f acc x) xs
+foldr : a b. ((b, a -> b), b, [a]) -> b
+foldr f acc [] = acc
+foldr f acc (x :: xs) = f x (foldr f acc xs)
+
+sum = foldr (+) 0
 
 binary_search : Int -> #[Int] -> Int
 let binary_search n xs =
