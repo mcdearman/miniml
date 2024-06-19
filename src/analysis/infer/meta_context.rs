@@ -55,7 +55,7 @@ impl MetaContext {
     }
 
     pub fn bind(&mut self, id: &MetaId, ty: &Type) -> InferResult<()> {
-        if *ty == Type::Meta(*id) {
+        if *ty == Type::MetaRef(*id) {
             Ok(())
         } else if ty.free_vars().contains(&id) {
             Err(TypeError::from(format!(
@@ -70,7 +70,7 @@ impl MetaContext {
 
     pub fn force(&mut self, ty: &Type) -> Type {
         match ty {
-            Type::Meta(id) => match self.clone().bindings.get(id) {
+            Type::MetaRef(id) => match self.clone().bindings.get(id) {
                 Some(Meta::Bound(ty)) => {
                     let ty = self.force(ty);
                     self.bindings.insert(*id, Meta::Bound(ty.clone()));
@@ -109,13 +109,13 @@ impl MetaContext {
                 self.unify(b1, b2)
             }
             (Type::List(l1), Type::List(l2)) => self.unify(l1, l2),
-            (_, Type::Meta(key)) => {
+            (_, Type::MetaRef(key)) => {
                 self.bind(key, &t1)?;
                 log::debug!("bind: {:?} to {:?}", key, t1);
                 // log::debug!("meta_ctx: {:#?}", self);
                 Ok(())
             }
-            (Type::Meta(key), _) => {
+            (Type::MetaRef(key), _) => {
                 self.bind(key, &t2)?;
                 log::debug!("bind: {:?} to {:?}", key, t2);
                 // log::debug!("meta_ctx: {:#?}", self);

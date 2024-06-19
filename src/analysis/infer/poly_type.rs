@@ -14,8 +14,8 @@ use std::{
 
 #[derive(Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct PolyType {
-    metas: Vec<MetaId>,
-    ty: Box<Type>,
+    pub metas: Vec<MetaId>,
+    pub ty: Box<Type>,
 }
 
 impl PolyType {
@@ -41,11 +41,11 @@ impl PolyType {
     pub fn instantiate(&self, meta_ctx: &mut MetaContext) -> Type {
         fn substitute(ty: &Type, subst: &HashMap<u32, Type>, meta_ctx: &mut MetaContext) -> Type {
             match ty {
-                Type::Meta(id) => match meta_ctx.get(id) {
+                Type::MetaRef(id) => match meta_ctx.get(id) {
                     Some(Meta::Bound(ty)) => substitute(&ty, subst, meta_ctx),
                     Some(Meta::Unbound(tv)) => match subst.get(&tv) {
                         Some(t) => t.clone(),
-                        None => Type::Meta(*id),
+                        None => Type::MetaRef(*id),
                     },
                     None => panic!("dangling meta reference"),
                 },
@@ -73,7 +73,7 @@ impl PolyType {
             let id = meta_ctx.fresh();
             match meta_ctx.get(m) {
                 Some(Meta::Unbound(tv)) => {
-                    subst.insert(tv, Type::Meta(id));
+                    subst.insert(tv, Type::MetaRef(id));
                 }
                 _ => continue,
             }

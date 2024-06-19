@@ -1,5 +1,6 @@
 use super::{
     context::Context,
+    meta::Meta,
     meta_context::{MetaContext, MetaId},
     poly_type::PolyType,
 };
@@ -19,7 +20,8 @@ pub enum Type {
     Bool,
     String,
     Char,
-    Meta(MetaId),
+    MetaRef(MetaId),
+    Meta(Box<Meta>),
     Poly(PolyType),
     Lambda(Vec<Self>, Box<Self>),
     // Qual(Box<Constraint>, Box<Self>),
@@ -51,7 +53,7 @@ impl Type {
 
     pub(super) fn free_vars(&self) -> HashSet<MetaId> {
         match self {
-            Self::Meta(n) => vec![n.clone()].into_iter().collect(),
+            Self::MetaRef(n) => vec![n.clone()].into_iter().collect(),
             Self::Lambda(params, body) => params
                 .iter()
                 .fold(HashSet::new(), |acc, ty| {
@@ -75,6 +77,13 @@ impl Type {
             Type::String => Type::String,
             Type::Char => Type::Char,
             Type::Unit => Type::Unit,
+            Type::MetaRef(n) => {
+                if let Some(m) = meta_ctx.get(&n) {
+                    Type::Meta(Box::new(m))
+                } else {
+                    Type::MetaRef(n)
+                }
+            }
             m @ Type::Meta(_) => m,
             Type::Poly(poly) => Type::Poly(poly.clone()),
             Type::Lambda(params, body) => Type::Lambda(
@@ -124,38 +133,40 @@ impl Debug for Type {
 
 impl Display for Type {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        fn lower(ty: Type, metas: &mut HashMap<MetaId, MetaId>) -> Type {
+        fn lower(ty: &Type, metas: &mut HashMap<u32, u32>) -> Type {
             match ty {
-                Type::Byte
-                | Type::Int
-                | Type::Rational
-                | Type::Real
-                | Type::Bool
-                | Type::String
-                | Type::Char
-                | Type::Unit => ty,
-                Type::Meta(id) => {
-                    if let Some(lowered) = metas.get(&id) {
-                        Type::Meta(lowered.clone())
-                    } else {
-                        let new_id = MetaId::gen();
-                        metas.insert(id, new_id);
-                        Type::Meta(id)
+                Type::Meta(m) => match m.as_ref() {
+                    Meta::Bound(ty) => lower(ty, metas),
+                    Meta::Unbound(tv) => {
+                        if let Some(lowered) = metas.get(tv) {
+                            Type::Meta(Box::new(Meta::Unbound(*lowered)))
+                        } else {
+                            let id = metas.len() as u32;
+                            metas.insert(*tv, id);
+                            Type::Meta(Box::new(Meta::Unbound(id)))
+                        }
                     }
+                },
+                Type::Poly(poly) => {
+                    for v in poly.metas {
+                         
+                        // lowered_metas.push(lower(&Type::MetaRef(v), metas));
+                    }
+                    Type::Poly(PolyType::new(lowered_metas, lower(poly.ty.as_ref(), metas)))
                 }
-                Type::Poly(poly) => Type::Poly(poly),
                 Type::Lambda(params, body) => Type::Lambda(
-                    params.iter().map(|p| lower(p.clone(), metas)).collect_vec(),
-                    Box::new(lower(*body, metas)),
+                    params.iter().map(|p| lower(p, metas)).collect_vec(),
+                    Box::new(lower(body, metas)),
                 ),
-                Type::List(list_ty) => Type::List(Box::new(lower(*list_ty, metas))),
-                Type::Record(name, fields) => {
-                    let mut lowered_fields = vec![];
-                    for (k, v) in fields {
-                        lowered_fields.push((k.clone(), lower(v, metas)));
-                    }
-                    Type::Record(name, lowered_fields)
-                }
+                // Type::List(list_ty) => Type::List(Box::new(lower(*list_ty, metas))),
+                // Type::Record(name, fields) => {
+                //     let mut lowered_fields = vec![];
+                //     for (k, v) in fields {
+                //         lowered_fields.push((k.clone(), lower(v, metas)));
+                //     }
+                //     Type::Record(name, lowered_fields)
+                // }
+                _ => *ty,
             }
         }
 
@@ -168,7 +179,7 @@ impl Display for Type {
             Self::Bool => write!(f, "Bool"),
             Self::String => write!(f, "String"),
             Self::Char => write!(f, "Char"),
-            Self::Meta(n) => write!(f, "{}", n),
+            Self::MetaRef(n) => write!(f, "{}", n),
             Self::Poly(poly) => write!(f, "{}", poly),
             Self::Lambda(params, body) => {
                 if params.len() == 1 {

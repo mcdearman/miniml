@@ -152,10 +152,10 @@ impl TypeSolver {
                 // Γ, x: gen(T) ⊢ e1 : T'
 
                 let param_vars = params.iter().map(|_| self.meta_ctx.fresh()).collect_vec();
-                let param_tys = param_vars.iter().map(|id| Type::Meta(*id)).collect_vec();
+                let param_tys = param_vars.iter().map(|id| Type::MetaRef(*id)).collect_vec();
 
                 let meta_ret = self.meta_ctx.fresh();
-                let ty_ret = Type::Meta(meta_ret);
+                let ty_ret = Type::MetaRef(meta_ret);
                 let fn_ty = Type::Lambda(param_tys.clone(), Box::new(ty_ret.clone()));
                 log::debug!("decl_fn_ty: {:?}", fn_ty);
 
@@ -254,7 +254,7 @@ impl TypeSolver {
                 // T = newvar
 
                 // Γ, x : T ⊢ e : T'
-                let param_types = vec![Type::Meta(self.meta_ctx.fresh()); params.len()];
+                let param_types = vec![Type::MetaRef(self.meta_ctx.fresh()); params.len()];
                 log::debug!("lambda_param_types: {:?}", param_types);
                 self.ctx.push();
                 let mut solved_params = vec![];
@@ -297,7 +297,7 @@ impl TypeSolver {
                 );
 
                 // T' = newvar
-                let ty_ret = Type::Meta(self.meta_ctx.fresh());
+                let ty_ret = Type::MetaRef(self.meta_ctx.fresh());
                 log::debug!("app_ty_ret: {:?}", ty_ret);
 
                 // unify(T0, T1 -> T')
@@ -368,8 +368,8 @@ impl TypeSolver {
                 // to show that Γ ⊢ fn x = e0 in e1 : T' we need to show that
                 // Γ, x: gen(T) ⊢ e1 : T'
 
-                let param_tys = vec![Type::Meta(self.meta_ctx.fresh()); params.len()];
-                let ty_ret = Type::Meta(self.meta_ctx.fresh());
+                let param_tys = vec![Type::MetaRef(self.meta_ctx.fresh()); params.len()];
+                let ty_ret = Type::MetaRef(self.meta_ctx.fresh());
                 let fn_ty = Type::Lambda(param_tys.clone(), Box::new(ty_ret.clone()));
                 log::debug!("fn_ty: {:?}", fn_ty);
 
@@ -419,7 +419,7 @@ impl TypeSolver {
             nir::ExprKind::Match(expr, arms) => {
                 log::debug!("infer match");
                 let solved_expr = self.infer_expr(expr)?;
-                let ty = Type::Meta(self.meta_ctx.fresh());
+                let ty = Type::MetaRef(self.meta_ctx.fresh());
                 let mut solved_arms = vec![];
                 for (pat, body) in arms {
                     self.ctx.push();
@@ -452,7 +452,7 @@ impl TypeSolver {
                 ))
             }
             nir::ExprKind::List(exprs) => {
-                let ty = Type::Meta(self.meta_ctx.fresh());
+                let ty = Type::MetaRef(self.meta_ctx.fresh());
 
                 let solved_exprs = exprs
                     .iter()
@@ -483,7 +483,7 @@ impl TypeSolver {
         match pat.kind.as_ref() {
             nir::PatternKind::Wildcard => Ok(Pattern::new(
                 PatternKind::Wildcard,
-                Type::Meta(self.meta_ctx.fresh()),
+                Type::MetaRef(self.meta_ctx.fresh()),
                 pat.span,
             )),
             nir::PatternKind::Ident(ident, hint) => {
@@ -546,7 +546,7 @@ impl TypeSolver {
             },
             nir::PatternKind::List(pats) => {
                 log::debug!("infer list pat: {:?}", ty);
-                let elem_ty = Type::Meta(self.meta_ctx.fresh());
+                let elem_ty = Type::MetaRef(self.meta_ctx.fresh());
                 let list_ty = Type::List(Box::new(elem_ty.clone()));
                 let solved_pats = pats
                     .iter()
@@ -563,7 +563,7 @@ impl TypeSolver {
                 ))
             }
             nir::PatternKind::Pair(lhs, rhs) => {
-                let elem_ty = Type::Meta(self.meta_ctx.fresh());
+                let elem_ty = Type::MetaRef(self.meta_ctx.fresh());
                 let list_ty = Type::List(Box::new(elem_ty.clone()));
                 let solved_lhs = self.infer_pattern(lhs, &elem_ty, generalize)?;
                 let solved_rhs = self.infer_pattern(rhs, &list_ty, generalize)?;
