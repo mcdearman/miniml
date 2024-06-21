@@ -102,40 +102,39 @@ let peek_char lexer =
   else
     None
 
-let next_token (lexer : Lexer) : Token = 
-  match peek_char lexer with
-  | None -> { kind = Eof, span = { start = lexer.pos, end = lexer.pos } }
-  | Some c -> 
-    if is_whitespace c then
-      let start = lexer.pos
-      let lexer' = consume_whitespace lexer
-      { kind = Whitespace, span = { start, end = lexer'.pos } }
-    else
-      let start = lexer.pos
-      let end = lexer.pos + 1
-      let lexer' = { lexer with pos = lexer.pos + 1 }
-      match c with
-      | '+' -> { kind = Plus, span = Span { start, end } }
-      | '-' -> { kind = Minus, span = { start, end } }
-      | '*' -> { kind = Star, span = { start, end } }
-      | '/' -> { kind = Slash, span = { start, end } }
-      | '%' -> { kind = Percent, span = { start, end } }
-      | '^' -> { kind = Caret, span = { start, end } }
-      | '\\' -> { kind = Backslash, span = { start, end } }
-      | '(' -> { kind = LParen, span = { start, end } }
-      | ')' -> { kind = RParen, span = { start, end } }
-      | '[' -> { kind = LBrack, span = { start, end } }
-      | ']' -> { kind = RBrack, span = { start, end } }
-      | '{' -> { kind = LBrace, span = { start, end } }
-      | '}' -> { kind = RBrace, span = { start, end } }
-      | ',' -> { kind = Comma, span = { start, end } }
-      | '.' -> { kind = Period, span = { start, end } }
-      | ':' -> { kind = Colon, span = { start, end } }
-      | ';' -> { kind = Semicolon, span = { start, end } }
-      | _ -> error "unimplemented"
+next_token : Lexer -> Token = 
+next_token None -> { kind = Eof, span = { start = lexer.pos, end = lexer.pos } }
+next_token Some c -> 
+  if is_whitespace c then
+    let start = lexer.pos
+    let lexer' = consume_whitespace lexer
+    { kind = Whitespace, span = { start, end = lexer'.pos } }
+  else
+    let start = lexer.pos
+    let end = lexer.pos + 1
+    let lexer' = { lexer with pos = lexer.pos + 1 }
+    match c
+    | '+' -> { kind = Plus, span = Span { start, end } }
+    | '-' -> { kind = Minus, span = { start, end } }
+    | '*' -> { kind = Star, span = { start, end } }
+    | '/' -> { kind = Slash, span = { start, end } }
+    | '%' -> { kind = Percent, span = { start, end } }
+    | '^' -> { kind = Caret, span = { start, end } }
+    | '\\' -> { kind = Backslash, span = { start, end } }
+    | '(' -> { kind = LParen, span = { start, end } }
+    | ')' -> { kind = RParen, span = { start, end } }
+    | '[' -> { kind = LBrack, span = { start, end } }
+    | ']' -> { kind = RBrack, span = { start, end } }
+    | '{' -> { kind = LBrace, span = { start, end } }
+    | '}' -> { kind = RBrace, span = { start, end } }
+    | ',' -> { kind = Comma, span = { start, end } }
+    | '.' -> { kind = Period, span = { start, end } }
+    | ':' -> { kind = Colon, span = { start, end } }
+    | ';' -> { kind = Semicolon, span = { start, end } }
+    | _ -> error "unimplemented"
 
-type Expr = 
-  | Int Int
+data Expr
+  = Int Int
   | Real Real
   | Bool Bool
   | Ident String 
