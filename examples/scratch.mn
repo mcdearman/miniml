@@ -12,7 +12,8 @@ true -- Bool
 -- or repl, you can use expressions at the top level. You can think of 
 -- this as a shorthand for `let main args = <expr>`. In files, the main 
 -- function must be defined explicitly:
-let main (args : [String]) : () = ()
+main : #[String] -> ()
+main args = ()
 
 -- Bindings are immutable by default.
 let x = 1
@@ -81,11 +82,13 @@ let gcd a b =
   else gcd b (a % b)
 
 -- with type annotations
-let gcd (a : Int) (b : Int) : Int = 
+gcd : Int -> Int -> Int
+gcd a b = 
   if b = 0 then a 
   else gcd b (a % b)
 
-let fib (n : Int) : Int = 
+fib : Int -> Int
+fib n = 
   if n <= 1 then n 
   else fib (n - 1) + fib (n - 2)
 
@@ -116,11 +119,11 @@ let gcd a b =
   | (a, b) if a > b -> gcd b (a % b)
   | (a, b) -> gcd a (b % a)
 
-gcd : (Int, Int) -> Int
+gcd : Int -> Int -> Int
 gcd a 0 = a
 gcd a b = gcd b (a % b)
 
-map : a b. (a -> b, [a]) -> [b]
+map : a b. a -> b -> [a] -> [b]
 map f [] = []
 map f (x :: xs) = f x :: map f xs
 
@@ -129,18 +132,22 @@ map f xs =
   | [] -> []
   | (x::xs) -> f x :: map f xs
 
-foldl : a b. ((a, b -> a), a, [b]) -> a
+(.) : a b c. (b -> c) -> (a -> b) -> a -> c
+f . g = \x -> f (g x)
+
+foldl : a b. (a -> b -> a) -> a -> [b] -> a
 foldl f acc [] = acc
 foldl f acc (x :: xs) = foldl f (f acc x) xs
 
-foldr : a b. ((b, a -> b), b, [a]) -> b
+foldr : a b. (a -> b -> b) -> b -> [a] -> b
 foldr f acc [] = acc
 foldr f acc (x :: xs) = f x (foldr f acc xs)
 
+sum : [Int] -> Int
 sum = foldr (+) 0
 
 binary_search : Int -> #[Int] -> Int
-let binary_search n xs =
+binary_search n xs =
   let loop l r =
     if l > r then -1
     else
@@ -161,3 +168,14 @@ let p = { name = "Alice", age = 30 }
 type Option a = None | Some a
 
 type List a = Empty | Pair a (List a)
+
+-- dependent types
+data Nat = Z | S Nat
+
+(+) : Nat -> Nat -> Nat
+Z + n = n
+(S m) + n = S (m + n)
+
+data Vec a n = Nil | Pair a (Vec a n)
+
+
