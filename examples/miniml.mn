@@ -1,14 +1,14 @@
 -- Bootstrapped compiler
 
 -- utils
-type Span = { start : Int, end : Int }
+data Span = { start : Int, end : Int }
 
-let span_to_string span src = 
+span_to_string span src = 
   let start = span.start
   let end = span.end
   stringSub src start (end - start)
 
-let span_to_line_col span src = 
+span_to_line_col span src = 
   let loop pos line col =
     if pos >= span.start then
       (line, col)
@@ -19,14 +19,14 @@ let span_to_line_col span src =
   in
   loop 0 0 0
 
-let span_to_line_col_string span src = 
+span_to_line_col_string span src = 
   let (line, col) = spanToLineCol span src
   format "{}:{}" (intToString line) (intToString col)
 
 -- Lexer
-type Token = { kind : TokenKind, span : Span }
+data Token = { kind : TokenKind, span : Span }
 
-type TokenKind
+data TokenKind
   = Eof
   | Whitespace
   | Comment
@@ -64,7 +64,7 @@ type TokenKind
   | Colon
   | Semicolon
 
-type Lexer = {
+data Lexer = {
   src : String,
   pos : Int,
 }
@@ -74,17 +74,17 @@ let init_lexer src = {
   pos = 0,
 }
 
-let is_whitespace c = c = ' ' or c = '\t' or c = '\n' or c = '\r'
+is_whitespace c = c = ' ' or c = '\t' or c = '\n' or c = '\r'
 
-let is_digit c = c >= '0' and c <= '9'
+is_digit c = c >= '0' and c <= '9'
 
-let is_alpha c = 
+is_alpha c = 
   (c >= 'a' and c <= 'z') or 
   (c >= 'A' and c <= 'Z')
 
-let is_alpha_num c = is_alpha c or is_digit c
+is_alpha_num c = is_alpha c or is_digit c
 
-let consume_whitespace lexer =
+consume_whitespace lexer =
   let loop pos =
     if pos < String.length lexer.src and 
       (lexer.src[pos] = ' ' or 
@@ -96,7 +96,7 @@ let consume_whitespace lexer =
   in
   { lexer with pos = loop lexer.pos }
 
-let peek_char lexer = 
+peek_char lexer = 
   if lexer.pos < String.length lexer.src then
     Some lexer.src[lexer.pos]
   else
