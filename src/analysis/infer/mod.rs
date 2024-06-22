@@ -18,6 +18,7 @@ mod poly_type;
 pub mod registry;
 pub mod tests;
 pub mod tir;
+pub mod ty_var;
 pub mod r#type;
 
 #[derive(Debug, Clone)]

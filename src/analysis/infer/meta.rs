@@ -33,9 +33,8 @@ impl Debug for Meta {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Self::Bound(ty) => write!(f, "{:?}", ty),
-            Self::Unbound(_) => write!(f, "{}", self),
+            Self::Unbound(id) => write!(f, "m{}", id),
         }
-        // write!(f, "{:?}", self.)
     }
 }
 

@@ -3,6 +3,7 @@ use super::{
     meta::Meta,
     meta_context::{MetaContext, MetaId},
     poly_type::PolyType,
+    ty_var::TyVar,
 };
 use crate::{
     analysis::infer::meta_context::CTX,
@@ -23,8 +24,8 @@ pub enum Type {
     Bool,
     String,
     Char,
-    MetaRef(MetaId),
-    Meta(Box<Meta>),
+    // MetaRef(MetaId),
+    Var(TyVar),
     Poly(PolyType),
     Lambda(Vec<Self>, Box<Self>),
     List(Box<Self>),
@@ -53,9 +54,10 @@ impl Type {
         )
     }
 
-    pub(super) fn free_vars(&self) -> HashSet<MetaId> {
+    pub(super) fn free_vars(&self) -> HashSet<TyVar> {
         match self {
-            Self::MetaRef(n) => vec![n.clone()].into_iter().collect(),
+            // Self::MetaRef(n) => vec![n.clone()].into_iter().collect(),
+            Self::Var(v) => vec![v.clone()].into_iter().collect(),
             Self::Lambda(params, body) => params
                 .iter()
                 .fold(HashSet::new(), |acc, ty| {
@@ -150,7 +152,7 @@ impl Display for Type {
                     }
                 },
                 Type::Poly(poly) => {
-                    for mid in poly.metas {
+                    for mid in poly.vars {
                         let tv = metas.len() as u32;
                         let m = Meta::from(mid);
                         metas.insert(tv, m);

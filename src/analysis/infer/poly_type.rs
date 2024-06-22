@@ -1,7 +1,4 @@
-use super::{
-    meta_context::{MetaContext, MetaId},
-    r#type::Type,
-};
+use super::{meta_context::MetaContext, r#type::Type, ty_var::TyVar};
 use crate::analysis::infer::meta::Meta;
 use itertools::join;
 use std::{
@@ -11,26 +8,26 @@ use std::{
 
 #[derive(Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct PolyType {
-    pub metas: Vec<MetaId>,
+    pub vars: Vec<TyVar>,
     pub ty: Box<Type>,
 }
 
 impl PolyType {
-    pub fn new(metas: Vec<MetaId>, ty: Type) -> Self {
+    pub fn new(metas: Vec<TyVar>, ty: Type) -> Self {
         Self {
-            metas,
+            vars: metas,
             ty: Box::new(ty),
         }
     }
 
     pub fn zonk(&self, meta_ctx: &mut MetaContext) -> PolyType {
-        Self::new(self.metas.clone(), self.ty.zonk(meta_ctx))
+        Self::new(self.vars.clone(), self.ty.zonk(meta_ctx))
     }
 
-    pub fn free_vars(&self) -> HashSet<MetaId> {
+    pub fn free_vars(&self) -> HashSet<TyVar> {
         self.ty
             .free_vars()
-            .difference(&self.metas.iter().cloned().collect())
+            .difference(&self.vars.iter().cloned().collect())
             .cloned()
             .collect()
     }
@@ -66,7 +63,7 @@ impl PolyType {
         }
 
         let mut subst = HashMap::new();
-        for m in self.metas.iter() {
+        for m in self.vars.iter() {
             let id = meta_ctx.fresh();
             match meta_ctx.get(m) {
                 Some(Meta::Unbound(tv)) => {
@@ -82,20 +79,20 @@ impl PolyType {
 
 impl Debug for PolyType {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        if self.metas.is_empty() {
+        if self.vars.is_empty() {
             write!(f, "{:?}", self.ty)
         } else {
-            write!(f, "{:?}. {:?}", self.metas, self.ty)
+            write!(f, "{:?}. {:?}", self.vars, self.ty)
         }
     }
 }
 
 impl Display for PolyType {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        if self.metas.is_empty() {
+        if self.vars.is_empty() {
             write!(f, "{}", self.ty)
         } else {
-            write!(f, "{}. {}", join(&self.metas, " "), self.ty)
+            write!(f, "{}. {}", join(&self.vars, " "), self.ty)
         }
     }
 }
