@@ -3,6 +3,7 @@ use super::{
     meta_context::{MetaContext, MetaId},
     poly_type::PolyType,
     r#type::Type,
+    ty_var::TyVar,
 };
 use crate::utils::intern::InternedString;
 use std::collections::{HashMap, HashSet};
@@ -42,7 +43,7 @@ impl Context {
         }
     }
 
-    pub(super) fn free_vars(&self) -> HashSet<MetaId> {
+    pub(super) fn free_vars(&self) -> HashSet<TyVar> {
         self.frames
             .iter()
             .map(|frame| frame.free_vars())
@@ -86,7 +87,7 @@ impl Frame {
         self.bindings.insert(name, scheme);
     }
 
-    pub(super) fn free_vars(&self) -> HashSet<MetaId> {
+    pub(super) fn free_vars(&self) -> HashSet<TyVar> {
         self.clone()
             .bindings
             .into_iter()

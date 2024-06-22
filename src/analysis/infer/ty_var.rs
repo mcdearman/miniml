@@ -1,4 +1,4 @@
-use std::fmt;
+use std::{fmt, sync::atomic::AtomicU32};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct TyVar {
@@ -14,6 +14,8 @@ impl TyVar {
         self.id
     }
 }
+
+static COUNTER: AtomicU32 = AtomicU32::new(0);
 
 #[rustfmt::skip]
 const ALPHABET: &[char] = &[
