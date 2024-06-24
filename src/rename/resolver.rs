@@ -1,3 +1,5 @@
+use itertools::Itertools;
+
 use super::{
     env::Env,
     error::{ResError, ResErrorKind, ResResult},
@@ -200,15 +202,19 @@ impl Resolver {
                 }))
                 // Ok(Expr::new(ExprKind::Lambda(res_params, res_expr), expr.span))
             }
-            ast::ExprKind::Apply(fun, args) => Ok(Expr::new(
-                ExprKind::Apply(
-                    self.resolve_expr(fun)?,
-                    args.iter()
-                        .map(|arg| self.resolve_expr(arg))
-                        .collect::<ResResult<Vec<Expr>>>()?,
-                ),
-                expr.span,
-            )),
+            ast::ExprKind::Apply(fun, args) => {
+                let res_fun = self.resolve_expr(fun)?;
+                let res_args = args
+                    .iter()
+                    .map(|arg| self.resolve_expr(arg))
+                    .collect::<Result<Vec<_>, _>>()?;
+                Ok(Expr::new(
+                    res_args.into_iter().fold(res_fun, |acc, arg| {
+                        Expr::new(ExprKind::Apply(acc, arg), expr.span)
+                    }),
+                    expr.span,
+                ))
+            }
             ast::ExprKind::UnaryOp(op, op_expr) => {
                 let name = InternedString::from(*op);
                 let ident = ScopedIdent::new(name, 0, op.span);
