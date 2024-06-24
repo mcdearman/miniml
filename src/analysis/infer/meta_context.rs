@@ -1,8 +1,10 @@
 use once_cell::sync::Lazy;
 
+use crate::analysis::infer::meta;
+
 use super::{
     error::{InferResult, TypeError},
-    meta::Meta,
+    meta::{Meta, MetaId},
     r#type::Type,
 };
 use std::{
@@ -12,29 +14,29 @@ use std::{
 };
 
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub struct MetaId(usize);
+pub struct MetaRef(usize);
 
-impl MetaId {
+impl MetaRef {
     pub fn gen() -> Self {
         Self(COUNTER.fetch_add(1, std::sync::atomic::Ordering::SeqCst))
     }
 }
 
-impl Debug for MetaId {
+impl Debug for MetaRef {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{:#08x}", self.0)
     }
 }
 
-impl Display for MetaId {
+impl Display for MetaRef {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{:#08x}", self.0)
     }
 }
 
-impl From<MetaId> for Meta {
-    fn from(id: MetaId) -> Self {
-        unsafe { CTX.get(&id).expect("unbound meta id") }
+impl From<MetaRef> for Meta {
+    fn from(id: MetaRef) -> Self {
+        unsafe { CTX.get(&id) }
     }
 }
 
@@ -43,7 +45,7 @@ pub static mut CTX: Lazy<MetaContext> = Lazy::new(|| MetaContext::new());
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct MetaContext {
-    bindings: HashMap<MetaId, Meta>,
+    bindings: HashMap<MetaRef, Meta>,
 }
 
 impl MetaContext {
@@ -53,27 +55,35 @@ impl MetaContext {
         }
     }
 
-    pub fn fresh(&mut self) -> MetaId {
-        let id = MetaId::gen();
+    pub fn fresh(&mut self) -> MetaRef {
+        let id = MetaRef::gen();
         self.bindings.insert(id, Meta::fresh());
         id
     }
 
-    pub fn get(&self, id: &MetaId) -> Option<Meta> {
-        self.bindings.get(id).cloned()
+    pub fn get(&self, meta_ref: &MetaRef) -> Meta {
+        self.bindings
+            .get(meta_ref)
+            .cloned()
+            .expect("dangling meta reference")
     }
 
-    pub fn bind(&mut self, id: &MetaId, ty: &Type) -> InferResult<()> {
-        if *ty == Type::MetaRef(*id) {
-            Ok(())
-        } else if ty.free_vars().contains(&id) {
-            Err(TypeError::from(format!(
-                "occurs check failed: {} occurs in {:?}",
-                id, ty
-            )))
-        } else {
-            self.bindings.insert(*id, Meta::Bound(ty.clone()));
-            Ok(())
+    pub fn bind(&mut self, meta_ref: &MetaRef, ty: &Type) -> InferResult<()> {
+        match self.get(meta_ref) {
+            Meta::Bound(t) => self.unify(&t, ty),
+            Meta::Unbound(id) => {
+                if *ty == Type::Meta(Box::new(Meta::Unbound(id))) {
+                    Ok(())
+                } else if ty.free_vars(self).contains(&id) {
+                    Err(TypeError::from(format!(
+                        "occurs check failed: {} occurs in {:?}",
+                        id, ty
+                    )))
+                } else {
+                    self.bindings.insert(*meta_ref, Meta::Bound(ty.clone()));
+                    Ok(())
+                }
+            }
         }
     }
 
@@ -118,27 +128,27 @@ impl MetaContext {
                 self.unify(b1, b2)
             }
             (Type::List(l1), Type::List(l2)) => self.unify(l1, l2),
-            (_, Type::MetaRef(key)) => {
-                self.bind(key, &t1)?;
-                log::debug!("bind: {:?} to {:?}", key, t1);
+            (t, Type::MetaRef(meta_ref)) => {
+                self.bind(meta_ref, &t1)?;
+                log::debug!("bind: {:?} to {:?}", meta_ref, t1);
                 // log::debug!("meta_ctx: {:#?}", self);
                 Ok(())
             }
-            (Type::MetaRef(key), _) => {
-                self.bind(key, &t2)?;
-                log::debug!("bind: {:?} to {:?}", key, t2);
+            (Type::MetaRef(meta_ref), _) => {
+                self.bind(meta_ref, &t2)?;
+                log::debug!("bind: {:?} to {:?}", meta_ref, t2);
                 // log::debug!("meta_ctx: {:#?}", self);
                 Ok(())
             }
-            (Type::Poly(p1), Type::Poly(p2)) => todo!(),
-            (Type::Poly(p), _) => {
-                let p = p.instantiate(self);
-                self.unify(&p, &t2)
-            }
-            (_, Type::Poly(p)) => {
-                let p = p.instantiate(self);
-                self.unify(&t1, &p)
-            }
+            // (Type::Poly(p1), Type::Poly(p2)) => todo!(),
+            // (Type::Poly(p), _) => {
+            //     let p = p.instantiate(self);
+            //     self.unify(&p, &t2)
+            // }
+            // (_, Type::Poly(p)) => {
+            //     let p = p.instantiate(self);
+            //     self.unify(&t1, &p)
+            // }
             _ => Err(TypeError::from(format!(
                 "cannot unify {:?} and {:?}",
                 t1, t2,

@@ -18,7 +18,6 @@ mod poly_type;
 pub mod registry;
 pub mod tests;
 pub mod tir;
-pub mod ty_var;
 pub mod r#type;
 
 #[derive(Debug, Clone)]
@@ -152,38 +151,39 @@ impl TypeSolver {
                 // to show that Γ ⊢ fn x = e0 in e1 : T' we need to show that
                 // Γ, x: gen(T) ⊢ e1 : T'
 
-                let param_vars = params.iter().map(|_| self.meta_ctx.fresh()).collect_vec();
-                let param_tys = param_vars.iter().map(|id| Type::MetaRef(*id)).collect_vec();
+                // let param_vars = params.iter().map(|_| self.meta_ctx.fresh()).collect_vec();
+                // let param_tys = param_vars.iter().map(|id| Type::MetaRef(*id)).collect_vec();
 
-                let meta_ret = self.meta_ctx.fresh();
-                let ty_ret = Type::MetaRef(meta_ret);
-                let fn_ty = Type::Lambda(param_tys.clone(), Box::new(ty_ret.clone()));
-                log::debug!("decl_fn_ty: {:?}", fn_ty);
+                // let meta_ret = self.meta_ctx.fresh();
+                // let ty_ret = Type::MetaRef(meta_ret);
+                // let fn_ty = Type::Lambda(param_tys.clone(), Box::new(ty_ret.clone()));
+                // log::debug!("decl_fn_ty: {:?}", fn_ty);
 
-                let mut vars = param_vars.iter().cloned().collect_vec();
-                vars.push(meta_ret.clone());
-                let fn_poly = PolyType::new(vars.clone(), fn_ty.clone());
-                // let fn_ty = Type::Poly(fn_poly.clone());
-                self.ctx.insert(ident.name, fn_poly.clone());
-                self.ctx.push();
+                // let mut vars = param_vars.iter().cloned().collect_vec();
+                // vars.push(meta_ret.clone());
+                // let fn_poly = PolyType::new(vars.clone(), fn_ty.clone());
+                // // let fn_ty = Type::Poly(fn_poly.clone());
+                // self.ctx.insert(ident.name, fn_poly.clone());
+                // self.ctx.push();
 
-                let mut solved_params = vec![];
-                for (ty, param) in param_tys.iter().zip(params.iter()) {
-                    let solved_pat = self.infer_pattern(param, ty, false)?;
-                    solved_params.push(solved_pat.clone());
-                    // self.meta_ctx.unify(&solved_pat.ty, &ty)?;
-                }
-                let solved_expr = self.infer_expr(fn_expr)?;
-                log::debug!("unify fn expr: {:?} and {:?}", solved_expr.ty, ty_ret);
-                self.meta_ctx.unify(&solved_expr.ty, &ty_ret)?;
+                // let mut solved_params = vec![];
+                // for (ty, param) in param_tys.iter().zip(params.iter()) {
+                //     let solved_pat = self.infer_pattern(param, ty, false)?;
+                //     solved_params.push(solved_pat.clone());
+                //     // self.meta_ctx.unify(&solved_pat.ty, &ty)?;
+                // }
+                // let solved_expr = self.infer_expr(fn_expr)?;
+                // log::debug!("unify fn expr: {:?} and {:?}", solved_expr.ty, ty_ret);
+                // self.meta_ctx.unify(&solved_expr.ty, &ty_ret)?;
 
-                self.ctx.pop();
+                // self.ctx.pop();
 
-                Ok(Decl {
-                    kind: DeclKind::Fn(*ident, solved_params, solved_expr.clone()),
-                    ty: fn_ty,
-                    span: decl.span,
-                })
+                // Ok(Decl {
+                //     kind: DeclKind::Fn(*ident, solved_params, solved_expr.clone()),
+                //     ty: fn_ty,
+                //     span: decl.span,
+                // })
+                todo!()
             }
         }
     }
@@ -490,12 +490,12 @@ impl TypeSolver {
             nir::PatternKind::Ident(ident, hint) => {
                 log::debug!("infer pattern ident: {:?}", ident.name);
                 if generalize {
-                    let scm = ty.generalize(&self.ctx);
+                    let scm = ty.generalize(&self.ctx, &self.meta_ctx);
                     log::debug!("gen scm: {:?}", scm);
                     self.ctx.insert(ident.name, scm.clone());
                     Ok(Pattern::new(
                         PatternKind::Ident(*ident),
-                        Type::Poly(scm.clone()),
+                        scm.instantiate(&mut self.meta_ctx),
                         pat.span,
                     ))
                 } else {

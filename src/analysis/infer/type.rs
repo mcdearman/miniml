@@ -1,21 +1,17 @@
 use super::{
     context::Context,
-    meta::Meta,
-    meta_context::{MetaContext, MetaId},
+    meta::{Meta, MetaId},
+    meta_context::{MetaContext, MetaRef},
     poly_type::PolyType,
-    ty_var::TyVar,
 };
-use crate::{
-    analysis::infer::meta_context::CTX,
-    utils::{intern::InternedString, unique_id::UniqueId},
-};
+use crate::utils::{intern::InternedString, unique_id::UniqueId};
 use itertools::Itertools;
 use std::{
     collections::{HashMap, HashSet},
     fmt::{Debug, Display},
 };
 
-#[derive(Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum Type {
     Byte,
     Int,
@@ -24,9 +20,9 @@ pub enum Type {
     Bool,
     String,
     Char,
-    // MetaRef(MetaId),
-    Var(TyVar),
-    Poly(PolyType),
+    MetaRef(MetaRef),
+    Meta(Box<Meta>),
+    // Poly(PolyType),
     Lambda(Vec<Self>, Box<Self>),
     List(Box<Self>),
     Record(UniqueId, Vec<(InternedString, Self)>),
@@ -41,29 +37,32 @@ impl Type {
         }
     }
 
-    pub fn generalize(&self, ctx: &Context) -> PolyType {
+    pub fn generalize(&self, ctx: &Context, meta_ctx: &MetaContext) -> PolyType {
         log::debug!("generalize: {:?}", self);
-        log::debug!("free vars: {:?}", self.free_vars());
-        log::debug!("ctx free vars: {:?}", ctx.free_vars());
+        log::debug!("free vars: {:?}", self.free_vars(meta_ctx));
+        log::debug!("ctx free vars: {:?}", ctx.free_vars(meta_ctx));
         PolyType::new(
-            self.free_vars()
-                .difference(&ctx.free_vars())
+            self.free_vars(meta_ctx)
+                .difference(&ctx.free_vars(meta_ctx))
                 .cloned()
                 .collect(),
             self.clone(),
         )
     }
 
-    pub(super) fn free_vars(&self) -> HashSet<TyVar> {
+    pub(super) fn free_vars(&self, meta_ctx: &MetaContext) -> HashSet<MetaId> {
         match self {
-            // Self::MetaRef(n) => vec![n.clone()].into_iter().collect(),
-            Self::Var(v) => vec![v.clone()].into_iter().collect(),
+            Self::MetaRef(n) => match meta_ctx.get(n) {
+                Meta::Bound(ty) => ty.free_vars(meta_ctx),
+                Meta::Unbound(tv) => vec![tv].into_iter().collect(),
+            },
+
             Self::Lambda(params, body) => params
                 .iter()
                 .fold(HashSet::new(), |acc, ty| {
-                    acc.union(&ty.free_vars()).cloned().collect()
+                    acc.union(&ty.free_vars(meta_ctx)).cloned().collect()
                 })
-                .union(&body.free_vars())
+                .union(&body.free_vars(meta_ctx))
                 .cloned()
                 .collect(),
             _ => HashSet::new(),
@@ -81,15 +80,12 @@ impl Type {
             Type::String => Type::String,
             Type::Char => Type::Char,
             Type::Unit => Type::Unit,
-            Type::MetaRef(n) => {
-                if let Some(m) = meta_ctx.get(&n) {
-                    Type::Meta(Box::new(m))
-                } else {
-                    Type::MetaRef(n)
-                }
-            }
+            Type::MetaRef(n) => match meta_ctx.get(&n) {
+                Meta::Bound(ty) => ty.zonk(meta_ctx),
+                Meta::Unbound(tv) => Type::Meta(Box::new(Meta::Unbound(tv))),
+            },
             m @ Type::Meta(_) => m,
-            Type::Poly(poly) => Type::Poly(poly.clone()),
+            // Type::Poly(poly) => Type::Poly(poly.clone()),
             Type::Lambda(params, body) => Type::Lambda(
                 params.iter().map(|ty| ty.zonk(meta_ctx)).collect_vec(),
                 Box::new(body.zonk(meta_ctx)),
@@ -104,35 +100,6 @@ impl Type {
             ),
         }
     }
-}
-
-impl Debug for Type {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self)
-    }
-    // fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-    //     match self.clone() {
-    //         Self::Byte => write!(f, "Byte"),
-    //         Self::Int => write!(f, "Int"),
-    //         Self::Rational => write!(f, "Rational"),
-    //         Self::Real => write!(f, "Real"),
-    //         Self::Bool => write!(f, "Bool"),
-    //         Self::String => write!(f, "String"),
-    //         Self::Char => write!(f, "Char"),
-    //         Self::Meta(n) => write!(f, "{:?}", n),
-    //         Self::Poly(poly) => write!(f, "{:?}", poly),
-    //         Self::Lambda(params, body) => {
-    //             if params.len() == 1 {
-    //                 write!(f, "{:?} -> {:?}", params[0], body)
-    //             } else {
-    //                 write!(f, "({:?}) -> {:?}", params.iter().format(", "), body)
-    //             }
-    //         }
-    //         Self::List(ty) => write!(f, "[{:?}]", ty),
-    //         Self::Record(name, fields) => write!(f, "{:?} = {:?}", name, fields),
-    //         Self::Unit => write!(f, "()"),
-    //     }
-    // }
 }
 
 impl Display for Type {
@@ -151,15 +118,15 @@ impl Display for Type {
                         }
                     }
                 },
-                Type::Poly(poly) => {
-                    for mid in poly.vars {
-                        let tv = metas.len() as u32;
-                        let m = Meta::from(mid);
-                        metas.insert(tv, m);
-                        // lowered_metas.push(lower(&Type::MetaRef(v), metas));
-                    }
-                    Type::Poly(PolyType::new(lowered_metas, lower(poly.ty.as_ref(), metas)))
-                }
+                // Type::Poly(poly) => {
+                //     for mid in poly.vars {
+                //         let tv = metas.len() as u32;
+                //         let m = Meta::from(mid);
+                //         metas.insert(tv, m);
+                //         // lowered_metas.push(lower(&Type::MetaRef(v), metas));
+                //     }
+                //     Type::Poly(PolyType::new(lowered_metas, lower(poly.ty.as_ref(), metas)))
+                // }
                 Type::Lambda(params, body) => Type::Lambda(
                     params.iter().map(|p| lower(p, metas)).collect_vec(),
                     Box::new(lower(body, metas)),
@@ -172,7 +139,7 @@ impl Display for Type {
                 //     }
                 //     Type::Record(name, lowered_fields)
                 // }
-                _ => *ty,
+                _ => ty.clone(),
             }
         }
 
@@ -187,7 +154,7 @@ impl Display for Type {
             Self::Char => write!(f, "Char"),
             Self::MetaRef(n) => write!(f, "{}", n),
             Self::Meta(m) => write!(f, "{:?}", m),
-            Self::Poly(poly) => write!(f, "{}", poly),
+            // Self::Poly(poly) => write!(f, "{}", poly),
             Self::Lambda(params, body) => {
                 if params.len() == 1 {
                     write!(f, "{} -> {}", params[0], body)

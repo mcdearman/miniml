@@ -4,10 +4,12 @@ use std::{
     sync::atomic::AtomicU32,
 };
 
+pub type MetaId = u32;
+
 #[derive(Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum Meta {
     Bound(Type),
-    Unbound(u32),
+    Unbound(MetaId),
 }
 
 static COUNTER: AtomicU32 = AtomicU32::new(0);
@@ -50,7 +52,7 @@ const ALPHABET: &[char] = &[
 impl Display for Meta {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Self::Bound(ty) => write!(f, "{}", ty),
+            Self::Bound(ty) => write!(f, "{:?}", ty),
             Self::Unbound(id) => {
                 let id = u32::from(*id) as usize;
                 if id < ALPHABET.len() {

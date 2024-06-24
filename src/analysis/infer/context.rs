@@ -1,9 +1,8 @@
 use super::{
-    meta::Meta,
-    meta_context::{MetaContext, MetaId},
+    meta::{self, Meta, MetaId},
+    meta_context::{MetaContext, MetaRef},
     poly_type::PolyType,
     r#type::Type,
-    ty_var::TyVar,
 };
 use crate::utils::intern::InternedString;
 use std::collections::{HashMap, HashSet};
@@ -43,10 +42,10 @@ impl Context {
         }
     }
 
-    pub(super) fn free_vars(&self) -> HashSet<TyVar> {
+    pub(super) fn free_vars(&self, meta_ctx: &MetaContext) -> HashSet<MetaId> {
         self.frames
             .iter()
-            .map(|frame| frame.free_vars())
+            .map(|frame| frame.free_vars(meta_ctx))
             .fold(HashSet::new(), |acc, set| {
                 acc.union(&set).cloned().collect()
             })
@@ -87,11 +86,11 @@ impl Frame {
         self.bindings.insert(name, scheme);
     }
 
-    pub(super) fn free_vars(&self) -> HashSet<TyVar> {
+    pub(super) fn free_vars(&self, meta_ctx: &MetaContext) -> HashSet<MetaId> {
         self.clone()
             .bindings
             .into_iter()
-            .map(|(_, scheme)| scheme.free_vars())
+            .map(|(_, scheme)| scheme.free_vars(meta_ctx))
             .fold(HashSet::new(), |acc, set| {
                 acc.union(&set).cloned().collect()
             })
