@@ -51,7 +51,7 @@ impl Resolver {
                 let (res_pat, _) = self.resolve_pattern(&ident, true)?;
                 let res_expr = self.resolve_expr(&expr)?;
                 Ok(Decl {
-                    kind: DeclKind::Let(res_pat, res_expr),
+                    kind: DeclKind::Def(res_pat, res_expr.is_lambda(), res_expr),
                     span: decl.span,
                 })
             }
@@ -80,14 +80,30 @@ impl Resolver {
                     self.env.pop(ident.name);
                 }
 
-                Ok(Decl {
-                    kind: DeclKind::Fn(
-                        ScopedIdent::new(ident.name, 0, ident.span),
-                        res_params,
-                        res_expr,
+                // Ok(Decl {
+                //     kind: DeclKind::Fn(
+                //         ScopedIdent::new(ident.name, 0, ident.span),
+                //         res_params,
+                //         res_expr,
+                //     ),
+                //     span: decl.span,
+                // })
+                // fold params into lambda expr
+                let lam = res_params.into_iter().rev().fold(res_expr, |acc, p| {
+                    Expr::new(ExprKind::Lambda(p, acc), decl.span)
+                });
+
+                Ok(Decl::new(
+                    DeclKind::Def(
+                        Pattern::new(
+                            PatternKind::Ident(ScopedIdent::new(ident.name, 0, ident.span), None),
+                            ident.span,
+                        ),
+                        true,
+                        lam,
                     ),
-                    span: decl.span,
-                })
+                    decl.span,
+                ))
             }
             ast::DeclKind::FnMatch(arms) => {
                 // if arms.is_empty() {
@@ -179,7 +195,10 @@ impl Resolver {
                     self.env.pop(ident.name);
                 }
 
-                Ok(Expr::new(ExprKind::Lambda(res_params, res_expr), expr.span))
+                Ok(res_params.into_iter().rev().fold(res_expr, |acc, p| {
+                    Expr::new(ExprKind::Lambda(p, acc), expr.span)
+                }))
+                // Ok(Expr::new(ExprKind::Lambda(res_params, res_expr), expr.span))
             }
             ast::ExprKind::Apply(fun, args) => Ok(Expr::new(
                 ExprKind::Apply(
@@ -229,7 +248,7 @@ impl Resolver {
                 }
 
                 Ok(Expr::new(
-                    ExprKind::Let(res_pat, res_expr, res_body),
+                    ExprKind::Let(res_pat, res_expr.is_lambda(), res_expr, res_body),
                     expr.span,
                 ))
             }
@@ -261,11 +280,30 @@ impl Resolver {
                 let res_body = self.resolve_expr(body)?;
                 self.env.pop(ident.name);
 
+                // Ok(Expr::new(
+                //     ExprKind::Fn(
+                //         ScopedIdent::new(ident.name, level, ident.span),
+                //         res_params,
+                //         res_expr,
+                //         res_body,
+                //     ),
+                //     expr.span,
+                // ))
+                // fold params into lambda expr
+                let lam = res_params.into_iter().rev().fold(res_expr, |acc, p| {
+                    Expr::new(ExprKind::Lambda(p, acc), expr.span)
+                });
                 Ok(Expr::new(
-                    ExprKind::Fn(
-                        ScopedIdent::new(ident.name, level, ident.span),
-                        res_params,
-                        res_expr,
+                    ExprKind::Let(
+                        Pattern::new(
+                            PatternKind::Ident(
+                                ScopedIdent::new(ident.name, level, ident.span),
+                                None,
+                            ),
+                            ident.span,
+                        ),
+                        true,
+                        lam,
                         res_body,
                     ),
                     expr.span,

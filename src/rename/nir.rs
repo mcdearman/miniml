@@ -16,10 +16,15 @@ pub struct Decl {
     pub span: Span,
 }
 
+impl Decl {
+    pub fn new(kind: DeclKind, span: Span) -> Self {
+        Self { kind, span }
+    }
+}
+
 #[derive(Debug, Clone, PartialEq)]
 pub enum DeclKind {
-    Let(Pattern, Expr),
-    Fn(ScopedIdent, Vec<Pattern>, Expr),
+    Def(Pattern, bool, Expr),
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -35,18 +40,21 @@ impl Expr {
             span,
         }
     }
+
+    pub fn is_lambda(&self) -> bool {
+        matches!(self.kind.as_ref(), &ExprKind::Lambda(_, _))
+    }
 }
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum ExprKind {
     Lit(Lit),
     Var(ScopedIdent),
-    Apply(Expr, Vec<Expr>),
-    Lambda(Vec<Pattern>, Expr),
+    Apply(Expr, Expr),
+    Lambda(Pattern, Expr),
     Or(Expr, Expr),
     And(Expr, Expr),
-    Let(Pattern, Expr, Expr),
-    Fn(ScopedIdent, Vec<Pattern>, Expr, Expr),
+    Let(Pattern, bool, Expr, Expr),
     If(Expr, Expr, Expr),
     Match(Expr, Vec<(Pattern, Expr)>),
     List(Vec<Expr>),

@@ -23,7 +23,7 @@ pub enum Type {
     MetaRef(MetaRef),
     Meta(Box<Meta>),
     // Poly(PolyType),
-    Lambda(Vec<Self>, Box<Self>),
+    Lambda(Box<Self>, Box<Self>),
     List(Box<Self>),
     Record(UniqueId, Vec<(InternedString, Self)>),
     Unit,
@@ -56,12 +56,8 @@ impl Type {
                 Meta::Bound(ty) => ty.free_vars(meta_ctx),
                 Meta::Unbound(tv) => vec![tv].into_iter().collect(),
             },
-
-            Self::Lambda(params, body) => params
-                .iter()
-                .fold(HashSet::new(), |acc, ty| {
-                    acc.union(&ty.free_vars(meta_ctx)).cloned().collect()
-                })
+            Self::Lambda(param, body) => param
+                .free_vars(meta_ctx)
                 .union(&body.free_vars(meta_ctx))
                 .cloned()
                 .collect(),
@@ -86,8 +82,8 @@ impl Type {
             },
             m @ Type::Meta(_) => m,
             // Type::Poly(poly) => Type::Poly(poly.clone()),
-            Type::Lambda(params, body) => Type::Lambda(
-                params.iter().map(|ty| ty.zonk(meta_ctx)).collect_vec(),
+            Type::Lambda(param, body) => Type::Lambda(
+                Box::new(param.zonk(meta_ctx)),
                 Box::new(body.zonk(meta_ctx)),
             ),
             Type::List(ty) => Type::List(Box::new(ty.zonk(meta_ctx))),
@@ -127,10 +123,9 @@ impl Display for Type {
                 //     }
                 //     Type::Poly(PolyType::new(lowered_metas, lower(poly.ty.as_ref(), metas)))
                 // }
-                Type::Lambda(params, body) => Type::Lambda(
-                    params.iter().map(|p| lower(p, metas)).collect_vec(),
-                    Box::new(lower(body, metas)),
-                ),
+                Type::Lambda(param, body) => {
+                    Type::Lambda(Box::new(lower(param, metas)), Box::new(lower(body, metas)))
+                }
                 // Type::List(list_ty) => Type::List(Box::new(lower(*list_ty, metas))),
                 // Type::Record(name, fields) => {
                 //     let mut lowered_fields = vec![];
@@ -155,12 +150,8 @@ impl Display for Type {
             Self::MetaRef(n) => write!(f, "{}", n),
             Self::Meta(m) => write!(f, "{:?}", m),
             // Self::Poly(poly) => write!(f, "{}", poly),
-            Self::Lambda(params, body) => {
-                if params.len() == 1 {
-                    write!(f, "{} -> {}", params[0], body)
-                } else {
-                    write!(f, "({}) -> {}", params.iter().format(", "), body)
-                }
+            Self::Lambda(param, body) => {
+                write!(f, "{} -> {}", param, body)
             }
             Self::List(ty) => write!(f, "[{}]", ty),
             Self::Record(name, fields) => write!(f, "{:?} = {:?}", name, fields),

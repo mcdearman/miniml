@@ -200,7 +200,7 @@ pub enum ExprKind {
     Lit(Lit),
     Var(ScopedIdent),
     Apply(Expr, Vec<Expr>),
-    Lambda(Vec<Pattern>, Expr),
+    Lambda(Pattern, Expr),
     Or(Expr, Expr),
     And(Expr, Expr),
     Let(Pattern, Expr, Expr),

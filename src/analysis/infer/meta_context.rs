@@ -116,15 +116,7 @@ impl MetaContext {
             | (Type::Char, Type::Char)
             | (Type::Unit, Type::Unit) => Ok(()),
             (Type::Lambda(p1, b1), Type::Lambda(p2, b2)) => {
-                if p1.len() != p2.len() {
-                    return Err(TypeError::from(format!(
-                        "functions have different arity: {:?} and {:?}",
-                        t1, t2,
-                    )));
-                }
-                for (t1, t2) in p1.iter().zip(p2.iter()) {
-                    self.unify(t1, t2)?;
-                }
+                self.unify(p1, p2)?;
                 self.unify(b1, b2)
             }
             (Type::List(l1), Type::List(l2)) => self.unify(l1, l2),
