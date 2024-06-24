@@ -10,8 +10,9 @@ use std::{cell::RefCell, fmt::Display, rc::Rc};
 #[derive(Debug, Clone, PartialEq)]
 pub enum Value {
     Lit(Lit),
-    Lambda(Rc<RefCell<Env>>, Vec<Pattern>, Expr),
-    NativeFn(fn(Vec<Value>) -> RuntimeResult<Value>),
+    Lambda(Rc<RefCell<Env>>, Pattern, Expr),
+    NativeFn(fn(Value) -> RuntimeResult<Value>),
+    NativeClosure(fn(Rc<RefCell<Env>>, Value) -> RuntimeResult<Value>),
     List(List<Value>),
     Record(Record),
     Unit,
@@ -23,6 +24,7 @@ impl Display for Value {
             Value::Lit(lit) => write!(f, "{}", lit),
             Value::Lambda { .. } => write!(f, "<lambda>"),
             Value::NativeFn { .. } => write!(f, "<native fn>"),
+            Value::NativeClosure { .. } => write!(f, "<native closure>"),
             Value::List(list) => write!(f, "{}", list),
             Value::Record(record) => write!(f, "{}", record),
             Value::Unit => write!(f, "()"),

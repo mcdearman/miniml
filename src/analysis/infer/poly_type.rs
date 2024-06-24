@@ -42,11 +42,8 @@ impl PolyType {
                         None => Type::MetaRef(*id),
                     },
                 },
-                Type::Lambda(params, body) => Type::Lambda(
-                    params
-                        .iter()
-                        .map(|ty| substitute(ty, subst, meta_ctx))
-                        .collect(),
+                Type::Lambda(param, body) => Type::Lambda(
+                    Box::new(substitute(param, subst, meta_ctx)),
                     Box::new(substitute(body, subst, meta_ctx)),
                 ),
                 // Type::List(ty) => Type::List(Box::new(substitute(ty, subst, meta_ctx))),

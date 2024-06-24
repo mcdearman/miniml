@@ -50,19 +50,18 @@ pub fn eval<'src>(
                     ));
                 }
                 payload = RuntimePayload::Bindings(bindings);
-            }
-            DeclKind::Fn(ident, params, expr, ..) => {
-                let value = Value::Lambda(env.clone(), params.clone(), expr.clone());
-                env.borrow_mut().insert(ident.name, value);
-                if ident.name.to_string() == "main" {
-                    return Ok(RuntimePayload::Value(
-                        eval_expr(src, env.clone(), expr.clone())?,
-                        expr.ty.clone(),
-                    ));
-                } else {
-                    payload = RuntimePayload::default();
-                }
-            }
+            } // DeclKind::Fn(ident, params, expr, ..) => {
+              //     let value = Value::Lambda(env.clone(), params.clone(), expr.clone());
+              //     env.borrow_mut().insert(ident.name, value);
+              //     if ident.name.to_string() == "main" {
+              //         return Ok(RuntimePayload::Value(
+              //             eval_expr(src, env.clone(), expr.clone())?,
+              //             expr.ty.clone(),
+              //         ));
+              //     } else {
+              //         payload = RuntimePayload::default();
+              //     }
+              // }
         }
     }
     Ok(payload)
@@ -95,33 +94,21 @@ fn eval_expr<'src>(
                     ));
                 }
             }
-            ExprKind::Apply(fun, args) => match eval_expr(src, env.clone(), fun.clone())? {
-                Value::Lambda(lam_env, params, lam_expr) => {
-                    let vargs = args
-                        .into_iter()
-                        .map(|arg| eval_expr(src, env.clone(), arg.clone()))
-                        .collect::<RuntimeResult<Vec<Value>>>()?;
+            ExprKind::Apply(fun, arg) => match eval_expr(src, env.clone(), fun.clone())? {
+                Value::Lambda(lam_env, param, lam_expr) => {
+                    let varg = eval_expr(src, env.clone(), arg.clone())?;
                     let arg_env = Env::new_with_parent(lam_env.clone());
-                    for (arg, p) in vargs.iter().zip(params.iter()) {
-                        // arg_env.borrow_mut().insert(*p, arg.clone());
-                        if !destructure_pattern(src, arg_env.clone(), p, arg).0 {
-                            return Err(RuntimeError::PatternMismatch(
-                                format!("apply {:?}", p).into(),
-                                p.span,
-                            ));
-                        }
+                    if !destructure_pattern(src, arg_env.clone(), &param, &varg).0 {
+                        return Err(RuntimeError::PatternMismatch(
+                            format!("apply {:?}", param).into(),
+                            param.span,
+                        ));
                     }
                     expr = lam_expr;
                     env = arg_env;
                     continue 'tco;
                 }
-                Value::NativeFn(fun) => {
-                    let mut new_args = Vec::new();
-                    for arg in args {
-                        new_args.push(eval_expr(src, env.clone(), arg.clone())?);
-                    }
-                    fun(new_args)?
-                }
+                Value::NativeFn(fun) => fun(eval_expr(src, env.clone(), arg.clone())?)?,
                 f => {
                     return Err(RuntimeError::TypeError(
                         format!("Expected lambda, found {:?}", f).into(),
@@ -142,7 +129,7 @@ fn eval_expr<'src>(
                     eval_expr(src, env.clone(), rhs.clone())?
                 }
             }
-            ExprKind::Let(pat, let_expr, body) => {
+            ExprKind::Let(pat, rec, let_expr, body) => {
                 let value = eval_expr(src, env.clone(), let_expr.clone())?;
                 let let_env = Env::new_with_parent(env.clone());
                 // let_env.borrow_mut().insert(name.id, value);
@@ -156,14 +143,14 @@ fn eval_expr<'src>(
                 env = let_env;
                 continue 'tco;
             }
-            ExprKind::Fn(ident, params, fn_expr, body) => {
-                let lam_env = Env::new_with_parent(env.clone());
-                let value = Value::Lambda(lam_env.clone(), params.clone(), fn_expr.clone());
-                env.borrow_mut().insert(ident.name, value);
-                expr = body.clone();
-                env = lam_env;
-                continue 'tco;
-            }
+            // ExprKind::Fn(ident, param, fn_expr, body) => {
+            //     let lam_env = Env::new_with_parent(env.clone());
+            //     let value = Value::Lambda(lam_env.clone(), param.clone(), fn_expr.clone());
+            //     env.borrow_mut().insert(ident.name, value);
+            //     expr = body.clone();
+            //     env = lam_env;
+            //     continue 'tco;
+            // }
             ExprKind::If(cond, then, else_, ..) => {
                 let cond = eval_expr(src, env.clone(), cond.clone())?;
                 match cond {

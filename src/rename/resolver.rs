@@ -209,30 +209,44 @@ impl Resolver {
                     .map(|arg| self.resolve_expr(arg))
                     .collect::<Result<Vec<_>, _>>()?;
                 Ok(Expr::new(
-                    res_args.into_iter().fold(res_fun, |acc, arg| {
-                        Expr::new(ExprKind::Apply(acc, arg), expr.span)
-                    }),
+                    res_args
+                        .into_iter()
+                        .fold(res_fun, |acc, arg| {
+                            Expr::new(ExprKind::Apply(acc, arg), expr.span)
+                        })
+                        .kind
+                        .as_ref()
+                        .clone(),
                     expr.span,
                 ))
             }
             ast::ExprKind::UnaryOp(op, op_expr) => {
                 let name = InternedString::from(*op);
+                self.env.overwrite(name);
                 let ident = ScopedIdent::new(name, 0, op.span);
                 Ok(Expr::new(
                     ExprKind::Apply(
                         Expr::new(ExprKind::Var(ident), op.span),
-                        vec![self.resolve_expr(op_expr)?],
+                        self.resolve_expr(op_expr)?,
                     ),
                     expr.span,
                 ))
             }
             ast::ExprKind::BinaryOp(op, lhs, rhs) => {
                 let name = InternedString::from(*op);
+                self.env.overwrite(name);
                 let ident = ScopedIdent::new(name, 0, op.span);
+                let res_lhs = self.resolve_expr(lhs)?;
                 Ok(Expr::new(
                     ExprKind::Apply(
-                        Expr::new(ExprKind::Var(ident), op.span),
-                        vec![self.resolve_expr(lhs)?, self.resolve_expr(rhs)?],
+                        Expr::new(
+                            ExprKind::Apply(
+                                Expr::new(ExprKind::Var(ident), op.span),
+                                res_lhs.clone(),
+                            ),
+                            op.span.extend(res_lhs.span),
+                        ),
+                        self.resolve_expr(rhs)?,
                     ),
                     expr.span,
                 ))

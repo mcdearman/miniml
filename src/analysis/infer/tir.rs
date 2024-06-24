@@ -45,19 +45,18 @@ impl Decl {
                     ty: self.ty.zonk(meta_ctx),
                     span: self.span,
                 }
-            }
-            DeclKind::Fn(ident, params, fn_expr) => {
-                let zonked_params = params
-                    .iter()
-                    .map(|param| param.zonk(meta_ctx))
-                    .collect_vec();
-                let zonked_expr = fn_expr.zonk(meta_ctx);
-                Decl {
-                    kind: DeclKind::Fn(*ident, zonked_params, zonked_expr),
-                    ty: self.ty.zonk(meta_ctx),
-                    span: self.span,
-                }
-            }
+            } // DeclKind::Fn(ident, params, fn_expr) => {
+              //     let zonked_params = params
+              //         .iter()
+              //         .map(|param| param.zonk(meta_ctx))
+              //         .collect_vec();
+              //     let zonked_expr = fn_expr.zonk(meta_ctx);
+              //     Decl {
+              //         kind: DeclKind::Fn(*ident, zonked_params, zonked_expr),
+              //         ty: self.ty.zonk(meta_ctx),
+              //         span: self.span,
+              //     }
+              // }
         }
     }
 }
@@ -65,7 +64,7 @@ impl Decl {
 #[derive(Debug, Clone, PartialEq)]
 pub enum DeclKind {
     Let(Pattern, Expr),
-    Fn(ScopedIdent, Vec<Pattern>, Expr),
+    // Fn(ScopedIdent, Vec<Pattern>, Expr),
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -94,23 +93,20 @@ impl Expr {
             ExprKind::Var(name) => {
                 Expr::new(ExprKind::Var(*name), self.ty.zonk(meta_ctx), self.span)
             }
-            ExprKind::Lambda(params, fn_expr) => {
-                let zonked_params = params
-                    .iter()
-                    .map(|param| param.zonk(meta_ctx))
-                    .collect_vec();
+            ExprKind::Lambda(param, fn_expr) => {
+                let zonked_param = param.zonk(meta_ctx);
                 let zonked_expr = fn_expr.zonk(meta_ctx);
                 Expr::new(
-                    ExprKind::Lambda(zonked_params, zonked_expr),
+                    ExprKind::Lambda(zonked_param, zonked_expr),
                     self.ty.zonk(meta_ctx),
                     self.span,
                 )
             }
-            ExprKind::Apply(fun, args) => {
+            ExprKind::Apply(fun, arg) => {
                 let zonked_fun = fun.zonk(meta_ctx);
-                let zonked_args = args.iter().map(|arg| arg.zonk(meta_ctx)).collect_vec();
+                let zonked_arg = arg.zonk(meta_ctx);
                 Expr::new(
-                    ExprKind::Apply(zonked_fun, zonked_args),
+                    ExprKind::Apply(zonked_fun, zonked_arg),
                     self.ty.zonk(meta_ctx),
                     self.span,
                 )
@@ -133,29 +129,29 @@ impl Expr {
                     self.span,
                 )
             }
-            ExprKind::Let(pat, let_expr, body) => {
+            ExprKind::Let(pat, rec, let_expr, body) => {
                 let zonked_pat = pat.zonk(meta_ctx);
                 let zonked_let_expr = let_expr.zonk(meta_ctx);
                 let zonked_body = body.zonk(meta_ctx);
                 Expr::new(
-                    ExprKind::Let(zonked_pat, zonked_let_expr, zonked_body),
+                    ExprKind::Let(zonked_pat, *rec, zonked_let_expr, zonked_body),
                     self.ty.zonk(meta_ctx),
                     self.span,
                 )
             }
-            ExprKind::Fn(name, params, expr, body) => {
-                let zonked_params = params
-                    .iter()
-                    .map(|param| param.zonk(meta_ctx))
-                    .collect_vec();
-                let zonked_expr = expr.zonk(meta_ctx);
-                let zonked_body = body.zonk(meta_ctx);
-                Expr::new(
-                    ExprKind::Fn(*name, zonked_params, zonked_expr, zonked_body),
-                    self.ty.zonk(meta_ctx),
-                    self.span,
-                )
-            }
+            // ExprKind::Fn(name, params, expr, body) => {
+            //     let zonked_params = params
+            //         .iter()
+            //         .map(|param| param.zonk(meta_ctx))
+            //         .collect_vec();
+            //     let zonked_expr = expr.zonk(meta_ctx);
+            //     let zonked_body = body.zonk(meta_ctx);
+            //     Expr::new(
+            //         ExprKind::Fn(*name, zonked_params, zonked_expr, zonked_body),
+            //         self.ty.zonk(meta_ctx),
+            //         self.span,
+            //     )
+            // }
             ExprKind::If(cond, then, else_) => {
                 let zonked_cond = cond.zonk(meta_ctx);
                 let zonked_then = then.zonk(meta_ctx);
@@ -199,12 +195,12 @@ impl Expr {
 pub enum ExprKind {
     Lit(Lit),
     Var(ScopedIdent),
-    Apply(Expr, Vec<Expr>),
+    Apply(Expr, Expr),
     Lambda(Pattern, Expr),
     Or(Expr, Expr),
     And(Expr, Expr),
-    Let(Pattern, Expr, Expr),
-    Fn(ScopedIdent, Vec<Pattern>, Expr, Expr),
+    Let(Pattern, bool, Expr, Expr),
+    // Fn(ScopedIdent, Vec<Pattern>, Expr, Expr),
     If(Expr, Expr, Expr),
     Match(Expr, Vec<(Pattern, Expr)>),
     List(Vec<Expr>),
