@@ -106,7 +106,7 @@ let fib n =
   match n
   | 0 -> 0
   | 1 -> 1
-  \ n -> fib (n - 1) + fib (n - 2)
+  | n -> fib (n - 1) + fib (n - 2)
 
 let fib 0 = 0
   | fib 1 = 1

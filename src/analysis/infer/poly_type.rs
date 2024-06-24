@@ -13,9 +13,9 @@ pub struct PolyType {
 }
 
 impl PolyType {
-    pub fn new(metas: Vec<TyVar>, ty: Type) -> Self {
+    pub fn new(vars: Vec<TyVar>, ty: Type) -> Self {
         Self {
-            vars: metas,
+            vars,
             ty: Box::new(ty),
         }
     }
