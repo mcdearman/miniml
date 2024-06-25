@@ -50,7 +50,7 @@ pub fn eval<'src>(
                             if ident.name.to_string() == "main" {
                                 return Ok(RuntimePayload::Value(
                                     eval_expr(src, lam_env.clone(), lam_expr.clone())?,
-                                    expr.ty.clone(),
+                                    lam_expr.ty.clone(),
                                 ));
                             }
                             env.borrow_mut().insert(ident.name, value.clone());
