@@ -28,6 +28,18 @@ impl Resolver {
     pub fn resolve(&mut self, ast: &ast::Root) -> (Option<Root>, Vec<ResError>) {
         let mut decls = Vec::new();
         let mut errors = Vec::new();
+
+        // #[rustfmt::skip]
+        // const BUILTINS: [&str; 15] = [
+        //     "neg", "not", "add", "sub", "mul",
+        //     "div", "rem", "pow", "eq", "neq",
+        //     "lt", "lte", "gt", "gte", "pair",
+        // ];
+
+        // for b in BUILTINS {
+        //     self.env.push(b.into());
+        // }
+
         for decl in &ast.decls {
             match self.resolve_decl(&decl) {
                 Ok(decl) => decls.push(decl),

@@ -88,8 +88,8 @@ impl From<Token> for UnaryOpKind {
 impl ToString for UnaryOpKind {
     fn to_string(&self) -> String {
         match self {
-            Self::Neg => "neg".to_string(),
-            Self::Not => "not".to_string(),
+            Self::Neg => "__neg__".to_string(),
+            Self::Not => "__not__".to_string(),
         }
     }
 }
@@ -147,19 +147,19 @@ impl From<Token> for BinaryOpKind {
 impl ToString for BinaryOpKind {
     fn to_string(&self) -> String {
         match self {
-            Self::Add => "add".to_string(),
-            Self::Sub => "sub".to_string(),
-            Self::Mul => "mul".to_string(),
-            Self::Div => "div".to_string(),
-            Self::Rem => "rem".to_string(),
-            Self::Pow => "pow".to_string(),
-            Self::Eq => "eq".to_string(),
-            Self::Neq => "neq".to_string(),
-            Self::Lt => "lt".to_string(),
-            Self::Lte => "lte".to_string(),
-            Self::Gt => "gt".to_string(),
-            Self::Gte => "gte".to_string(),
-            Self::Pair => "pair".to_string(),
+            Self::Add => "__add__".to_string(),
+            Self::Sub => "__sub__".to_string(),
+            Self::Mul => "__mul__".to_string(),
+            Self::Div => "__div__".to_string(),
+            Self::Rem => "__rem__".to_string(),
+            Self::Pow => "__pow__".to_string(),
+            Self::Eq => "__eq__".to_string(),
+            Self::Neq => "__neq__".to_string(),
+            Self::Lt => "__lt__".to_string(),
+            Self::Lte => "__lte__".to_string(),
+            Self::Gt => "__gt__".to_string(),
+            Self::Gte => "__gte__".to_string(),
+            Self::Pair => "__pair__".to_string(),
         }
     }
 }

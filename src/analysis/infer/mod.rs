@@ -30,11 +30,11 @@ pub struct TypeSolver {
 
 impl TypeSolver {
     pub fn new() -> Self {
-        let mut meta_ctx = MetaContext::new();
+        let meta_ctx = MetaContext::new();
         let mut ctx = Context::new();
 
         ctx.insert(
-            "neg".into(),
+            "__neg__".into(),
             PolyType::new(
                 vec![],
                 Type::Lambda(Box::new(Type::Int), Box::new(Type::Int)),
@@ -42,7 +42,7 @@ impl TypeSolver {
         );
 
         ctx.insert(
-            "not".into(),
+            "__not__".into(),
             PolyType::new(
                 vec![],
                 Type::Lambda(Box::new(Type::Bool), Box::new(Type::Bool)),
@@ -50,7 +50,7 @@ impl TypeSolver {
         );
 
         ctx.insert(
-            "add".into(),
+            "__add__".into(),
             PolyType::new(
                 vec![],
                 Type::Lambda(
@@ -61,7 +61,7 @@ impl TypeSolver {
         );
 
         ctx.insert(
-            "sub".into(),
+            "__sub__".into(),
             PolyType::new(
                 vec![],
                 Type::Lambda(
@@ -72,7 +72,7 @@ impl TypeSolver {
         );
 
         ctx.insert(
-            "mul".into(),
+            "__mul__".into(),
             PolyType::new(
                 vec![],
                 Type::Lambda(
@@ -83,7 +83,7 @@ impl TypeSolver {
         );
 
         ctx.insert(
-            "div".into(),
+            "__div__".into(),
             PolyType::new(
                 vec![],
                 Type::Lambda(
@@ -94,7 +94,7 @@ impl TypeSolver {
         );
 
         ctx.insert(
-            "rem".into(),
+            "__rem__".into(),
             PolyType::new(
                 vec![],
                 Type::Lambda(
@@ -157,7 +157,9 @@ impl TypeSolver {
                 if *rec {
                     let fn_ty = Type::MetaRef(self.meta_ctx.fresh());
                     let solved_pat = self.infer_pattern(pat, &fn_ty, true)?;
+                    log::debug!("let_solved_pat: {:?}", solved_pat.ty);
                     let solved_expr = self.infer_expr(let_expr)?;
+                    log::debug!("let_solved_expr: {:?}", solved_expr.ty);
                     self.meta_ctx.unify(&solved_pat.ty, &solved_expr.ty)?;
 
                     Ok(Decl {

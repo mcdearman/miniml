@@ -151,7 +151,11 @@ impl Display for Type {
             Self::Meta(m) => write!(f, "{:?}", m),
             // Self::Poly(poly) => write!(f, "{}", poly),
             Self::Lambda(param, body) => {
-                write!(f, "{} -> {}", param, body)
+                if matches!(*param, Self::Lambda(_, _)) {
+                    write!(f, "({}) -> {}", param, body)
+                } else {
+                    write!(f, "{} -> {}", param, body)
+                }
             }
             Self::List(ty) => write!(f, "[{}]", ty),
             Self::Record(name, fields) => write!(f, "{:?} = {:?}", name, fields),

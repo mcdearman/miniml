@@ -36,7 +36,7 @@ impl Interpreter {
         );
 
         env.borrow_mut().insert(
-            "neg".into(),
+            "__neg__".into(),
             Value::NativeFn(|arg| match arg {
                 Value::Lit(Lit::Int(i)) => Ok(Value::Lit(Lit::Int(-i))),
                 _ => Err(RuntimeError::TypeError(InternedString::from(format!(
@@ -47,7 +47,7 @@ impl Interpreter {
         );
 
         env.borrow_mut().insert(
-            "not".into(),
+            "__not__".into(),
             Value::NativeFn(|arg| match arg {
                 Value::Lit(Lit::Bool(b)) => Ok(Value::Lit(Lit::Bool(!b))),
                 _ => Err(RuntimeError::TypeError(InternedString::from(format!(
@@ -58,7 +58,7 @@ impl Interpreter {
         );
 
         env.borrow_mut().insert(
-            "add".into(),
+            "__add__".into(),
             Value::NativeFn(|arg| match arg {
                 Value::Lit(Lit::Int(l)) => Ok(Value::NativeClosure(|env, arg| match arg {
                     Value::Lit(Lit::Int(r)) => {
