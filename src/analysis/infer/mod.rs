@@ -163,7 +163,7 @@ impl TypeSolver {
                     self.meta_ctx.unify(&solved_pat.ty, &solved_expr.ty)?;
 
                     Ok(Decl {
-                        kind: DeclKind::Let(solved_pat, solved_expr.clone()),
+                        kind: DeclKind::Def(solved_pat, solved_expr.clone()),
                         ty: solved_expr.ty,
                         span: decl.span,
                     })
@@ -176,7 +176,7 @@ impl TypeSolver {
                     let solved_pat = self.infer_pattern(pat, &solved_expr.ty, true)?;
 
                     Ok(Decl {
-                        kind: DeclKind::Let(solved_pat, solved_expr.clone()),
+                        kind: DeclKind::Def(solved_pat, solved_expr.clone()),
                         ty: solved_expr.ty,
                         span: decl.span,
                     })

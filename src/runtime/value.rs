@@ -1,18 +1,18 @@
-use num_rational::Rational64;
-
 use super::{env::Env, error::RuntimeResult};
 use crate::{
     analysis::infer::tir::{self, Expr, Pattern},
     utils::{intern::InternedString, list::List, unique_id::UniqueId},
 };
+use itertools::Itertools;
+use num_rational::Rational64;
 use std::{cell::RefCell, fmt::Display, rc::Rc};
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Value {
     Lit(Lit),
     Lambda(Rc<RefCell<Env>>, Pattern, Expr),
-    NativeFn(fn(Value) -> RuntimeResult<Value>),
-    NativeClosure(fn(Rc<RefCell<Env>>, Value) -> RuntimeResult<Value>),
+    NativeFn(NativeFn),
+    Tuple(Vec<Value>),
     List(List<Value>),
     Record(Record),
     Unit,
@@ -24,7 +24,7 @@ impl Display for Value {
             Value::Lit(lit) => write!(f, "{}", lit),
             Value::Lambda { .. } => write!(f, "<lambda>"),
             Value::NativeFn { .. } => write!(f, "<native fn>"),
-            Value::NativeClosure { .. } => write!(f, "<native closure>"),
+            Value::Tuple(tuple) => write!(f, "({})", tuple.iter().format(", ")),
             Value::List(list) => write!(f, "{}", list),
             Value::Record(record) => write!(f, "{}", record),
             Value::Unit => write!(f, "()"),
@@ -33,6 +33,32 @@ impl Display for Value {
 }
 
 impl Eq for Value {}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct NativeFn {
+    pub args: Vec<Value>,
+    pub len: usize,
+    pub f: fn(Vec<Value>) -> RuntimeResult<Value>,
+}
+
+impl NativeFn {
+    pub fn call(&self, arg: Value) -> RuntimeResult<Value> {
+        let mut args = self.args.clone();
+        args.push(arg);
+        log::trace!("NativeFn::call: args={:?}", args);
+        if args.len() < self.len {
+            Ok(Value::NativeFn(NativeFn {
+                args,
+                len: self.len,
+                f: self.f,
+            }))
+        } else if args.len() == self.len {
+            (self.f)(args)
+        } else {
+            Err(super::error::RuntimeError::ArityError(self.len, args.len()))
+        }
+    }
+}
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Record {

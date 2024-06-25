@@ -40,28 +40,61 @@ pub fn eval<'src>(
             // DeclKind::DataType(dt) => {
             //     types.insert(dt.name().id(), dt.kind().clone());
             // }
-            DeclKind::Let(pat, expr) => {
-                let val = eval_expr(src, env.clone(), expr.clone())?;
-                let (matched, bindings) = destructure_pattern(src, env.clone(), pat, &val);
-                if !matched {
-                    return Err(RuntimeError::PatternMismatch(
-                        format!("let decl{:?}", pat).into(),
-                        pat.span,
-                    ));
+            DeclKind::Def(pat, expr) => {
+                match expr.kind.as_ref() {
+                    ExprKind::Lambda(params, lam_expr) => {
+                        let lam_env = Env::new_with_parent(env.clone());
+                        let value =
+                            Value::Lambda(lam_env.clone(), params.clone(), lam_expr.clone());
+                        if let PatternKind::Ident(ident) = pat.kind.as_ref() {
+                            if ident.name.to_string() == "main" {
+                                return Ok(RuntimePayload::Value(
+                                    eval_expr(src, lam_env.clone(), lam_expr.clone())?,
+                                    expr.ty.clone(),
+                                ));
+                            }
+                            env.borrow_mut().insert(ident.name, value.clone());
+                            payload = RuntimePayload::Value(value, expr.ty.clone());
+                        } else {
+                            return Err(RuntimeError::PatternMismatch(
+                                format!("def {:?}", pat).into(),
+                                pat.span,
+                            ));
+                        }
+                    }
+                    _ => {
+                        let val = eval_expr(src, env.clone(), expr.clone())?;
+                        let (matched, bindings) = destructure_pattern(src, env.clone(), pat, &val);
+                        if !matched {
+                            return Err(RuntimeError::PatternMismatch(
+                                format!("def {:?}", pat).into(),
+                                pat.span,
+                            ));
+                        }
+                        payload = RuntimePayload::Bindings(bindings);
+                    }
                 }
-                payload = RuntimePayload::Bindings(bindings);
-            } // DeclKind::Fn(ident, params, expr, ..) => {
-              //     let value = Value::Lambda(env.clone(), params.clone(), expr.clone());
-              //     env.borrow_mut().insert(ident.name, value);
-              //     if ident.name.to_string() == "main" {
-              //         return Ok(RuntimePayload::Value(
-              //             eval_expr(src, env.clone(), expr.clone())?,
-              //             expr.ty.clone(),
-              //         ));
-              //     } else {
-              //         payload = RuntimePayload::default();
-              //     }
-              // }
+                // if let PatternKind::Ident(ident) = pat.kind.as_ref() {
+                //     if ident.name.to_string() == "main" {
+                //         return Ok(RuntimePayload::Value(
+                //             eval_expr(src, env.clone(), expr.clone())?,
+                //             expr.ty.clone(),
+                //         ));
+                //     }
+                //     env.borrow_mut().insert(ident.name, Value::Unit);
+                //     payload = RuntimePayload::default();
+                // } else {
+                //     let val = eval_expr(src, env.clone(), expr.clone())?;
+                //     let (matched, bindings) = destructure_pattern(src, env.clone(), pat, &val);
+                //     if !matched {
+                //         return Err(RuntimeError::PatternMismatch(
+                //             format!("let decl {:?}", pat).into(),
+                //             pat.span,
+                //         ));
+                //     }
+                //     payload = RuntimePayload::Bindings(bindings);
+                // }
+            }
         }
     }
     Ok(payload)
@@ -108,7 +141,7 @@ fn eval_expr<'src>(
                     env = arg_env;
                     continue 'tco;
                 }
-                Value::NativeFn(fun) => fun(eval_expr(src, env.clone(), arg.clone())?)?,
+                Value::NativeFn(fun) => fun.call(eval_expr(src, env.clone(), arg.clone())?)?,
                 f => {
                     return Err(RuntimeError::TypeError(
                         format!("Expected lambda, found {:?}", f).into(),

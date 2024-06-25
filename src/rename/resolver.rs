@@ -29,16 +29,26 @@ impl Resolver {
         let mut decls = Vec::new();
         let mut errors = Vec::new();
 
-        // #[rustfmt::skip]
-        // const BUILTINS: [&str; 15] = [
-        //     "neg", "not", "add", "sub", "mul",
-        //     "div", "rem", "pow", "eq", "neq",
-        //     "lt", "lte", "gt", "gte", "pair",
-        // ];
+        #[rustfmt::skip]
+        const BUILTINS: [&str; 16] = [
+            "__println__", 
 
-        // for b in BUILTINS {
-        //     self.env.push(b.into());
-        // }
+            "__neg__", "__not__", 
+
+            "__add__", "__sub__", 
+            "__mul__", "__div__", 
+            "__rem__", "__pow__", 
+            
+            "__eq__", "__neq__",
+            "__lt__", "__lte__", 
+            "__gt__", "__gte__", 
+            
+            "__pair__",
+        ];
+
+        for b in BUILTINS {
+            self.env.overwrite(b.into());
+        }
 
         for decl in &ast.decls {
             match self.resolve_decl(&decl) {
@@ -234,7 +244,6 @@ impl Resolver {
             }
             ast::ExprKind::UnaryOp(op, op_expr) => {
                 let name = InternedString::from(*op);
-                self.env.overwrite(name);
                 let ident = ScopedIdent::new(name, 0, op.span);
                 Ok(Expr::new(
                     ExprKind::Apply(
@@ -246,7 +255,6 @@ impl Resolver {
             }
             ast::ExprKind::BinaryOp(op, lhs, rhs) => {
                 let name = InternedString::from(*op);
-                self.env.overwrite(name);
                 let ident = ScopedIdent::new(name, 0, op.span);
                 let res_lhs = self.resolve_expr(lhs)?;
                 Ok(Expr::new(

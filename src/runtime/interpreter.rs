@@ -2,7 +2,7 @@ use super::{
     env::Env,
     error::{RuntimeError, RuntimeResult},
     eval::{eval, RuntimePayload},
-    value::{Lit, Value},
+    value::{Lit, NativeFn, Value},
 };
 use crate::{
     analysis::infer::{r#type::Type, TypeSolver},
@@ -27,64 +27,68 @@ impl Interpreter {
         // let scoped_interner = res.env().dump_to_interner();
         let type_solver = TypeSolver::new();
         let env = Env::new();
-        env.borrow_mut().insert(
-            "println".into(),
-            Value::NativeFn(|arg| {
-                println!("{}", arg);
-                Ok(Value::Unit)
-            }),
-        );
+        // env.borrow_mut().insert(
+        //     "println".into(),
+        //     Value::NativeFn(|dict| match dict {
+        //         NativeFnArgs { args, len: 1 } => {
+        //             println!("{}", args[0]);
+        //             Ok(Value::Unit)
+        //         }
+        //         _ => Err(RuntimeError::ArityError(1, dict.args.len())),
+        //     }),
+        // );
 
-        env.borrow_mut().insert(
-            "__neg__".into(),
-            Value::NativeFn(|arg| match arg {
-                Value::Lit(Lit::Int(i)) => Ok(Value::Lit(Lit::Int(-i))),
-                _ => Err(RuntimeError::TypeError(InternedString::from(format!(
-                    "Expected number, found {:?}",
-                    arg
-                )))),
-            }),
-        );
+        // env.borrow_mut().insert(
+        //     "__neg__".into(),
+        //     Value::NativeFn(|dict| match dict {
+        //         NativeFnArgs { args, len: 1 } => match &args[0] {
+        //             Value::Lit(Lit::Int(i)) => Ok(Value::Lit(Lit::Int(-i))),
+        //             _ => Err(RuntimeError::TypeError(InternedString::from(format!(
+        //                 "Expected number, found {:?}",
+        //                 args[0]
+        //             )))),
+        //         },
+        //         _ => Err(RuntimeError::ArityError(1, dict.args.len())),
+        //     }),
+        // );
 
-        env.borrow_mut().insert(
-            "__not__".into(),
-            Value::NativeFn(|arg| match arg {
-                Value::Lit(Lit::Bool(b)) => Ok(Value::Lit(Lit::Bool(!b))),
-                _ => Err(RuntimeError::TypeError(InternedString::from(format!(
-                    "Expected bool, found {:?}",
-                    arg
-                )))),
-            }),
-        );
+        // env.borrow_mut().insert(
+        //     "__not__".into(),
+        //     Value::NativeFn(|dict| match dict {
+        //         NativeFnArgs { args, len: 1 } => match &args[0] {
+        //             Value::Lit(Lit::Bool(b)) => Ok(Value::Lit(Lit::Bool(!b))),
+        //             _ => Err(RuntimeError::TypeError(InternedString::from(format!(
+        //                 "Expected bool, found {:?}",
+        //                 args[0]
+        //             )))),
+        //         },
+        //         _ => Err(RuntimeError::ArityError(1, dict.args.len())),
+        //     }),
+        // );
 
         env.borrow_mut().insert(
             "__add__".into(),
-            Value::NativeFn(|arg| match arg {
-                Value::Lit(Lit::Int(l)) => Ok(Value::NativeClosure(|env, arg| match arg {
-                    Value::Lit(Lit::Int(r)) => {
-                        let l = env
-                            .borrow()
-                            .get(&"l".into())
-                            .ok_or(RuntimeError::UnboundIdent("l".into(), Span::default()));
-                        match l {
-                            Ok(Value::Lit(Lit::Int(l))) => Ok(Value::Lit(Lit::Int(l + r))),
+            Value::NativeFn(NativeFn {
+                args: vec![],
+                len: 2,
+                f: |args| {
+                    if args.len() != 2 {
+                        Err(RuntimeError::ArityError(2, args.len()))
+                    } else {
+                        match (args[0].clone(), args[1].clone()) {
+                            (Value::Lit(Lit::Int(l)), Value::Lit(Lit::Int(r))) => {
+                                Ok(Value::Lit(Lit::Int(l + r)))
+                            }
+                            (Value::Lit(Lit::Rational(l)), Value::Lit(Lit::Rational(r))) => {
+                                Ok(Value::Lit(Lit::Rational(l + r)))
+                            }
                             _ => Err(RuntimeError::TypeError(InternedString::from(format!(
-                                "Expected Int got {:?}",
-                                arg
+                                "Expected number, found {:?}",
+                                args
                             )))),
                         }
                     }
-                    _ => Err(RuntimeError::TypeError(InternedString::from(format!(
-                        "Expected Int got {:?}",
-                        arg
-                    )))),
-                })),
-                _ => {
-                    return Err(RuntimeError::TypeError(InternedString::from(format!(
-                        "Expected Int got {:?}",
-                        arg
-                    ))));
-                }
+                },
             }),
         );
 
