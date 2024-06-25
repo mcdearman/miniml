@@ -46,14 +46,6 @@ impl PolyType {
                     Box::new(substitute(param, subst, meta_ctx)),
                     Box::new(substitute(body, subst, meta_ctx)),
                 ),
-                // Type::List(ty) => Type::List(Box::new(substitute(ty, subst, meta_ctx))),
-                // Type::Record(id, fields) => Type::Record(
-                //     *id,
-                //     fields
-                //         .iter()
-                //         .map(|(name, ty)| (name.clone(), substitute(ty, subst, meta_ctx)))
-                //         .collect(),
-                // ),
                 _ => ty.clone(),
             }
         }
