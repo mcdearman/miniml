@@ -54,7 +54,8 @@ pub fn eval<'src>(
                                 ));
                             }
                             env.borrow_mut().insert(ident.name, value.clone());
-                            payload = RuntimePayload::Value(value, expr.ty.clone());
+                            payload =
+                                RuntimePayload::Bindings(vec![(ident.name, value, pat.ty.clone())]);
                         } else {
                             return Err(RuntimeError::PatternMismatch(
                                 format!("def {:?}", pat).into(),

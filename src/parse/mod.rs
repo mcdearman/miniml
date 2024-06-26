@@ -90,20 +90,25 @@ fn decl_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
     //         ))
     //     });
 
-    let let_ = just(Token::Let)
-        .ignore_then(pattern_parser())
-        .then_ignore(just(Token::Eq))
+    let def = pattern_parser()
+        .then_ignore(just(Token::Assign))
         .then(expr_parser())
         .map(|(pat, expr)| DeclKind::Def(pat, expr));
+
+    // let def = ident_parser()
+    //     .map_with(|kind, e| Pattern::new(PatternKind::Ident(kind, None), e.span()))
+    //     .then_ignore(just(Token::Assign))
+    //     .then(expr_parser())
+    //     .map(|(pat, expr)| DeclKind::Def(pat, expr));
 
     let fn_ = just(Token::Let)
         .ignore_then(ident_parser())
         .then(pattern_parser().repeated().at_least(1).collect())
-        .then_ignore(just(Token::Eq))
+        .then_ignore(just(Token::Assign))
         .then(expr_parser())
         .map(|((name, params), expr)| DeclKind::Fn(name, params, expr));
 
-    let_.or(fn_)
+    def.or(fn_)
         // .or(record)
         .map_with(|kind, e| Decl {
             kind,
@@ -398,10 +403,10 @@ fn pattern_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
             .delimited_by(just(Token::LParen), just(Token::RParen))
             .map(|(ident, pat)| PatternKind::Pair(ident, pat));
 
-        just(Token::Wildcard)
-            .map(|_| PatternKind::Wildcard)
+        ident_parser()
+            .map(|ident| PatternKind::Ident(ident, None))
+            .or(just(Token::Wildcard).map(|_| PatternKind::Wildcard))
             .or(lit_parser().map(PatternKind::Lit))
-            .or(ident_parser().map(|ident| PatternKind::Ident(ident, None)))
             .or(list)
             .or(pair)
             .map_with(|kind, e| Pattern::new(kind, e.span()))

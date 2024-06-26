@@ -64,6 +64,8 @@ pub enum Token {
     #[token("not")]
     Not,
     #[token("=")]
+    Assign,
+    #[token("==")]
     Eq,
     #[token("!=")]
     Neq,
@@ -166,6 +168,7 @@ impl Display for Token {
             Or => write!(f, "Or"),
             And => write!(f, "And"),
             Not => write!(f, "Not"),
+            Assign => write!(f, "Assign"),
             Eq => write!(f, "Eq"),
             Neq => write!(f, "Neq"),
             Lt => write!(f, "Lt"),

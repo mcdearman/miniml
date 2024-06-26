@@ -360,6 +360,7 @@ impl Interpreter {
 
     pub fn run(&mut self, src: &str) -> RuntimeResult<RuntimePayload> {
         let stream = TokenIter::new(&src);
+        log::debug!("Tokens: {:?}", stream.clone().collect_vec());
 
         let ast = match parse(stream, true) {
             (Some(ast), _) => {

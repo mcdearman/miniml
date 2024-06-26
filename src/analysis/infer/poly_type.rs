@@ -39,7 +39,7 @@ impl PolyType {
                     Meta::Bound(ty) => substitute(&ty, subst, meta_ctx),
                     Meta::Unbound(tv) => match subst.get(&tv) {
                         Some(t) => t.clone(),
-                        None => Type::MetaRef(*id),
+                        None => ty.clone(),
                     },
                 },
                 Type::Lambda(param, body) => Type::Lambda(
@@ -52,13 +52,7 @@ impl PolyType {
 
         let mut subst = HashMap::new();
         for m in self.vars.iter() {
-            let meta_ref = meta_ctx.fresh();
-            match meta_ctx.get(&meta_ref) {
-                Meta::Unbound(id) => {
-                    subst.insert(id, Type::MetaRef(meta_ref));
-                }
-                _ => continue,
-            }
+            subst.insert(*m, Type::MetaRef(meta_ctx.fresh()));
         }
 
         substitute(&meta_ctx.force(&self.ty), &subst, meta_ctx)

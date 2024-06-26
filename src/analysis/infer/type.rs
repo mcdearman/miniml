@@ -11,7 +11,7 @@ use std::{
     fmt::{Debug, Display},
 };
 
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum Type {
     Byte,
     Int,
@@ -98,6 +98,33 @@ impl Type {
     }
 }
 
+impl Debug for Type {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Byte => write!(f, "Byte"),
+            Self::Int => write!(f, "Int"),
+            Self::Rational => write!(f, "Rational"),
+            Self::Real => write!(f, "Real"),
+            Self::Bool => write!(f, "Bool"),
+            Self::String => write!(f, "String"),
+            Self::Char => write!(f, "Char"),
+            Self::MetaRef(n) => write!(f, "{}", n),
+            Self::Meta(m) => write!(f, "{:?}", m),
+            // Self::Poly(poly) => write!(f, "{:?}", poly),
+            Self::Lambda(param, body) => {
+                if matches!(**param, Self::Lambda(_, _)) {
+                    write!(f, "({:?}) -> {:?}", param, body)
+                } else {
+                    write!(f, "{:?} -> {:?}", param, body)
+                }
+            }
+            Self::List(ty) => write!(f, "[{:?}]", ty),
+            Self::Record(id, fields) => write!(f, "{:?} = {:?}", id, fields),
+            Self::Unit => write!(f, "()"),
+        }
+    }
+}
+
 impl Display for Type {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         fn lower(ty: &Type, metas: &mut HashMap<u32, u32>) -> Type {
@@ -148,7 +175,7 @@ impl Display for Type {
             Self::String => write!(f, "String"),
             Self::Char => write!(f, "Char"),
             Self::MetaRef(n) => write!(f, "{}", n),
-            Self::Meta(m) => write!(f, "{:?}", m),
+            Self::Meta(m) => write!(f, "{}", m),
             // Self::Poly(poly) => write!(f, "{}", poly),
             Self::Lambda(param, body) => {
                 if matches!(*param, Self::Lambda(_, _)) {
