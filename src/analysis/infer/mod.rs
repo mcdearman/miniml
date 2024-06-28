@@ -153,13 +153,13 @@ impl TypeSolver {
     fn infer_decl(&mut self, decl: &nir::Decl) -> InferResult<Decl> {
         match &decl.kind {
             nir::DeclKind::Def(pat, rec, let_expr) => {
-                log::debug!("infer let ({:?})", pat);
+                log::debug!("infer def ({:?})", pat);
                 if *rec {
                     let fn_ty = Type::MetaRef(self.meta_ctx.fresh());
                     let solved_pat = self.infer_pattern(pat, &fn_ty, true)?;
-                    log::debug!("let_solved_pat: {:?}", solved_pat.ty);
+                    log::debug!("def_solved_pat: {:?}", solved_pat.ty);
                     let solved_expr = self.infer_expr(let_expr)?;
-                    log::debug!("let_solved_expr: {:?}", solved_expr.ty);
+                    log::debug!("def_solved_expr: {:?}", solved_expr.ty);
                     self.meta_ctx.unify(&solved_pat.ty, &solved_expr.ty)?;
 
                     Ok(Decl {

@@ -44,22 +44,22 @@ fn root_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
 
 fn repl_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
 ) -> impl ChumskyParser<'a, I, Root, extra::Err<Rich<'a, Token, Span>>> {
-    expr_parser()
-        .map(|e| {
-            DeclKind::Fn(
-                Ident::new(InternedString::from("main"), e.span),
-                vec![Pattern::new(
-                    PatternKind::Ident(Ident::new(InternedString::from("args"), e.span), None),
-                    e.span,
-                )],
-                e.clone(),
-            )
-        })
-        .map_with(|kind, e| Decl {
-            kind,
-            span: e.span(),
-        })
-        .or(decl_parser())
+    decl_parser()
+        .or(expr_parser()
+            .map(|e| {
+                DeclKind::Fn(
+                    Ident::new(InternedString::from("main"), e.span),
+                    vec![Pattern::new(
+                        PatternKind::Ident(Ident::new(InternedString::from("args"), e.span), None),
+                        e.span,
+                    )],
+                    e.clone(),
+                )
+            })
+            .map_with(|kind, e| Decl {
+                kind,
+                span: e.span(),
+            }))
         .map_with(|decl, e| Root {
             decls: vec![decl],
             span: e.span(),
@@ -101,8 +101,7 @@ fn decl_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
     //     .then(expr_parser())
     //     .map(|(pat, expr)| DeclKind::Def(pat, expr));
 
-    let fn_ = just(Token::Let)
-        .ignore_then(ident_parser())
+    let fn_ = ident_parser()
         .then(pattern_parser().repeated().at_least(1).collect())
         .then_ignore(just(Token::Assign))
         .then(expr_parser())
