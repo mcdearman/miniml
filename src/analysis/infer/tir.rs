@@ -45,18 +45,7 @@ impl Decl {
                     ty: self.ty.zonk(meta_ctx),
                     span: self.span,
                 }
-            } // DeclKind::Fn(ident, params, fn_expr) => {
-              //     let zonked_params = params
-              //         .iter()
-              //         .map(|param| param.zonk(meta_ctx))
-              //         .collect_vec();
-              //     let zonked_expr = fn_expr.zonk(meta_ctx);
-              //     Decl {
-              //         kind: DeclKind::Fn(*ident, zonked_params, zonked_expr),
-              //         ty: self.ty.zonk(meta_ctx),
-              //         span: self.span,
-              //     }
-              // }
+            }
         }
     }
 }
@@ -64,7 +53,6 @@ impl Decl {
 #[derive(Debug, Clone, PartialEq)]
 pub enum DeclKind {
     Def(Pattern, Expr),
-    // Fn(ScopedIdent, Vec<Pattern>, Expr),
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -200,7 +188,6 @@ pub enum ExprKind {
     Or(Expr, Expr),
     And(Expr, Expr),
     Let(Pattern, bool, Expr, Expr),
-    // Fn(ScopedIdent, Vec<Pattern>, Expr, Expr),
     If(Expr, Expr, Expr),
     Match(Expr, Vec<(Pattern, Expr)>),
     List(Vec<Expr>),
