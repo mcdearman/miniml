@@ -24,13 +24,13 @@ impl MetaRef {
 
 impl Debug for MetaRef {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{:#08x}", self.0)
+        write!(f, "m{}", self.0)
     }
 }
 
 impl Display for MetaRef {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{:#08x}", self.0)
+        write!(f, "m{}", self.0)
     }
 }
 
@@ -148,7 +148,3 @@ impl MetaContext {
         }
     }
 }
-
-// impl Debug for MetaContext {
-//     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {}
-// }

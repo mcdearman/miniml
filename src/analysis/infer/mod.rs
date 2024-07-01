@@ -133,6 +133,7 @@ impl TypeSolver {
 
         log::debug!("meta_ctx: {:#?}", self.meta_ctx);
         self.ctx.zonk(&mut self.meta_ctx);
+        log::debug!("ctx: {:#?}", self.ctx);
 
         if errors.is_empty() {
             (
@@ -155,12 +156,17 @@ impl TypeSolver {
             nir::DeclKind::Def(pat, rec, let_expr) => {
                 log::debug!("infer def ({:?})", pat);
                 if *rec {
-                    let fn_ty = Type::MetaRef(self.meta_ctx.fresh());
-                    let solved_pat = self.infer_pattern(pat, &fn_ty, true)?;
+                    let binder_ty = Type::MetaRef(self.meta_ctx.fresh());
+                    log::debug!("def_binder_ty: {:?}", binder_ty);
+
+                    let solved_pat = self.infer_pattern(pat, &binder_ty, true)?;
                     log::debug!("def_solved_pat: {:?}", solved_pat.ty);
+
                     let solved_expr = self.infer_expr(let_expr)?;
                     log::debug!("def_solved_expr: {:?}", solved_expr.ty);
-                    self.meta_ctx.unify(&solved_pat.ty, &solved_expr.ty)?;
+
+                    // self.meta_ctx.unify(&binder_ty, &solved_expr.ty)?;
+                    // self.meta_ctx.unify(&solved_pat.ty, &solved_expr.ty)?;
 
                     Ok(Decl {
                         kind: DeclKind::Def(solved_pat, solved_expr.clone()),
@@ -253,7 +259,7 @@ impl TypeSolver {
 
                 // Γ, x : T ⊢ e : T'
                 let param_ty = Type::MetaRef(self.meta_ctx.fresh());
-                log::debug!("lambda_param_types: {:?}", param_ty);
+                log::debug!("lambda_param_type: {:?}", param_ty);
                 self.ctx.push();
                 let solved_param = self.infer_pattern(param, &param_ty, false)?;
 
