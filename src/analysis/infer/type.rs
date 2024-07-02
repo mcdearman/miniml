@@ -141,15 +141,6 @@ impl Display for Type {
                         }
                     }
                 },
-                // Type::Poly(poly) => {
-                //     for mid in poly.vars {
-                //         let tv = metas.len() as u32;
-                //         let m = Meta::from(mid);
-                //         metas.insert(tv, m);
-                //         // lowered_metas.push(lower(&Type::MetaRef(v), metas));
-                //     }
-                //     Type::Poly(PolyType::new(lowered_metas, lower(poly.ty.as_ref(), metas)))
-                // }
                 Type::Lambda(param, body) => {
                     Type::Lambda(Box::new(lower(param, metas)), Box::new(lower(body, metas)))
                 }
@@ -166,6 +157,7 @@ impl Display for Type {
         }
 
         let mut vars = HashMap::new();
+        // log::debug!("lowered: {:?}", lower(self, &mut vars));
         match lower(self, &mut vars) {
             Self::Byte => write!(f, "Byte"),
             Self::Int => write!(f, "Int"),
@@ -179,9 +171,9 @@ impl Display for Type {
             // Self::Poly(poly) => write!(f, "{}", poly),
             Self::Lambda(param, body) => {
                 if matches!(*param, Self::Lambda(_, _)) {
-                    write!(f, "({}) -> {}", param, body)
+                    write!(f, "({:?}) -> {:?}", param, body)
                 } else {
-                    write!(f, "{} -> {}", param, body)
+                    write!(f, "{:?} -> {:?}", param, body)
                 }
             }
             Self::List(ty) => write!(f, "[{}]", ty),
