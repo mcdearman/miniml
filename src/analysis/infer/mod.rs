@@ -159,14 +159,26 @@ impl TypeSolver {
                     let binder_ty = Type::MetaRef(self.meta_ctx.fresh());
                     log::debug!("def_binder_ty: {:?}", binder_ty);
 
-                    let solved_pat = self.infer_pattern(pat, &binder_ty, true)?;
-                    log::debug!("def_solved_pat: {:?}", solved_pat.ty);
+                    match pat.kind.as_ref() {
+                        nir::PatternKind::Ident(ident, _) => {
+                            self.ctx
+                                .insert(ident.name, PolyType::new(vec![], binder_ty.clone()));
+                        }
+                        _ => {
+                            return Err(TypeError::from(format!(
+                                "recursion is only allowed with identifiers: {:?}",
+                                pat
+                            )));
+                        }
+                    }
 
                     let solved_expr = self.infer_expr(let_expr)?;
                     log::debug!("def_solved_expr: {:?}", solved_expr.ty);
 
-                    // self.meta_ctx.unify(&binder_ty, &solved_expr.ty)?;
-                    // self.meta_ctx.unify(&solved_pat.ty, &solved_expr.ty)?;
+                    let solved_pat = self.infer_pattern(pat, &solved_expr.ty, true)?;
+                    log::debug!("def_solved_pat: {:?}", solved_pat.ty);
+
+                    self.meta_ctx.unify(&binder_ty, &solved_expr.ty)?;
 
                     Ok(Decl {
                         kind: DeclKind::Def(solved_pat, solved_expr.clone()),
@@ -445,7 +457,7 @@ impl TypeSolver {
                     self.ctx.insert(ident.name, scm.clone());
                     Ok(Pattern::new(
                         PatternKind::Ident(*ident),
-                        scm.instantiate(&mut self.meta_ctx),
+                        ty.clone(),
                         pat.span,
                     ))
                 } else {
