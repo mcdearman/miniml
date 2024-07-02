@@ -342,7 +342,7 @@ impl TypeSolver {
                     solved_pat.ty,
                     solved_expr.ty
                 );
-                self.meta_ctx.unify(&solved_pat.ty, &solved_expr.ty)?;
+                // self.meta_ctx.unify(&solved_pat.ty, &solved_expr.ty)?;
 
                 let solved_body = self.infer_expr(body)?;
 
@@ -352,44 +352,6 @@ impl TypeSolver {
                     expr.span,
                 ))
             }
-            // nir::ExprKind::Fn(ident, params, expr, body) => {
-            //     log::debug!("infer fn ({:?})", ident);
-            //     // to show that Γ ⊢ fn x = e0 in e1 : T' we need to show that
-            //     // Γ, x: gen(T) ⊢ e1 : T'
-
-            //     let param_tys = vec![Type::MetaRef(self.meta_ctx.fresh()); params.len()];
-            //     let ty_ret = Type::MetaRef(self.meta_ctx.fresh());
-            //     let fn_ty = Type::Lambda(param_tys.clone(), Box::new(ty_ret.clone()));
-            //     log::debug!("fn_ty: {:?}", fn_ty);
-
-            //     self.ctx.push();
-            //     self.ctx
-            //         .insert(ident.name, PolyType::new(vec![], fn_ty.clone()));
-            //     self.ctx.push();
-            //     let mut solved_params = vec![];
-            //     for (ty, pat) in param_tys.iter().zip(params.iter()) {
-            //         let solved_pat = self.infer_pattern(pat, ty, false)?;
-            //         solved_params.push(solved_pat.clone());
-            //         log::debug!("unify fn param: {:?} and {:?}", solved_pat.ty, ty);
-            //         self.meta_ctx.unify(&solved_pat.ty, &ty)?;
-            //     }
-
-            //     let solved_expr = self.infer_expr(expr)?;
-            //     // log::debug!("fn_solved_expr: {:?}", solved_expr.ty);
-            //     log::debug!("unify fn expr: {:?} and {:?}", solved_expr.ty, ty_ret);
-            //     self.meta_ctx.unify(&solved_expr.ty, &ty_ret)?;
-            //     self.ctx.pop();
-
-            //     let solved_body = self.infer_expr(body)?;
-            //     // log::debug!("fn_solved_body: {:?}", solved_body.ty);
-            //     self.ctx.pop();
-
-            //     Ok(Expr::new(
-            //         ExprKind::Fn(*ident, solved_params, solved_expr, solved_body.clone()),
-            //         solved_body.ty,
-            //         expr.span,
-            //     ))
-            // }
             nir::ExprKind::If(cond, then, else_) => {
                 log::debug!("infer if");
                 let solved_cond = self.infer_expr(cond)?;
