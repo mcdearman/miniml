@@ -3,12 +3,12 @@
 -- utils
 data Span = { start : Int, end : Int }
 
-span_to_string span src = 
+spanToString span src = 
   let start = span.start
   let end = span.end
   stringSub src start (end - start)
 
-span_to_line_col span src = 
+spanToLineCol span src = 
   let loop pos line col =
     if pos >= span.start then
       (line, col)
@@ -19,7 +19,7 @@ span_to_line_col span src =
   in
   loop 0 0 0
 
-span_to_line_col_string span src = 
+lineColToString src = 
   let (line, col) = spanToLineCol span src
   format "{}:{}" (intToString line) (intToString col)
 
@@ -69,22 +69,22 @@ data Lexer = {
   pos : Int,
 }
 
-let init_lexer src = {
+initLexer src = {
   src = src,
   pos = 0,
 }
 
-is_whitespace c = c = ' ' or c = '\t' or c = '\n' or c = '\r'
+isWhitespace c = c = ' ' or c = '\t' or c = '\n' or c = '\r'
 
-is_digit c = c >= '0' and c <= '9'
+isDigit c = c >= '0' and c <= '9'
 
-is_alpha c = 
+isAlpha c = 
   (c >= 'a' and c <= 'z') or 
   (c >= 'A' and c <= 'Z')
 
 is_alpha_num c = is_alpha c or is_digit c
 
-consume_whitespace lexer =
+consumeWhitespace lexer =
   let loop pos =
     if pos < String.length lexer.src and 
       (lexer.src[pos] = ' ' or 
@@ -96,18 +96,18 @@ consume_whitespace lexer =
   in
   { lexer with pos = loop lexer.pos }
 
-peek_char lexer = 
+peekChar lexer = 
   if lexer.pos < String.length lexer.src then
     Some lexer.src[lexer.pos]
   else
     None
 
-next_token : Lexer -> Token = 
-next_token None -> { kind = Eof, span = { start = lexer.pos, end = lexer.pos } }
-next_token Some c -> 
-  if is_whitespace c then
+nextToken : Lexer -> Token = 
+nextToken None -> { kind = Eof, span = { start = lexer.pos, end = lexer.pos } }
+nextToken Some c -> 
+  if isWhitespace c then
     let start = lexer.pos
-    let lexer' = consume_whitespace lexer
+    let lexer' = consumeWhitespace lexer
     { kind = Whitespace, span = { start, end = lexer'.pos } }
   else
     let start = lexer.pos
