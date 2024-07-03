@@ -144,7 +144,7 @@ impl Display for Type {
                 Type::Lambda(param, body) => {
                     Type::Lambda(Box::new(lower(param, metas)), Box::new(lower(body, metas)))
                 }
-                // Type::List(list_ty) => Type::List(Box::new(lower(*list_ty, metas))),
+                Type::List(list_ty) => Type::List(Box::new(lower(list_ty, metas))),
                 // Type::Record(name, fields) => {
                 //     let mut lowered_fields = vec![];
                 //     for (k, v) in fields {

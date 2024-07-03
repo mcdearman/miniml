@@ -46,6 +46,7 @@ impl PolyType {
                     Box::new(substitute(param, subst, meta_ctx)),
                     Box::new(substitute(body, subst, meta_ctx)),
                 ),
+                Type::List(ty) => Type::List(Box::new(substitute(ty, subst, meta_ctx))),
                 _ => ty.clone(),
             }
         }
@@ -55,7 +56,10 @@ impl PolyType {
             subst.insert(*m, Type::MetaRef(meta_ctx.fresh()));
         }
 
-        substitute(&meta_ctx.force(&self.ty), &subst, meta_ctx)
+        let ty = meta_ctx.force(&self.ty);
+        let inst = substitute(&ty, &subst, meta_ctx);
+        log::debug!("instantiate: {:?} -- {:?}", self, inst);
+        inst
     }
 }
 

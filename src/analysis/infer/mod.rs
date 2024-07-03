@@ -30,7 +30,7 @@ pub struct TypeSolver {
 
 impl TypeSolver {
     pub fn new() -> Self {
-        let meta_ctx = MetaContext::new();
+        let mut meta_ctx = MetaContext::new();
         let mut ctx = Context::new();
 
         ctx.insert(
@@ -102,6 +102,19 @@ impl TypeSolver {
                     Box::new(Type::Lambda(Box::new(Type::Int), Box::new(Type::Int))),
                 ),
             ),
+        );
+
+        let r = meta_ctx.fresh();
+        ctx.insert(
+            "__pair__".into(),
+            Type::Lambda(
+                Box::new(Type::MetaRef(r)),
+                Box::new(Type::Lambda(
+                    Box::new(Type::List(Box::new(Type::MetaRef(r)))),
+                    Box::new(Type::List(Box::new(Type::MetaRef(r)))),
+                )),
+            )
+            .generalize(&ctx, &meta_ctx),
         );
 
         Self {
@@ -177,8 +190,6 @@ impl TypeSolver {
 
                     let solved_pat = self.infer_pattern(pat, &solved_expr.ty, true)?;
                     log::debug!("def_solved_pat: {:?}", solved_pat.ty);
-
-                    self.meta_ctx.unify(&binder_ty, &solved_expr.ty)?;
 
                     Ok(Decl {
                         kind: DeclKind::Def(solved_pat, solved_expr.clone()),
@@ -381,26 +392,23 @@ impl TypeSolver {
             }
             nir::ExprKind::Match(expr, arms) => {
                 log::debug!("infer match");
+
                 let solved_expr = self.infer_expr(expr)?;
                 let ty = Type::MetaRef(self.meta_ctx.fresh());
+
                 let mut solved_arms = vec![];
                 for (pat, body) in arms {
                     self.ctx.push();
 
-                    let solved_pat = self.infer_pattern(pat, &ty, false)?;
+                    let solved_pat = self.infer_pattern(pat, &solved_expr.ty, false)?;
                     log::debug!(
                         "unify match pat: {:?} and {:?}",
                         solved_pat.ty,
                         solved_expr.ty
                     );
-                    self.meta_ctx.unify(&solved_pat.ty, &solved_expr.ty)?;
 
                     let solved_body = self.infer_expr(body)?;
-                    log::debug!(
-                        "unify match body: {:?} and {:?}",
-                        solved_body.ty,
-                        solved_expr.ty
-                    );
+                    log::debug!("unify match body: {:?} and {:?}", solved_body.ty, ty,);
                     self.meta_ctx.unify(&solved_body.ty, &ty)?;
 
                     solved_arms.push((solved_pat, solved_body));
