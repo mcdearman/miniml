@@ -48,7 +48,7 @@ fn main() {
                         runtime::eval::RuntimePayload::Type(ty) => println!("{}", ty),
                         runtime::eval::RuntimePayload::Bindings(bindings) => {
                             for (name, value, ty) in bindings {
-                                println!("{} : {} = {}", name, ty, value);
+                                println!("{} : {} = {}\n", name, ty, value);
                             }
                         }
                         runtime::eval::RuntimePayload::Value(val, ty) => {

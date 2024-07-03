@@ -76,26 +76,6 @@ pub fn eval<'src>(
                         payload = RuntimePayload::Bindings(bindings);
                     }
                 }
-                // if let PatternKind::Ident(ident) = pat.kind.as_ref() {
-                //     if ident.name.to_string() == "main" {
-                //         return Ok(RuntimePayload::Value(
-                //             eval_expr(src, env.clone(), expr.clone())?,
-                //             expr.ty.clone(),
-                //         ));
-                //     }
-                //     env.borrow_mut().insert(ident.name, Value::Unit);
-                //     payload = RuntimePayload::default();
-                // } else {
-                //     let val = eval_expr(src, env.clone(), expr.clone())?;
-                //     let (matched, bindings) = destructure_pattern(src, env.clone(), pat, &val);
-                //     if !matched {
-                //         return Err(RuntimeError::PatternMismatch(
-                //             format!("let decl {:?}", pat).into(),
-                //             pat.span,
-                //         ));
-                //     }
-                //     payload = RuntimePayload::Bindings(bindings);
-                // }
             }
         }
     }
@@ -123,10 +103,7 @@ fn eval_expr<'src>(
                 if let Some(value) = env.borrow().get(&ident.name) {
                     value
                 } else {
-                    return Err(RuntimeError::UnboundIdent(
-                        src[ident.span].trim().into(),
-                        ident.span,
-                    ));
+                    return Err(RuntimeError::UnboundIdent(ident.name, ident.span));
                 }
             }
             ExprKind::Apply(fun, arg) => match eval_expr(src, env.clone(), fun.clone())? {

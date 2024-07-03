@@ -95,12 +95,6 @@ fn decl_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
         .then(expr_parser())
         .map(|(pat, expr)| DeclKind::Def(pat, expr));
 
-    // let def = ident_parser()
-    //     .map_with(|kind, e| Pattern::new(PatternKind::Ident(kind, None), e.span()))
-    //     .then_ignore(just(Token::Assign))
-    //     .then(expr_parser())
-    //     .map(|(pat, expr)| DeclKind::Def(pat, expr));
-
     let fn_ = ident_parser()
         .then(pattern_parser().repeated().at_least(1).collect())
         .then_ignore(just(Token::Assign))

@@ -104,6 +104,83 @@ impl TypeSolver {
             ),
         );
 
+        ctx.insert(
+            "__pow__".into(),
+            PolyType::new(
+                vec![],
+                Type::Lambda(
+                    Box::new(Type::Int),
+                    Box::new(Type::Lambda(Box::new(Type::Int), Box::new(Type::Int))),
+                ),
+            ),
+        );
+
+        ctx.insert(
+            "__eq__".into(),
+            PolyType::new(
+                vec![],
+                Type::Lambda(
+                    Box::new(Type::Int),
+                    Box::new(Type::Lambda(Box::new(Type::Int), Box::new(Type::Bool))),
+                ),
+            ),
+        );
+
+        ctx.insert(
+            "__neq__".into(),
+            PolyType::new(
+                vec![],
+                Type::Lambda(
+                    Box::new(Type::Int),
+                    Box::new(Type::Lambda(Box::new(Type::Int), Box::new(Type::Bool))),
+                ),
+            ),
+        );
+
+        ctx.insert(
+            "__lt__".into(),
+            PolyType::new(
+                vec![],
+                Type::Lambda(
+                    Box::new(Type::Int),
+                    Box::new(Type::Lambda(Box::new(Type::Int), Box::new(Type::Bool))),
+                ),
+            ),
+        );
+
+        ctx.insert(
+            "__lte__".into(),
+            PolyType::new(
+                vec![],
+                Type::Lambda(
+                    Box::new(Type::Int),
+                    Box::new(Type::Lambda(Box::new(Type::Int), Box::new(Type::Bool))),
+                ),
+            ),
+        );
+
+        ctx.insert(
+            "__gt__".into(),
+            PolyType::new(
+                vec![],
+                Type::Lambda(
+                    Box::new(Type::Int),
+                    Box::new(Type::Lambda(Box::new(Type::Int), Box::new(Type::Bool))),
+                ),
+            ),
+        );
+
+        ctx.insert(
+            "__gte__".into(),
+            PolyType::new(
+                vec![],
+                Type::Lambda(
+                    Box::new(Type::Int),
+                    Box::new(Type::Lambda(Box::new(Type::Int), Box::new(Type::Bool))),
+                ),
+            ),
+        );
+
         let r = meta_ctx.fresh();
         ctx.insert(
             "__pair__".into(),
