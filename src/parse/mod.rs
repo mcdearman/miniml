@@ -164,7 +164,7 @@ fn expr_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
 
         let let_ = just(Token::Let)
             .ignore_then(pattern_parser())
-            .then_ignore(just(Token::Eq))
+            .then_ignore(just(Token::Assign))
             .then(expr.clone())
             .then_ignore(just(Token::In))
             .then(expr.clone())
@@ -173,7 +173,7 @@ fn expr_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
         let fn_ = just(Token::Let)
             .ignore_then(ident_parser())
             .then(pattern_parser().repeated().at_least(1).collect())
-            .then_ignore(just(Token::Eq))
+            .then_ignore(just(Token::Assign))
             .then(expr.clone())
             .then_ignore(just(Token::In))
             .then(expr.clone())
