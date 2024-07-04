@@ -222,7 +222,6 @@ impl Resolver {
                 Ok(res_params.into_iter().rev().fold(res_expr, |acc, p| {
                     Expr::new(ExprKind::Lambda(p, acc), expr.span)
                 }))
-                // Ok(Expr::new(ExprKind::Lambda(res_params, res_expr), expr.span))
             }
             ast::ExprKind::Apply(fun, args) => {
                 let res_fun = self.resolve_expr(fun)?;
@@ -320,19 +319,10 @@ impl Resolver {
                 let res_body = self.resolve_expr(body)?;
                 self.env.pop(ident.name);
 
-                // Ok(Expr::new(
-                //     ExprKind::Fn(
-                //         ScopedIdent::new(ident.name, level, ident.span),
-                //         res_params,
-                //         res_expr,
-                //         res_body,
-                //     ),
-                //     expr.span,
-                // ))
-                // fold params into lambda expr
                 let lam = res_params.into_iter().rev().fold(res_expr, |acc, p| {
                     Expr::new(ExprKind::Lambda(p, acc), expr.span)
                 });
+
                 Ok(Expr::new(
                     ExprKind::Let(
                         Pattern::new(
