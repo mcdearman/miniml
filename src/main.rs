@@ -43,7 +43,7 @@ fn main() {
             Ok(line) => {
                 rl.add_history_entry(line.as_str())
                     .expect("Failed to add history entry");
-                match interpreter.run(line.trim().strip_suffix(";;").unwrap_or(&*line)) {
+                match interpreter.run(line.trim()) {
                     Ok(payload) => match payload {
                         runtime::eval::RuntimePayload::Type(ty) => println!("{}", ty),
                         runtime::eval::RuntimePayload::Bindings(bindings) => {

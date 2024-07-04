@@ -42,10 +42,9 @@ pub fn eval<'src>(
             // }
             DeclKind::Def(pat, expr) => {
                 match expr.kind.as_ref() {
-                    ExprKind::Lambda(params, lam_expr) => {
+                    ExprKind::Lambda(param, lam_expr) => {
                         let lam_env = Env::new_with_parent(env.clone());
-                        let value =
-                            Value::Lambda(lam_env.clone(), params.clone(), lam_expr.clone());
+                        let value = Value::Lambda(lam_env.clone(), param.clone(), lam_expr.clone());
                         if let PatternKind::Ident(ident) = pat.kind.as_ref() {
                             if ident.name.to_string() == "main" {
                                 return Ok(RuntimePayload::Value(
@@ -142,18 +141,54 @@ fn eval_expr<'src>(
                 }
             }
             ExprKind::Let(pat, rec, let_expr, body) => {
-                let value = eval_expr(src, env.clone(), let_expr.clone())?;
-                let let_env = Env::new_with_parent(env.clone());
-                // let_env.borrow_mut().insert(name.id, value);
-                if !destructure_pattern(src, let_env.clone(), pat, &value).0 {
-                    return Err(RuntimeError::PatternMismatch(
-                        format!("let {:?}", pat).into(),
-                        pat.span,
-                    ));
+                if *rec {
+                    let lam_env = Env::new_with_parent(env.clone());
+                    let ident = match pat.kind.as_ref() {
+                        PatternKind::Ident(ident) => ident,
+                        _ => {
+                            return Err(RuntimeError::PatternMismatch(
+                                format!("let {:?}", pat).into(),
+                                pat.span,
+                            ));
+                        }
+                    };
+                    match let_expr.kind.as_ref() {
+                        ExprKind::Lambda(param, lam_expr) => {
+                            let value =
+                                Value::Lambda(lam_env.clone(), param.clone(), lam_expr.clone());
+                            env.borrow_mut().insert(ident.name, value.clone());
+                            env = lam_env;
+                            expr = body.clone();
+                            continue 'tco;
+                        }
+                        _ => {
+                            let value = eval_expr(src, env.clone(), let_expr.clone())?;
+                            let let_env = Env::new_with_parent(env.clone());
+                            if !destructure_pattern(src, let_env.clone(), pat, &value).0 {
+                                return Err(RuntimeError::PatternMismatch(
+                                    format!("let {:?}", pat).into(),
+                                    pat.span,
+                                ));
+                            }
+                            env = let_env;
+                            expr = body.clone();
+                            continue 'tco;
+                        }
+                    }
+                } else {
+                    let value = eval_expr(src, env.clone(), let_expr.clone())?;
+                    let let_env = Env::new_with_parent(env.clone());
+                    // let_env.borrow_mut().insert(name.id, value);
+                    if !destructure_pattern(src, let_env.clone(), pat, &value).0 {
+                        return Err(RuntimeError::PatternMismatch(
+                            format!("let {:?}", pat).into(),
+                            pat.span,
+                        ));
+                    }
+                    expr = body.clone();
+                    env = let_env;
+                    continue 'tco;
                 }
-                expr = body.clone();
-                env = let_env;
-                continue 'tco;
             }
             // ExprKind::Fn(ident, param, fn_expr, body) => {
             //     let lam_env = Env::new_with_parent(env.clone());
