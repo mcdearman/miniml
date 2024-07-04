@@ -433,24 +433,59 @@ impl TypeSolver {
                 log::debug!("infer let ({:?})", pat.span);
                 // to show that Γ ⊢ let x = e0 in e1 : T' we need to show that
                 // Γ ⊢ e0 : T
-                let solved_expr = self.infer_expr(let_expr)?;
+                if *rec {
+                    let binder_ty = Type::MetaRef(self.meta_ctx.fresh());
+                    log::debug!("let_binder_ty: {:?}", binder_ty);
 
-                // Γ, x: T ⊢ e1 : T'
-                let solved_pat = self.infer_pattern(pat, &solved_expr.ty, false)?;
-                log::debug!(
-                    "unify let pat: {:?} and {:?}",
-                    solved_pat.ty,
-                    solved_expr.ty
-                );
-                // self.meta_ctx.unify(&solved_pat.ty, &solved_expr.ty)?;
+                    match pat.kind.as_ref() {
+                        nir::PatternKind::Ident(ident, _) => {
+                            self.ctx
+                                .insert(ident.name, PolyType::new(vec![], binder_ty.clone()));
+                        }
+                        _ => {
+                            return Err(TypeError::from(format!(
+                                "recursion is only allowed with identifiers: {:?}",
+                                pat
+                            )));
+                        }
+                    }
 
-                let solved_body = self.infer_expr(body)?;
+                    let solved_expr = self.infer_expr(let_expr)?;
+                    log::debug!("let_solved_expr: {:?}", solved_expr.ty);
 
-                Ok(Expr::new(
-                    ExprKind::Let(solved_pat, *rec, solved_expr, solved_body.clone()),
-                    solved_body.ty,
-                    expr.span,
-                ))
+                    let solved_pat = self.infer_pattern(pat, &solved_expr.ty, false)?;
+                    log::debug!("let_solved_pat: {:?}", solved_pat.ty);
+
+                    let solved_body = self.infer_expr(body)?;
+                    log::debug!("let_solved_body: {:?}", solved_body.ty);
+
+                    Ok(Expr::new(
+                        ExprKind::Let(solved_pat, *rec, solved_expr, solved_body.clone()),
+                        solved_body.ty,
+                        expr.span,
+                    ))
+                } else {
+                    // to show that Γ ⊢ let x = e0 in e1 : T' we need to show that
+                    // Γ ⊢ e0 : T
+                    let solved_expr = self.infer_expr(let_expr)?;
+
+                    // Γ, x: T ⊢ e1 : T'
+                    let solved_pat = self.infer_pattern(pat, &solved_expr.ty, false)?;
+                    log::debug!(
+                        "unify let pat: {:?} and {:?}",
+                        solved_pat.ty,
+                        solved_expr.ty
+                    );
+                    // self.meta_ctx.unify(&solved_pat.ty, &solved_expr.ty)?;
+
+                    let solved_body = self.infer_expr(body)?;
+
+                    Ok(Expr::new(
+                        ExprKind::Let(solved_pat, *rec, solved_expr, solved_body.clone()),
+                        solved_body.ty,
+                        expr.span,
+                    ))
+                }
             }
             nir::ExprKind::If(cond, then, else_) => {
                 log::debug!("infer if");
