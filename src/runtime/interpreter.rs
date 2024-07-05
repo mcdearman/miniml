@@ -76,9 +76,9 @@ impl Interpreter {
                         Err(RuntimeError::ArityError(2, args.len()))
                     } else {
                         match (args[0].clone(), args[1].clone()) {
-                            (Value::Lit(Lit::Int(l)), Value::Lit(Lit::Int(r))) => {
-                                Ok(Value::Lit(Lit::Int(l + r)))
-                            }
+                            (Value::Lit(Lit::Int(l)), Value::Lit(Lit::Int(r))) => Ok(Value::Lit(
+                                Lit::Int(l.checked_add(r).ok_or(RuntimeError::Overflow)?),
+                            )),
                             (Value::Lit(Lit::Rational(l)), Value::Lit(Lit::Rational(r))) => {
                                 Ok(Value::Lit(Lit::Rational(l + r)))
                             }
@@ -102,9 +102,9 @@ impl Interpreter {
                         Err(RuntimeError::ArityError(2, args.len()))
                     } else {
                         match (args[0].clone(), args[1].clone()) {
-                            (Value::Lit(Lit::Int(l)), Value::Lit(Lit::Int(r))) => {
-                                Ok(Value::Lit(Lit::Int(l - r)))
-                            }
+                            (Value::Lit(Lit::Int(l)), Value::Lit(Lit::Int(r))) => Ok(Value::Lit(
+                                Lit::Int(l.checked_sub(r).ok_or(RuntimeError::Overflow)?),
+                            )),
                             (Value::Lit(Lit::Rational(l)), Value::Lit(Lit::Rational(r))) => {
                                 Ok(Value::Lit(Lit::Rational(l - r)))
                             }
@@ -128,9 +128,9 @@ impl Interpreter {
                         Err(RuntimeError::ArityError(2, args.len()))
                     } else {
                         match (args[0].clone(), args[1].clone()) {
-                            (Value::Lit(Lit::Int(l)), Value::Lit(Lit::Int(r))) => {
-                                Ok(Value::Lit(Lit::Int(l * r)))
-                            }
+                            (Value::Lit(Lit::Int(l)), Value::Lit(Lit::Int(r))) => Ok(Value::Lit(
+                                Lit::Int(l.checked_mul(r).ok_or(RuntimeError::Overflow)?),
+                            )),
                             (Value::Lit(Lit::Rational(l)), Value::Lit(Lit::Rational(r))) => {
                                 Ok(Value::Lit(Lit::Rational(l * r)))
                             }

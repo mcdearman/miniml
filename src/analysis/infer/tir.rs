@@ -179,6 +179,8 @@ impl Expr {
     }
 }
 
+type BoxedExpr = Box<Expr>;
+
 #[derive(Debug, Clone, PartialEq)]
 pub enum ExprKind {
     Lit(Lit),
