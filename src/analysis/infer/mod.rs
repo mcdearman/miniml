@@ -513,13 +513,8 @@ impl TypeSolver {
                     self.ctx.push();
 
                     let solved_pat = self.infer_pattern(pat, &solved_expr.ty, false)?;
-                    log::debug!(
-                        "unify match pat: {:?} and {:?}",
-                        solved_pat.ty,
-                        solved_expr.ty
-                    );
-
                     let solved_body = self.infer_expr(body)?;
+
                     log::debug!("unify match body: {:?} and {:?}", solved_body.ty, ty,);
                     self.meta_ctx.unify(&solved_body.ty, &ty)?;
 
