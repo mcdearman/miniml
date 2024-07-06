@@ -38,6 +38,10 @@ fib n =
   if n < 2 then n 
   else fib (n - 1) + fib (n - 2)
 
+fib 0 = 0
+fib 1 = 1
+fib n = fib (n - 1) + fib (n - 2)
+
 fibIter n = 
   let loop n a b = 
     if n == 0 then a
@@ -48,6 +52,11 @@ foldr : (a -> b -> b) -> b -> [a] -> b
 foldr f acc xs = match xs
 | [] -> acc
 | (x::xs) -> f x (foldr f acc xs)
+
+foldl : (b -> a -> b) -> b -> [a] -> b
+foldl f acc xs = match xs
+| [] -> acc
+| (x::xs) -> foldl f (f acc x) xs
 
 f : e -> b -> b
 acc : b : d
