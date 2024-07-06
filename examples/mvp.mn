@@ -68,3 +68,23 @@ after match first arm we know that c is [e] and d is b
 after match second arm we know that a is a function e -> b -> b
 
 we know the return type is b because the application of f is the result of the foldr in the second arm
+
+filter : (a -> Bool) -> [a] -> [a]
+filter p xs = foldr (\x acc -> if p x then x::acc else acc) [] xs
+
+-- filter without fold
+filter p xs = 
+  let loop acc xs = match xs
+  | [] -> acc
+  | (x::xs) -> if p x then loop (x::acc) xs else loop acc xs
+  in loop [] xs
+
+reverse : [a] -> [a]
+reverse xs = foldl (\acc x -> x::acc) [] xs
+
+-- reverse without fold
+reverse xs = 
+  let loop acc xs = match xs
+  | [] -> acc
+  | (x::xs) -> loop (x::acc) xs
+  in loop [] xs
