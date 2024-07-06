@@ -382,7 +382,6 @@ impl TypeSolver {
                 log::debug!("app_solved_fun: {:?}", solved_fun.ty);
 
                 // Γ ⊢ e1 : T1
-                // let solved_arg = self.infer_expr(arg)?;
                 let solved_arg = self.infer_expr(arg)?;
                 log::debug!("app_solved_arg: {:?}", solved_arg.ty);
 
