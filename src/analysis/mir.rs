@@ -6,7 +6,10 @@
  */
 
 use super::infer::r#type::Type;
-use crate::utils::{ident::ScopedIdent, intern::InternedString, span::Span};
+use crate::{
+    rename::scoped_ident::ScopedIdent,
+    utils::{intern::InternedString, span::Span},
+};
 use num_rational::Rational64;
 
 #[derive(Debug, Clone, PartialEq)]
@@ -117,5 +120,5 @@ pub enum Value {
     Rational(Rational64),
     Bool(bool),
     String(InternedString),
-    Ident(ScopedIdent),
+    Var(ScopedIdent),
 }
