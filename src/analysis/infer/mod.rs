@@ -506,6 +506,7 @@ impl TypeSolver {
 
                 let solved_expr = self.infer_expr(expr)?;
                 let ty = Type::MetaRef(self.meta_ctx.fresh());
+                log::debug!("match_ty: {:?}", ty);
 
                 let mut solved_arms = vec![];
                 for (pat, body) in arms {
