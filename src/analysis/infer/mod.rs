@@ -505,8 +505,8 @@ impl TypeSolver {
                 log::debug!("infer match");
 
                 let solved_expr = self.infer_expr(expr)?;
-                let ty = Type::MetaRef(self.meta_ctx.fresh());
-                log::debug!("match_ty: {:?}", ty);
+                // let ty = Type::MetaRef(self.meta_ctx.fresh());
+                log::debug!("match_ty: {:?}", solved_expr.ty);
 
                 let mut solved_arms = vec![];
                 for (pat, body) in arms {
@@ -515,8 +515,12 @@ impl TypeSolver {
                     let solved_pat = self.infer_pattern(pat, &solved_expr.ty, false)?;
                     let solved_body = self.infer_expr(body)?;
 
-                    log::debug!("unify match body: {:?} and {:?}", solved_body.ty, ty);
-                    self.meta_ctx.unify(&solved_body.ty, &ty)?;
+                    log::debug!(
+                        "unify match body: {:?} and {:?}",
+                        solved_body.ty,
+                        solved_expr.ty.clone()
+                    );
+                    self.meta_ctx.unify(&solved_body.ty, &solved_expr.ty)?;
 
                     solved_arms.push((solved_pat, solved_body));
 
@@ -524,8 +528,8 @@ impl TypeSolver {
                 }
 
                 Ok(Expr::new(
-                    ExprKind::Match(solved_expr, solved_arms),
-                    ty,
+                    ExprKind::Match(solved_expr.clone(), solved_arms),
+                    solved_expr.ty,
                     expr.span,
                 ))
             }
