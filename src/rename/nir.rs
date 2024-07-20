@@ -41,9 +41,9 @@ impl Expr {
         }
     }
 
-    pub fn is_lambda(&self) -> bool {
-        matches!(self.kind.as_ref(), &ExprKind::Lambda(_, _))
-    }
+    // pub fn is_lambda(&self) -> bool {
+    //     matches!(self.kind.as_ref(), &ExprKind::Lambda(_, _))
+    // }
 }
 
 #[derive(Debug, Clone, PartialEq)]
