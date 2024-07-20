@@ -123,14 +123,6 @@ impl Resolver {
                     self.env.pop(ident.name);
                 }
 
-                // Ok(Decl {
-                //     kind: DeclKind::Fn(
-                //         ScopedIdent::new(ident.name, 0, ident.span),
-                //         res_params,
-                //         res_expr,
-                //     ),
-                //     span: decl.span,
-                // })
                 // fold params into lambda expr
                 let lam = res_params.into_iter().rev().fold(res_expr, |acc, p| {
                     Expr::new(ExprKind::Lambda(p, acc), decl.span)
