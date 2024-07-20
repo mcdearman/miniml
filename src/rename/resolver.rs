@@ -90,8 +90,7 @@ impl Resolver {
                         ResErrorKind::InvalidDefPattern,
                         pattern.span,
                     )),
-                }
-            } else {
+                } } else {
                     let res_expr = self.resolve_expr(&expr)?;
                 let (res_pat, _) = self.resolve_pattern(&pattern, true)?;
                 Ok(Decl {
