@@ -93,7 +93,7 @@ impl Resolver {
                     let res_expr = self.resolve_expr(&expr)?;
                     let (res_pat, _) = self.resolve_pattern(&pattern, true)?;
                     Ok(Decl {
-                        kind: DeclKind::Def(res_pat, true, res_expr),
+                        kind: DeclKind::Def(res_pat, false, res_expr),
                         span: decl.span,
                     })
                 }
