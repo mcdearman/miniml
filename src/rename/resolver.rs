@@ -30,17 +30,17 @@ impl Resolver {
         #[rustfmt::skip]
         const BUILTINS: [&str; 16] = [
             "__println__", 
-
             "__neg__", "__not__", 
 
             "__add__", "__sub__", 
             "__mul__", "__div__", 
-            "__rem__", "__pow__", 
 
+            "__rem__", "__pow__", 
             "__eq__", "__neq__",
+
             "__lt__", "__lte__", 
             "__gt__", "__gte__", 
-            
+
             "__pair__",
         ];
 
@@ -298,18 +298,38 @@ impl Resolver {
                 expr.span,
             )),
             ast::ExprKind::Let(pat, let_expr, body) => {
-                todo!()
-                // let res_expr = self.resolve_expr(&let_expr)?;
-                // let (res_pat, idents) = self.resolve_pattern(pat, false)?;
-                // let res_body = self.resolve_expr(&body)?;
-                // for ident in idents {
-                //     self.env.pop(ident.name);
-                // }
+                if let_expr.is_lambda() {
+                    match pat.kind.as_ref() {
+                        ast::PatternKind::Ident(ident, _) => {
+                            let level = self.env.push(ident.name);
+                            let res_pat = Pattern::new(
+                                PatternKind::Ident(
+                                    ScopedIdent::new(ident.name, level, ident.span),
+                                    None,
+                                ),
+                                ident.span,
+                            );
+                            let res_expr = self.resolve_expr(&let_expr)?;
+                            Ok(Expr::new(
+                                ExprKind::Let(res_pat, true, res_expr, self.resolve_expr(&body)?),
+                                expr.span,
+                            ))
+                        }
+                        _ => Err(ResError::new(ResErrorKind::InvalidLetPattern, pat.span)),
+                    }
+                } else {
+                    let res_expr = self.resolve_expr(&let_expr)?;
+                    let (res_pat, idents) = self.resolve_pattern(pat, false)?;
+                    let res_body = self.resolve_expr(&body)?;
+                    for ident in idents {
+                        self.env.pop(ident.name);
+                    }
 
-                // Ok(Expr::new(
-                //     ExprKind::Let(res_pat, res_expr, res_expr, res_body),
-                //     expr.span,
-                // ))
+                    Ok(Expr::new(
+                        ExprKind::Let(res_pat, false, res_expr, res_body),
+                        expr.span,
+                    ))
+                }
             }
             ast::ExprKind::Fn(ident, params, fn_expr, body) => {
                 let level = self.env.push(ident.name);

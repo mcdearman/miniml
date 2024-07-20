@@ -32,6 +32,7 @@ pub enum ResErrorKind {
     UnboundName(InternedString),
     UnboundBuiltIn(InternedString),
     InvalidDefPattern,
+    InvalidLetPattern,
     EmptyFnMatch,
     TooManyFnNames,
     FnArmParamMismatch,
@@ -48,6 +49,9 @@ impl Display for ResErrorKind {
             }
             ResErrorKind::InvalidDefPattern => {
                 write!(f, "invalid definition pattern")
+            }
+            ResErrorKind::InvalidLetPattern => {
+                write!(f, "invalid let pattern")
             }
             ResErrorKind::EmptyFnMatch => {
                 write!(f, "empty function match")
