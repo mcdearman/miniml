@@ -1,5 +1,3 @@
-use itertools::Itertools;
-
 use super::{
     env::Env,
     error::{ResError, ResErrorKind, ResResult},
@@ -38,7 +36,7 @@ impl Resolver {
             "__add__", "__sub__", 
             "__mul__", "__div__", 
             "__rem__", "__pow__", 
-            
+
             "__eq__", "__neq__",
             "__lt__", "__lte__", 
             "__gt__", "__gte__", 
@@ -73,31 +71,32 @@ impl Resolver {
         match &decl.kind {
             ast::DeclKind::Def(pattern, expr) => {
                 if expr.is_lambda() {
-                match pattern.kind.as_ref() {
-                    ast::PatternKind::Ident(ident, _) => {
-                        self.env.overwrite(ident.name);
-                        let res_pat = Pattern::new(
-                            PatternKind::Ident(ScopedIdent::new(ident.name, 0, ident.span), None),
-                            ident.span,
-                        );
-                        let res_expr = self.resolve_expr(&expr)?;
-                        Ok(Decl {
-                            kind: DeclKind::Def(res_pat, true, res_expr),
-                            span: decl.span,
-                        })
+                    match pattern.kind.as_ref() {
+                        ast::PatternKind::Ident(ident, _) => {
+                            self.env.overwrite(ident.name);
+                            let res_pat = Pattern::new(
+                                PatternKind::Ident(
+                                    ScopedIdent::new(ident.name, 0, ident.span),
+                                    None,
+                                ),
+                                ident.span,
+                            );
+                            let res_expr = self.resolve_expr(&expr)?;
+                            Ok(Decl {
+                                kind: DeclKind::Def(res_pat, true, res_expr),
+                                span: decl.span,
+                            })
+                        }
+                        _ => Err(ResError::new(ResErrorKind::InvalidDefPattern, pattern.span)),
                     }
-                    _ => Err(ResError::new(
-                        ResErrorKind::InvalidDefPattern,
-                        pattern.span,
-                    )),
-                } } else {
+                } else {
                     let res_expr = self.resolve_expr(&expr)?;
-                let (res_pat, _) = self.resolve_pattern(&pattern, true)?;
-                Ok(Decl {
-                    kind: DeclKind::Def(res_pat, true, res_expr),
-                    span: decl.span,
-                })
-             }
+                    let (res_pat, _) = self.resolve_pattern(&pattern, true)?;
+                    Ok(Decl {
+                        kind: DeclKind::Def(res_pat, true, res_expr),
+                        span: decl.span,
+                    })
+                }
             }
             ast::DeclKind::Fn(ident, params, fn_expr) => {
                 self.env.overwrite(ident.name);
