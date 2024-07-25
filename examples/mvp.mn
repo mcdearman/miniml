@@ -34,6 +34,11 @@ let f x = x + 1 in f 1
 compose : (b -> c) -> (a -> b) -> a -> c
 compose f g x = f (g x)
 
+map : (a -> b) -> [a] -> [b]
+map f xs = match xs
+| [] -> []
+| (x::xs) -> f x :: map f xs
+
 fib n = 
   if n < 2 then n 
   else fib (n - 1) + fib (n - 2)
