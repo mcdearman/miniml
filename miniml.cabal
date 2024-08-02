@@ -17,6 +17,7 @@ executable raskell
     import:           warnings
     main-is:          Main.hs
     other-modules: 
+        Lexer
         AST
         Parser
     default-extensions: 
