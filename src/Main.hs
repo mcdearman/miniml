@@ -3,13 +3,15 @@ module Main where
 import System.Console.Haskeline
 
 settings :: Settings IO
-settings = defaultSettings {historyFile = Just ".miniml-history"}
+settings = defaultSettings {historyFile = Just ".miniml-history", autoAddHistory = False}
 
 repl :: InputT IO ()
 repl = do
   input <- getMultilineInput ""
   case input of
-    Just i -> outputStrLn $ "You entered:\n" ++ i
+    Just i -> do
+      outputStrLn $ "You entered:\n" ++ i
+      putHistory i
     Nothing -> return ()
   repl -- Continue the loop
 
