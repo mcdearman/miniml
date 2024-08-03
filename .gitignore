@@ -6,4 +6,3 @@ history.txt
 *.log
 dist-*
 src-old
-.*

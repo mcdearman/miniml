@@ -1,19 +1,17 @@
 module Main where
 
-import System.Console.Haskeline
+import Data.Text (pack)
+import System.IO (BufferMode (NoBuffering), hSetBuffering, stdout)
 
-settings :: Settings IO
-settings = defaultSettings {historyFile = Just ".miniml-history"}
-
-repl :: InputT IO ()
+repl :: IO ()
 repl = do
-  minput <- getInputLine "> "
-  case minput of
-    Nothing -> return ()
-    Just "quit" -> return ()
-    Just input -> do outputStrLn $ "Input was: " ++ input; repl
+  hSetBuffering stdout NoBuffering
+  putStr "> "
+  input <- pack <$> getLine
+  print input
+  repl
 
 main :: IO ()
 main = do
   putStrLn "Welcome to the MiniML REPL!"
-  runInputT settings repl
+  repl
