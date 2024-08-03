@@ -7,26 +7,11 @@ settings = defaultSettings {historyFile = Just ".miniml-history"}
 
 repl :: InputT IO ()
 repl = do
-  input <- getMultilineInput ""
-  case input of
-    Just i -> outputStrLn $ "You entered:\n" ++ i
-    Nothing -> return ()
-  repl -- Continue the loop
-
-getMultilineInput :: String -> InputT IO (Maybe String)
-getMultilineInput acc = do
-  firstLine <- getInputLine "> "
-  case firstLine of
-    Nothing -> return Nothing
-    Just fl -> collectLines (acc ++ fl ++ "\n")
-
-collectLines :: String -> InputT IO (Maybe String)
-collectLines acc = do
-  minput <- getInputLine ""
+  minput <- getInputLine "> "
   case minput of
-    Nothing -> return Nothing
-    Just "" -> return $ Just (init acc)
-    Just input -> collectLines (acc ++ input ++ "\n")
+    Nothing -> return ()
+    Just "quit" -> return ()
+    Just input -> do outputStrLn $ "Input was: " ++ input; repl
 
 main :: IO ()
 main = do
