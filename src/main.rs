@@ -1,4 +1,3 @@
-use chumsky::combinator::PaddedBy;
 use runtime::interpreter::Interpreter;
 use rustyline::{
     error::ReadlineError, validate::Validator, Completer, Editor, Helper, Highlighter, Hinter,
