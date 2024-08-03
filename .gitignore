@@ -5,4 +5,4 @@
 .miniml_history
 *.log
 old-src
-.dist-*
+dist-*

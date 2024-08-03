@@ -2,25 +2,35 @@ cabal-version:      3.0
 name:               miniml
 version:            0.1.0.0
 synopsis:           The MiniML programming language
--- description:
 license:            BSD-3-Clause
 license-file:       LICENSE
-author:             mcdearman
+author:             Chris McDearman
 maintainer:         mcdearmanchris@gmail.com
--- copyright:
 category:           Language
 build-type:         Simple
 extra-doc-files:    CHANGELOG.md
--- extra-source-files:
 
 common warnings
-    ghc-options: -Wall
+    ghc-options: -Wall -Werror=missing-signatures -Werror=incomplete-patterns -Werror=incomplete-uni-patterns
 
-executable miniml
+executable raskell
     import:           warnings
     main-is:          Main.hs
-    -- other-modules:
-    -- other-extensions:
-    build-depends:    base ^>=4.17.2.1
+    other-modules: 
+        AST
+        Parser
+    default-extensions: 
+        OverloadedStrings
+        ScopedTypeVariables
+        LambdaCase
+        TupleSections
+        TemplateHaskell
+    build-depends:    
+        base ^>=4.17.2.1,
+        megaparsec,
+        text,
+        pretty-simple,
+        array,
+        haskeline,
     hs-source-dirs:   src
     default-language: Haskell2010
