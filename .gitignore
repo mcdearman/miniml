@@ -2,5 +2,7 @@
 .vscode
 .idea
 .DS_Store
-history.txt
+.miniml_history
 *.log
+old-src
+.dist-*

@@ -112,6 +112,10 @@ let fib 0 = 0
   | fib 1 = 1
   | fib n = fib (n - 1) + fib (n - 2)
 
+is_empty : [a] -> Bool
+is_empty [] = true
+is_empty _ = false
+
 -- with guards
 let gcd a b = 
   match (a, b)
@@ -123,9 +127,16 @@ gcd : Int -> Int -> Int
 gcd a 0 = a
 gcd a b = gcd b (a % b)
 
+let gcd a 0 = a
+  | gcd a b = gcd b (a % b)
+
 map : a b. a -> b -> [a] -> [b]
 map f [] = []
 map f (x :: xs) = f x :: map f xs
+
+let map : a b. (a -> b) -> [a] -> [b]
+  | map f [] = []
+  | map f (x :: xs) = f x :: map f xs
 
 map f xs = 
   match xs
@@ -135,9 +146,9 @@ map f xs =
 (.) : a b c. (b -> c) -> (a -> b) -> a -> c
 f . g = \x -> f (g x)
 
-foldl : a b. (a -> b -> a) -> a -> [b] -> a
-foldl f acc [] = acc
-foldl f acc (x :: xs) = foldl f (f acc x) xs
+let foldl : a b. (a -> b -> a) -> a -> [b] -> a
+  | foldl f acc [] = acc
+  | foldl f acc (x :: xs) = foldl f (f acc x) xs
 
 foldr : a b. (a -> b -> b) -> b -> [a] -> b
 foldr f acc [] = acc
