@@ -1,22 +1,19 @@
 module Main where
 
-import Data.Text (unpack)
-import Data.Text.Lazy (toStrict)
-import Lexer (lexMML)
 import System.Console.Haskeline
-import Text.Pretty.Simple (pShow)
 
 settings :: Settings IO
-settings = defaultSettings {historyFile = Just ".miniml-history"}
+settings = defaultSettings {historyFile = Just ".miniml-history", autoAddHistory = False}
 
 repl :: InputT IO ()
 repl = do
   input <- getMultilineInput ""
   case input of
     Just i -> do
-      outputStrLn $ unpack (toStrict (pShow $ lexMML i))
+      outputStrLn $ "You entered:\n" ++ i
+      putHistory i
     Nothing -> return ()
-  repl
+  repl -- Continue the loop
 
 getMultilineInput :: String -> InputT IO (Maybe String)
 getMultilineInput acc = do
