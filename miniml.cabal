@@ -17,6 +17,7 @@ executable raskell
     import:           warnings
     main-is:          Main.hs
     other-modules: 
+        Span
         AST
         Parser
     default-extensions: 
@@ -25,6 +26,7 @@ executable raskell
         LambdaCase
         TupleSections
         TemplateHaskell
+        GADTs
     build-depends:    
         base ^>=4.17.2.1,
         megaparsec,

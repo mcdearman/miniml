@@ -1,23 +1,23 @@
-{-# LANGUAGE GADTs #-}
-
 module AST where
 
-data Def a = Def String (Expr a)
+import Span
 
--- data Expr
+data Def = Def (Spanned String) ()
+
+-- data Expr a
 --   = ELit Lit
---   | EVar String
---   | EApp Expr Expr
---   | ELam String Expr
---   | ELet String Expr Expr
+--   | EVar (a String)
+--   | EApp (a (Expr a)) (a (Expr a))
+--   | ELam (a String) (a (Expr a))
+--   | ELet (a String) (a (Expr a)) (a (Expr a))
 --   deriving (Show)
-
 data Expr a where
-  I :: Int -> Expr Int
-  B :: Bool -> Expr Bool
-  Add :: Expr Int -> Expr Int -> Expr Int
-  Mul :: Expr Int -> Expr Int -> Expr Int
-  Eq :: (Eq a) => Expr a -> Expr a -> Expr Bool
+  ELit :: Lit -> Expr a
+  EVar :: Show a => a String -> Expr a
+  EApp :: Show a => a (Expr a) -> a (Expr a) -> Expr a
+  ELam :: Show a => a String -> a (Expr a) -> Expr a
+  ELet :: a String -> a (Expr a) -> a (Expr a) -> Expr a
+  deriving (Show)
 
 data Lit
   = LInt Integer
