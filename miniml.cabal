@@ -18,7 +18,10 @@ executable raskell
     main-is:          Main.hs
     other-modules: 
         Span
-        AST
+        Spanned
+        AST.Def
+        AST.Expr
+        AST.Lit
         Parser
     default-extensions: 
         OverloadedStrings

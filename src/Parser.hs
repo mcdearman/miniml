@@ -1,6 +1,5 @@
 module Parser where
 
-import AST
 import Control.Applicative (empty, (<|>))
 import Data.Text (Text, pack)
 import Data.Void

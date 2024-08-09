@@ -4,5 +4,5 @@
 .DS_Store
 .miniml_history
 *.log
-old-src
+src-old
 dist-*
