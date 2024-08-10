@@ -2,7 +2,6 @@ module Main where
 
 import Data.Text (unpack)
 import Data.Text.Lazy (toStrict)
-import Lexer (lexMML)
 import System.Console.Haskeline
 import Text.Pretty.Simple (pShow)
 
@@ -14,7 +13,7 @@ repl = do
   input <- getMultilineInput ""
   case input of
     Just i -> do
-      outputStrLn $ unpack (toStrict (pShow $ lexMML i))
+      outputStrLn $ "You entered: " ++ i
     Nothing -> return ()
   repl
 

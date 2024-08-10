@@ -13,7 +13,7 @@ extra-doc-files:    CHANGELOG.md
 common warnings
     ghc-options: -Wall -Werror=missing-signatures -Werror=incomplete-patterns -Werror=incomplete-uni-patterns
 
-executable raskell
+executable miniml
     import:           warnings
     main-is:          Main.hs
     other-modules: 
