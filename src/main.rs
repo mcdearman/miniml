@@ -71,6 +71,6 @@ fn main() {
             }
         }
     }
-    rl.save_history("history.txt")
+    rl.save_history(".miniml_history")
         .expect("Failed to save history");
 }
