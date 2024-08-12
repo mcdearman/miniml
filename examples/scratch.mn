@@ -93,9 +93,9 @@ fib n =
   else fib (n - 1) + fib (n - 2)
 
 -- tail recursive fib
-let fib n = 
+fib n = 
   let loop a b i = 
-    if i = 0 then a 
+    if i == 0 then a 
     else loop b (a + b) (i - 1)
   in loop 0 1 n
 
