@@ -1,7 +1,8 @@
 module Main where
 
-import Data.Text (unpack)
+import Data.Text (pack, unpack)
 import Data.Text.Lazy (toStrict)
+import Parser (parseDef)
 import System.Console.Haskeline
 import Text.Pretty.Simple (pShow)
 
@@ -12,8 +13,9 @@ repl :: InputT IO ()
 repl = do
   input <- getMultilineInput ""
   case input of
-    Just i -> do
-      outputStrLn $ "You entered: " ++ i
+    Just i -> case parseDef (pack i) of
+      Left err -> outputStrLn $ "Error: " ++ unpack (toStrict $ pShow err)
+      Right def -> outputStrLn $ unpack $ toStrict $ pShow def
     Nothing -> return ()
   repl
 
