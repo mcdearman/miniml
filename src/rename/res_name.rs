@@ -14,3 +14,9 @@ impl ResName {
         Self(COUNTER.fetch_add(1, std::sync::atomic::Ordering::SeqCst))
     }
 }
+
+impl std::fmt::Display for ResName {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        write!(f, "{}", self.0)
+    }
+}

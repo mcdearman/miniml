@@ -1,16 +1,15 @@
-use std::sync::atomic::{AtomicUsize, Ordering};
-
+use super::res_name::ResName;
 use crate::utils::{intern::InternedString, span::Span};
 
 #[derive(Debug, Clone, Copy)]
 pub struct ScopedIdent {
-    pub id: usize,
+    pub id: ResName,
     pub name: InternedString,
     pub span: Span,
 }
 
 impl ScopedIdent {
-    pub fn new(id: usize, name: InternedString, span: Span) -> Self {
+    pub fn new(id: ResName, name: InternedString, span: Span) -> Self {
         Self { id, name, span }
     }
 }
