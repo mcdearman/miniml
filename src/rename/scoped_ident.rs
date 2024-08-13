@@ -21,17 +21,6 @@ impl std::fmt::Display for ScopedIdent {
     }
 }
 
-static COUNTER: AtomicUsize = AtomicUsize::new(0);
-
-impl ScopedIdent {
-    pub fn gen() -> Self {
-        Self {
-            id: COUNTER.fetch_add(1, Ordering::SeqCst),
-
-        }
-    }
-}
-
 impl PartialEq for ScopedIdent {
     fn eq(&self, other: &ScopedIdent) -> bool {
         self.id == other.id
