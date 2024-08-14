@@ -5,7 +5,7 @@
 1 / 2
 
 -- value definition
-x = 1
+def x = 1
 
 -- lambda
 \a b -> a + b
@@ -14,7 +14,7 @@ x = 1
 (\a b -> a + b) 1 2
 
 -- function definition
-f x = x + 1
+def f x = x + 1
 
 -- function application
 f x

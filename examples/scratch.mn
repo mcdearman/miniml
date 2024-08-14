@@ -130,16 +130,17 @@ gcd a b = gcd b (a % b)
 let gcd a 0 = a
   | gcd a b = gcd b (a % b)
 
-map : a b. a -> b -> [a] -> [b]
-map f [] = []
-map f (x :: xs) = f x :: map f xs
+def map [a b] (f : a -> b) (xs : [a]) : [b] = 
+  match xs with
+  | [] -> []
+  | (x::xs) -> f x :: map f xs
 
-let map : a b. (a -> b) -> [a] -> [b]
+def map : a b. (a -> b) -> [a] -> [b]
   | map f [] = []
   | map f (x :: xs) = f x :: map f xs
 
-map f xs = 
-  match xs
+def map f xs = 
+  match xs with
   | [] -> []
   | (x::xs) -> f x :: map f xs
 
@@ -150,9 +151,9 @@ let foldl : a b. (a -> b -> a) -> a -> [b] -> a
   | foldl f acc [] = acc
   | foldl f acc (x :: xs) = foldl f (f acc x) xs
 
-foldr : a b. (a -> b -> b) -> b -> [a] -> b
-foldr f acc [] = acc
-foldr f acc (x :: xs) = f x (foldr f acc xs)
+def foldr : a b. (a -> b -> b) -> b -> [a] -> b
+  | f acc [] = acc
+  | f acc (x :: xs) = f x (foldr f acc xs)
 
 sum : [Int] -> Int
 sum = foldr (+) 0
