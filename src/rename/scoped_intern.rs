@@ -1,10 +1,10 @@
-use super::res_name::ResName;
+use super::res_id::ResId;
 use crate::utils::intern::InternedString;
 use std::collections::HashMap;
 
 #[derive(Debug, Clone)]
 pub struct ScopedInterner {
-    entries: HashMap<ResName, InternedString>,
+    entries: HashMap<ResId, InternedString>,
 }
 
 impl ScopedInterner {
@@ -14,8 +14,8 @@ impl ScopedInterner {
         }
     }
 
-    pub fn intern(&mut self, key: InternedString) -> ResName {
-        let id = ResName::gen();
+    pub fn intern(&mut self, key: InternedString) -> ResId {
+        let id = ResId::gen();
         self.entries.insert(id, key);
         id
     }
@@ -24,7 +24,15 @@ impl ScopedInterner {
         self.entries.extend(other.entries);
     }
 
-    pub fn get(&self, id: ResName) -> Option<&InternedString> {
+    pub fn get(&self, id: ResId) -> Option<&InternedString> {
         self.entries.get(&id)
+    }
+}
+
+impl FromIterator<(ResId, InternedString)> for ScopedInterner {
+    fn from_iter<T: IntoIterator<Item = (ResId, InternedString)>>(iter: T) -> Self {
+        Self {
+            entries: iter.into_iter().collect(),
+        }
     }
 }

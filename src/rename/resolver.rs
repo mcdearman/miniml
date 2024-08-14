@@ -2,31 +2,23 @@ use super::{
     env::Env,
     error::{ResError, ResErrorKind, ResResult},
     nir::*,
+    res_id::ResId,
     scoped_ident::ScopedIdent,
 };
 use crate::{
     parse::ast,
     utils::{ident::Ident, intern::InternedString},
 };
+use std::collections::HashMap;
 
 #[derive(Debug)]
 pub struct Resolver {
+    builtins: HashMap<ResId, InternedString>,
     env: Env,
 }
 
 impl Resolver {
     pub fn new() -> Self {
-        Self { env: Env::new() }
-    }
-
-    pub fn env(&self) -> &Env {
-        &self.env
-    }
-
-    pub fn resolve(&mut self, ast: &ast::Root) -> (Option<Root>, Vec<ResError>) {
-        let mut decls = Vec::new();
-        let mut errors = Vec::new();
-
         #[rustfmt::skip]
         const BUILTINS: [&str; 16] = [
             "__println__", 
@@ -43,6 +35,31 @@ impl Resolver {
 
             "__pair__",
         ];
+
+        let mut builtins = HashMap::new();
+        for n in names {
+            let id = ResId::gen();
+            builtins.insert(id, InternedString::from(n));
+        }
+
+        Self {
+            builtins: builtins.clone(),
+            env: Env::new_with_builtins(builtins),
+        }
+    }
+
+    pub fn builtins(&self) -> &HashMap<ResId, InternedString> {
+        &self.builtins
+    }
+
+    pub fn env(&self) -> &Env {
+        &self.env
+    }
+
+    pub fn resolve(&mut self, ast: &ast::Root) -> (Option<Root>, Vec<ResError>) {
+        let mut decls = Vec::new();
+        let mut errors = Vec::new();
+
 
         for b in BUILTINS {
             self.env.overwrite(b.into());

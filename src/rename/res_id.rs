@@ -1,11 +1,11 @@
 use std::sync::atomic::AtomicUsize;
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub struct ResName(usize);
+pub struct ResId(usize);
 
 static COUNTER: AtomicUsize = AtomicUsize::new(0);
 
-impl ResName {
+impl ResId {
     pub fn new(id: usize) -> Self {
         Self(id)
     }
@@ -15,7 +15,7 @@ impl ResName {
     }
 }
 
-impl std::fmt::Display for ResName {
+impl std::fmt::Display for ResId {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         write!(f, "{}", self.0)
     }
