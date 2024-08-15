@@ -37,7 +37,7 @@ impl Resolver {
         ];
 
         let mut builtins = HashMap::new();
-        for n in names {
+        for n in BUILTINS {
             let id = ResId::gen();
             builtins.insert(id, InternedString::from(n));
         }
@@ -59,7 +59,6 @@ impl Resolver {
     pub fn resolve(&mut self, ast: &ast::Root) -> (Option<Root>, Vec<ResError>) {
         let mut decls = Vec::new();
         let mut errors = Vec::new();
-
 
         for b in BUILTINS {
             self.env.overwrite(b.into());
