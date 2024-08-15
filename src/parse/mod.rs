@@ -90,14 +90,15 @@ fn decl_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
     //         ))
     //     });
 
-    let def = pattern_parser()
-        .then_ignore(just(Token::Assign))
+    let def = just(Token::Def)
+        .ignore_then(pattern_parser())
+        .then_ignore(just(Token::Eq))
         .then(expr_parser())
         .map(|(pat, expr)| DeclKind::Def(pat, expr));
 
     let fn_ = ident_parser()
         .then(pattern_parser().repeated().at_least(1).collect())
-        .then_ignore(just(Token::Assign))
+        .then_ignore(just(Token::Eq))
         .then(expr_parser())
         .map(|((name, params), expr)| DeclKind::Fn(name, params, expr));
 
@@ -158,7 +159,7 @@ fn expr_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
 
         let let_ = just(Token::Let)
             .ignore_then(pattern_parser())
-            .then_ignore(just(Token::Assign))
+            .then_ignore(just(Token::Eq))
             .then(expr.clone())
             .then_ignore(just(Token::In))
             .then(expr.clone())
@@ -167,7 +168,7 @@ fn expr_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
         let fn_ = just(Token::Let)
             .ignore_then(ident_parser())
             .then(pattern_parser().repeated().at_least(1).collect())
-            .then_ignore(just(Token::Assign))
+            .then_ignore(just(Token::Eq))
             .then(expr.clone())
             .then_ignore(just(Token::In))
             .then(expr.clone())

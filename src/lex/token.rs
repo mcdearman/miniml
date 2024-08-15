@@ -64,8 +64,6 @@ pub enum Token {
     #[token("not")]
     Not,
     #[token("=")]
-    Assign,
-    #[token("==")]
     Eq,
     #[token("!=")]
     Neq,
@@ -119,12 +117,16 @@ pub enum Token {
     End,
     #[token("use")]
     Use,
+    #[token("def")]
+    Def,
     #[token("let")]
     Let,
     #[token("in")]
     In,
     #[token("match")]
     Match,
+    #[token("with")]
+    With,
     #[token("if")]
     If,
     #[token("then")]
@@ -168,7 +170,7 @@ impl Display for Token {
             Or => write!(f, "Or"),
             And => write!(f, "And"),
             Not => write!(f, "Not"),
-            Assign => write!(f, "Assign"),
+            Eq => write!(f, "Assign"),
             Eq => write!(f, "Eq"),
             Neq => write!(f, "Neq"),
             Lt => write!(f, "Lt"),
@@ -195,10 +197,12 @@ impl Display for Token {
             Mod => write!(f, "Mod"),
             End => write!(f, "End"),
             Use => write!(f, "Use"),
+            Def => write!(f, "Def"),
             Let => write!(f, "Let"),
             In => write!(f, "In"),
             If => write!(f, "If"),
             Match => write!(f, "Match"),
+            With => write!(f, "With"),
             Then => write!(f, "Then"),
             Else => write!(f, "Else"),
             Type => write!(f, "Type"),

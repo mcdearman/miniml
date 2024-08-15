@@ -1,7 +1,7 @@
 -- Bootstrapped compiler
 
 -- utils
-data Span = { start : Int, end : Int }
+type Span = { start : Int, end : Int }
 
 spanToString span src = 
   let start = span.start
@@ -24,9 +24,9 @@ lineColToString src =
   format "{}:{}" (intToString line) (intToString col)
 
 -- Lexer
-data Token = { kind : TokenKind, span : Span }
+type Token = { kind : TokenKind, span : Span }
 
-data TokenKind
+type TokenKind
   = Eof
   | Whitespace
   | Comment
@@ -64,7 +64,7 @@ data TokenKind
   | Colon
   | Semicolon
 
-data Lexer = {
+type Lexer = {
   src : String,
   pos : Int,
 }
@@ -133,7 +133,7 @@ nextToken Some c ->
     | ';' -> { kind = Semicolon, span = { start, end } }
     | _ -> error "unimplemented"
 
-data Expr
+type Expr
   = Int Int
   | Real Real
   | Bool Bool

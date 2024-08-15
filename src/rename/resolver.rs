@@ -89,7 +89,6 @@ impl Resolver {
                 if expr.is_lambda() {
                     match pattern.kind.as_ref() {
                         ast::PatternKind::Ident(ident, _) => {
-                            self.env.overwrite(ident.name);
                             let res_pat = Pattern::new(
                                 PatternKind::Ident(
                                     ScopedIdent::new(ident.name, 0, ident.span),
@@ -115,8 +114,6 @@ impl Resolver {
                 }
             }
             ast::DeclKind::Fn(ident, params, fn_expr) => {
-                self.env.overwrite(ident.name);
-
                 let mut res_params = vec![];
                 let mut idents = vec![];
                 for p in params {
@@ -496,6 +493,7 @@ impl Resolver {
     }
 
     fn resolve_hint(&mut self, hint: &ast::TypeHint) -> ResResult<TypeHint> {
+        use ast::TypeHintKind as Atk;
         match hint.kind.as_ref() {
             ast::TypeHintKind::Ident(ident) => {
                 todo!()
@@ -511,14 +509,14 @@ impl Resolver {
                 //     ))
                 // }
             }
-            ast::TypeHintKind::Byte => Ok(TypeHint::new(TypeHintKind::Byte, hint.span)),
-            ast::TypeHintKind::Int => Ok(TypeHint::new(TypeHintKind::Int, hint.span)),
-            ast::TypeHintKind::Rational => Ok(TypeHint::new(TypeHintKind::Rational, hint.span)),
-            ast::TypeHintKind::Real => Ok(TypeHint::new(TypeHintKind::Real, hint.span)),
-            ast::TypeHintKind::Bool => Ok(TypeHint::new(TypeHintKind::Bool, hint.span)),
-            ast::TypeHintKind::String => Ok(TypeHint::new(TypeHintKind::String, hint.span)),
-            ast::TypeHintKind::Char => Ok(TypeHint::new(TypeHintKind::Char, hint.span)),
-            ast::TypeHintKind::Fn(params, ret) => Ok(TypeHint::new(
+            Atk::Byte => Ok(TypeHint::new(TypeHintKind::Byte, hint.span)),
+            Atk::Int => Ok(TypeHint::new(TypeHintKind::Int, hint.span)),
+            Atk::Rational => Ok(TypeHint::new(TypeHintKind::Rational, hint.span)),
+            Atk::Real => Ok(TypeHint::new(TypeHintKind::Real, hint.span)),
+            Atk::Bool => Ok(TypeHint::new(TypeHintKind::Bool, hint.span)),
+            Atk::String => Ok(TypeHint::new(TypeHintKind::String, hint.span)),
+            Atk::Char => Ok(TypeHint::new(TypeHintKind::Char, hint.span)),
+            Atk::Fn(params, ret) => Ok(TypeHint::new(
                 TypeHintKind::Fn(
                     params
                         .iter()
