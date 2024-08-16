@@ -133,8 +133,8 @@ def map [a b] (f : a -> b) (xs : [a]) : [b] =
   | (x::xs) -> f x :: map f xs
 
 def map : a b. (a -> b) -> [a] -> [b]
-  | map f [] = []
-  | map f (x :: xs) = f x :: map f xs
+  | f [] = []
+  | f (x :: xs) = f x :: map f xs
 
 def map f xs = 
   match xs with
@@ -145,12 +145,12 @@ def (.) : a b c. (b -> c) -> (a -> b) -> a -> c
   | f . g = \x -> f (g x)
 
 def foldl : a b. (a -> b -> a) -> a -> [b] -> a
-  | foldl f acc [] = acc
-  | foldl f acc (x :: xs) = foldl f (f acc x) xs
+  | f acc [] = acc
+  | f acc (x :: xs) = foldl f (f acc x) xs
 
 def foldr : a b. (a -> b -> b) -> b -> [a] -> b
-  | foldr f acc [] = acc
-  | foldr f acc (x :: xs) = f x (foldr f acc xs)
+  | f acc [] = acc
+  | f acc (x :: xs) = f x (foldr f acc xs)
 
 sum : [Int] -> Int
 sum = foldr (+) 0

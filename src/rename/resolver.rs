@@ -60,10 +60,6 @@ impl Resolver {
         let mut decls = Vec::new();
         let mut errors = Vec::new();
 
-        for b in BUILTINS {
-            self.env.overwrite(b.into());
-        }
-
         for decl in &ast.decls {
             match self.resolve_decl(&decl) {
                 Ok(decl) => decls.push(decl),
