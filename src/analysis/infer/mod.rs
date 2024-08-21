@@ -288,6 +288,36 @@ impl TypeSolver {
                     })
                 }
             }
+            nir::DeclKind::Fn(ident, params, fn_expr) => {
+                log::debug!("infer fn ({:?})", ident);
+                let param_tys = params
+                    .iter()
+                    .map(|_| Type::MetaRef(self.meta_ctx.fresh()))
+                    .collect::<Vec<_>>();
+                let ret_ty = Type::MetaRef(self.meta_ctx.fresh());
+                let fn_ty = Type::Lambda(
+                    param_tys.iter().map(|ty| Box::new(ty.clone())).collect(),
+                    Box::new(ret_ty.clone()),
+                );
+                log::debug!("fn_ty: {:?}", fn_ty);
+
+                self.ctx.insert(
+                    ident.name,
+                    PolyType::new(
+                        param_tys.iter().map(|ty| ty.clone()).collect(),
+                        fn_ty.clone(),
+                    ),
+                );
+
+                let solved_expr = self.infer_expr(fn_expr)?;
+                log::debug!("fn_solved_expr: {:?}", solved_expr.ty);
+
+                Ok(Decl {
+                    kind: DeclKind::Fn(*ident, params.clone(), solved_expr.clone()),
+                    ty: fn_ty,
+                    span: decl.span,
+                })
+            }
         }
     }
 
