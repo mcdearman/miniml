@@ -127,7 +127,7 @@ def gcd : Int -> Int -> Int
   | gcd a 0 = a
   | gcd a b = gcd b (a % b)
 
-def map [a b] (f : a -> b) (xs : [a]) : [b] = 
+def map {a b} (f : a -> b) (xs : [a]) : [b] = 
   match xs with
   | [] -> []
   | (x::xs) -> f x :: map f xs
