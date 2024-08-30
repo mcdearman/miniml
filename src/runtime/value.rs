@@ -39,7 +39,7 @@ impl Eq for Value {}
 #[derive(Debug, Clone, PartialEq)]
 pub struct NativeFn {
     pub args: Vec<Value>,
-    pub len: usize,
+    pub arity: usize,
     pub f: fn(Vec<Value>) -> RuntimeResult<Value>,
 }
 
@@ -48,16 +48,19 @@ impl NativeFn {
         let mut args = self.args.clone();
         args.push(arg);
         log::trace!("NativeFn::call: args={:?}", args);
-        if args.len() < self.len {
+        if args.len() < self.arity {
             Ok(Value::NativeFn(NativeFn {
                 args,
-                len: self.len,
+                arity: self.arity,
                 f: self.f,
             }))
-        } else if args.len() == self.len {
+        } else if args.len() == self.arity {
             (self.f)(args)
         } else {
-            Err(super::error::RuntimeError::ArityError(self.len, args.len()))
+            Err(super::error::RuntimeError::ArityError(
+                self.arity,
+                args.len(),
+            ))
         }
     }
 }

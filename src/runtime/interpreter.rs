@@ -70,7 +70,7 @@ impl Interpreter {
             "__add__".into(),
             Value::NativeFn(NativeFn {
                 args: vec![],
-                len: 2,
+                arity: 2,
                 f: |args| {
                     if args.len() != 2 {
                         Err(RuntimeError::ArityError(2, args.len()))
@@ -96,7 +96,7 @@ impl Interpreter {
             "__sub__".into(),
             Value::NativeFn(NativeFn {
                 args: vec![],
-                len: 2,
+                arity: 2,
                 f: |args| {
                     if args.len() != 2 {
                         Err(RuntimeError::ArityError(2, args.len()))
@@ -122,7 +122,7 @@ impl Interpreter {
             "__mul__".into(),
             Value::NativeFn(NativeFn {
                 args: vec![],
-                len: 2,
+                arity: 2,
                 f: |args| {
                     if args.len() != 2 {
                         Err(RuntimeError::ArityError(2, args.len()))
@@ -148,7 +148,7 @@ impl Interpreter {
             "__div__".into(),
             Value::NativeFn(NativeFn {
                 args: vec![],
-                len: 2,
+                arity: 2,
                 f: |args| {
                     if args.len() != 2 {
                         Err(RuntimeError::ArityError(2, args.len()))
@@ -174,7 +174,7 @@ impl Interpreter {
             "__rem__".into(),
             Value::NativeFn(NativeFn {
                 args: vec![],
-                len: 2,
+                arity: 2,
                 f: |args| {
                     if args.len() != 2 {
                         Err(RuntimeError::ArityError(2, args.len()))
@@ -197,7 +197,7 @@ impl Interpreter {
             "__pow__".into(),
             Value::NativeFn(NativeFn {
                 args: vec![],
-                len: 2,
+                arity: 2,
                 f: |args| {
                     if args.len() != 2 {
                         Err(RuntimeError::ArityError(2, args.len()))
@@ -220,7 +220,7 @@ impl Interpreter {
             "__eq__".into(),
             Value::NativeFn(NativeFn {
                 args: vec![],
-                len: 2,
+                arity: 2,
                 f: |args| {
                     if args.len() != 2 {
                         Err(RuntimeError::ArityError(2, args.len()))
@@ -237,7 +237,7 @@ impl Interpreter {
             "__neq__".into(),
             Value::NativeFn(NativeFn {
                 args: vec![],
-                len: 2,
+                arity: 2,
                 f: |args| {
                     if args.len() != 2 {
                         Err(RuntimeError::ArityError(2, args.len()))
@@ -254,7 +254,7 @@ impl Interpreter {
             "__lt__".into(),
             Value::NativeFn(NativeFn {
                 args: vec![],
-                len: 2,
+                arity: 2,
                 f: |args| {
                     if args.len() != 2 {
                         Err(RuntimeError::ArityError(2, args.len()))
@@ -278,7 +278,7 @@ impl Interpreter {
             "__lte__".into(),
             Value::NativeFn(NativeFn {
                 args: vec![],
-                len: 2,
+                arity: 2,
                 f: |args| {
                     if args.len() != 2 {
                         Err(RuntimeError::ArityError(2, args.len()))
@@ -302,7 +302,7 @@ impl Interpreter {
             "__gt__".into(),
             Value::NativeFn(NativeFn {
                 args: vec![],
-                len: 2,
+                arity: 2,
                 f: |args| {
                     if args.len() != 2 {
                         Err(RuntimeError::ArityError(2, args.len()))
@@ -326,7 +326,7 @@ impl Interpreter {
             "__gte__".into(),
             Value::NativeFn(NativeFn {
                 args: vec![],
-                len: 2,
+                arity: 2,
                 f: |args| {
                     if args.len() != 2 {
                         Err(RuntimeError::ArityError(2, args.len()))
@@ -350,7 +350,7 @@ impl Interpreter {
             "__pair__".into(),
             Value::NativeFn(NativeFn {
                 args: vec![],
-                len: 2,
+                arity: 2,
                 f: |args| {
                     if args.len() != 2 {
                         Err(RuntimeError::ArityError(2, args.len()))
