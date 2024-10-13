@@ -16,7 +16,7 @@ main : #[String] -> ()
 main args = ()
 
 -- Bindings are immutable by default.
-let x = 1
+def x = 1
 
 -- ints
 1
@@ -48,10 +48,10 @@ if 1 < 2 then 1 else 2
 let x = 1 in x + 1
 
 -- function definition
-let f x = x + 1
+def f x = x + 1
 
 -- this is equivalent to
-let f = \x -> x + 1
+def f = \x -> x + 1
 
 -- function expression
 let f x = x + 1 in f 1
@@ -68,64 +68,55 @@ f 1
 -- nested let
 let x = 1 in let y = 2 in x + y
 
--- function declaration
-id : a. a -> a
-let id x = x
-
 -- recursion
-let fib n = 
+def fib n = 
   if n <= 1 then n 
   else fib (n - 1) + fib (n - 2) 
 
-let gcd a b = 
+def gcd a b = 
   if b = 0 then a 
   else gcd b (a % b)
 
 -- with type annotations
-gcd : Int -> Int -> Int
-gcd a b = 
+def gcd (a : Int) (b : Int) : Int =
   if b = 0 then a 
   else gcd b (a % b)
 
-fib : Int -> Int
-fib n = 
+def fib (n : Int) : Int =
   if n <= 1 then n 
   else fib (n - 1) + fib (n - 2)
 
 -- tail recursive fib
-fib n = 
+def fib n = 
   let loop a b i = 
     if i == 0 then a 
     else loop b (a + b) (i - 1)
   in loop 0 1 n
 
 -- pattern match
-let [a, b, c] = [1, 2, 3]
+def [a, b, c] = [1, 2, 3]
 
-let fib n = 
+def fib n = 
   match n
   | 0 -> 0
   | 1 -> 1
   | n -> fib (n - 1) + fib (n - 2)
 
-let fib 0 = 0
-  | fib 1 = 1
-  | fib n = fib (n - 1) + fib (n - 2)
-
-is_empty : [a] -> Bool
-is_empty [] = true
-is_empty _ = false
+def fib 
+  | 0 = 0
+  | 1 = 1
+  | n = fib (n - 1) + fib (n - 2)
 
 -- with guards
-let gcd a b = 
+def gcd a b = 
   match (a, b)
   | (a, 0) -> a
   | (a, b) if a > b -> gcd b (a % b)
   | (a, b) -> gcd a (b % a)
 
 def gcd : Int -> Int -> Int
-  | gcd a 0 = a
-  | gcd a b = gcd b (a % b)
+  | a 0 = a
+  | a b = gcd b (a % b)
 
 def map {a b} (f : a -> b) (xs : [a]) : [b] = 
   match xs with
@@ -141,22 +132,18 @@ def map f xs =
   | [] -> []
   | (x::xs) -> f x :: map f xs
 
-def (.) : a b c. (b -> c) -> (a -> b) -> a -> c
-  | f . g = \x -> f (g x)
-
-def foldl : a b. (a -> b -> a) -> a -> [b] -> a
+def foldl : 'a 'b. ('a -> 'b -> 'a) -> 'a -> ['b] -> 'a
   | f acc [] = acc
   | f acc (x :: xs) = foldl f (f acc x) xs
 
-def foldr : a b. (a -> b -> b) -> b -> [a] -> b
+def foldr : 'a 'b. ('a -> 'b -> 'b) -> 'b -> ['a] -> 'b
   | f acc [] = acc
   | f acc (x :: xs) = f x (foldr f acc xs)
 
-sum : [Int] -> Int
+sum : Add a => [a] -> b
 sum = foldr (+) 0
 
-binary_search : Int -> #[Int] -> Int
-binary_search n xs =
+def binary_search (x : Int) (xs : #[Int] -> Int) : Int =
   let loop l r =
     if l > r then -1
     else
@@ -171,7 +158,7 @@ type Point = (Int, Int)
 
 -- records
 type Person = { name : String, age : Int }
-let p = { name = "Alice", age = 30 }
+def p = { name = "Alice", age = 30 }
 
 -- sum types
 type Option a = None | Some a
@@ -181,10 +168,19 @@ type List a = Empty | Pair a (List a)
 -- dependent types
 data Nat = Z | S Nat
 
-(+) : Nat -> Nat -> Nat
-Z + n = n
-(S m) + n = S (m + n)
+def (+) : Nat -> Nat -> Nat
+  | Z + n = n
+  | (S m) + n = S (m + n)
 
 data Vec a n = Nil | Pair a (Vec a n)
 
+def (|>) : 'a 'b. 'a -> ('a -> 'b) -> 'b
+  | x |> f = f x
 
+def (::) : 'a. 'a -> ['a] -> ['a]
+  | x :: xs = Pair x xs
+
+-- methods with pipe
+[1, 2, 3]
+  |> map (+ 1)
+  |> filter ((= 0) ∘ (% 2))
