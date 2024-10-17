@@ -1,13 +1,13 @@
-use runtime::interpreter::Interpreter;
+// use runtime::interpreter::Interpreter;
 use rustyline::{
     error::ReadlineError, validate::Validator, Completer, Editor, Helper, Highlighter, Hinter,
 };
 
-mod analysis;
+// mod analysis;
 mod lex;
 mod parse;
-mod rename;
-mod runtime;
+// mod rename;
+// mod runtime;
 mod utils;
 
 #[derive(Completer, Helper, Highlighter, Hinter)]
@@ -34,7 +34,7 @@ fn main() {
     if rl.load_history(".miniml_history").is_err() {
         println!("No previous history.");
     }
-    let mut interpreter = Interpreter::new();
+    // let mut interpreter = Interpreter::new();
 
     loop {
         let readline = rl.readline("> ");
@@ -42,20 +42,20 @@ fn main() {
             Ok(line) => {
                 rl.add_history_entry(line.as_str())
                     .expect("Failed to add history entry");
-                match interpreter.run(line.trim()) {
-                    Ok(payload) => match payload {
-                        runtime::eval::RuntimePayload::Type(ty) => println!("{}", ty),
-                        runtime::eval::RuntimePayload::Bindings(bindings) => {
-                            for (name, value, ty) in bindings {
-                                println!("{} : {} = {}\n", name, ty, value);
-                            }
-                        }
-                        runtime::eval::RuntimePayload::Value(val, ty) => {
-                            println!("- : {} = {}", ty, val)
-                        }
-                    },
-                    Err(err) => println!("{}", err),
-                }
+                // match interpreter.run(line.trim()) {
+                //     Ok(payload) => match payload {
+                //         runtime::eval::RuntimePayload::Type(ty) => println!("{}", ty),
+                //         runtime::eval::RuntimePayload::Bindings(bindings) => {
+                //             for (name, value, ty) in bindings {
+                //                 println!("{} : {} = {}\n", name, ty, value);
+                //             }
+                //         }
+                //         runtime::eval::RuntimePayload::Value(val, ty) => {
+                //             println!("- : {} = {}", ty, val)
+                //         }
+                //     },
+                //     Err(err) => println!("{}", err),
+                // }
             }
             Err(ReadlineError::Interrupted) => {
                 println!("CTRL-C");

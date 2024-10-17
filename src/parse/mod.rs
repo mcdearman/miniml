@@ -17,7 +17,7 @@ pub mod ast;
 pub fn parse<'src>(
     tokens: impl Iterator<Item = (Token, Span)> + Clone + 'src,
     repl: bool,
-) -> (Option<Root>, Vec<Rich<'src, Token, Span>>) {
+) -> (Option<Prog>, Vec<Rich<'src, Token, Span>>) {
     let eof_span = tokens
         .clone()
         .last()
@@ -27,23 +27,23 @@ pub fn parse<'src>(
     if repl {
         repl_parser().parse(tok_stream).into_output_errors()
     } else {
-        root_parser().parse(tok_stream).into_output_errors()
+        prog_parser().parse(tok_stream).into_output_errors()
     }
 }
 
-fn root_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
-) -> impl ChumskyParser<'a, I, Root, extra::Err<Rich<'a, Token, Span>>> {
+fn prog_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
+) -> impl ChumskyParser<'a, I, Prog, extra::Err<Rich<'a, Token, Span>>> {
     decl_parser()
         .repeated()
         .collect()
-        .map_with(|decls, e| Root {
+        .map_with(|decls, e| Prog {
             decls,
             span: e.span(),
         })
 }
 
 fn repl_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
-) -> impl ChumskyParser<'a, I, Root, extra::Err<Rich<'a, Token, Span>>> {
+) -> impl ChumskyParser<'a, I, Prog, extra::Err<Rich<'a, Token, Span>>> {
     decl_parser()
         .or(expr_parser()
             .map(|e| {

@@ -1,8 +1,6 @@
-use num_rational::Rational64;
-
-use crate::utils::{intern::InternedString, span::Span};
-
 use super::scoped_ident::ScopedIdent;
+use crate::utils::{intern::InternedString, span::Span};
+use num_rational::Rational64;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Root {

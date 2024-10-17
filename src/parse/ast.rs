@@ -1,3 +1,4 @@
+use itertools::Either;
 use num_rational::Rational64;
 
 use crate::{
@@ -6,7 +7,17 @@ use crate::{
 };
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct Root {
+pub enum Prog {
+    File {
+        name: InternedString,
+        module: Module,
+    },
+    Repl(Either<Expr, Decl>),
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct Module {
+    pub name: InternedString,
     pub decls: Vec<Decl>,
     pub span: Span,
 }
