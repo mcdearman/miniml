@@ -101,6 +101,15 @@ where
     }
 }
 
+// impl<'a, T> IntoIterator for List<T> {
+//     type Item = T;
+//     type IntoIter = ListIter<'a, T>;
+
+//     fn into_iter(self) -> Self::IntoIter {
+//         ListIter::new(&self)
+//     }
+// }
+
 #[derive(Debug)]
 struct ListIter<'a, T> {
     list: &'a List<T>,
