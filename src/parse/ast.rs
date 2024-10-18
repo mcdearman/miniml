@@ -1,4 +1,3 @@
-use itertools::Either;
 use num_rational::Rational64;
 
 use crate::{
@@ -7,18 +6,22 @@ use crate::{
 };
 
 #[derive(Debug, Clone, PartialEq)]
-pub enum Prog {
-    File {
-        name: InternedString,
-        module: Module,
-    },
-    Repl(Either<Expr, Decl>),
+pub struct Prog {
+    pub modules: Vec<Module>,
+    pub span: Span,
 }
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Module {
     pub name: InternedString,
+    pub imports: Vec<Import>,
     pub decls: Vec<Decl>,
+    pub span: Span,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct Import {
+    pub path: Vec<Ident>,
     pub span: Span,
 }
 
