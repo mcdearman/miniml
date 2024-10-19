@@ -5,7 +5,7 @@ use rustyline::{
 
 // mod analysis;
 mod lex;
-mod parse;
+// mod parse;
 // mod rename;
 // mod runtime;
 mod utils;
