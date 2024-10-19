@@ -1,9 +1,8 @@
-use num_rational::Rational64;
-
 use crate::{
     lex::token::Token,
     utils::{ident::Ident, intern::InternedString, span::Span},
 };
+use num_rational::Rational64;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Prog {
