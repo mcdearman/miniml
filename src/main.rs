@@ -1,3 +1,5 @@
+use itertools::Itertools;
+use lex::token_iter::TokenIter;
 // use runtime::interpreter::Interpreter;
 use rustyline::{
     error::ReadlineError, validate::Validator, Completer, Editor, Helper, Highlighter, Hinter,
@@ -42,6 +44,8 @@ fn main() {
             Ok(line) => {
                 rl.add_history_entry(line.as_str())
                     .expect("Failed to add history entry");
+                let stream = TokenIter::new(&line);
+                log::debug!("Tokens: {:#?}", stream.clone().collect_vec());
                 // match interpreter.run(line.trim()) {
                 //     Ok(payload) => match payload {
                 //         runtime::eval::RuntimePayload::Type(ty) => println!("{}", ty),
