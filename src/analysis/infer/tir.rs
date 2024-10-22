@@ -174,11 +174,6 @@ impl Expr {
                 )
             }
             ExprKind::Unit => Expr::new(ExprKind::Unit, self.ty.zonk(meta_ctx), self.span),
-            ExprKind::Error(err) => Expr::new(
-                ExprKind::Error(err.clone()),
-                self.ty.zonk(meta_ctx),
-                self.span,
-            ),
         }
     }
 }
@@ -198,7 +193,6 @@ pub enum ExprKind {
     Match(Expr, Vec<(Pattern, Expr)>),
     List(Vec<Expr>),
     Unit,
-    Error(TypeError),
 }
 
 #[derive(Debug, Clone, PartialEq)]
