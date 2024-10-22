@@ -1,13 +1,16 @@
+use dbg_pls::color;
 use itertools::Itertools;
 use lex::token_iter::TokenIter;
+use parse::parse;
 // use runtime::interpreter::Interpreter;
 use rustyline::{
     error::ReadlineError, validate::Validator, Completer, Editor, Helper, Highlighter, Hinter,
 };
+use utils::intern::InternedString;
 
 // mod analysis;
 mod lex;
-// mod parse;
+mod parse;
 // mod rename;
 // mod runtime;
 mod utils;
@@ -45,21 +48,22 @@ fn main() {
                 rl.add_history_entry(line.as_str())
                     .expect("Failed to add history entry");
                 let stream = TokenIter::new(&line);
-                log::debug!("Tokens: {:#?}", stream.clone().collect_vec());
-                // match interpreter.run(line.trim()) {
-                //     Ok(payload) => match payload {
-                //         runtime::eval::RuntimePayload::Type(ty) => println!("{}", ty),
-                //         runtime::eval::RuntimePayload::Bindings(bindings) => {
-                //             for (name, value, ty) in bindings {
-                //                 println!("{} : {} = {}\n", name, ty, value);
-                //             }
-                //         }
-                //         runtime::eval::RuntimePayload::Value(val, ty) => {
-                //             println!("- : {} = {}", ty, val)
-                //         }
-                //     },
-                //     Err(err) => println!("{}", err),
-                // }
+                // log::debug!(
+                //     "Tokens: {}",
+                //     color(&stream.clone().into_iter().collect_vec())
+                // );
+                let ast = match parse(stream, true) {
+                    (Some(ast), _) => {
+                        log::debug!("AST: {:#?}", ast);
+                        // log::debug!("AST: {}", color(&ast));
+                        // println!("AST: {:#?}", ast);
+                        Some(ast)
+                    }
+                    (None, parse_errors) => {
+                        log::error!("Parse errors: {:?}", parse_errors);
+                        None
+                    }
+                };
             }
             Err(ReadlineError::Interrupted) => {
                 println!("CTRL-C");

@@ -1,9 +1,10 @@
+use dbg_pls::DebugPls;
 use std::{
     fmt::{Debug, Display},
     ops::{Index, Range},
 };
 
-#[derive(Clone, Copy, Eq, PartialEq, Default, Hash)]
+#[derive(DebugPls, Clone, Copy, Eq, PartialEq, Default, Hash)]
 pub struct Span {
     start: u32,
     end: u32,

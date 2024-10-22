@@ -1,9 +1,9 @@
-use crate::utils::intern::InternedString;
+use crate::utils::{intern::InternedString, rational::Rational};
+use dbg_pls::DebugPls;
 use logos::Logos;
-use num_rational::Rational64;
 use std::fmt::Display;
 
-#[derive(Logos, Debug, Clone, PartialEq)]
+#[derive(Logos, Debug, DebugPls, Clone, PartialEq)]
 pub enum Token {
     Error,
     #[regex(r"--.*", logos::skip)]
@@ -24,9 +24,9 @@ pub enum Token {
     )]
     Real(f64),
     #[regex(
-        r"-?((0b[0-1]+)|(0o[0-7]+)|(0x[0-9a-fA-F]+)|([1-9]\d*|0))(/-?((0b[0-1]+)|(0o[0-7]+)|(0x[0-9a-fA-F]+)|([1-9]\d*|0)))", 
+        r"-?((0b[0-1]+)|(0o[0-7]+)|(0x[0-9a-fA-F]+)|([1-9]\d*|0))(/-?((0b[0-1]+)|(0o[0-7]+)|(0x[0-9a-fA-F]+)|([1-9]\d*|0)))",
         |lex| lex.slice().parse().ok())]
-    Rational(Rational64),
+    Rational(Rational),
     #[regex(r"true|false", |lex| lex.slice().parse().ok())]
     Bool(bool),
     #[regex(r#""(\\.|[^"\\])*""#, |lex| InternedString::from(lex.slice()))]
@@ -170,7 +170,6 @@ impl Display for Token {
             Or => write!(f, "Or"),
             And => write!(f, "And"),
             Not => write!(f, "Not"),
-            Eq => write!(f, "Assign"),
             Eq => write!(f, "Eq"),
             Neq => write!(f, "Neq"),
             Lt => write!(f, "Lt"),

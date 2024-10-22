@@ -1,7 +1,8 @@
-use super::{intern::InternedString, span::Span, unique_id::UniqueId};
+use super::{intern::InternedString, span::Span};
+use dbg_pls::DebugPls;
 use std::fmt::{Debug, Display};
 
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, DebugPls, Clone, Copy, PartialEq)]
 pub struct Ident {
     pub name: InternedString,
     pub span: Span,

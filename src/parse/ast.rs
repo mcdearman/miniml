@@ -1,12 +1,13 @@
 use crate::{
     lex::token::Token,
-    utils::{ident::Ident, intern::InternedString, span::Span},
+    utils::{ident::Ident, intern::InternedString, rational::Rational, span::Span},
 };
-use num_rational::Rational64;
+use dbg_pls::DebugPls;
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, DebugPls, Clone, PartialEq)]
 pub struct Prog {
-    pub modules: Vec<Module>,
+    // pub modules: Vec<Module>,
+    pub decls: Vec<Decl>,
     pub span: Span,
 }
 
@@ -24,20 +25,20 @@ pub struct Import {
     pub span: Span,
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, DebugPls, Clone, PartialEq)]
 pub struct Decl {
     pub kind: DeclKind,
     pub span: Span,
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, DebugPls, Clone, PartialEq)]
 pub enum DeclKind {
     Def(Pattern, Expr),
     Fn(Ident, Vec<Pattern>, Expr),
-    FnMatch(Vec<(Ident, Vec<Pattern>, Expr)>),
+    FnMatch(Ident, Vec<(Vec<Pattern>, Expr)>),
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, DebugPls, Clone, PartialEq)]
 pub struct Expr {
     pub kind: Box<ExprKind>,
     pub span: Span,
@@ -56,7 +57,7 @@ impl Expr {
     }
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, DebugPls, Clone, PartialEq)]
 pub enum ExprKind {
     Lit(Lit),
     Var(Ident),
@@ -74,7 +75,7 @@ pub enum ExprKind {
     Unit,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, DebugPls, Clone, Copy, PartialEq)]
 pub struct UnaryOp {
     pub kind: UnaryOpKind,
     pub span: Span,
@@ -86,7 +87,7 @@ impl From<UnaryOp> for InternedString {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, DebugPls, Clone, Copy, PartialEq)]
 pub enum UnaryOpKind {
     Neg,
     Not,
@@ -111,7 +112,7 @@ impl ToString for UnaryOpKind {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, DebugPls, Clone, Copy, PartialEq)]
 pub struct BinaryOp {
     pub kind: BinaryOpKind,
     pub span: Span,
@@ -123,7 +124,7 @@ impl From<BinaryOp> for InternedString {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, DebugPls, Clone, Copy, PartialEq)]
 pub enum BinaryOpKind {
     Add,
     Sub,
@@ -181,7 +182,7 @@ impl ToString for BinaryOpKind {
     }
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, DebugPls, Clone, PartialEq)]
 pub struct Pattern {
     pub kind: Box<PatternKind>,
     pub span: Span,
@@ -196,7 +197,7 @@ impl Pattern {
     }
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, DebugPls, Clone, PartialEq)]
 pub enum PatternKind {
     Wildcard,
     Lit(Lit),
@@ -206,7 +207,7 @@ pub enum PatternKind {
     Unit,
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, DebugPls, Clone, PartialEq)]
 pub struct TypeHint {
     pub kind: Box<TypeHintKind>,
     pub span: Span,
@@ -221,7 +222,7 @@ impl TypeHint {
     }
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, DebugPls, Clone, PartialEq)]
 pub enum TypeHintKind {
     Byte,
     Int,
@@ -236,11 +237,11 @@ pub enum TypeHintKind {
     Unit,
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, DebugPls, Clone, PartialEq)]
 pub enum Lit {
     Byte(u8),
     Int(i64),
-    Rational(Rational64),
+    Rational(Rational),
     Real(f64),
     Bool(bool),
     String(InternedString),
