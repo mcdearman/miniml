@@ -138,8 +138,16 @@ impl Resolver {
                 let res_expr = self.resolve_expr(&fn_expr)?;
                 self.env.pop();
 
+                let res_lam = res_params.into_iter().rev().fold(res_expr, |acc, p| {
+                    Expr::new(ExprKind::Lambda(p, acc), fn_expr.span)
+                });
+
                 Ok(Decl {
-                    kind: DeclKind::Fn(res_name, res_params, res_expr),
+                    kind: DeclKind::Def(
+                        Pattern::new(PatternKind::Ident(res_name, None), res_name.span),
+                        true,
+                        res_lam,
+                    ),
                     span: decl.span,
                 })
             }
@@ -348,13 +356,17 @@ impl Resolver {
                 let res_body = self.resolve_expr(body)?;
                 self.env.pop();
 
+                let res_pat = Pattern::new(
+                    PatternKind::Ident(ScopedIdent::new(res_name, ident.name, ident.span), None),
+                    ident.span,
+                );
+
+                let res_lam = res_params.into_iter().rev().fold(res_expr, |acc, p| {
+                    Expr::new(ExprKind::Lambda(p, acc), fn_expr.span)
+                });
+
                 Ok(Expr::new(
-                    ExprKind::Fn(
-                        ScopedIdent::new(res_name, ident.name, ident.span),
-                        res_params,
-                        res_expr,
-                        res_body,
-                    ),
+                    ExprKind::Let(res_pat, true, res_lam, res_body),
                     expr.span,
                 ))
             }

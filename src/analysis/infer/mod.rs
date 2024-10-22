@@ -8,7 +8,6 @@ use self::{
     tir::*,
 };
 use crate::{rename::nir, utils::intern::InternedString};
-use itertools::Itertools;
 
 mod context;
 pub mod error;
@@ -243,78 +242,48 @@ impl TypeSolver {
 
     fn infer_decl(&mut self, decl: &nir::Decl) -> InferResult<Decl> {
         match &decl.kind {
-            nir::DeclKind::Def(pat, rec, let_expr) => {
+            nir::DeclKind::Def(pat, false, expr) => {
                 log::debug!("infer def ({:?})", pat);
-                if *rec {
-                    let binder_ty = Type::MetaRef(self.meta_ctx.fresh());
-                    log::debug!("def_binder_ty: {:?}", binder_ty);
+                // to show that Γ ⊢ let x = e0: T we need to show that
+                // Γ ⊢ e0 : T
+                let solved_expr = self.infer_expr(expr)?;
 
-                    match pat.kind.as_ref() {
-                        nir::PatternKind::Ident(ident, _) => {
-                            self.ctx
-                                .insert(ident.name, PolyType::new(vec![], binder_ty.clone()));
-                        }
-                        _ => {
-                            return Err(TypeError::from(format!(
-                                "recursion is only allowed with identifiers: {:?}",
-                                pat
-                            )));
-                        }
-                    }
-
-                    let solved_expr = self.infer_expr(let_expr)?;
-                    log::debug!("def_solved_expr: {:?}", solved_expr.ty);
-
-                    let solved_pat = self.infer_pattern(pat, &solved_expr.ty, true)?;
-                    log::debug!("def_solved_pat: {:?}", solved_pat.ty);
-
-                    Ok(Decl {
-                        kind: DeclKind::Def(solved_pat, solved_expr.clone()),
-                        ty: solved_expr.ty,
-                        span: decl.span,
-                    })
-                } else {
-                    // to show that Γ ⊢ let x = e0: T we need to show that
-                    // Γ ⊢ e0 : T
-                    let solved_expr = self.infer_expr(let_expr)?;
-
-                    // Γ, x: gen(T) ⊢ e0 : T
-                    let solved_pat = self.infer_pattern(pat, &solved_expr.ty, true)?;
-
-                    Ok(Decl {
-                        kind: DeclKind::Def(solved_pat, solved_expr.clone()),
-                        ty: solved_expr.ty,
-                        span: decl.span,
-                    })
-                }
-            }
-            nir::DeclKind::Fn(ident, params, fn_expr) => {
-                log::debug!("infer fn ({:?})", ident);
-                let param_tys = params
-                    .iter()
-                    .map(|_| Type::MetaRef(self.meta_ctx.fresh()))
-                    .collect::<Vec<_>>();
-                let ret_ty = Type::MetaRef(self.meta_ctx.fresh());
-                let fn_ty = Type::Lambda(
-                    param_tys.iter().map(|ty| Box::new(ty.clone())).collect(),
-                    Box::new(ret_ty.clone()),
-                );
-                log::debug!("fn_ty: {:?}", fn_ty);
-
-                self.ctx.insert(
-                    ident.name,
-                    PolyType::new(
-                        param_tys.iter().map(|ty| ty.clone()).collect(),
-                        fn_ty.clone(),
-                    ),
-                );
-
-                let solved_expr = self.infer_expr(fn_expr)?;
-                log::debug!("fn_solved_expr: {:?}", solved_expr.ty);
+                // Γ, x: gen(T) ⊢ e0 : T
+                let solved_pat = self.infer_pattern(pat, &solved_expr.ty, true)?;
 
                 Ok(Decl {
-                    kind: DeclKind::Fn(*ident, params.clone(), solved_expr.clone()),
-                    ty: fn_ty,
+                    kind: DeclKind::Def(solved_pat, solved_expr.clone()),
+                    ty: solved_expr.ty,
+                    span: decl.span,
+                })
+            }
+            nir::DeclKind::Def(pat, true, expr) => {
+                log::debug!("infer def rec ({:?})", pat);
+                let binder_ty = Type::MetaRef(self.meta_ctx.fresh());
+                log::debug!("def_binder_ty: {:?}", binder_ty);
+
+                match pat.kind.as_ref() {
+                    nir::PatternKind::Ident(ident, _) => {
+                        self.ctx
+                            .insert(ident.name, PolyType::new(vec![], binder_ty.clone()));
+                    }
+                    _ => {
+                        return Err(TypeError::from(format!(
+                            "recursion is only allowed with identifiers: {:?}",
+                            pat
+                        )));
+                    }
+                }
+
+                let solved_expr = self.infer_expr(expr)?;
+                log::debug!("def_solved_expr: {:?}", solved_expr.ty);
+
+                let solved_pat = self.infer_pattern(pat, &solved_expr.ty, true)?;
+                log::debug!("def_solved_pat: {:?}", solved_pat.ty);
+
+                Ok(Decl {
+                    kind: DeclKind::Def(solved_pat, solved_expr.clone()),
+                    ty: solved_expr.ty,
                     span: decl.span,
                 })
             }

@@ -1,10 +1,9 @@
 use super::{meta_context::MetaContext, r#type::Type};
 use crate::{
     rename::scoped_ident::ScopedIdent,
-    utils::{intern::InternedString, span::Span},
+    utils::{intern::InternedString, rational::Rational, span::Span},
 };
 use itertools::{join, Itertools};
-use num_rational::Rational64;
 use std::fmt::{Debug, Display};
 
 #[derive(Debug, Clone, PartialEq)]
@@ -274,7 +273,7 @@ pub enum PatternKind {
 pub enum Lit {
     Byte(u8),
     Int(i64),
-    Rational(Rational64),
+    Rational(Rational),
     Real(f64),
     Bool(bool),
     String(InternedString),

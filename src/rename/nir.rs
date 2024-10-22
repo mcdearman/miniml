@@ -1,6 +1,5 @@
 use super::scoped_ident::ScopedIdent;
-use crate::utils::{intern::InternedString, span::Span};
-use num_rational::Rational64;
+use crate::utils::{intern::InternedString, rational::Rational, span::Span};
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Root {
@@ -118,7 +117,7 @@ pub enum TypeHintKind {
 pub enum Lit {
     Byte(u8),
     Int(i64),
-    Rational(Rational64),
+    Rational(Rational),
     Real(f64),
     Bool(bool),
     String(InternedString),

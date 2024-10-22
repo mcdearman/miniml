@@ -1,14 +1,15 @@
+use analysis::infer::TypeSolver;
 use dbg_pls::color;
-use itertools::Itertools;
 use lex::token_iter::TokenIter;
 use parse::parse;
+use rename::resolver::Resolver;
 // use runtime::interpreter::Interpreter;
 use rustyline::{
     error::ReadlineError, validate::Validator, Completer, Editor, Helper, Highlighter, Hinter,
 };
 use utils::intern::InternedString;
 
-// mod analysis;
+mod analysis;
 mod lex;
 mod parse;
 mod rename;
@@ -40,6 +41,10 @@ fn main() {
         println!("No previous history.");
     }
 
+    let mut res = Resolver::new();
+    let mut solver = TypeSolver::new();
+    // let res_env = res.env();
+
     loop {
         let readline = rl.readline("> ");
         match readline {
@@ -47,14 +52,33 @@ fn main() {
                 rl.add_history_entry(line.as_str())
                     .expect("Failed to add history entry");
                 let stream = TokenIter::new(&line);
-                let ast = match parse(stream, true) {
+
+                match parse(stream, true) {
                     (Some(ast), _) => {
-                        log::debug!("AST: {:#?}", ast);
-                        Some(ast)
+                        // log::debug!("AST: {:#?}", ast);
+                        match res.resolve(&ast) {
+                            (Some(nir), _) => {
+                                // log::debug!("NIR: {:#?}", nir);
+
+                                match solver.infer(&line, &nir) {
+                                    (Some(tir), _) => {
+                                        log::debug!("{:#?}", tir);
+                                    }
+                                    (None, errors) => {
+                                        log::error!("Inference errors: {:?}", errors);
+                                        continue;
+                                    }
+                                }
+                            }
+                            (None, res_errors) => {
+                                log::error!("Resolution errors: {:?}", res_errors);
+                                continue;
+                            }
+                        }
                     }
                     (None, parse_errors) => {
                         log::error!("Parse errors: {:?}", parse_errors);
-                        None
+                        continue;
                     }
                 };
             }
