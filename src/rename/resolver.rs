@@ -62,7 +62,7 @@ impl Resolver {
         None
     }
 
-    pub fn resolve(&mut self, ast: &ast::Root) -> (Option<Root>, Vec<ResError>) {
+    pub fn resolve(&mut self, ast: &ast::Prog) -> (Option<Root>, Vec<ResError>) {
         let mut decls = Vec::new();
         let mut errors = Vec::new();
 
@@ -143,7 +143,7 @@ impl Resolver {
                     span: decl.span,
                 })
             }
-            ast::DeclKind::FnMatch(arms) => {
+            ast::DeclKind::FnMatch(name, arms) => {
                 // if arms.is_empty() {
                 //     return Err(ResError::new(ResErrorKind::EmptyFnMatch, decl.span));
                 // }

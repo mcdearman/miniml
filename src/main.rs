@@ -11,7 +11,7 @@ use utils::intern::InternedString;
 // mod analysis;
 mod lex;
 mod parse;
-// mod rename;
+mod rename;
 // mod runtime;
 mod utils;
 
@@ -39,7 +39,6 @@ fn main() {
     if rl.load_history(".miniml_history").is_err() {
         println!("No previous history.");
     }
-    // let mut interpreter = Interpreter::new();
 
     loop {
         let readline = rl.readline("> ");
@@ -48,15 +47,9 @@ fn main() {
                 rl.add_history_entry(line.as_str())
                     .expect("Failed to add history entry");
                 let stream = TokenIter::new(&line);
-                // log::debug!(
-                //     "Tokens: {}",
-                //     color(&stream.clone().into_iter().collect_vec())
-                // );
                 let ast = match parse(stream, true) {
                     (Some(ast), _) => {
                         log::debug!("AST: {:#?}", ast);
-                        // log::debug!("AST: {}", color(&ast));
-                        // println!("AST: {:#?}", ast);
                         Some(ast)
                     }
                     (None, parse_errors) => {
