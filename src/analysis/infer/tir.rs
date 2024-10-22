@@ -1,4 +1,4 @@
-use super::{meta_context::MetaContext, r#type::Type};
+use super::{error::TypeError, meta_context::MetaContext, ty::Ty};
 use crate::{
     rename::scoped_ident::ScopedIdent,
     utils::{intern::InternedString, rational::Rational, span::Span},
@@ -7,19 +7,19 @@ use itertools::{join, Itertools};
 use std::fmt::{Debug, Display};
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct Root {
+pub struct Prog {
     pub decls: Vec<Decl>,
     pub span: Span,
 }
 
-impl Root {
-    pub fn zonk(&self, meta_ctx: &mut MetaContext) -> Root {
+impl Prog {
+    pub fn zonk(&self, meta_ctx: &mut MetaContext) -> Prog {
         let decls = self
             .decls
             .iter()
             .map(|decl| decl.zonk(meta_ctx))
             .collect_vec();
-        Root {
+        Prog {
             decls,
             span: self.span,
         }
@@ -29,7 +29,7 @@ impl Root {
 #[derive(Debug, Clone, PartialEq)]
 pub struct Decl {
     pub kind: DeclKind,
-    pub ty: Type,
+    pub ty: Ty,
     pub span: Span,
 }
 
@@ -57,12 +57,12 @@ pub enum DeclKind {
 #[derive(Debug, Clone, PartialEq)]
 pub struct Expr {
     pub kind: Box<ExprKind>,
-    pub ty: Type,
+    pub ty: Ty,
     pub span: Span,
 }
 
 impl Expr {
-    pub fn new(kind: ExprKind, ty: Type, span: Span) -> Self {
+    pub fn new(kind: ExprKind, ty: Ty, span: Span) -> Self {
         Self {
             kind: Box::new(kind),
             ty,
@@ -174,6 +174,11 @@ impl Expr {
                 )
             }
             ExprKind::Unit => Expr::new(ExprKind::Unit, self.ty.zonk(meta_ctx), self.span),
+            ExprKind::Error(err) => Expr::new(
+                ExprKind::Error(err.clone()),
+                self.ty.zonk(meta_ctx),
+                self.span,
+            ),
         }
     }
 }
@@ -193,17 +198,18 @@ pub enum ExprKind {
     Match(Expr, Vec<(Pattern, Expr)>),
     List(Vec<Expr>),
     Unit,
+    Error(TypeError),
 }
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Pattern {
     pub kind: Box<PatternKind>,
-    pub ty: Type,
+    pub ty: Ty,
     pub span: Span,
 }
 
 impl Pattern {
-    pub fn new(kind: PatternKind, ty: Type, span: Span) -> Self {
+    pub fn new(kind: PatternKind, ty: Ty, span: Span) -> Self {
         Self {
             kind: Box::new(kind),
             ty,

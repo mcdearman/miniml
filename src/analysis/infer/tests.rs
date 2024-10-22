@@ -7,7 +7,7 @@ use crate::{
 };
 use logos::Logos;
 
-fn test_helper(src: &str) -> tir::Root {
+fn test_helper(src: &str) -> tir::Prog {
     let lexer = TokenIter::new(src);
     let (ast, errors) = parse(lexer, true);
     if !errors.is_empty() {

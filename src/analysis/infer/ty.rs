@@ -5,14 +5,13 @@ use super::{
     poly_type::PolyType,
 };
 use crate::utils::{intern::InternedString, unique_id::UniqueId};
-use itertools::Itertools;
 use std::{
     collections::{HashMap, HashSet},
     fmt::{Debug, Display},
 };
 
 #[derive(Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub enum Type {
+pub enum Ty {
     Byte,
     Int,
     Rational,
@@ -25,11 +24,12 @@ pub enum Type {
     // Poly(PolyType),
     Lambda(Box<Self>, Box<Self>),
     List(Box<Self>),
+    Array(Box<Self>),
     Record(UniqueId, Vec<(InternedString, Self)>),
     Unit,
 }
 
-impl Type {
+impl Ty {
     pub(super) fn is_numeric(&self) -> bool {
         match self {
             Self::Byte | Self::Int | Self::Rational | Self::Real => true,
@@ -65,29 +65,30 @@ impl Type {
         }
     }
 
-    pub fn zonk(&self, meta_ctx: &mut MetaContext) -> Type {
+    pub fn zonk(&self, meta_ctx: &mut MetaContext) -> Ty {
         // log::debug!("zonk: {:?}", self);
         match meta_ctx.force(self) {
-            Type::Byte => Type::Byte,
-            Type::Int => Type::Int,
-            Type::Rational => Type::Rational,
-            Type::Real => Type::Real,
-            Type::Bool => Type::Bool,
-            Type::String => Type::String,
-            Type::Char => Type::Char,
-            Type::Unit => Type::Unit,
-            Type::MetaRef(n) => match meta_ctx.get(&n) {
+            Ty::Byte => Ty::Byte,
+            Ty::Int => Ty::Int,
+            Ty::Rational => Ty::Rational,
+            Ty::Real => Ty::Real,
+            Ty::Bool => Ty::Bool,
+            Ty::String => Ty::String,
+            Ty::Char => Ty::Char,
+            Ty::Unit => Ty::Unit,
+            Ty::MetaRef(n) => match meta_ctx.get(&n) {
                 Meta::Bound(ty) => ty.zonk(meta_ctx),
-                Meta::Unbound(tv) => Type::Meta(Box::new(Meta::Unbound(tv))),
+                Meta::Unbound(tv) => Ty::Meta(Box::new(Meta::Unbound(tv))),
             },
-            m @ Type::Meta(_) => m,
+            m @ Ty::Meta(_) => m,
             // Type::Poly(poly) => Type::Poly(poly.clone()),
-            Type::Lambda(param, body) => Type::Lambda(
+            Ty::Lambda(param, body) => Ty::Lambda(
                 Box::new(param.zonk(meta_ctx)),
                 Box::new(body.zonk(meta_ctx)),
             ),
-            Type::List(ty) => Type::List(Box::new(ty.zonk(meta_ctx))),
-            Type::Record(id, fields) => Type::Record(
+            Ty::List(ty) => Ty::List(Box::new(ty.zonk(meta_ctx))),
+            Ty::Array(ty) => Ty::Array(Box::new(ty.zonk(meta_ctx))),
+            Ty::Record(id, fields) => Ty::Record(
                 id,
                 fields
                     .iter()
@@ -98,7 +99,7 @@ impl Type {
     }
 }
 
-impl Debug for Type {
+impl Debug for Ty {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Self::Byte => write!(f, "Byte"),
@@ -119,32 +120,33 @@ impl Debug for Type {
                 }
             }
             Self::List(ty) => write!(f, "[{:?}]", ty),
+            Self::Array(ty) => write!(f, "#[{:?}]", ty),
             Self::Record(id, fields) => write!(f, "{:?} = {:?}", id, fields),
             Self::Unit => write!(f, "()"),
         }
     }
 }
 
-impl Display for Type {
+impl Display for Ty {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        fn lower(ty: &Type, metas: &mut HashMap<u32, u32>) -> Type {
+        fn lower(ty: &Ty, metas: &mut HashMap<u32, u32>) -> Ty {
             match ty {
-                Type::Meta(m) => match m.as_ref() {
+                Ty::Meta(m) => match m.as_ref() {
                     Meta::Bound(ty) => lower(ty, metas),
                     Meta::Unbound(tv) => {
                         if let Some(lowered) = metas.get(tv) {
-                            Type::Meta(Box::new(Meta::Unbound(*lowered)))
+                            Ty::Meta(Box::new(Meta::Unbound(*lowered)))
                         } else {
                             let id = metas.len() as u32;
                             metas.insert(*tv, id);
-                            Type::Meta(Box::new(Meta::Unbound(id)))
+                            Ty::Meta(Box::new(Meta::Unbound(id)))
                         }
                     }
                 },
-                Type::Lambda(param, body) => {
-                    Type::Lambda(Box::new(lower(param, metas)), Box::new(lower(body, metas)))
+                Ty::Lambda(param, body) => {
+                    Ty::Lambda(Box::new(lower(param, metas)), Box::new(lower(body, metas)))
                 }
-                Type::List(list_ty) => Type::List(Box::new(lower(list_ty, metas))),
+                Ty::List(list_ty) => Ty::List(Box::new(lower(list_ty, metas))),
                 // Type::Record(name, fields) => {
                 //     let mut lowered_fields = vec![];
                 //     for (k, v) in fields {
@@ -177,6 +179,7 @@ impl Display for Type {
                 }
             }
             Self::List(ty) => write!(f, "[{}]", ty),
+            Self::Array(ty) => write!(f, "[{}]", ty),
             Self::Record(name, fields) => write!(f, "{:?} = {:?}", name, fields),
             Self::Unit => write!(f, "()"),
         }

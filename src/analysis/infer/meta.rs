@@ -1,4 +1,4 @@
-use super::r#type::Type;
+use super::ty::Ty;
 use std::{
     fmt::{Debug, Display},
     sync::atomic::AtomicU32,
@@ -8,14 +8,14 @@ pub type MetaId = u32;
 
 #[derive(Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum Meta {
-    Bound(Type),
+    Bound(Ty),
     Unbound(MetaId),
 }
 
 static COUNTER: AtomicU32 = AtomicU32::new(0);
 
 impl Meta {
-    pub fn new(ty: Type) -> Self {
+    pub fn new(ty: Ty) -> Self {
         Self::Bound(ty)
     }
 

@@ -2,7 +2,7 @@ use super::{
     meta::{self, Meta, MetaId},
     meta_context::{MetaContext, MetaRef},
     poly_type::PolyType,
-    r#type::Type,
+    ty::Ty,
 };
 use crate::utils::intern::InternedString;
 use std::collections::{HashMap, HashSet};

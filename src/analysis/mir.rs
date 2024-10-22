@@ -5,7 +5,7 @@
  * and returns.
  */
 
-use super::infer::r#type::Type;
+use super::infer::ty::Ty;
 use crate::{
     rename::scoped_ident::ScopedIdent,
     utils::{intern::InternedString, span::Span},
@@ -35,12 +35,12 @@ impl Root {
 #[derive(Debug, Clone, PartialEq)]
 pub struct Decl {
     kind: DeclKind,
-    ty: Type,
+    ty: Ty,
     span: Span,
 }
 
 impl Decl {
-    pub fn new(kind: DeclKind, ty: Type, span: Span) -> Self {
+    pub fn new(kind: DeclKind, ty: Ty, span: Span) -> Self {
         Self { kind, ty, span }
     }
 
@@ -48,7 +48,7 @@ impl Decl {
         &self.kind
     }
 
-    pub fn ty(&self) -> &Type {
+    pub fn ty(&self) -> &Ty {
         &self.ty
     }
 
@@ -74,12 +74,12 @@ pub enum DeclKind {
 #[derive(Debug, Clone, PartialEq)]
 pub struct Expr {
     pub kind: Box<ExprKind>,
-    pub ty: Type,
+    pub ty: Ty,
     pub span: Span,
 }
 
 impl Expr {
-    pub fn new(kind: ExprKind, ty: Type, span: Span) -> Self {
+    pub fn new(kind: ExprKind, ty: Ty, span: Span) -> Self {
         Self {
             kind: Box::new(kind),
             ty,
@@ -102,7 +102,7 @@ pub enum ExprKind {
 #[derive(Debug, Clone, PartialEq)]
 pub struct Pattern {
     pub kind: PatternKind,
-    pub ty: Type,
+    pub ty: Ty,
     pub span: Span,
 }
 

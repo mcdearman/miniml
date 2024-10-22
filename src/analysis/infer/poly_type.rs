@@ -1,4 +1,4 @@
-use super::{meta::MetaId, meta_context::MetaContext, r#type::Type};
+use super::{meta::MetaId, meta_context::MetaContext, ty::Ty};
 use crate::analysis::infer::meta::Meta;
 use itertools::join;
 use std::{
@@ -9,11 +9,11 @@ use std::{
 #[derive(Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct PolyType {
     pub vars: Vec<MetaId>,
-    pub ty: Box<Type>,
+    pub ty: Box<Ty>,
 }
 
 impl PolyType {
-    pub fn new(vars: Vec<MetaId>, ty: Type) -> Self {
+    pub fn new(vars: Vec<MetaId>, ty: Ty) -> Self {
         Self {
             vars,
             ty: Box::new(ty),
@@ -32,28 +32,28 @@ impl PolyType {
             .collect()
     }
 
-    pub fn instantiate(&self, meta_ctx: &mut MetaContext) -> Type {
-        fn substitute(ty: &Type, subst: &HashMap<u32, Type>, meta_ctx: &mut MetaContext) -> Type {
+    pub fn instantiate(&self, meta_ctx: &mut MetaContext) -> Ty {
+        fn substitute(ty: &Ty, subst: &HashMap<u32, Ty>, meta_ctx: &mut MetaContext) -> Ty {
             match ty {
-                Type::MetaRef(id) => match meta_ctx.get(id) {
+                Ty::MetaRef(id) => match meta_ctx.get(id) {
                     Meta::Bound(ty) => substitute(&ty, subst, meta_ctx),
                     Meta::Unbound(tv) => match subst.get(&tv) {
                         Some(t) => t.clone(),
                         None => ty.clone(),
                     },
                 },
-                Type::Lambda(param, body) => Type::Lambda(
+                Ty::Lambda(param, body) => Ty::Lambda(
                     Box::new(substitute(param, subst, meta_ctx)),
                     Box::new(substitute(body, subst, meta_ctx)),
                 ),
-                Type::List(ty) => Type::List(Box::new(substitute(ty, subst, meta_ctx))),
+                Ty::List(ty) => Ty::List(Box::new(substitute(ty, subst, meta_ctx))),
                 _ => ty.clone(),
             }
         }
 
         let mut subst = HashMap::new();
         for m in self.vars.iter() {
-            subst.insert(*m, Type::MetaRef(meta_ctx.fresh()));
+            subst.insert(*m, Ty::MetaRef(meta_ctx.fresh()));
         }
 
         let ty = meta_ctx.force(&self.ty);
@@ -73,12 +73,12 @@ impl Debug for PolyType {
     }
 }
 
-// impl Display for PolyType {
-//     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-//         if self.vars.is_empty() {
-//             write!(f, "{}", self.ty)
-//         } else {
-//             write!(f, "{}. {}", join(&self.vars, " "), self.ty)
-//         }
-//     }
-// }
+impl Display for PolyType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        if self.vars.is_empty() {
+            write!(f, "{}", self.ty)
+        } else {
+            write!(f, "{}. {}", join(&self.vars, " "), self.ty)
+        }
+    }
+}

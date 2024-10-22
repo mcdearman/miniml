@@ -43,6 +43,7 @@ fn main() {
 
     let mut res = Resolver::new();
     let mut solver = TypeSolver::new();
+
     // let res_env = res.env();
 
     loop {

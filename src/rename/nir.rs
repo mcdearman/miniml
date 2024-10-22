@@ -2,7 +2,7 @@ use super::scoped_ident::ScopedIdent;
 use crate::utils::{intern::InternedString, rational::Rational, span::Span};
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct Root {
+pub struct Prog {
     pub decls: Vec<Decl>,
     pub span: Span,
 }
@@ -37,10 +37,6 @@ impl Expr {
             span,
         }
     }
-
-    // pub fn is_lambda(&self) -> bool {
-    //     matches!(self.kind.as_ref(), &ExprKind::Lambda(_, _))
-    // }
 }
 
 #[derive(Debug, Clone, PartialEq)]

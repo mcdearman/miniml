@@ -2,13 +2,17 @@ use self::{
     context::Context,
     error::{InferResult, TypeError},
     meta_context::MetaContext,
-    poly_type::PolyType,
-    r#type::Type,
-    registry::Registry,
     tir::*,
+    ty::Ty,
 };
 use crate::{rename::nir, utils::intern::InternedString};
+use constraint::Constraint;
+use itertools::Itertools;
+use libc::ABDAY_6;
+use poly_type::PolyType;
+use registry::Registry;
 
+mod constraint;
 mod context;
 pub mod error;
 mod meta;
@@ -17,7 +21,7 @@ mod poly_type;
 pub mod registry;
 pub mod tests;
 pub mod tir;
-pub mod r#type;
+pub mod ty;
 
 #[derive(Debug, Clone)]
 pub struct TypeSolver {
@@ -25,6 +29,7 @@ pub struct TypeSolver {
     ctx: Context,
     meta_ctx: MetaContext,
     reg: Registry,
+    errors: Vec<TypeError>,
 }
 
 impl TypeSolver {
@@ -33,28 +38,30 @@ impl TypeSolver {
         let mut ctx = Context::new();
 
         ctx.insert(
-            "__neg__".into(),
+            "main".into(),
             PolyType::new(
                 vec![],
-                Type::Lambda(Box::new(Type::Int), Box::new(Type::Int)),
+                Ty::Lambda(Box::new(Ty::Array(Box::new(Ty::String))), Box::new(Ty::Int)),
             ),
         );
 
         ctx.insert(
+            "__neg__".into(),
+            PolyType::new(vec![], Ty::Lambda(Box::new(Ty::Int), Box::new(Ty::Int))),
+        );
+
+        ctx.insert(
             "__not__".into(),
-            PolyType::new(
-                vec![],
-                Type::Lambda(Box::new(Type::Bool), Box::new(Type::Bool)),
-            ),
+            PolyType::new(vec![], Ty::Lambda(Box::new(Ty::Bool), Box::new(Ty::Bool))),
         );
 
         ctx.insert(
             "__add__".into(),
             PolyType::new(
                 vec![],
-                Type::Lambda(
-                    Box::new(Type::Int),
-                    Box::new(Type::Lambda(Box::new(Type::Int), Box::new(Type::Int))),
+                Ty::Lambda(
+                    Box::new(Ty::Int),
+                    Box::new(Ty::Lambda(Box::new(Ty::Int), Box::new(Ty::Int))),
                 ),
             ),
         );
@@ -63,9 +70,9 @@ impl TypeSolver {
             "__sub__".into(),
             PolyType::new(
                 vec![],
-                Type::Lambda(
-                    Box::new(Type::Int),
-                    Box::new(Type::Lambda(Box::new(Type::Int), Box::new(Type::Int))),
+                Ty::Lambda(
+                    Box::new(Ty::Int),
+                    Box::new(Ty::Lambda(Box::new(Ty::Int), Box::new(Ty::Int))),
                 ),
             ),
         );
@@ -74,9 +81,9 @@ impl TypeSolver {
             "__mul__".into(),
             PolyType::new(
                 vec![],
-                Type::Lambda(
-                    Box::new(Type::Int),
-                    Box::new(Type::Lambda(Box::new(Type::Int), Box::new(Type::Int))),
+                Ty::Lambda(
+                    Box::new(Ty::Int),
+                    Box::new(Ty::Lambda(Box::new(Ty::Int), Box::new(Ty::Int))),
                 ),
             ),
         );
@@ -85,9 +92,9 @@ impl TypeSolver {
             "__div__".into(),
             PolyType::new(
                 vec![],
-                Type::Lambda(
-                    Box::new(Type::Int),
-                    Box::new(Type::Lambda(Box::new(Type::Int), Box::new(Type::Int))),
+                Ty::Lambda(
+                    Box::new(Ty::Int),
+                    Box::new(Ty::Lambda(Box::new(Ty::Int), Box::new(Ty::Int))),
                 ),
             ),
         );
@@ -96,9 +103,9 @@ impl TypeSolver {
             "__rem__".into(),
             PolyType::new(
                 vec![],
-                Type::Lambda(
-                    Box::new(Type::Int),
-                    Box::new(Type::Lambda(Box::new(Type::Int), Box::new(Type::Int))),
+                Ty::Lambda(
+                    Box::new(Ty::Int),
+                    Box::new(Ty::Lambda(Box::new(Ty::Int), Box::new(Ty::Int))),
                 ),
             ),
         );
@@ -107,9 +114,9 @@ impl TypeSolver {
             "__pow__".into(),
             PolyType::new(
                 vec![],
-                Type::Lambda(
-                    Box::new(Type::Int),
-                    Box::new(Type::Lambda(Box::new(Type::Int), Box::new(Type::Int))),
+                Ty::Lambda(
+                    Box::new(Ty::Int),
+                    Box::new(Ty::Lambda(Box::new(Ty::Int), Box::new(Ty::Int))),
                 ),
             ),
         );
@@ -118,9 +125,9 @@ impl TypeSolver {
             "__eq__".into(),
             PolyType::new(
                 vec![],
-                Type::Lambda(
-                    Box::new(Type::Int),
-                    Box::new(Type::Lambda(Box::new(Type::Int), Box::new(Type::Bool))),
+                Ty::Lambda(
+                    Box::new(Ty::Int),
+                    Box::new(Ty::Lambda(Box::new(Ty::Int), Box::new(Ty::Bool))),
                 ),
             ),
         );
@@ -129,9 +136,9 @@ impl TypeSolver {
             "__neq__".into(),
             PolyType::new(
                 vec![],
-                Type::Lambda(
-                    Box::new(Type::Int),
-                    Box::new(Type::Lambda(Box::new(Type::Int), Box::new(Type::Bool))),
+                Ty::Lambda(
+                    Box::new(Ty::Int),
+                    Box::new(Ty::Lambda(Box::new(Ty::Int), Box::new(Ty::Bool))),
                 ),
             ),
         );
@@ -140,9 +147,9 @@ impl TypeSolver {
             "__lt__".into(),
             PolyType::new(
                 vec![],
-                Type::Lambda(
-                    Box::new(Type::Int),
-                    Box::new(Type::Lambda(Box::new(Type::Int), Box::new(Type::Bool))),
+                Ty::Lambda(
+                    Box::new(Ty::Int),
+                    Box::new(Ty::Lambda(Box::new(Ty::Int), Box::new(Ty::Bool))),
                 ),
             ),
         );
@@ -151,9 +158,9 @@ impl TypeSolver {
             "__lte__".into(),
             PolyType::new(
                 vec![],
-                Type::Lambda(
-                    Box::new(Type::Int),
-                    Box::new(Type::Lambda(Box::new(Type::Int), Box::new(Type::Bool))),
+                Ty::Lambda(
+                    Box::new(Ty::Int),
+                    Box::new(Ty::Lambda(Box::new(Ty::Int), Box::new(Ty::Bool))),
                 ),
             ),
         );
@@ -162,9 +169,9 @@ impl TypeSolver {
             "__gt__".into(),
             PolyType::new(
                 vec![],
-                Type::Lambda(
-                    Box::new(Type::Int),
-                    Box::new(Type::Lambda(Box::new(Type::Int), Box::new(Type::Bool))),
+                Ty::Lambda(
+                    Box::new(Ty::Int),
+                    Box::new(Ty::Lambda(Box::new(Ty::Int), Box::new(Ty::Bool))),
                 ),
             ),
         );
@@ -173,9 +180,9 @@ impl TypeSolver {
             "__gte__".into(),
             PolyType::new(
                 vec![],
-                Type::Lambda(
-                    Box::new(Type::Int),
-                    Box::new(Type::Lambda(Box::new(Type::Int), Box::new(Type::Bool))),
+                Ty::Lambda(
+                    Box::new(Ty::Int),
+                    Box::new(Ty::Lambda(Box::new(Ty::Int), Box::new(Ty::Bool))),
                 ),
             ),
         );
@@ -183,11 +190,11 @@ impl TypeSolver {
         let r = meta_ctx.fresh();
         ctx.insert(
             "__pair__".into(),
-            Type::Lambda(
-                Box::new(Type::MetaRef(r)),
-                Box::new(Type::Lambda(
-                    Box::new(Type::List(Box::new(Type::MetaRef(r)))),
-                    Box::new(Type::List(Box::new(Type::MetaRef(r)))),
+            Ty::Lambda(
+                Box::new(Ty::MetaRef(r)),
+                Box::new(Ty::Lambda(
+                    Box::new(Ty::List(Box::new(Ty::MetaRef(r)))),
+                    Box::new(Ty::List(Box::new(Ty::MetaRef(r)))),
                 )),
             )
             .generalize(&ctx, &meta_ctx),
@@ -201,11 +208,108 @@ impl TypeSolver {
         }
     }
 
+    fn generate_constraints<'src>(&mut self, src: &'src str, nir: &nir::Prog) -> Prog {
+        Prog {
+            decls: nir
+                .decls
+                .iter()
+                .map(|decl| self.generate_decl_constraints(src, decl))
+                .collect_vec(),
+            span: nir.span,
+        }
+    }
+
+    fn generate_decl_constraints<'src>(&mut self, src: &'src str, decl: &nir::Decl) -> Decl {
+        match &decl.kind {
+            nir::DeclKind::Def(pat, _, expr) => {
+                let solved_expr = self.generate_expr_constraints(src, expr);
+                let solved_pat = self.generate_pattern_constraints(src, pat, &solved_expr.ty, true);
+
+                Decl {
+                    kind: DeclKind::Def(solved_pat, solved_expr.clone()),
+                    ty: solved_expr.ty,
+                    span: decl.span,
+                }
+            }
+        }
+    }
+
+    fn generate_expr_constraints<'src>(
+        &mut self,
+        src: &'src str,
+        expr: &nir::Expr,
+    ) -> Option<Expr> {
+        match expr.kind.as_ref() {
+            nir::ExprKind::Lit(lit) => match lit {
+                nir::Lit::Byte(b) => {
+                    Some(Expr::new(ExprKind::Lit(Lit::Byte(*b)), Ty::Byte, expr.span))
+                }
+                nir::Lit::Int(i) => {
+                    Some(Expr::new(ExprKind::Lit(Lit::Int(*i)), Ty::Int, expr.span))
+                }
+                nir::Lit::Rational(r) => Some(Expr::new(
+                    ExprKind::Lit(Lit::Rational(*r)),
+                    Ty::Rational,
+                    expr.span,
+                )),
+                nir::Lit::Real(r) => {
+                    Some(Expr::new(ExprKind::Lit(Lit::Real(*r)), Ty::Real, expr.span))
+                }
+                nir::Lit::Bool(b) => {
+                    Some(Expr::new(ExprKind::Lit(Lit::Bool(*b)), Ty::Bool, expr.span))
+                }
+                nir::Lit::String(s) => Some(Expr::new(
+                    ExprKind::Lit(Lit::String(s.clone())),
+                    Ty::String,
+                    expr.span,
+                )),
+                nir::Lit::Char(c) => {
+                    Some(Expr::new(ExprKind::Lit(Lit::Char(*c)), Ty::Char, expr.span))
+                }
+            },
+            nir::ExprKind::Var(ident) => {
+                if let Some(scm) = self.ctx.get(&ident.name) {
+                    Some(Expr::new(
+                        ExprKind::Var(*ident),
+                        scm.instantiate(&mut self.meta_ctx),
+                        expr.span,
+                    ))
+                } else {
+                    self.errors.push(TypeError::from(format!(
+                        "unbound variable: {:?} - \"{}\"",
+                        expr,
+                        self.src[ident.span].to_string()
+                    )));
+                    None
+                }
+            }
+            nir::ExprKind::Apply(fun, arg) => todo!(),
+            nir::ExprKind::Lambda(pattern, expr) => todo!(),
+            nir::ExprKind::Or(expr, expr1) => todo!(),
+            nir::ExprKind::And(expr, expr1) => todo!(),
+            nir::ExprKind::Let(pattern, _, expr, expr1) => todo!(),
+            nir::ExprKind::If(expr, expr1, expr2) => todo!(),
+            nir::ExprKind::Match(expr, vec) => todo!(),
+            nir::ExprKind::List(vec) => todo!(),
+            nir::ExprKind::Unit => todo!(),
+        }
+    }
+
+    fn generate_pattern_constraints<'src>(
+        &mut self,
+        src: &'src str,
+        pat: &nir::Pattern,
+        ty: &Ty,
+        generalize: bool,
+    ) -> Pattern {
+        todo!()
+    }
+
     pub fn infer<'src>(
         &mut self,
         src: &'src str,
-        nir: &nir::Root,
-    ) -> (Option<Root>, Vec<TypeError>) {
+        nir: &nir::Prog,
+    ) -> (Option<Prog>, Vec<TypeError>) {
         log::debug!("infer: {:?}", nir.span);
         self.src = src.into();
         let mut decls = vec![];
@@ -227,7 +331,7 @@ impl TypeSolver {
         if errors.is_empty() {
             (
                 Some(
-                    Root {
+                    Prog {
                         decls,
                         span: nir.span,
                     }
@@ -259,7 +363,7 @@ impl TypeSolver {
             }
             nir::DeclKind::Def(pat, true, expr) => {
                 log::debug!("infer def rec ({:?})", pat);
-                let binder_ty = Type::MetaRef(self.meta_ctx.fresh());
+                let binder_ty = Ty::MetaRef(self.meta_ctx.fresh());
                 log::debug!("def_binder_ty: {:?}", binder_ty);
 
                 match pat.kind.as_ref() {
@@ -296,39 +400,31 @@ impl TypeSolver {
             nir::ExprKind::Lit(lit) => {
                 log::debug!("infer lit");
                 match *lit {
-                    nir::Lit::Byte(b) => Ok(Expr::new(
-                        ExprKind::Lit(Lit::Byte(b)),
-                        Type::Byte,
-                        expr.span,
-                    )),
+                    nir::Lit::Byte(b) => {
+                        Ok(Expr::new(ExprKind::Lit(Lit::Byte(b)), Ty::Byte, expr.span))
+                    }
                     nir::Lit::Int(n) => {
-                        Ok(Expr::new(ExprKind::Lit(Lit::Int(n)), Type::Int, expr.span))
+                        Ok(Expr::new(ExprKind::Lit(Lit::Int(n)), Ty::Int, expr.span))
                     }
                     nir::Lit::Rational(r) => Ok(Expr::new(
                         ExprKind::Lit(Lit::Rational(r)),
-                        Type::Rational,
+                        Ty::Rational,
                         expr.span,
                     )),
-                    nir::Lit::Real(r) => Ok(Expr::new(
-                        ExprKind::Lit(Lit::Real(r)),
-                        Type::Real,
-                        expr.span,
-                    )),
-                    nir::Lit::Bool(b) => Ok(Expr::new(
-                        ExprKind::Lit(Lit::Bool(b)),
-                        Type::Bool,
-                        expr.span,
-                    )),
+                    nir::Lit::Real(r) => {
+                        Ok(Expr::new(ExprKind::Lit(Lit::Real(r)), Ty::Real, expr.span))
+                    }
+                    nir::Lit::Bool(b) => {
+                        Ok(Expr::new(ExprKind::Lit(Lit::Bool(b)), Ty::Bool, expr.span))
+                    }
                     nir::Lit::String(s) => Ok(Expr::new(
                         ExprKind::Lit(Lit::String(s.clone())),
-                        Type::String,
+                        Ty::String,
                         expr.span,
                     )),
-                    nir::Lit::Char(c) => Ok(Expr::new(
-                        ExprKind::Lit(Lit::Char(c)),
-                        Type::Char,
-                        expr.span,
-                    )),
+                    nir::Lit::Char(c) => {
+                        Ok(Expr::new(ExprKind::Lit(Lit::Char(c)), Ty::Char, expr.span))
+                    }
                 }
             }
             nir::ExprKind::Var(ident) => {
@@ -357,13 +453,13 @@ impl TypeSolver {
                 // T = newvar
 
                 // Γ, x : T ⊢ e : T'
-                let param_ty = Type::MetaRef(self.meta_ctx.fresh());
+                let param_ty = Ty::MetaRef(self.meta_ctx.fresh());
                 log::debug!("lambda_param_type: {:?}", param_ty);
                 self.ctx.push();
                 let solved_param = self.infer_pattern(param, &param_ty, false)?;
 
                 let solved_expr = self.infer_expr(fn_expr)?;
-                let fun_ty = Type::Lambda(Box::new(param_ty), Box::new(solved_expr.ty.clone()));
+                let fun_ty = Ty::Lambda(Box::new(param_ty), Box::new(solved_expr.ty.clone()));
                 log::debug!("lambda_fun_ty: {:?}", fun_ty);
                 self.ctx.pop();
 
@@ -385,12 +481,11 @@ impl TypeSolver {
                 log::debug!("app_solved_arg: {:?}", solved_arg.ty);
 
                 // T' = newvar
-                let ty_ret = Type::MetaRef(self.meta_ctx.fresh());
+                let ty_ret = Ty::MetaRef(self.meta_ctx.fresh());
                 log::debug!("app_ty_ret: {:?}", ty_ret);
 
                 // unify(T0, T1 -> T')
-                let ty_fun =
-                    Type::Lambda(Box::new(solved_arg.clone().ty), Box::new(ty_ret.clone()));
+                let ty_fun = Ty::Lambda(Box::new(solved_arg.clone().ty), Box::new(ty_ret.clone()));
                 log::debug!("app_ty_fun: {:?}", ty_fun);
                 self.meta_ctx.unify(&solved_fun.ty, &ty_fun)?;
                 log::debug!("exit apply");
@@ -405,12 +500,12 @@ impl TypeSolver {
                 let solved_lhs = self.infer_expr(lhs)?;
                 let solved_rhs = self.infer_expr(rhs)?;
 
-                self.meta_ctx.unify(&solved_lhs.ty, &Type::Bool)?;
-                self.meta_ctx.unify(&solved_rhs.ty, &Type::Bool)?;
+                self.meta_ctx.unify(&solved_lhs.ty, &Ty::Bool)?;
+                self.meta_ctx.unify(&solved_rhs.ty, &Ty::Bool)?;
 
                 Ok(Expr::new(
                     ExprKind::Or(solved_lhs, solved_rhs),
-                    Type::Bool,
+                    Ty::Bool,
                     expr.span,
                 ))
             }
@@ -418,12 +513,12 @@ impl TypeSolver {
                 let solved_lhs = self.infer_expr(lhs)?;
                 let solved_rhs = self.infer_expr(rhs)?;
 
-                self.meta_ctx.unify(&solved_lhs.ty, &Type::Bool)?;
-                self.meta_ctx.unify(&solved_rhs.ty, &Type::Bool)?;
+                self.meta_ctx.unify(&solved_lhs.ty, &Ty::Bool)?;
+                self.meta_ctx.unify(&solved_rhs.ty, &Ty::Bool)?;
 
                 Ok(Expr::new(
                     ExprKind::And(solved_lhs, solved_rhs),
-                    Type::Bool,
+                    Ty::Bool,
                     expr.span,
                 ))
             }
@@ -432,7 +527,7 @@ impl TypeSolver {
                 // to show that Γ ⊢ let x = e0 in e1 : T' we need to show that
                 // Γ ⊢ e0 : T
                 if *rec {
-                    let binder_ty = Type::MetaRef(self.meta_ctx.fresh());
+                    let binder_ty = Ty::MetaRef(self.meta_ctx.fresh());
                     log::debug!("let_binder_ty: {:?}", binder_ty);
 
                     match pat.kind.as_ref() {
@@ -491,7 +586,7 @@ impl TypeSolver {
                 let solved_then = self.infer_expr(then)?;
                 let solved_else = self.infer_expr(else_)?;
 
-                self.meta_ctx.unify(&solved_cond.ty, &Type::Bool)?;
+                self.meta_ctx.unify(&solved_cond.ty, &Ty::Bool)?;
                 self.meta_ctx.unify(&solved_then.ty, &solved_else.ty)?;
 
                 Ok(Expr::new(
@@ -533,7 +628,7 @@ impl TypeSolver {
                 ))
             }
             nir::ExprKind::List(exprs) => {
-                let ty = Type::MetaRef(self.meta_ctx.fresh());
+                let ty = Ty::MetaRef(self.meta_ctx.fresh());
 
                 let solved_exprs = exprs
                     .iter()
@@ -547,24 +642,24 @@ impl TypeSolver {
 
                 Ok(Expr::new(
                     ExprKind::List(solved_exprs),
-                    Type::List(Box::new(ty)),
+                    Ty::List(Box::new(ty)),
                     expr.span,
                 ))
             }
-            nir::ExprKind::Unit => Ok(Expr::new(ExprKind::Unit, Type::Unit, expr.span)),
+            nir::ExprKind::Unit => Ok(Expr::new(ExprKind::Unit, Ty::Unit, expr.span)),
         }
     }
 
     fn infer_pattern(
         &mut self,
         pat: &nir::Pattern,
-        ty: &Type,
+        ty: &Ty,
         generalize: bool,
     ) -> InferResult<Pattern> {
         match pat.kind.as_ref() {
             nir::PatternKind::Wildcard => Ok(Pattern::new(
                 PatternKind::Wildcard,
-                Type::MetaRef(self.meta_ctx.fresh()),
+                Ty::MetaRef(self.meta_ctx.fresh()),
                 pat.span,
             )),
             nir::PatternKind::Ident(ident, hint) => {
@@ -591,44 +686,44 @@ impl TypeSolver {
             nir::PatternKind::Lit(lit) => match *lit {
                 nir::Lit::Byte(b) => Ok(Pattern::new(
                     PatternKind::Lit(Lit::Byte(b)),
-                    Type::Byte,
+                    Ty::Byte,
                     pat.span,
                 )),
                 nir::Lit::Int(n) => Ok(Pattern::new(
                     PatternKind::Lit(Lit::Int(n)),
-                    Type::Int,
+                    Ty::Int,
                     pat.span,
                 )),
                 nir::Lit::Rational(r) => Ok(Pattern::new(
                     PatternKind::Lit(Lit::Rational(r)),
-                    Type::Rational,
+                    Ty::Rational,
                     pat.span,
                 )),
                 nir::Lit::Real(r) => Ok(Pattern::new(
                     PatternKind::Lit(Lit::Real(r)),
-                    Type::Real,
+                    Ty::Real,
                     pat.span,
                 )),
                 nir::Lit::Bool(b) => Ok(Pattern::new(
                     PatternKind::Lit(Lit::Bool(b)),
-                    Type::Bool,
+                    Ty::Bool,
                     pat.span,
                 )),
                 nir::Lit::String(s) => Ok(Pattern::new(
                     PatternKind::Lit(Lit::String(s.clone())),
-                    Type::String,
+                    Ty::String,
                     pat.span,
                 )),
                 nir::Lit::Char(c) => Ok(Pattern::new(
                     PatternKind::Lit(Lit::Char(c)),
-                    Type::Char,
+                    Ty::Char,
                     pat.span,
                 )),
             },
             nir::PatternKind::List(pats) => {
                 log::debug!("infer list pat: {:?}", ty);
-                let elem_ty = Type::MetaRef(self.meta_ctx.fresh());
-                let list_ty = Type::List(Box::new(elem_ty.clone()));
+                let elem_ty = Ty::MetaRef(self.meta_ctx.fresh());
+                let list_ty = Ty::List(Box::new(elem_ty.clone()));
                 let solved_pats = pats
                     .iter()
                     .map(|pat| self.infer_pattern(pat, &elem_ty, generalize))
@@ -644,8 +739,8 @@ impl TypeSolver {
                 ))
             }
             nir::PatternKind::Pair(lhs, rhs) => {
-                let elem_ty = Type::MetaRef(self.meta_ctx.fresh());
-                let list_ty = Type::List(Box::new(elem_ty.clone()));
+                let elem_ty = Ty::MetaRef(self.meta_ctx.fresh());
+                let list_ty = Ty::List(Box::new(elem_ty.clone()));
                 let solved_lhs = self.infer_pattern(lhs, &elem_ty, generalize)?;
                 let solved_rhs = self.infer_pattern(rhs, &list_ty, generalize)?;
 
@@ -660,7 +755,7 @@ impl TypeSolver {
                     pat.span,
                 ))
             }
-            nir::PatternKind::Unit => Ok(Pattern::new(PatternKind::Unit, Type::Unit, pat.span)),
+            nir::PatternKind::Unit => Ok(Pattern::new(PatternKind::Unit, Ty::Unit, pat.span)),
         }
     }
 }

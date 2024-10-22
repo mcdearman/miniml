@@ -5,7 +5,7 @@ use crate::analysis::infer::meta;
 use super::{
     error::{InferResult, TypeError},
     meta::{Meta, MetaId},
-    r#type::Type,
+    ty::Ty,
 };
 use std::{
     collections::HashMap,
@@ -68,11 +68,11 @@ impl MetaContext {
             .expect("dangling meta reference")
     }
 
-    pub fn bind(&mut self, meta_ref: &MetaRef, ty: &Type) -> InferResult<()> {
+    pub fn bind(&mut self, meta_ref: &MetaRef, ty: &Ty) -> InferResult<()> {
         match self.get(meta_ref) {
             Meta::Bound(t) => self.unify(&t, ty),
             Meta::Unbound(id) => {
-                if *ty == Type::Meta(Box::new(Meta::Unbound(id))) {
+                if *ty == Ty::Meta(Box::new(Meta::Unbound(id))) {
                     Ok(())
                 } else if ty.free_vars(self).contains(&id) {
                     Err(TypeError::from(format!(
@@ -87,9 +87,9 @@ impl MetaContext {
         }
     }
 
-    pub fn force(&mut self, ty: &Type) -> Type {
+    pub fn force(&mut self, ty: &Ty) -> Ty {
         match ty {
-            Type::MetaRef(id) => match self.clone().bindings.get(id) {
+            Ty::MetaRef(id) => match self.clone().bindings.get(id) {
                 Some(Meta::Bound(ty)) => {
                     let ty = self.force(ty);
                     self.bindings.insert(*id, Meta::Bound(ty.clone()));
@@ -101,32 +101,32 @@ impl MetaContext {
         }
     }
 
-    pub fn unify(&mut self, t1: &Type, t2: &Type) -> InferResult<()> {
+    pub fn unify(&mut self, t1: &Ty, t2: &Ty) -> InferResult<()> {
         log::debug!("unify: {:?} and {:?}", t1, t2);
         let t1 = self.force(t1);
         let t2 = self.force(t2);
 
         match (&t1, &t2) {
-            (Type::Byte, Type::Byte)
-            | (Type::Int, Type::Int)
-            | (Type::Rational, Type::Rational)
-            | (Type::Real, Type::Real)
-            | (Type::Bool, Type::Bool)
-            | (Type::String, Type::String)
-            | (Type::Char, Type::Char)
-            | (Type::Unit, Type::Unit) => Ok(()),
-            (Type::Lambda(p1, b1), Type::Lambda(p2, b2)) => {
+            (Ty::Byte, Ty::Byte)
+            | (Ty::Int, Ty::Int)
+            | (Ty::Rational, Ty::Rational)
+            | (Ty::Real, Ty::Real)
+            | (Ty::Bool, Ty::Bool)
+            | (Ty::String, Ty::String)
+            | (Ty::Char, Ty::Char)
+            | (Ty::Unit, Ty::Unit) => Ok(()),
+            (Ty::Lambda(p1, b1), Ty::Lambda(p2, b2)) => {
                 self.unify(p1, p2)?;
                 self.unify(b1, b2)
             }
-            (Type::List(l1), Type::List(l2)) => self.unify(l1, l2),
-            (t, Type::MetaRef(meta_ref)) => {
+            (Ty::List(l1), Ty::List(l2)) => self.unify(l1, l2),
+            (t, Ty::MetaRef(meta_ref)) => {
                 self.bind(meta_ref, &t1)?;
                 log::debug!("bind: {:?} to {:?}", meta_ref, t1);
                 // log::debug!("meta_ctx: {:#?}", self);
                 Ok(())
             }
-            (Type::MetaRef(meta_ref), _) => {
+            (Ty::MetaRef(meta_ref), _) => {
                 self.bind(meta_ref, &t2)?;
                 log::debug!("bind: {:?} to {:?}", meta_ref, t2);
                 // log::debug!("meta_ctx: {:#?}", self);

@@ -62,7 +62,7 @@ impl Resolver {
         None
     }
 
-    pub fn resolve(&mut self, ast: &ast::Prog) -> (Option<Root>, Vec<ResError>) {
+    pub fn resolve(&mut self, ast: &ast::Prog) -> (Option<Prog>, Vec<ResError>) {
         let mut decls = Vec::new();
         let mut errors = Vec::new();
 
@@ -76,7 +76,7 @@ impl Resolver {
             (None, errors)
         } else {
             (
-                Some(Root {
+                Some(Prog {
                     decls,
                     span: ast.span,
                 }),
