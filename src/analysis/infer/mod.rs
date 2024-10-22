@@ -361,10 +361,98 @@ impl TypeSolver {
                     expr.span,
                 ))
             }
-            nir::ExprKind::Let(pattern, _, expr, expr1) => todo!(),
-            nir::ExprKind::If(expr, expr1, expr2) => todo!(),
-            nir::ExprKind::Match(expr, vec) => todo!(),
-            nir::ExprKind::List(vec) => todo!(),
+            nir::ExprKind::Let(pattern, true, expr, body) => {
+                let var = Ty::MetaRef(self.meta_ctx.fresh());
+
+                self.ctx.push();
+                let solved_pat = self.generate_pattern_constraints(src, pattern, &var, false)?;
+                let solved_expr = self.generate_expr_constraints(src, expr)?;
+                let solved_body = self.generate_expr_constraints(src, body)?;
+                self.ctx.pop();
+
+                self.constraints.push(Constraint::Eq(
+                    solved_pat.ty.clone(),
+                    solved_expr.ty.clone(),
+                ));
+
+                Ok(Expr::new(
+                    ExprKind::Let(solved_pat, true, solved_expr, solved_body.clone()),
+                    solved_body.ty,
+                    expr.span,
+                ))
+            }
+            nir::ExprKind::Let(pattern, false, expr, body) => {
+                let solved_expr = self.generate_expr_constraints(src, expr)?;
+                let solved_pat =
+                    self.generate_pattern_constraints(src, pattern, &solved_expr.ty, false)?;
+                let solved_body = self.generate_expr_constraints(src, body)?;
+                self.constraints.push(Constraint::Eq(
+                    solved_pat.ty.clone(),
+                    solved_expr.ty.clone(),
+                ));
+
+                Ok(Expr::new(
+                    ExprKind::Let(solved_pat, false, solved_expr, solved_body.clone()),
+                    solved_body.ty,
+                    expr.span,
+                ))
+            }
+            nir::ExprKind::If(cond, then, else_) => {
+                let solved_cond = self.generate_expr_constraints(src, cond)?;
+                let solved_then = self.generate_expr_constraints(src, then)?;
+                let solved_else = self.generate_expr_constraints(src, else_)?;
+
+                self.constraints
+                    .push(Constraint::Eq(solved_cond.ty.clone(), Ty::Bool));
+                self.constraints.push(Constraint::Eq(
+                    solved_then.ty.clone(),
+                    solved_else.ty.clone(),
+                ));
+
+                Ok(Expr::new(
+                    ExprKind::If(solved_cond, solved_then.clone(), solved_else),
+                    solved_then.ty,
+                    expr.span,
+                ))
+            }
+            nir::ExprKind::Match(expr, arms) => {
+                let solved_expr = self.generate_expr_constraints(src, expr)?;
+                let ty = Ty::MetaRef(self.meta_ctx.fresh());
+
+                let mut solved_vec = vec![];
+                for (pat, body) in arms {
+                    self.ctx.push();
+                    let solved_pat =
+                        self.generate_pattern_constraints(src, pat, &solved_expr.ty, false)?;
+                    let solved_body = self.generate_expr_constraints(src, body)?;
+                    self.constraints.push(Constraint::Eq(
+                        solved_body.ty.clone(),
+                        solved_expr.ty.clone(),
+                    ));
+                    solved_vec.push((solved_pat, solved_body));
+                    self.ctx.pop();
+                }
+
+                Ok(Expr::new(
+                    ExprKind::Match(solved_expr.clone(), solved_vec),
+                    solved_expr.ty,
+                    expr.span,
+                ))
+            }
+            nir::ExprKind::List(vec) => {
+                let elem_ty = Ty::MetaRef(self.meta_ctx.fresh());
+                let list_ty = Ty::List(Box::new(elem_ty.clone()));
+                let solved_vec = vec
+                    .iter()
+                    .map(|expr| self.generate_expr_constraints(src, expr))
+                    .collect::<InferResult<Vec<Expr>>>()?;
+                for expr in &solved_vec {
+                    self.constraints
+                        .push(Constraint::Eq(expr.ty.clone(), elem_ty.clone()));
+                }
+
+                Ok(Expr::new(ExprKind::List(solved_vec), list_ty, expr.span))
+            }
             nir::ExprKind::Unit => Ok(Expr::new(ExprKind::Unit, Ty::Unit, expr.span)),
         }
     }
