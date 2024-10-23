@@ -61,15 +61,12 @@ fn main() {
                             (Some(nir), _) => {
                                 // log::debug!("NIR: {:#?}", nir);
 
-                                match solver.infer(&line, &nir) {
-                                    (Some(tir), _) => {
-                                        log::debug!("{:#?}", tir);
-                                    }
-                                    (None, errors) => {
-                                        log::error!("Inference errors: {:?}", errors);
-                                        continue;
-                                    }
+                                let (tir, type_errors) = solver.infer(&line, &nir);
+                                if !type_errors.is_empty() {
+                                    log::error!("Type errors: {:?}", type_errors);
+                                    continue;
                                 }
+                                log::debug!("TIR: {:#?}", tir);
                             }
                             (None, res_errors) => {
                                 log::error!("Resolution errors: {:?}", res_errors);
