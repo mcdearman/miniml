@@ -76,7 +76,7 @@ impl MetaContext {
                     Ok(())
                 } else if ty.free_vars(self).contains(&id) {
                     Err(TypeError::from(format!(
-                        "occurs check failed: {} occurs in {:?}",
+                        "occurs check failed: @{} occurs in {:?}",
                         id, ty
                     )))
                 } else {
