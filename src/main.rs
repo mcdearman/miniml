@@ -50,6 +50,18 @@ fn main() {
         let readline = rl.readline("> ");
         match readline {
             Ok(line) => {
+                match line.trim() {
+                    ":q" | ":quit" => break,
+                    "ctx" => {
+                        log::debug!("Context: {:#?}", solver.ctx);
+                        continue;
+                    }
+                    "mctx" => {
+                        log::debug!("Meta context: {:#?}", solver.meta_ctx);
+                        continue;
+                    }
+                    _ => (),
+                }
                 rl.add_history_entry(line.as_str())
                     .expect("Failed to add history entry");
                 let stream = TokenIter::new(&line);
@@ -63,19 +75,19 @@ fn main() {
 
                                 let (tir, type_errors) = solver.infer(&line, &nir);
                                 if !type_errors.is_empty() {
-                                    log::error!("Type errors: {:?}", type_errors);
+                                    log::error!("Type errors: {:#?}", type_errors);
                                     continue;
                                 }
                                 log::debug!("TIR: {:#?}", tir);
                             }
                             (None, res_errors) => {
-                                log::error!("Resolution errors: {:?}", res_errors);
+                                log::error!("Resolution errors: {:#?}", res_errors);
                                 continue;
                             }
                         }
                     }
                     (None, parse_errors) => {
-                        log::error!("Parse errors: {:?}", parse_errors);
+                        log::error!("Parse errors: {:#?}", parse_errors);
                         continue;
                     }
                 };

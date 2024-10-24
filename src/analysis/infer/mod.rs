@@ -11,7 +11,6 @@ use clap::builder::TryMapValueParser;
 use constraint::Constraint;
 use itertools::Itertools;
 use poly_type::PolyType;
-use registry::Registry;
 
 mod constraint;
 mod context;
@@ -19,7 +18,6 @@ pub mod error;
 mod meta;
 mod meta_context;
 mod poly_type;
-pub mod registry;
 pub mod tests;
 pub mod tir;
 pub mod ty;
@@ -27,10 +25,9 @@ pub mod ty;
 #[derive(Debug, Clone)]
 pub struct TypeSolver {
     src: InternedString,
-    ctx: Context,
-    meta_ctx: MetaContext,
+    pub ctx: Context,
+    pub meta_ctx: MetaContext,
     constraints: Vec<Constraint>,
-    reg: Registry,
 }
 
 impl TypeSolver {
@@ -206,18 +203,17 @@ impl TypeSolver {
             ctx,
             meta_ctx,
             constraints: vec![],
-            reg: Registry::new(),
         }
     }
 
     pub fn infer<'src>(&mut self, src: &'src str, nir: &nir::Prog) -> (Prog, Vec<TypeError>) {
         let (prog, gen_errors) = self.generate_constraints(src, nir);
-        let (solved_prog, unify_errors) = self.solve_constraints(&prog);
+        let unify_errors = self.solve_constraints();
         let errors = gen_errors.into_iter().chain(unify_errors).collect_vec();
-        (solved_prog.zonk(&mut self.meta_ctx), errors)
+        (prog.zonk(&mut self.meta_ctx), errors)
     }
 
-    fn solve_constraints<'src>(&mut self, prog: &tir::Prog) -> (Prog, Vec<TypeError>) {
+    fn solve_constraints<'src>(&mut self) -> Vec<TypeError> {
         let mut errors = vec![];
         for c in &self.constraints {
             match c {
@@ -228,8 +224,7 @@ impl TypeSolver {
                 }
             }
         }
-
-        (prog.clone(), errors)
+        errors
     }
 
     fn generate_constraints<'src>(
