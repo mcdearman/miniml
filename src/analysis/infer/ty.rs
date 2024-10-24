@@ -53,8 +53,9 @@ impl Ty {
     pub(super) fn free_vars(&self, meta_ctx: &MetaContext) -> HashSet<MetaId> {
         match self {
             Self::MetaRef(n) => match meta_ctx.get(n) {
-                Meta::Bound(ty) => ty.free_vars(meta_ctx),
-                Meta::Unbound(tv) => vec![tv].into_iter().collect(),
+                Some(Meta::Bound(ty)) => ty.free_vars(meta_ctx),
+                Some(Meta::Unbound(tv)) => vec![tv].into_iter().collect(),
+                None => HashSet::new(),
             },
             Self::Lambda(param, body) => param
                 .free_vars(meta_ctx)
@@ -77,8 +78,9 @@ impl Ty {
             Ty::Char => Ty::Char,
             Ty::Unit => Ty::Unit,
             Ty::MetaRef(n) => match meta_ctx.get(&n) {
-                Meta::Bound(ty) => ty.zonk(meta_ctx),
-                Meta::Unbound(tv) => Ty::Meta(Box::new(Meta::Unbound(tv))),
+                Some(Meta::Bound(ty)) => ty.zonk(meta_ctx),
+                Some(Meta::Unbound(tv)) => Ty::Meta(Box::new(Meta::Unbound(tv))),
+                None => Ty::MetaRef(n),
             },
             m @ Ty::Meta(_) => m,
             // Type::Poly(poly) => Type::Poly(poly.clone()),

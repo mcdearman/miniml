@@ -36,7 +36,7 @@ impl Display for MetaRef {
 
 impl From<MetaRef> for Meta {
     fn from(id: MetaRef) -> Self {
-        unsafe { CTX.get(&id) }
+        unsafe { CTX.get(&id).expect("unbound meta ref") }
     }
 }
 
@@ -61,15 +61,15 @@ impl MetaContext {
         id
     }
 
-    pub fn get(&self, meta_ref: &MetaRef) -> Meta {
-        self.bindings
-            .get(meta_ref)
-            .cloned()
-            .expect("dangling meta reference")
+    pub fn get(&self, meta_ref: &MetaRef) -> Option<Meta> {
+        self.bindings.get(meta_ref).cloned()
     }
 
     pub fn bind(&mut self, meta_ref: &MetaRef, ty: &Ty) -> InferResult<()> {
-        match self.get(meta_ref) {
+        match self.get(meta_ref).ok_or(TypeError::from(format!(
+            "unbound meta variable: {:?}",
+            meta_ref
+        )))? {
             Meta::Bound(t) => self.unify(&t, ty),
             Meta::Unbound(id) => {
                 if *ty == Ty::Meta(Box::new(Meta::Unbound(id))) {
@@ -89,7 +89,7 @@ impl MetaContext {
 
     pub fn force(&mut self, ty: &Ty) -> Ty {
         match ty {
-            Ty::MetaRef(id) => match self.bindings.get(id).cloned() {
+            Ty::MetaRef(id) => match self.get(id) {
                 Some(Meta::Bound(ty)) => {
                     let ty = self.force(&ty);
                     self.bindings.insert(*id, Meta::Bound(ty.clone()));

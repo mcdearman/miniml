@@ -36,11 +36,12 @@ impl PolyType {
         fn substitute(ty: &Ty, subst: &HashMap<u32, Ty>, meta_ctx: &mut MetaContext) -> Ty {
             match ty {
                 Ty::MetaRef(id) => match meta_ctx.get(id) {
-                    Meta::Bound(ty) => substitute(&ty, subst, meta_ctx),
-                    Meta::Unbound(tv) => match subst.get(&tv) {
+                    Some(Meta::Bound(ty)) => substitute(&ty, subst, meta_ctx),
+                    Some(Meta::Unbound(tv)) => match subst.get(&tv) {
                         Some(t) => t.clone(),
                         None => ty.clone(),
                     },
+                    None => ty.clone(),
                 },
                 Ty::Lambda(param, body) => Ty::Lambda(
                     Box::new(substitute(param, subst, meta_ctx)),
