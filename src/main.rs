@@ -59,7 +59,7 @@ fn main() {
                         // log::debug!("AST: {:#?}", ast);
                         match res.resolve(&ast) {
                             (Some(nir), _) => {
-                                // log::debug!("NIR: {:#?}", nir);
+                                log::debug!("NIR: {:#?}", nir);
 
                                 let (tir, type_errors) = solver.infer(&line, &nir);
                                 if !type_errors.is_empty() {

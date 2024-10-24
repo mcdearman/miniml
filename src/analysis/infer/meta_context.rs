@@ -89,9 +89,9 @@ impl MetaContext {
 
     pub fn force(&mut self, ty: &Ty) -> Ty {
         match ty {
-            Ty::MetaRef(id) => match self.clone().bindings.get(id) {
+            Ty::MetaRef(id) => match self.bindings.get(id).cloned() {
                 Some(Meta::Bound(ty)) => {
-                    let ty = self.force(ty);
+                    let ty = self.force(&ty);
                     self.bindings.insert(*id, Meta::Bound(ty.clone()));
                     ty
                 }

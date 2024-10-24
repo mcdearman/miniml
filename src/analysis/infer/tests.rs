@@ -41,7 +41,7 @@ fn test_helper(src: &str) -> tir::Prog {
         }
         panic!("type inference failed");
     }
-    tir.unwrap()
+    tir
 }
 
 #[test]

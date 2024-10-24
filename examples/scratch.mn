@@ -89,7 +89,7 @@ def fib (n : Int) : Int =
 -- tail recursive fib
 def fib n = 
   let loop a b i = 
-    if i == 0 then a 
+    if i = 0 then a 
     else loop b (a + b) (i - 1)
   in loop 0 1 n
 
@@ -128,7 +128,7 @@ def map : a b. (a -> b) -> [a] -> [b]
   | f (x :: xs) = f x :: map f xs
 
 def map f xs = 
-  match xs with
+  match xs
   | [] -> []
   | (x::xs) -> f x :: map f xs
 

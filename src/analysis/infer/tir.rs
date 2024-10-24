@@ -36,11 +36,11 @@ pub struct Decl {
 impl Decl {
     fn zonk(&self, meta_ctx: &mut MetaContext) -> Decl {
         match &self.kind {
-            DeclKind::Def(pat, let_expr) => {
+            DeclKind::Def(pat, rec, expr) => {
                 let zonked_pat = pat.zonk(meta_ctx);
-                let zonked_expr = let_expr.zonk(meta_ctx);
+                let zonked_expr = expr.zonk(meta_ctx);
                 Decl {
-                    kind: DeclKind::Def(zonked_pat, zonked_expr),
+                    kind: DeclKind::Def(zonked_pat, *rec, zonked_expr),
                     ty: self.ty.zonk(meta_ctx),
                     span: self.span,
                 }
@@ -51,7 +51,7 @@ impl Decl {
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum DeclKind {
-    Def(Pattern, Expr),
+    Def(Pattern, bool, Expr),
 }
 
 #[derive(Debug, Clone, PartialEq)]

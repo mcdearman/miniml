@@ -7,6 +7,7 @@ use self::{
 };
 use crate::{rename::nir, utils::intern::InternedString};
 use chumsky::container::Seq;
+use clap::builder::TryMapValueParser;
 use constraint::Constraint;
 use itertools::Itertools;
 use poly_type::PolyType;
@@ -217,7 +218,18 @@ impl TypeSolver {
     }
 
     fn solve_constraints<'src>(&mut self, prog: &tir::Prog) -> (Prog, Vec<TypeError>) {
-        todo!()
+        let mut errors = vec![];
+        for c in &self.constraints {
+            match c {
+                Constraint::Eq(t1, t2) => {
+                    if let Err(e) = self.meta_ctx.unify(&t1, &t2) {
+                        errors.push(e);
+                    }
+                }
+            }
+        }
+
+        (prog.clone(), errors)
     }
 
     fn generate_constraints<'src>(
@@ -252,13 +264,32 @@ impl TypeSolver {
         decl: &nir::Decl,
     ) -> InferResult<Decl> {
         match &decl.kind {
-            nir::DeclKind::Def(pat, _, expr) => {
+            nir::DeclKind::Def(pat, false, expr) => {
                 let solved_expr = self.generate_expr_constraints(src, expr)?;
                 let solved_pat =
                     self.generate_pattern_constraints(src, pat, &solved_expr.ty, true)?;
 
                 Ok(Decl {
-                    kind: DeclKind::Def(solved_pat, solved_expr.clone()),
+                    kind: DeclKind::Def(solved_pat, false, solved_expr.clone()),
+                    ty: solved_expr.ty,
+                    span: decl.span,
+                })
+            }
+            nir::DeclKind::Def(pat, true, expr) => {
+                let var = Ty::MetaRef(self.meta_ctx.fresh());
+                let solved_pat = self.generate_pattern_constraints(src, pat, &var, false)?;
+
+                self.ctx.push();
+                let solved_expr = self.generate_expr_constraints(src, expr)?;
+                self.ctx.pop();
+
+                self.constraints.push(Constraint::Eq(
+                    solved_pat.ty.clone(),
+                    solved_expr.ty.clone(),
+                ));
+
+                Ok(Decl {
+                    kind: DeclKind::Def(solved_pat, true, solved_expr.clone()),
                     ty: solved_expr.ty,
                     span: decl.span,
                 })
@@ -305,10 +336,11 @@ impl TypeSolver {
                         expr.span,
                     ))
                 } else {
+                    log::debug!("unbound variable: {:?}", expr);
                     Err(TypeError::from(format!(
                         "unbound variable: {:?} - \"{}\"",
                         expr,
-                        self.src[ident.span].to_string()
+                        self.src[expr.span].to_string()
                     )))
                 }
             }
@@ -430,23 +462,25 @@ impl TypeSolver {
                 let solved_expr = self.generate_expr_constraints(src, expr)?;
                 let ty = Ty::MetaRef(self.meta_ctx.fresh());
 
-                let mut solved_vec = vec![];
+                let mut solved_arms = vec![];
                 for (pat, body) in arms {
                     self.ctx.push();
                     let solved_pat =
                         self.generate_pattern_constraints(src, pat, &solved_expr.ty, false)?;
                     let solved_body = self.generate_expr_constraints(src, body)?;
                     self.constraints.push(Constraint::Eq(
-                        solved_body.ty.clone(),
+                        solved_pat.ty.clone(),
                         solved_expr.ty.clone(),
                     ));
-                    solved_vec.push((solved_pat, solved_body));
+                    self.constraints
+                        .push(Constraint::Eq(solved_body.ty.clone(), ty.clone()));
+                    solved_arms.push((solved_pat, solved_body));
                     self.ctx.pop();
                 }
 
                 Ok(Expr::new(
-                    ExprKind::Match(solved_expr.clone(), solved_vec),
-                    solved_expr.ty,
+                    ExprKind::Match(solved_expr.clone(), solved_arms),
+                    ty,
                     expr.span,
                 ))
             }
