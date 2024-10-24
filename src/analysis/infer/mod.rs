@@ -465,15 +465,18 @@ impl TypeSolver {
                 let mut solved_arms = vec![];
                 for (pat, body) in arms {
                     self.ctx.push();
+
                     let solved_pat =
                         self.generate_pattern_constraints(src, pat, &solved_expr.ty, false)?;
                     let solved_body = self.generate_expr_constraints(src, body)?;
+
                     self.constraints.push(Constraint::Eq(
                         solved_pat.ty.clone(),
                         solved_expr.ty.clone(),
                     ));
                     self.constraints
                         .push(Constraint::Eq(solved_body.ty.clone(), ty.clone()));
+
                     solved_arms.push((solved_pat, solved_body));
                     self.ctx.pop();
                 }
