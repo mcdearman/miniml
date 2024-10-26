@@ -285,7 +285,7 @@ impl TypeSolver {
 
                 Ok(Decl {
                     kind: DeclKind::Def(solved_pat, true, solved_expr.clone()),
-                    ty: solved_expr.ty,
+                    ty: var,
                     span: decl.span,
                 })
             }
