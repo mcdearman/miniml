@@ -208,6 +208,7 @@ impl TypeSolver {
 
     pub fn infer<'src>(&mut self, src: &'src str, nir: &nir::Prog) -> (Prog, Vec<TypeError>) {
         let (prog, gen_errors) = self.generate_constraints(src, nir);
+        log::debug!("prog: {:#?}", prog);
         let unify_errors = self.solve_constraints();
         let errors = gen_errors.into_iter().chain(unify_errors).collect_vec();
         (prog.zonk(&mut self.meta_ctx), errors)
