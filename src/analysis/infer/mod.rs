@@ -208,7 +208,8 @@ impl TypeSolver {
 
     pub fn infer<'src>(&mut self, src: &'src str, nir: &nir::Prog) -> (Prog, Vec<TypeError>) {
         let (prog, gen_errors) = self.generate_constraints(src, nir);
-        log::debug!("prog: {:#?}", prog);
+        // log::debug!("prog: {:#?}", prog);
+        log::debug!("constraints: {:#?}", self.constraints);
         let unify_errors = self.solve_constraints();
         let errors = gen_errors.into_iter().chain(unify_errors).collect_vec();
         self.constraints.clear();
@@ -274,6 +275,7 @@ impl TypeSolver {
             }
             nir::DeclKind::Def(pat, true, expr) => {
                 let var = Ty::MetaRef(self.meta_ctx.fresh());
+                log::debug!("fresh def var: {:?}", var);
                 let solved_pat = self.generate_pattern_constraints(src, pat, &var, true)?;
 
                 self.ctx.push();
@@ -358,6 +360,7 @@ impl TypeSolver {
             }
             nir::ExprKind::Lambda(pattern, expr) => {
                 let param_ty = Ty::MetaRef(self.meta_ctx.fresh());
+                log::debug!("fresh lambda var: {:?}", param_ty);
                 self.ctx.push();
                 let solved_pat =
                     self.generate_pattern_constraints(src, pattern, &param_ty, false)?;
@@ -403,6 +406,7 @@ impl TypeSolver {
             }
             nir::ExprKind::Let(pattern, true, expr, body) => {
                 let var = Ty::MetaRef(self.meta_ctx.fresh());
+                log::debug!("fresh let var: {:?}", var);
 
                 self.ctx.push();
                 let solved_pat = self.generate_pattern_constraints(src, pattern, &var, false)?;
@@ -458,6 +462,7 @@ impl TypeSolver {
             nir::ExprKind::Match(expr, arms) => {
                 let solved_expr = self.generate_expr_constraints(src, expr)?;
                 let ty = Ty::MetaRef(self.meta_ctx.fresh());
+                log::debug!("fresh match var: {:?}", ty);
 
                 let mut solved_arms = vec![];
                 for (pat, body) in arms {
@@ -486,6 +491,7 @@ impl TypeSolver {
             }
             nir::ExprKind::List(vec) => {
                 let elem_ty = Ty::MetaRef(self.meta_ctx.fresh());
+                log::debug!("fresh list var: {:?}", elem_ty);
                 let list_ty = Ty::List(Box::new(elem_ty.clone()));
                 let solved_vec = vec
                     .iter()
@@ -556,7 +562,13 @@ impl TypeSolver {
                 }
             }
             nir::PatternKind::List(vec) => {
-                let elem_ty = Ty::MetaRef(self.meta_ctx.fresh());
+                let v = self.meta_ctx.fresh();
+                let elem_ty = Ty::MetaRef(v);
+                log::debug!(
+                    "fresh list pat var: {:?} is {:?}",
+                    elem_ty,
+                    self.meta_ctx.get(&v)
+                );
                 let list_ty = Ty::List(Box::new(elem_ty.clone()));
                 let solved_pats = vec
                     .iter()
@@ -572,6 +584,7 @@ impl TypeSolver {
             }
             nir::PatternKind::Pair(head, tail) => {
                 let var = Ty::MetaRef(self.meta_ctx.fresh());
+                log::debug!("fresh pair pat var: {:?}", var);
                 let pair_ty = Ty::List(Box::new(var.clone()));
                 let solved_head = self.generate_pattern_constraints(src, head, &var, generalize)?;
                 let solved_tail =

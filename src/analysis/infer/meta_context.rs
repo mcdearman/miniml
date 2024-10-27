@@ -56,9 +56,9 @@ impl MetaContext {
     }
 
     pub fn fresh(&mut self) -> MetaRef {
-        let id = MetaRef::gen();
-        self.bindings.insert(id, Meta::fresh());
-        id
+        let r = MetaRef::gen();
+        self.bindings.insert(r, Meta::fresh());
+        r
     }
 
     pub fn get(&self, meta_ref: &MetaRef) -> Option<Meta> {
@@ -70,14 +70,17 @@ impl MetaContext {
             "unbound meta variable: {:?}",
             meta_ref
         )))? {
-            Meta::Bound(t) => self.unify(&t, ty),
-            Meta::Unbound(id) => {
+            Meta::Bound(t) => Err(TypeError::from(format!(
+                "cannot bind {:?} to {:?}, already bound to {:?}",
+                meta_ref, ty, t
+            ))),
+            m @ Meta::Unbound(id) => {
                 if *ty == Ty::Meta(Box::new(Meta::Unbound(id))) {
                     Ok(())
                 } else if ty.free_vars(self).contains(&id) {
                     Err(TypeError::from(format!(
-                        "occurs check failed: @{} occurs in {:?}",
-                        id, ty
+                        "occurs check failed: {} occurs in {:?}",
+                        m, ty
                     )))
                 } else {
                     self.bindings.insert(*meta_ref, Meta::Bound(ty.clone()));
@@ -120,7 +123,7 @@ impl MetaContext {
                 self.unify(b1, b2)
             }
             (Ty::List(l1), Ty::List(l2)) => self.unify(l1, l2),
-            (t, Ty::MetaRef(meta_ref)) => {
+            (_, Ty::MetaRef(meta_ref)) => {
                 self.bind(meta_ref, &t1)?;
                 log::debug!("bind: {:?} to {:?}", meta_ref, t1);
                 // log::debug!("meta_ctx: {:#?}", self);

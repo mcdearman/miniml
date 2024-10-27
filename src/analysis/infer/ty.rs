@@ -38,9 +38,9 @@ impl Ty {
     }
 
     pub fn generalize(&self, ctx: &Context, meta_ctx: &MetaContext) -> PolyType {
-        log::debug!("generalize: {:?}", self);
-        log::debug!("free vars: {:?}", self.free_vars(meta_ctx));
-        log::debug!("ctx free vars: {:?}", ctx.free_vars(meta_ctx));
+        // log::debug!("generalize: {:?}", self);
+        // log::debug!("free vars: {:?}", self.free_vars(meta_ctx));
+        // log::debug!("ctx free vars: {:?}", ctx.free_vars(meta_ctx));
         PolyType::new(
             self.free_vars(meta_ctx)
                 .difference(&ctx.free_vars(meta_ctx))
