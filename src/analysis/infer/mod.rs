@@ -221,7 +221,7 @@ impl TypeSolver {
         for c in &self.constraints {
             match c {
                 Constraint::Eq(t1, t2) => {
-                    if let Err(e) = self.meta_ctx.unify(&t1, &t2) {
+                    if let Err(e) = self.meta_ctx.unify(&t1, &t2, c) {
                         errors.push(e);
                     }
                 }

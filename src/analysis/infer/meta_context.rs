@@ -3,6 +3,7 @@ use once_cell::sync::Lazy;
 use crate::analysis::infer::meta;
 
 use super::{
+    constraint::Constraint,
     error::{InferResult, TypeError},
     meta::{Meta, MetaId},
     ty::Ty,
@@ -65,7 +66,7 @@ impl MetaContext {
         self.bindings.get(meta_ref).cloned()
     }
 
-    pub fn bind(&mut self, meta_ref: &MetaRef, ty: &Ty) -> InferResult<()> {
+    pub fn bind(&mut self, meta_ref: &MetaRef, ty: &Ty, c: &Constraint) -> InferResult<()> {
         match self.get(meta_ref).ok_or(TypeError::from(format!(
             "unbound meta variable: {:?}",
             meta_ref
@@ -79,8 +80,8 @@ impl MetaContext {
                     Ok(())
                 } else if ty.free_vars(self).contains(&id) {
                     Err(TypeError::from(format!(
-                        "occurs check failed: {} occurs in {:?}",
-                        m, ty
+                        "occurs check failed: {} occurs in {:?} because {:?}",
+                        m, ty, c
                     )))
                 } else {
                     self.bindings.insert(*meta_ref, Meta::Bound(ty.clone()));
@@ -104,7 +105,7 @@ impl MetaContext {
         }
     }
 
-    pub fn unify(&mut self, t1: &Ty, t2: &Ty) -> InferResult<()> {
+    pub fn unify(&mut self, t1: &Ty, t2: &Ty, c: &Constraint) -> InferResult<()> {
         log::debug!("unify: {:?} and {:?}", t1, t2);
         let t1 = self.force(t1);
         let t2 = self.force(t2);
@@ -119,18 +120,18 @@ impl MetaContext {
             | (Ty::Char, Ty::Char)
             | (Ty::Unit, Ty::Unit) => Ok(()),
             (Ty::Lambda(p1, b1), Ty::Lambda(p2, b2)) => {
-                self.unify(p1, p2)?;
-                self.unify(b1, b2)
+                self.unify(p1, p2, c)?;
+                self.unify(b1, b2, c)
             }
-            (Ty::List(l1), Ty::List(l2)) => self.unify(l1, l2),
+            (Ty::List(l1), Ty::List(l2)) => self.unify(l1, l2, c),
             (_, Ty::MetaRef(meta_ref)) => {
-                self.bind(meta_ref, &t1)?;
+                self.bind(meta_ref, &t1, c)?;
                 log::debug!("bind: {:?} to {:?}", meta_ref, t1);
                 // log::debug!("meta_ctx: {:#?}", self);
                 Ok(())
             }
             (Ty::MetaRef(meta_ref), _) => {
-                self.bind(meta_ref, &t2)?;
+                self.bind(meta_ref, &t2, c)?;
                 log::debug!("bind: {:?} to {:?}", meta_ref, t2);
                 // log::debug!("meta_ctx: {:#?}", self);
                 Ok(())
