@@ -211,6 +211,7 @@ impl TypeSolver {
         log::debug!("prog: {:#?}", prog);
         let unify_errors = self.solve_constraints();
         let errors = gen_errors.into_iter().chain(unify_errors).collect_vec();
+        self.constraints.clear();
         (prog.zonk(&mut self.meta_ctx), errors)
     }
 
@@ -273,7 +274,7 @@ impl TypeSolver {
             }
             nir::DeclKind::Def(pat, true, expr) => {
                 let var = Ty::MetaRef(self.meta_ctx.fresh());
-                let solved_pat = self.generate_pattern_constraints(src, pat, &var, false)?;
+                let solved_pat = self.generate_pattern_constraints(src, pat, &var, true)?;
 
                 self.ctx.push();
                 let solved_expr = self.generate_expr_constraints(src, expr)?;

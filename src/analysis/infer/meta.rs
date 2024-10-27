@@ -6,7 +6,7 @@ use std::{
 
 pub type MetaId = u32;
 
-#[derive(Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum Meta {
     Bound(Ty),
     Unbound(MetaId),
@@ -31,11 +31,11 @@ impl Meta {
     }
 }
 
-impl Debug for Meta {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self)
-    }
-}
+// impl Debug for Meta {
+//     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+//         write!(f, "{}", self)
+//     }
+// }
 
 #[rustfmt::skip]
 const ALPHABET: &[char] = &[
