@@ -136,6 +136,11 @@ def foldl : 'a 'b. ('a -> 'b -> 'a) -> 'a -> ['b] -> 'a
   | f acc [] = acc
   | f acc (x :: xs) = foldl f (f acc x) xs
 
+def foldl f acc xs =
+  match xs
+  | [] -> acc
+  | (x::xs) -> foldl f (f acc x) xs
+
 def foldr : 'a 'b. ('a -> 'b -> 'b) -> 'b -> ['a] -> 'b
   | f acc [] = acc
   | f acc (x :: xs) = f x (foldr f acc xs)

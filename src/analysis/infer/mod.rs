@@ -472,10 +472,10 @@ impl TypeSolver {
                         self.generate_pattern_constraints(src, pat, &solved_expr.ty, false)?;
                     let solved_body = self.generate_expr_constraints(src, body)?;
 
-                    self.constraints.push(Constraint::Eq(
-                        solved_pat.ty.clone(),
-                        solved_expr.ty.clone(),
-                    ));
+                    // self.constraints.push(Constraint::Eq(
+                    //     solved_pat.ty.clone(),
+                    //     solved_expr.ty.clone(),
+                    // ));
                     self.constraints
                         .push(Constraint::Eq(solved_body.ty.clone(), ty.clone()));
 
@@ -574,8 +574,6 @@ impl TypeSolver {
                     .iter()
                     .map(|pat| self.generate_pattern_constraints(src, pat, &elem_ty, generalize))
                     .collect::<InferResult<Vec<Pattern>>>()?;
-                self.constraints
-                    .push(Constraint::Eq(ty.clone(), list_ty.clone()));
                 Ok(Pattern::new(
                     PatternKind::List(solved_pats),
                     list_ty,
