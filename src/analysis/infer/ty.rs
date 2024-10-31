@@ -37,7 +37,7 @@ impl Ty {
         }
     }
 
-    pub fn generalize(&self, ctx: &Context, meta_ctx: &MetaContext) -> PolyType {
+    pub(super) fn generalize(&self, ctx: &Context, meta_ctx: &MetaContext) -> PolyType {
         // log::debug!("generalize: {:?}", self);
         // log::debug!("free vars: {:?}", self.free_vars(meta_ctx));
         // log::debug!("ctx free vars: {:?}", ctx.free_vars(meta_ctx));
@@ -66,7 +66,7 @@ impl Ty {
         }
     }
 
-    pub fn zonk(&self, meta_ctx: &mut MetaContext) -> Ty {
+    pub(super) fn zonk(&self, meta_ctx: &mut MetaContext) -> Ty {
         // log::debug!("zonk: {:?}", self);
         match meta_ctx.force(self) {
             Ty::Byte => Ty::Byte,

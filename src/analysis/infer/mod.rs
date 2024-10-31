@@ -472,10 +472,6 @@ impl TypeSolver {
                         self.generate_pattern_constraints(src, pat, &solved_expr.ty, false)?;
                     let solved_body = self.generate_expr_constraints(src, body)?;
 
-                    // self.constraints.push(Constraint::Eq(
-                    //     solved_pat.ty.clone(),
-                    //     solved_expr.ty.clone(),
-                    // ));
                     self.constraints
                         .push(Constraint::Eq(solved_body.ty.clone(), ty.clone()));
 

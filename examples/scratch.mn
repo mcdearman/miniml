@@ -189,3 +189,28 @@ def (::) : 'a. 'a -> ['a] -> ['a]
 [1, 2, 3]
   |> map (+ 1)
   |> filter ((= 0) ∘ (% 2))
+
+-- type classes
+class Eq a where
+  (==) : a -> a -> Bool
+
+instance Eq Int where
+  (==) = prim_int_eq
+
+instance Eq (Option a) where
+  (==) = \match (x, y) ->
+    | (None, None) -> true
+    | (Some x, Some y) -> x == y
+    | _ -> false
+
+class Iterator i where
+  next : i a -> Option (a, i a)
+
+class IntoIterator i where
+  into_iter : i a -> Iterator a
+
+instance IntoIterator [a] where
+  into_iter = ListIterator
+
+
+
