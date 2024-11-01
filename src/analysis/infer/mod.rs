@@ -544,6 +544,7 @@ impl TypeSolver {
                     self.ctx.insert(ident.name, scm.clone());
                     Ok(Pattern::new(
                         PatternKind::Ident(*ident),
+                        // scm.instantiate(&mut self.meta_ctx),
                         ty.clone(),
                         pat.span,
                     ))
