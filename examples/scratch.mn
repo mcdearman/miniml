@@ -145,6 +145,11 @@ def foldr : 'a 'b. ('a -> 'b -> 'b) -> 'b -> ['a] -> 'b
   | f acc [] = acc
   | f acc (x :: xs) = f x (foldr f acc xs)
 
+def foldr f acc xs =
+  match xs
+  | [] -> acc
+  | (x::xs) -> f x (foldr f acc xs)
+
 sum : Add a => [a] -> b
 sum = foldr (+) 0
 
