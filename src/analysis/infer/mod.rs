@@ -282,11 +282,6 @@ impl TypeSolver {
                 let solved_expr = self.generate_expr_constraints(src, expr)?;
                 self.ctx.pop();
 
-                self.constraints.push(Constraint::Eq(
-                    solved_pat.ty.clone(),
-                    solved_expr.ty.clone(),
-                ));
-
                 Ok(Decl {
                     kind: DeclKind::Def(solved_pat, true, solved_expr.clone()),
                     ty: var,
@@ -414,10 +409,10 @@ impl TypeSolver {
                 let solved_body = self.generate_expr_constraints(src, body)?;
                 self.ctx.pop();
 
-                self.constraints.push(Constraint::Eq(
-                    solved_pat.ty.clone(),
-                    solved_expr.ty.clone(),
-                ));
+                // self.constraints.push(Constraint::Eq(
+                //     solved_pat.ty.clone(),
+                //     solved_expr.ty.clone(),
+                // ));
 
                 Ok(Expr::new(
                     ExprKind::Let(solved_pat, true, solved_expr, solved_body.clone()),
@@ -430,10 +425,10 @@ impl TypeSolver {
                 let solved_pat =
                     self.generate_pattern_constraints(src, pattern, &solved_expr.ty, false)?;
                 let solved_body = self.generate_expr_constraints(src, body)?;
-                self.constraints.push(Constraint::Eq(
-                    solved_pat.ty.clone(),
-                    solved_expr.ty.clone(),
-                ));
+                // self.constraints.push(Constraint::Eq(
+                //     solved_pat.ty.clone(),
+                //     solved_expr.ty.clone(),
+                // ));
 
                 Ok(Expr::new(
                     ExprKind::Let(solved_pat, false, solved_expr, solved_body.clone()),
@@ -571,6 +566,8 @@ impl TypeSolver {
                     .iter()
                     .map(|pat| self.generate_pattern_constraints(src, pat, &elem_ty, generalize))
                     .collect::<InferResult<Vec<Pattern>>>()?;
+                self.constraints
+                    .push(Constraint::Eq(ty.clone(), list_ty.clone()));
                 Ok(Pattern::new(
                     PatternKind::List(solved_pats),
                     list_ty,
