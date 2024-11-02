@@ -13,12 +13,12 @@ use crate::{
 use num_rational::Rational64;
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct Root {
+pub struct Prog {
     decls: Vec<Decl>,
     span: Span,
 }
 
-impl Root {
+impl Prog {
     pub fn new(decls: Vec<Decl>, span: Span) -> Self {
         Self { decls, span }
     }
@@ -97,6 +97,7 @@ pub enum ExprKind {
     Jump(ScopedIdent, Option<Value>),
     Apply(Expr, Vec<Expr>),
     Match(Expr, Vec<(Pattern, Expr)>),
+    Return(Expr),
 }
 
 #[derive(Debug, Clone, PartialEq)]
