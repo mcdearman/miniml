@@ -276,10 +276,10 @@ impl TypeSolver {
             nir::DeclKind::DefRec(ident, expr) => {
                 let var = Ty::MetaRef(self.meta_ctx.fresh());
                 log::debug!("fresh def var: {:?}", var);
-                self.ctx
-                    .insert(ident.name, PolyType::new(vec![], var.clone()));
 
                 self.ctx.push();
+                self.ctx
+                    .insert(ident.name, PolyType::new(vec![], var.clone()));
                 let solved_expr = self.generate_expr_constraints(src, expr)?;
                 self.ctx.pop();
 
