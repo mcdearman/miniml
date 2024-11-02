@@ -262,31 +262,35 @@ impl TypeSolver {
         decl: &nir::Decl,
     ) -> InferResult<Decl> {
         match &decl.kind {
-            nir::DeclKind::Def(pat, false, expr) => {
+            nir::DeclKind::Def(pat, expr) => {
                 let solved_expr = self.generate_expr_constraints(src, expr)?;
                 let solved_pat =
                     self.generate_pattern_constraints(src, pat, &solved_expr.ty, true)?;
 
                 Ok(Decl {
-                    kind: DeclKind::Def(solved_pat, false, solved_expr.clone()),
+                    kind: DeclKind::Def(solved_pat, solved_expr.clone()),
                     ty: solved_expr.ty,
                     span: decl.span,
                 })
             }
-            nir::DeclKind::Def(pat, true, expr) => {
+            nir::DeclKind::DefRec(ident, expr) => {
                 let var = Ty::MetaRef(self.meta_ctx.fresh());
                 log::debug!("fresh def var: {:?}", var);
-                let solved_pat = self.generate_pattern_constraints(src, pat, &var, true)?;
+                self.ctx
+                    .insert(ident.name, PolyType::new(vec![], var.clone()));
 
                 self.ctx.push();
                 let solved_expr = self.generate_expr_constraints(src, expr)?;
                 self.ctx.pop();
 
+                let scm = solved_expr.ty.generalize(&self.ctx, &self.meta_ctx);
+                self.ctx.insert(ident.name, scm.clone());
+
                 self.constraints
                     .push(Constraint::Eq(var.clone(), solved_expr.ty.clone()));
 
                 Ok(Decl {
-                    kind: DeclKind::Def(solved_pat, true, solved_expr.clone()),
+                    kind: DeclKind::DefRec(*ident, solved_expr.clone()),
                     ty: var,
                     span: decl.span,
                 })

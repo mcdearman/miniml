@@ -91,20 +91,14 @@ impl Resolver {
                 if expr.is_lambda() {
                     match pattern.kind.as_ref() {
                         ast::PatternKind::Ident(ident, _) => {
-                            let res_pat = Pattern::new(
-                                PatternKind::Ident(
-                                    ScopedIdent::new(
-                                        self.env.define(ident.name),
-                                        ident.name,
-                                        ident.span,
-                                    ),
-                                    None,
-                                ),
+                            let res_name = ScopedIdent::new(
+                                self.env.define(ident.name),
+                                ident.name,
                                 ident.span,
                             );
                             let res_expr = self.resolve_expr(&expr)?;
                             Ok(Decl {
-                                kind: DeclKind::Def(res_pat, true, res_expr),
+                                kind: DeclKind::DefRec(res_name, res_expr),
                                 span: decl.span,
                             })
                         }
@@ -114,7 +108,7 @@ impl Resolver {
                     let res_expr = self.resolve_expr(&expr)?;
                     let res_pat = self.resolve_pattern(&pattern)?;
                     Ok(Decl {
-                        kind: DeclKind::Def(res_pat, false, res_expr),
+                        kind: DeclKind::Def(res_pat, res_expr),
                         span: decl.span,
                     })
                 }
@@ -143,11 +137,7 @@ impl Resolver {
                 });
 
                 Ok(Decl {
-                    kind: DeclKind::Def(
-                        Pattern::new(PatternKind::Ident(res_name, None), res_name.span),
-                        true,
-                        res_lam,
-                    ),
+                    kind: DeclKind::DefRec(res_name, res_lam),
                     span: decl.span,
                 })
             }

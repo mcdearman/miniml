@@ -21,7 +21,8 @@ impl Decl {
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum DeclKind {
-    Def(Pattern, bool, Expr),
+    Def(Pattern, Expr),
+    DefRec(ScopedIdent, Expr),
 }
 
 #[derive(Debug, Clone, PartialEq)]
