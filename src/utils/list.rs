@@ -66,8 +66,8 @@ impl<T> List<T> {
         }
     }
 
-    pub fn iter(&self) -> impl Iterator<Item = &T> {
-        ListIter::new(self)
+    pub fn iter(&self) -> ListIterRef<'_, T> {
+        ListIterRef::new(self)
     }
 }
 
@@ -87,41 +87,52 @@ where
     }
 }
 
-impl<T, I> From<I> for List<T>
-where
-    I: IntoIterator<Item = T>,
-    <I as IntoIterator>::IntoIter: DoubleEndedIterator,
-{
-    fn from(value: I) -> Self {
-        let mut list = List::Empty;
-        for item in value.into_iter().rev() {
-            list.push_front(item);
-        }
-        list
+impl<T> IntoIterator for List<T> {
+    type Item = T;
+    type IntoIter = ListIter<T>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        ListIter::new(self)
     }
 }
 
-// impl<'a, T> IntoIterator for List<T> {
-//     type Item = T;
-//     type IntoIter = ListIter<'a, T>;
-
-//     fn into_iter(self) -> Self::IntoIter {
-//         ListIter::new(&self)
-//     }
-// }
-
-#[derive(Debug)]
-struct ListIter<'a, T> {
-    list: &'a List<T>,
+#[derive(Debug, Clone, PartialEq)]
+pub struct ListIter<T> {
+    list: List<T>,
 }
 
-impl<'a, T> ListIter<'a, T> {
-    fn new(list: &'a List<T>) -> Self {
+impl<T> ListIter<T> {
+    fn new(list: List<T>) -> Self {
         Self { list }
     }
 }
 
-impl<'a, T> Iterator for ListIter<'a, T> {
+impl<T> Iterator for ListIter<T> {
+    type Item = T;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        match std::mem::replace(&mut self.list, List::Empty) {
+            List::Empty => None,
+            List::Pair { head, tail } => {
+                self.list = *tail;
+                Some(*head)
+            }
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct ListIterRef<'a, T> {
+    list: &'a List<T>,
+}
+
+impl<'a, T> ListIterRef<'a, T> {
+    pub fn new(list: &'a List<T>) -> Self {
+        Self { list }
+    }
+}
+
+impl<'a, T> Iterator for ListIterRef<'a, T> {
     type Item = &'a T;
 
     fn next(&mut self) -> Option<Self::Item> {
