@@ -282,6 +282,9 @@ impl TypeSolver {
                 let solved_expr = self.generate_expr_constraints(src, expr)?;
                 self.ctx.pop();
 
+                self.constraints
+                    .push(Constraint::Eq(var.clone(), solved_expr.ty.clone()));
+
                 Ok(Decl {
                     kind: DeclKind::Def(solved_pat, true, solved_expr.clone()),
                     ty: var,
