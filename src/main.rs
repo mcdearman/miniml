@@ -14,6 +14,7 @@ mod lex;
 mod parse;
 mod rename;
 // mod runtime;
+mod scc;
 mod utils;
 
 #[derive(Completer, Helper, Highlighter, Hinter)]
@@ -43,8 +44,6 @@ fn main() {
 
     let mut res = Resolver::new();
     let mut solver = TypeSolver::new();
-
-    // let res_env = res.env();
 
     loop {
         let readline = rl.readline("> ");
