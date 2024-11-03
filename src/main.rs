@@ -14,7 +14,6 @@ mod lex;
 mod parse;
 mod rename;
 // mod runtime;
-mod scc;
 mod utils;
 
 #[derive(Completer, Helper, Highlighter, Hinter)]
