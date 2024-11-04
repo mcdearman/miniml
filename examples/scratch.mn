@@ -176,15 +176,6 @@ type Option a = None | Some a
 
 type List a = Empty | Pair a (List a)
 
--- dependent types
-data Nat = Z | S Nat
-
-def (+) : Nat -> Nat -> Nat
-  | Z + n = n
-  | (S m) + n = S (m + n)
-
-data Vec a n = Nil | Pair a (Vec a n)
-
 def (|>) : 'a 'b. 'a -> ('a -> 'b) -> 'b
   | x |> f = f x
 
@@ -198,16 +189,23 @@ def (::) : 'a. 'a -> ['a] -> ['a]
 
 -- type classes
 class Eq a where
-  (==) : a -> a -> Bool
+  def eq : a -> a -> Bool
 
 instance Eq Int where
-  (==) = prim_int_eq
+  def eq = prim_int_eq
 
 instance Eq (Option a) where
-  (==) = \match (x, y) ->
-    | (None, None) -> true
-    | (Some x, Some y) -> x == y
-    | _ -> false
+  def eq : Eq a => Option a -> Option a -> Bool
+    | None None = true 
+    | (Some x) (Some y) = eq x y
+    |  _ _ = false
+
+class Ord a where
+  def compare : a -> a -> Ordering
+
+class Add a b where
+  type Output = a
+  add : a -> a -> Output
 
 class Iterator i where
   next : i a -> Option (a, i a)
