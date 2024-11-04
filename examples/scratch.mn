@@ -18,6 +18,9 @@ main args = ()
 -- Bindings are immutable by default.
 def x = 1
 
+-- pattern binding
+def [a, b, c] = [1, 2, 3]
+
 -- ints
 1
 
@@ -94,8 +97,6 @@ def fib n =
   in loop 0 1 n
 
 -- pattern match
-def [a, b, c] = [1, 2, 3]
-
 def fib n = 
   match n
   | 0 -> 0
