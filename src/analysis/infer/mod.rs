@@ -239,7 +239,7 @@ impl TypeSolver {
         let mut errors = vec![];
 
         for decl in &nir.decls {
-            match self.generate_decl_constraints(src, decl) {
+            match self.generate_def_constraints(src, decl) {
                 Ok(decl) => {
                     decls.push(decl);
                 }
@@ -256,7 +256,7 @@ impl TypeSolver {
         )
     }
 
-    fn generate_decl_constraints<'src>(
+    fn generate_def_constraints<'src>(
         &mut self,
         src: &'src str,
         decl: &nir::Decl,

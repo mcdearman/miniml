@@ -22,19 +22,27 @@ impl Decl {
 #[derive(Debug, Clone, PartialEq)]
 pub enum DeclKind {
     Def(DefGroup),
-    TypeAlias(ScopedIdent, TypeHint),
-    Data(ScopedIdent, Vec<(ScopedIdent, Vec<TypeHint>)>),
+    // TypeAlias(ScopedIdent, TypeHint),
+    // Data(ScopedIdent, Vec<(ScopedIdent, Vec<TypeHint>)>),
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct DefGroup {
-    pub defs: Vec<Def>,
+pub enum DefGroup {
+    Rec(Vec<DefRec>),
+    NonRec(Def),
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub enum Def {
-    Rec(ScopedIdent, Expr),
-    NonRec(Pattern, Expr),
+pub struct DefRec {
+    pub ident: ScopedIdent,
+    pub anno: Option<TypeHint>,
+    pub body: Expr,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct Def {
+    pub pat: Pattern,
+    pub body: Expr,
 }
 
 #[derive(Debug, Clone, PartialEq)]
