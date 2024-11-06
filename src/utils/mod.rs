@@ -1,4 +1,5 @@
 pub mod box_node;
+pub mod functor;
 pub mod ident;
 pub mod intern;
 pub mod list;

@@ -1,29 +1,39 @@
 use crate::{
     lex::token::Token,
-    utils::{ident::Ident, intern::InternedString, rational::Rational, span::Span},
+    utils::{
+        functor::Functor, ident::Ident, intern::InternedString, rational::Rational, span::Span,
+    },
 };
 use dbg_pls::DebugPls;
 
-#[derive(Debug, DebugPls, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Prog {
-    // pub modules: Vec<Module>,
     pub decls: Vec<Decl>,
-    pub span: Span,
 }
 
-#[derive(Debug, Clone, PartialEq)]
-pub struct Module {
-    pub name: InternedString,
-    pub imports: Vec<Import>,
-    pub decls: Vec<Decl>,
-    pub span: Span,
+impl Functor for Prog {
+    type Wrapped<T> = Spanned<T>;
+
+    fn fmap<F, T, U>(f: F, x: Self::Wrapped<T>) -> Self::Wrapped<U>
+    where
+        F: FnOnce(T) -> U {
+        todo!()
+    }
 }
 
-#[derive(Debug, Clone, PartialEq)]
-pub struct Import {
-    pub path: Vec<Ident>,
-    pub span: Span,
-}
+// #[derive(Debug, Clone, PartialEq)]
+// pub struct Module {
+//     pub name: InternedString,
+//     pub imports: Vec<Import>,
+//     pub decls: Vec<Decl>,
+//     pub span: Span,
+// }
+
+// #[derive(Debug, Clone, PartialEq)]
+// pub struct Import {
+//     pub path: Vec<Ident>,
+//     pub span: Span,
+// }
 
 #[derive(Debug, DebugPls, Clone, PartialEq)]
 pub struct Decl {
