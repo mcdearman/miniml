@@ -5,5 +5,4 @@ pub mod list;
 pub mod node;
 pub mod rational;
 pub mod span;
-pub mod spanned;
 pub mod unique_id;

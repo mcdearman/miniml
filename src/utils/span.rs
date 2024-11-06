@@ -4,6 +4,8 @@ use std::{
     ops::{Index, Range},
 };
 
+use super::node::Node;
+
 #[derive(DebugPls, Clone, Copy, Eq, PartialEq, Default, Hash)]
 pub struct Span {
     start: u32,
@@ -98,3 +100,5 @@ impl Index<Span> for String {
         &self[Range::from(index)]
     }
 }
+
+pub type Spanned<T> = Node<T, Span>;
