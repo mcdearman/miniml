@@ -1,4 +1,4 @@
-use super::span::Span;
+use super::{functor::Functor, span::Span};
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Node<T, M = ()> {
@@ -22,6 +22,20 @@ impl<T, M: Clone> Node<T, M> {
         Node {
             kind: f(&self.kind),
             meta: self.meta.clone(),
+        }
+    }
+}
+
+impl<T: Clone, M: Clone> Functor for Node<T, M> {
+    type Wrapped<U: Clone> = T;
+
+    fn map<F, U: Clone, N: Clone>(f: F, x: U) -> N
+    where
+        F: FnOnce(T) -> U,
+    {
+        Node {
+            kind: f(x),
+            meta: 
         }
     }
 }

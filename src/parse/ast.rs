@@ -11,16 +11,6 @@ pub struct Prog {
     pub decls: Vec<Decl>,
 }
 
-impl Functor for Prog {
-    type Wrapped<T> = Spanned<T>;
-
-    fn fmap<F, T, U>(f: F, x: Self::Wrapped<T>) -> Self::Wrapped<U>
-    where
-        F: FnOnce(T) -> U {
-        todo!()
-    }
-}
-
 // #[derive(Debug, Clone, PartialEq)]
 // pub struct Module {
 //     pub name: InternedString,
