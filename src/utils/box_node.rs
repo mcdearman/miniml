@@ -1,34 +1,32 @@
-use super::span::Span;
-
 #[derive(Debug, Clone, PartialEq)]
-pub struct BoxNode<T> {
-    pub kind: Box<T>,
-    pub span: Span,
+pub struct BoxNode<T, M = ()> {
+    pub value: Box<T>,
+    pub meta: M,
 }
 
-impl<T> BoxNode<T> {
-    pub fn new(kind: T, span: Span) -> Self {
+impl<T, M: Clone> BoxNode<T, M> {
+    pub fn new(kind: T, meta: M) -> Self {
         Self {
-            kind: Box::new(kind),
-            span,
+            value: Box::new(kind),
+            meta,
         }
     }
 
-    pub fn kind(&self) -> &T {
-        &*self.kind
+    pub fn value(&self) -> &T {
+        &self.value
     }
 
-    pub fn map<U, F: FnOnce(T) -> U>(self, f: F) -> BoxNode<U> {
+    pub fn map<U, F: FnOnce(T) -> U>(self, f: F) -> BoxNode<U, M> {
         BoxNode {
-            kind: Box::new(f(*self.kind)),
-            span: self.span,
+            value: Box::new(f(*self.value)),
+            meta: self.meta,
         }
     }
 
-    pub fn map_ref<U, F: FnOnce(&T) -> U>(&self, f: F) -> BoxNode<U> {
+    pub fn map_ref<U, F: FnOnce(&T) -> U>(&self, f: F) -> BoxNode<U, M> {
         BoxNode {
-            kind: Box::new(f(&*self.kind)),
-            span: self.span,
+            value: Box::new(f(&*self.value)),
+            meta: self.meta.clone(),
         }
     }
 }

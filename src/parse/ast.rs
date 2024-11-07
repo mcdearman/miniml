@@ -1,10 +1,19 @@
 use crate::{
     lex::token::Token,
     utils::{
-        functor::Functor, ident::Ident, intern::InternedString, rational::Rational, span::Span,
+        box_node::BoxNode, ident::Ident, intern::InternedString, node::Node, rational::Rational,
+        span::Span,
     },
 };
-use dbg_pls::DebugPls;
+
+type SynNode<T> = Node<T, Span>;
+type BoxSynNode<T> = Box<SynNode<T>>;
+
+type Decl = Node<DeclKind, Span>;
+type Expr = BoxNode<ExprKind, Span>;
+type UnaryOp = Node<UnaryOpKind, Span>;
+type BinaryOp = Node<BinaryOpKind, Span>;
+type Pattern = Node<PatternKind, Span>;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Prog {
@@ -25,39 +34,14 @@ pub struct Prog {
 //     pub span: Span,
 // }
 
-#[derive(Debug, DebugPls, Clone, PartialEq)]
-pub struct Decl {
-    pub kind: DeclKind,
-    pub span: Span,
-}
-
-#[derive(Debug, DebugPls, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum DeclKind {
     Def(Pattern, Expr),
     Fn(Ident, Vec<Pattern>, Expr),
     FnMatch(Ident, Vec<(Vec<Pattern>, Expr)>),
 }
 
-#[derive(Debug, DebugPls, Clone, PartialEq)]
-pub struct Expr {
-    pub kind: Box<ExprKind>,
-    pub span: Span,
-}
-
-impl Expr {
-    pub fn new(kind: ExprKind, span: Span) -> Self {
-        Self {
-            kind: Box::new(kind),
-            span,
-        }
-    }
-
-    pub fn is_lambda(&self) -> bool {
-        matches!(self.kind.as_ref(), &ExprKind::Lambda(_, _))
-    }
-}
-
-#[derive(Debug, DebugPls, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum ExprKind {
     Lit(Lit),
     Var(Ident),
@@ -75,19 +59,19 @@ pub enum ExprKind {
     Unit,
 }
 
-#[derive(Debug, DebugPls, Clone, Copy, PartialEq)]
-pub struct UnaryOp {
-    pub kind: UnaryOpKind,
-    pub span: Span,
-}
+// #[derive(Debug, Clone, Copy, PartialEq)]
+// pub struct UnaryOp {
+//     pub kind: UnaryOpKind,
+//     pub span: Span,
+// }
 
-impl From<UnaryOp> for InternedString {
-    fn from(op: UnaryOp) -> Self {
-        InternedString::from(op.kind.to_string())
-    }
-}
+// impl From<UnaryOp> for InternedString {
+//     fn from(op: UnaryOp) -> Self {
+//         InternedString::from(op.kind.to_string())
+//     }
+// }
 
-#[derive(Debug, DebugPls, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub enum UnaryOpKind {
     Neg,
     Not,
@@ -112,19 +96,19 @@ impl ToString for UnaryOpKind {
     }
 }
 
-#[derive(Debug, DebugPls, Clone, Copy, PartialEq)]
-pub struct BinaryOp {
-    pub kind: BinaryOpKind,
-    pub span: Span,
-}
+// #[derive(Debug, Clone, Copy, PartialEq)]
+// pub struct BinaryOp {
+//     pub kind: BinaryOpKind,
+//     pub span: Span,
+// }
 
-impl From<BinaryOp> for InternedString {
-    fn from(op: BinaryOp) -> Self {
-        InternedString::from(op.kind.to_string())
-    }
-}
+// impl From<BinaryOp> for InternedString {
+//     fn from(op: BinaryOp) -> Self {
+//         InternedString::from(op.kind.to_string())
+//     }
+// }
 
-#[derive(Debug, DebugPls, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub enum BinaryOpKind {
     Add,
     Sub,
@@ -182,7 +166,7 @@ impl ToString for BinaryOpKind {
     }
 }
 
-#[derive(Debug, DebugPls, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Pattern {
     pub kind: Box<PatternKind>,
     pub span: Span,
@@ -191,13 +175,13 @@ pub struct Pattern {
 impl Pattern {
     pub fn new(kind: PatternKind, span: Span) -> Self {
         Self {
-            kind: Box::new(kind),
+            value: Box::new(kind),
             span,
         }
     }
 }
 
-#[derive(Debug, DebugPls, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum PatternKind {
     Wildcard,
     Lit(Lit),
@@ -207,7 +191,7 @@ pub enum PatternKind {
     Unit,
 }
 
-#[derive(Debug, DebugPls, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct TypeHint {
     pub kind: Box<TypeHintKind>,
     pub span: Span,
@@ -222,7 +206,7 @@ impl TypeHint {
     }
 }
 
-#[derive(Debug, DebugPls, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum TypeHintKind {
     Byte,
     Int,
@@ -237,7 +221,7 @@ pub enum TypeHintKind {
     Unit,
 }
 
-#[derive(Debug, DebugPls, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum Lit {
     Byte(u8),
     Int(i64),

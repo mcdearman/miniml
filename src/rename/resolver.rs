@@ -88,8 +88,8 @@ impl Resolver {
     fn resolve_decl(&mut self, decl: &ast::Decl) -> ResResult<Decl> {
         match &decl.kind {
             ast::DeclKind::Def(pattern, expr) => {
-                if expr.is_lambda() {
-                    match pattern.kind.as_ref() {
+                if matches!(expr., &ExprKind::Lambda(_, _)) {
+                    match pattern.value.as_ref() {
                         ast::PatternKind::Ident(ident, _) => {
                             let res_name = ScopedIdent::new(
                                 self.env.define(ident.name),
@@ -292,7 +292,7 @@ impl Resolver {
             )),
             ast::ExprKind::Let(pat, let_expr, body) => {
                 if let_expr.is_lambda() {
-                    match pat.kind.as_ref() {
+                    match pat.value.as_ref() {
                         ast::PatternKind::Ident(ident, _) => {
                             self.env.push();
                             let res_pat = Pattern::new(
