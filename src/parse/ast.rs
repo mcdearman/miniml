@@ -13,7 +13,8 @@ type Decl = Node<DeclKind, Span>;
 type Expr = BoxNode<ExprKind, Span>;
 type UnaryOp = Node<UnaryOpKind, Span>;
 type BinaryOp = Node<BinaryOpKind, Span>;
-type Pattern = Node<PatternKind, Span>;
+type Pattern = BoxNode<PatternKind, Span>;
+type TypeAnno = BoxNode<TypeAnnoKind, Span>;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Prog {
@@ -167,47 +168,17 @@ impl ToString for BinaryOpKind {
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct Pattern {
-    pub kind: Box<PatternKind>,
-    pub span: Span,
-}
-
-impl Pattern {
-    pub fn new(kind: PatternKind, span: Span) -> Self {
-        Self {
-            value: Box::new(kind),
-            span,
-        }
-    }
-}
-
-#[derive(Debug, Clone, PartialEq)]
 pub enum PatternKind {
     Wildcard,
     Lit(Lit),
-    Ident(Ident, Option<TypeHint>),
+    Ident(Ident, Option<TypeAnno>),
     List(Vec<Pattern>),
     Pair(Pattern, Pattern),
     Unit,
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct TypeHint {
-    pub kind: Box<TypeHintKind>,
-    pub span: Span,
-}
-
-impl TypeHint {
-    pub fn new(kind: TypeHintKind, span: Span) -> Self {
-        Self {
-            kind: Box::new(kind),
-            span,
-        }
-    }
-}
-
-#[derive(Debug, Clone, PartialEq)]
-pub enum TypeHintKind {
+pub enum TypeAnnoKind {
     Byte,
     Int,
     Rational,
@@ -216,8 +187,8 @@ pub enum TypeHintKind {
     String,
     Char,
     Ident(Ident),
-    Fn(Vec<TypeHint>, TypeHint),
-    List(TypeHint),
+    Fn(Vec<TypeAnno>, TypeAnno),
+    List(TypeAnno),
     Unit,
 }
 

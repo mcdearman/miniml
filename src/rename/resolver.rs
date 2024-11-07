@@ -438,9 +438,9 @@ impl Resolver {
     }
 
     fn resolve_hint(&mut self, hint: &ast::TypeHint) -> ResResult<TypeHint> {
-        use ast::TypeHintKind as Atk;
+        use ast::TypeAnnoKind as Atk;
         match hint.kind.as_ref() {
-            ast::TypeHintKind::Ident(ident) => {
+            ast::TypeAnnoKind::Ident(ident) => {
                 todo!()
                 // if let Some(name) = self.env.find(&ident.name) {
                 //     Ok(TypeHint::new(
@@ -471,11 +471,11 @@ impl Resolver {
                 ),
                 hint.span,
             )),
-            ast::TypeHintKind::List(hint) => Ok(TypeHint::new(
+            ast::TypeAnnoKind::List(hint) => Ok(TypeHint::new(
                 TypeHintKind::List(self.resolve_hint(hint)?),
                 hint.span,
             )),
-            ast::TypeHintKind::Unit => Ok(TypeHint::new(TypeHintKind::Unit, hint.span)),
+            ast::TypeAnnoKind::Unit => Ok(TypeHint::new(TypeHintKind::Unit, hint.span)),
         }
     }
 }
