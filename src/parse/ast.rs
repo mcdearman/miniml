@@ -7,14 +7,14 @@ use crate::{
 };
 
 type SynNode<T> = Node<T, Span>;
-type BoxSynNode<T> = Box<SynNode<T>>;
+type SynBoxNode<T> = BoxNode<T, Span>;
 
-type Decl = Node<DeclKind, Span>;
-type Expr = BoxNode<ExprKind, Span>;
-type UnaryOp = Node<UnaryOpKind, Span>;
-type BinaryOp = Node<BinaryOpKind, Span>;
-type Pattern = BoxNode<PatternKind, Span>;
-type TypeAnno = BoxNode<TypeAnnoKind, Span>;
+type Decl = SynNode<DeclKind>;
+type Expr = SynBoxNode<ExprKind>;
+type UnaryOp = SynNode<UnaryOpKind>;
+type BinaryOp = SynNode<BinaryOpKind>;
+type Pattern = SynBoxNode<PatternKind>;
+type TypeAnno = SynBoxNode<TypeAnnoKind>;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Prog {
