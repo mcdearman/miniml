@@ -9,6 +9,8 @@ use crate::{
 type SynNode<T> = Node<T, Span>;
 type SynBoxNode<T> = BoxNode<T, Span>;
 
+type Prog = SynNode<Decls>;
+type Decls = Vec<Decl>;
 type Decl = SynNode<DeclKind>;
 type Expr = SynBoxNode<ExprKind>;
 type UnaryOp = SynNode<UnaryOpKind>;
@@ -17,23 +19,17 @@ type Pattern = SynBoxNode<PatternKind>;
 type TypeAnno = SynBoxNode<TypeAnnoKind>;
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct Prog {
+pub struct Module {
+    pub name: InternedString,
+    pub imports: Vec<Import>,
     pub decls: Vec<Decl>,
+    pub span: Span,
 }
 
-// #[derive(Debug, Clone, PartialEq)]
-// pub struct Module {
-//     pub name: InternedString,
-//     pub imports: Vec<Import>,
-//     pub decls: Vec<Decl>,
-//     pub span: Span,
-// }
-
-// #[derive(Debug, Clone, PartialEq)]
-// pub struct Import {
-//     pub path: Vec<Ident>,
-//     pub span: Span,
-// }
+#[derive(Debug, Clone, PartialEq)]
+pub struct Import {
+    pub path: Vec<Ident>,
+}
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum DeclKind {
