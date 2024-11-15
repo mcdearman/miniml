@@ -6,19 +6,19 @@ use crate::{
     },
 };
 
-type SynNode<T> = Node<T, Span>;
-type SynBoxNode<T> = BoxNode<T, Span>;
+pub type SynNode<T> = Node<T, Span>;
+pub type SynBoxNode<T> = BoxNode<T, Span>;
 
-type Prog = SynNode<Module>;
-type Imports = Vec<Path>;
-type Decls = Vec<Decl>;
-type Decl = SynNode<DeclKind>;
-type Expr = SynBoxNode<ExprKind>;
-type UnaryOp = SynNode<UnaryOpKind>;
-type BinaryOp = SynNode<BinaryOpKind>;
-type Pattern = SynBoxNode<PatternKind>;
-type TypeAnno = SynBoxNode<TypeAnnoKind>;
-type Path = Vec<Ident>;
+pub type Prog = SynNode<Module>;
+pub type Imports = Vec<Path>;
+pub type Path = Vec<Ident>;
+pub type Decls = Vec<Decl>;
+pub type Decl = SynNode<DeclKind>;
+pub type Expr = SynBoxNode<ExprKind>;
+pub type UnaryOp = SynNode<UnaryOpKind>;
+pub type BinaryOp = SynNode<BinaryOpKind>;
+pub type Pattern = SynBoxNode<PatternKind>;
+pub type TypeAnno = SynBoxNode<TypeAnnoKind>;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Module {

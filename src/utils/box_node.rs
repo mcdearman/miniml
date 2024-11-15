@@ -5,9 +5,9 @@ pub struct BoxNode<T, M = ()> {
 }
 
 impl<T, M: Clone> BoxNode<T, M> {
-    pub fn new(kind: T, meta: M) -> Self {
+    pub fn new(value: T, meta: M) -> Self {
         Self {
-            value: Box::new(kind),
+            value: Box::new(value),
             meta,
         }
     }

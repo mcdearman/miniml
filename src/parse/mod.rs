@@ -27,42 +27,49 @@ pub fn parse<'src>(
     if repl {
         repl_parser().parse(tok_stream).into_output_errors()
     } else {
-        prog_parser().parse(tok_stream).into_output_errors()
+        file_parser().parse(tok_stream).into_output_errors()
     }
 }
 
-fn prog_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
+fn file_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
 ) -> impl ChumskyParser<'a, I, Prog, extra::Err<Rich<'a, Token, Span>>> {
-    decl_parser()
-        .repeated()
-        .collect()
-        .map_with(|decls, e| Prog {
-            decls,
-            span: e.span(),
-        })
+    decl_parser().repeated().collect().map_with(|decls, e| {
+        SynNode::new(
+            Module {
+                name: InternedString::from("main"),
+                imports: vec![],
+                decls,
+            },
+            e.span(),
+        )
+    })
 }
 
 fn repl_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
 ) -> impl ChumskyParser<'a, I, Prog, extra::Err<Rich<'a, Token, Span>>> {
     decl_parser()
-        .or(expr_parser()
-            .map(|e| {
+        .or(expr_parser().map(|e| {
+            SynNode::new(
                 DeclKind::Fn(
-                    Ident::new(InternedString::from("main"), e.span),
+                    Ident::new(InternedString::from("main"), e.meta),
                     vec![Pattern::new(
-                        PatternKind::Ident(Ident::new(InternedString::from("args"), e.span), None),
-                        e.span,
+                        PatternKind::Ident(Ident::new(InternedString::from("args"), e.meta), None),
+                        e.meta,
                     )],
                     e.clone(),
-                )
-            })
-            .map_with(|kind, e| Decl {
-                kind,
-                span: e.span(),
-            }))
-        .map_with(|decl, e| Prog {
-            decls: vec![decl],
-            span: e.span(),
+                ),
+                e.meta,
+            )
+        }))
+        .map_with(|decl, e| {
+            SynNode::new(
+                Module {
+                    name: InternedString::from("main"),
+                    imports: vec![],
+                    decls: vec![decl],
+                },
+                e.span(),
+            )
         })
         .boxed()
 }
@@ -116,10 +123,9 @@ fn decl_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
         )
         .map(|(name, arms)| DeclKind::FnMatch(name, arms));
 
-    def.or(fn_).or(fn_match).map_with(|kind, e| Decl {
-        kind,
-        span: e.span(),
-    })
+    def.or(fn_)
+        .or(fn_match)
+        .map_with(|kind, e| SynNode::new(kind, e.span()))
 }
 
 fn expr_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
@@ -211,7 +217,7 @@ fn expr_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
             .then(atom.clone().repeated().collect::<Vec<_>>())
             .map(|(fun, args)| {
                 if args.is_empty() {
-                    *fun.kind
+                    *fun.value
                 } else {
                     ExprKind::Apply(fun, args)
                 }
@@ -220,10 +226,7 @@ fn expr_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
 
         let op = just(Token::DoubleColon)
             .map(BinaryOpKind::from)
-            .map_with(|kind, e| BinaryOp {
-                kind,
-                span: e.span(),
-            });
+            .map_with(|kind, e| SynNode::new(kind, e.span()));
 
         let pair = apply
             .clone()
@@ -231,7 +234,7 @@ fn expr_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
             .map(|(lhs, rhs)| match rhs {
                 Some((op, rhs)) => Expr::new(
                     ExprKind::BinaryOp(op, lhs.clone(), rhs.clone()),
-                    lhs.span.extend(rhs.span),
+                    lhs.meta.extend(rhs.meta),
                 ),
                 None => lhs.clone(),
             });
@@ -239,24 +242,18 @@ fn expr_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
         let op = just(Token::Minus)
             .or(just(Token::Not))
             .map(UnaryOpKind::from)
-            .map_with(|kind, e| UnaryOp {
-                kind,
-                span: e.span(),
-            });
+            .map_with(|kind, e| SynNode::new(kind, e.span()));
 
         let unary = op.clone().repeated().foldr(pair, |op, expr| {
             Expr::new(
-                ExprKind::UnaryOp(op, expr.clone()),
-                op.span.extend(expr.span),
+                ExprKind::UnaryOp(op.clone(), expr.clone()),
+                op.meta.extend(expr.meta),
             )
         });
 
         let op = just(Token::Caret)
             .map(BinaryOpKind::from)
-            .map_with(|kind, e| BinaryOp {
-                kind,
-                span: e.span(),
-            });
+            .map_with(|kind, e| SynNode::new(kind, e.span()));
 
         let pow = unary
             .clone()
@@ -265,7 +262,7 @@ fn expr_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
                 |lhs: Expr, (op, rhs): (BinaryOp, Expr)| {
                     Expr::new(
                         ExprKind::BinaryOp(op, lhs.clone(), rhs.clone()),
-                        lhs.span.extend(rhs.span),
+                        lhs.meta.extend(rhs.meta),
                     )
                 },
             )
@@ -275,10 +272,7 @@ fn expr_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
             .or(just(Token::Slash))
             .or(just(Token::Percent))
             .map(BinaryOpKind::from)
-            .map_with(|kind, e| BinaryOp {
-                kind,
-                span: e.span(),
-            });
+            .map_with(|kind, e| SynNode::new(kind, e.span()));
 
         let factor = pow
             .clone()
@@ -287,7 +281,7 @@ fn expr_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
                 |lhs: Expr, (op, rhs): (BinaryOp, Expr)| {
                     Expr::new(
                         ExprKind::BinaryOp(op, lhs.clone(), rhs.clone()),
-                        lhs.span.extend(rhs.span),
+                        lhs.meta.extend(rhs.meta),
                     )
                 },
             )
@@ -296,11 +290,7 @@ fn expr_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
         let op = just(Token::Plus)
             .or(just(Token::Minus))
             .map(BinaryOpKind::from)
-            .map_with(|kind, e| BinaryOp {
-                kind,
-                span: e.span(),
-            })
-            .boxed();
+            .map_with(|kind, e| SynNode::new(kind, e.span()));
 
         let term = factor
             .clone()
@@ -309,7 +299,7 @@ fn expr_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
                 |lhs: Expr, (op, rhs): (BinaryOp, Expr)| {
                     Expr::new(
                         ExprKind::BinaryOp(op, lhs.clone(), rhs.clone()),
-                        lhs.span.extend(rhs.span),
+                        lhs.meta.extend(rhs.meta),
                     )
                 },
             )
@@ -320,11 +310,7 @@ fn expr_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
             .or(just(Token::Leq))
             .or(just(Token::Geq))
             .map(BinaryOpKind::from)
-            .map_with(|kind, e| BinaryOp {
-                kind,
-                span: e.span(),
-            })
-            .boxed();
+            .map_with(|kind, e| SynNode::new(kind, e.span()));
 
         let cmp = term
             .clone()
@@ -332,7 +318,7 @@ fn expr_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
             .map(|(lhs, rhs)| match rhs {
                 Some((op, rhs)) => Expr::new(
                     ExprKind::BinaryOp(op, lhs.clone(), rhs.clone()),
-                    lhs.span.extend(rhs.span),
+                    lhs.meta.extend(rhs.meta),
                 ),
                 None => lhs.clone(),
             })
@@ -341,11 +327,7 @@ fn expr_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
         let op = just(Token::Eq)
             .or(just(Token::Neq))
             .map(BinaryOpKind::from)
-            .map_with(|kind, e| BinaryOp {
-                kind,
-                span: e.span(),
-            })
-            .boxed();
+            .map_with(|kind, e| SynNode::new(kind, e.span()));
 
         let eq = cmp
             .clone()
@@ -353,7 +335,7 @@ fn expr_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
             .map(|(lhs, rhs)| match rhs {
                 Some((op, rhs)) => Expr::new(
                     ExprKind::BinaryOp(op, lhs.clone(), rhs.clone()),
-                    lhs.span.extend(rhs.span),
+                    lhs.meta.extend(rhs.meta),
                 ),
                 None => lhs.clone(),
             })
@@ -366,7 +348,7 @@ fn expr_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
                 |lhs, rhs| {
                     Expr::new(
                         ExprKind::And(lhs.clone(), rhs.clone()),
-                        lhs.span.extend(rhs.span),
+                        lhs.meta.extend(rhs.meta),
                     )
                 },
             )
@@ -379,7 +361,7 @@ fn expr_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
                 |lhs, rhs| {
                     Expr::new(
                         ExprKind::Or(lhs.clone(), rhs.clone()),
-                        lhs.span.extend(rhs.span),
+                        lhs.meta.extend(rhs.meta),
                     )
                 },
             )

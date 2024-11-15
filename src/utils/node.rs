@@ -5,8 +5,8 @@ pub struct Node<T, M = ()> {
 }
 
 impl<T, M: Clone> Node<T, M> {
-    pub fn new(kind: T, meta: M) -> Self {
-        Self { value: kind, meta }
+    pub fn new(value: T, meta: M) -> Self {
+        Self { value, meta }
     }
 
     pub fn map<U, F: FnOnce(T) -> U>(self, f: F) -> Node<U, M> {
