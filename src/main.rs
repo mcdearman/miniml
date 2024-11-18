@@ -10,7 +10,7 @@ use rustyline::{
 // mod analysis;
 mod lex;
 mod parse;
-// mod rename;
+mod rename;
 // mod runtime;
 mod utils;
 
