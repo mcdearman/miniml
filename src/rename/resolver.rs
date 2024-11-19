@@ -5,7 +5,10 @@ use super::{
     res_id::ResId,
     scoped_ident::ScopedIdent,
 };
-use crate::{parse::ast, utils::intern::InternedString};
+use crate::{
+    parse::ast::{self, SynNode},
+    utils::intern::InternedString,
+};
 use std::collections::HashMap;
 
 #[derive(Debug)]
@@ -62,27 +65,48 @@ impl Resolver {
         None
     }
 
-    pub fn resolve(&mut self, ast: &ast::Prog) -> (Option<Prog>, Vec<ResError>) {
+    fn resolve(&mut self, prog: &ast::Prog) -> (Option<Prog>, Vec<ResError>) {
         let mut decls = Vec::new();
         let mut errors = Vec::new();
 
-        for decl in &ast.decls {
-            match self.resolve_decl(&decl) {
+        for decl in &prog.value.decls {
+            match self.resolve_decl(decl) {
                 Ok(decl) => decls.push(decl),
                 Err(e) => errors.push(e),
             }
         }
+
+        let res_imports = prog
+            .value
+            .imports
+            .iter()
+            .map(|i| self.resolve_path(i))
+            .collect::<ResResult<Vec<Path>>>()?;
+
         if decls.is_empty() {
             (None, errors)
         } else {
             (
-                Some(Prog {
-                    decls,
-                    span: ast.span,
-                }),
+                Some(SynNode::new(
+                    Module {
+                        name: prog.value.name,
+                        imports: res_imports,
+                        decls,
+                    },
+                    prog.meta,
+                )),
                 errors,
             )
         }
+    }
+
+    fn resolve_path(&mut self, import: &ast::Path) -> ResResult<Path> {
+        let mut path = Vec::new();
+        for ident in &import.path {
+            let id = self.env.define(ident.name);
+            path.push(ScopedIdent::new(id, ident.name, ident.span));
+        }
+        Ok(Import { path })
     }
 
     fn resolve_decl(&mut self, decl: &ast::Decl) -> ResResult<Decl> {
