@@ -1,22 +1,23 @@
 use super::scoped_ident::ScopedIdent;
-use crate::utils::{intern::InternedString, rational::Rational, span::Span};
+use crate::{
+    parse::ast::{SynBoxNode, SynNode},
+    utils::{intern::InternedString, rational::Rational},
+};
+
+pub type Prog = SynNode<Module>;
+pub type Imports = Vec<Path>;
+pub type Path = Vec<ScopedIdent>;
+pub type Decls = Vec<Decl>;
+pub type Decl = SynNode<DeclKind>;
+pub type Expr = SynBoxNode<ExprKind>;
+pub type Pattern = SynBoxNode<PatternKind>;
+pub type TypeAnno = SynBoxNode<TypeAnnoKind>;
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct Prog {
-    pub decls: Vec<Decl>,
-    pub span: Span,
-}
-
-#[derive(Debug, Clone, PartialEq)]
-pub struct Decl {
-    pub kind: DeclKind,
-    pub span: Span,
-}
-
-impl Decl {
-    pub fn new(kind: DeclKind, span: Span) -> Self {
-        Self { kind, span }
-    }
+pub struct Module {
+    pub name: InternedString,
+    pub imports: Imports,
+    pub decls: Decls,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -35,7 +36,7 @@ pub enum DefGroup {
 #[derive(Debug, Clone, PartialEq)]
 pub struct DefRec {
     pub ident: ScopedIdent,
-    pub anno: Option<TypeHint>,
+    pub anno: Option<TypeAnno>,
     pub body: Expr,
 }
 
@@ -43,21 +44,6 @@ pub struct DefRec {
 pub struct Def {
     pub pat: Pattern,
     pub body: Expr,
-}
-
-#[derive(Debug, Clone, PartialEq)]
-pub struct Expr {
-    pub kind: Box<ExprKind>,
-    pub span: Span,
-}
-
-impl Expr {
-    pub fn new(kind: ExprKind, span: Span) -> Self {
-        Self {
-            kind: Box::new(kind),
-            span,
-        }
-    }
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -76,47 +62,17 @@ pub enum ExprKind {
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct Pattern {
-    pub kind: Box<PatternKind>,
-    pub span: Span,
-}
-
-impl Pattern {
-    pub fn new(kind: PatternKind, span: Span) -> Self {
-        Self {
-            kind: Box::new(kind),
-            span,
-        }
-    }
-}
-
-#[derive(Debug, Clone, PartialEq)]
 pub enum PatternKind {
     Wildcard,
     Lit(Lit),
-    Ident(ScopedIdent, Option<TypeHint>),
+    Ident(ScopedIdent, Option<TypeAnno>),
     List(Vec<Pattern>),
     Pair(Pattern, Pattern),
     Unit,
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct TypeHint {
-    pub kind: Box<TypeHintKind>,
-    pub span: Span,
-}
-
-impl TypeHint {
-    pub fn new(kind: TypeHintKind, span: Span) -> Self {
-        Self {
-            kind: Box::new(kind),
-            span,
-        }
-    }
-}
-
-#[derive(Debug, Clone, PartialEq)]
-pub enum TypeHintKind {
+pub enum TypeAnnoKind {
     Byte,
     Int,
     Rational,
@@ -125,8 +81,8 @@ pub enum TypeHintKind {
     String,
     Char,
     ScopedIdent(ScopedIdent),
-    Fn(Vec<TypeHint>, TypeHint),
-    List(TypeHint),
+    Fn(Vec<TypeAnno>, TypeAnno),
+    List(TypeAnno),
     Unit,
 }
 

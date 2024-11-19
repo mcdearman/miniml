@@ -437,7 +437,7 @@ impl Resolver {
         }
     }
 
-    fn resolve_hint(&mut self, hint: &ast::TypeHint) -> ResResult<TypeHint> {
+    fn resolve_hint(&mut self, hint: &ast::TypeHint) -> ResResult<TypeAnno> {
         use ast::TypeAnnoKind as Atk;
         match hint.kind.as_ref() {
             ast::TypeAnnoKind::Ident(ident) => {
@@ -454,28 +454,28 @@ impl Resolver {
                 //     ))
                 // }
             }
-            Atk::Byte => Ok(TypeHint::new(TypeHintKind::Byte, hint.span)),
-            Atk::Int => Ok(TypeHint::new(TypeHintKind::Int, hint.span)),
-            Atk::Rational => Ok(TypeHint::new(TypeHintKind::Rational, hint.span)),
-            Atk::Real => Ok(TypeHint::new(TypeHintKind::Real, hint.span)),
-            Atk::Bool => Ok(TypeHint::new(TypeHintKind::Bool, hint.span)),
-            Atk::String => Ok(TypeHint::new(TypeHintKind::String, hint.span)),
-            Atk::Char => Ok(TypeHint::new(TypeHintKind::Char, hint.span)),
-            Atk::Fn(params, ret) => Ok(TypeHint::new(
-                TypeHintKind::Fn(
+            Atk::Byte => Ok(TypeAnno::new(TypeAnnoKind::Byte, hint.span)),
+            Atk::Int => Ok(TypeAnno::new(TypeAnnoKind::Int, hint.span)),
+            Atk::Rational => Ok(TypeAnno::new(TypeAnnoKind::Rational, hint.span)),
+            Atk::Real => Ok(TypeAnno::new(TypeAnnoKind::Real, hint.span)),
+            Atk::Bool => Ok(TypeAnno::new(TypeAnnoKind::Bool, hint.span)),
+            Atk::String => Ok(TypeAnno::new(TypeAnnoKind::String, hint.span)),
+            Atk::Char => Ok(TypeAnno::new(TypeAnnoKind::Char, hint.span)),
+            Atk::Fn(params, ret) => Ok(TypeAnno::new(
+                TypeAnnoKind::Fn(
                     params
                         .iter()
                         .map(|p| self.resolve_hint(p))
-                        .collect::<ResResult<Vec<TypeHint>>>()?,
+                        .collect::<ResResult<Vec<TypeAnno>>>()?,
                     self.resolve_hint(ret)?,
                 ),
                 hint.span,
             )),
-            ast::TypeAnnoKind::List(hint) => Ok(TypeHint::new(
-                TypeHintKind::List(self.resolve_hint(hint)?),
+            ast::TypeAnnoKind::List(hint) => Ok(TypeAnno::new(
+                TypeAnnoKind::List(self.resolve_hint(hint)?),
                 hint.span,
             )),
-            ast::TypeAnnoKind::Unit => Ok(TypeHint::new(TypeHintKind::Unit, hint.span)),
+            ast::TypeAnnoKind::Unit => Ok(TypeAnno::new(TypeAnnoKind::Unit, hint.span)),
         }
     }
 }
