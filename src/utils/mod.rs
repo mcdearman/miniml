@@ -1,5 +1,5 @@
 pub mod box_node;
-pub mod ident;
+pub mod finger_tree;
 pub mod intern;
 pub mod list;
 pub mod node;

@@ -6,16 +6,17 @@ use crate::{
 
 pub type Prog = SynNode<Module>;
 pub type Imports = Vec<Path>;
-pub type Path = Vec<ScopedIdent>;
+pub type Path = Vec<SynNode<ScopedIdent>>;
 pub type Decls = Vec<Decl>;
 pub type Decl = SynNode<DeclKind>;
 pub type Expr = SynBoxNode<ExprKind>;
 pub type Pattern = SynBoxNode<PatternKind>;
 pub type TypeAnno = SynBoxNode<TypeAnnoKind>;
+pub type Ident = SynNode<ScopedIdent>;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Module {
-    pub name: InternedString,
+    pub name: Ident,
     pub imports: Imports,
     pub decls: Decls,
 }
@@ -35,7 +36,7 @@ pub enum DefGroup {
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct DefRec {
-    pub ident: ScopedIdent,
+    pub ident: Ident,
     pub anno: Option<TypeAnno>,
     pub body: Expr,
 }

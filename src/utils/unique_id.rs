@@ -1,11 +1,10 @@
-use dbg_pls::DebugPls;
 use std::{
     fmt::{Debug, Display},
     sync::atomic::{AtomicUsize, Ordering},
 };
 
 #[repr(transparent)]
-#[derive(DebugPls, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct UniqueId(usize);
 
 impl UniqueId {

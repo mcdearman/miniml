@@ -76,12 +76,13 @@ impl Resolver {
             }
         }
 
-        let res_imports = prog
-            .value
-            .imports
-            .iter()
-            .map(|i| self.resolve_path(i))
-            .collect::<ResResult<Vec<Path>>>()?;
+        let mut res_imports = vec![vec![]];
+        for i in &prog.value.imports {
+            match self.resolve_path(i) {
+                Ok(p) => res_imports.push(p),
+                Err(e) => errors.push(e),
+            }
+        }
 
         if decls.is_empty() {
             (None, errors)
@@ -100,46 +101,56 @@ impl Resolver {
         }
     }
 
-    fn resolve_path(&mut self, import: &ast::Path) -> ResResult<Path> {
-        let mut path = Vec::new();
-        for ident in &import.path {
-            let id = self.env.define(ident.name);
-            path.push(ScopedIdent::new(id, ident.name, ident.span));
+    fn resolve_path(&mut self, path: &ast::Path) -> ResResult<Path> {
+        let mut res_path = Vec::new();
+        for ident in path {
+            let id = self.env.define(ident.value);
+            res_path.push(SynNode::new(ScopedIdent::new(id, ident.value), ident.meta));
         }
-        Ok(Import { path })
+        Ok(res_path)
     }
 
     fn resolve_decl(&mut self, decl: &ast::Decl) -> ResResult<Decl> {
-        match &decl.kind {
+        match &decl.value {
             ast::DeclKind::Def(pattern, expr) => {
-                if matches!(expr., &ExprKind::Lambda(_, _)) {
+                if matches!(expr.value.as_ref(), &ast::ExprKind::Lambda(_, _)) {
                     match pattern.value.as_ref() {
                         ast::PatternKind::Ident(ident, _) => {
-                            let res_name = ScopedIdent::new(
-                                self.env.define(ident.name),
-                                ident.name,
-                                ident.span,
+                            let res_name = SynNode::new(
+                                ScopedIdent::new(self.env.define(ident.value), ident.value),
+                                ident.meta,
                             );
                             let res_expr = self.resolve_expr(&expr)?;
-                            Ok(Decl {
-                                kind: DeclKind::DefRec(res_name, res_expr),
-                                span: decl.span,
-                            })
+
+                            Ok(SynNode::new(
+                                DeclKind::Def(DefGroup::Rec(vec![DefRec {
+                                    ident: res_name,
+                                    anno: None,
+                                    body: res_expr,
+                                }])),
+                                decl.meta,
+                            ))
                         }
-                        _ => Err(ResError::new(ResErrorKind::InvalidDefPattern, pattern.span)),
+                        _ => Err(ResError::new(ResErrorKind::InvalidDefPattern, pattern.meta)),
                     }
                 } else {
                     let res_expr = self.resolve_expr(&expr)?;
                     let res_pat = self.resolve_pattern(&pattern)?;
-                    Ok(Decl {
-                        kind: DeclKind::Def(res_pat, res_expr),
-                        span: decl.span,
-                    })
+
+                    Ok(SynNode::new(
+                        DeclKind::Def(DefGroup::NonRec(Def {
+                            pat: res_pat,
+                            body: res_expr,
+                        })),
+                        decl.meta,
+                    ))
                 }
             }
             ast::DeclKind::Fn(ident, params, fn_expr) => {
-                let res_name =
-                    ScopedIdent::new(self.env.define(ident.name), ident.name, ident.span);
+                let res_name = SynNode::new(
+                    ScopedIdent::new(self.env.define(ident.value), ident.value),
+                    ident.meta,
+                );
 
                 self.env.push();
                 let mut res_params = vec![];
@@ -157,17 +168,21 @@ impl Resolver {
                 self.env.pop();
 
                 let res_lam = res_params.into_iter().rev().fold(res_expr, |acc, p| {
-                    Expr::new(ExprKind::Lambda(p, acc), fn_expr.span)
+                    Expr::new(ExprKind::Lambda(p, acc), fn_expr.meta)
                 });
 
-                Ok(Decl {
-                    kind: DeclKind::DefRec(res_name, res_lam),
-                    span: decl.span,
-                })
+                Ok(SynNode::new(
+                    DeclKind::Def(DefGroup::Rec(vec![DefRec {
+                        ident: res_name,
+                        anno: None,
+                        body: res_lam,
+                    }])),
+                    decl.meta,
+                ))
             }
             ast::DeclKind::FnMatch(name, arms) => {
                 // if arms.is_empty() {
-                //     return Err(ResError::new(ResErrorKind::EmptyFnMatch, decl.span));
+                //     return Err(ResError::new(ResErrorKind::EmptyFnMatch, decl.meta));
                 // }
 
                 // let name = arms[0].0;
@@ -179,10 +194,10 @@ impl Resolver {
                 // let mut res_arms = vec![];
                 // for (n, params, body) in arms {
                 //     if *n != name {
-                //         return Err(ResError::new(ResErrorKind::TooManyFnNames, decl.span));
+                //         return Err(ResError::new(ResErrorKind::TooManyFnNames, decl.meta));
                 //     }
                 //     if params.len() != param_len {
-                //         return Err(ResError::new(ResErrorKind::FnArmParamMismatch, decl.span));
+                //         return Err(ResError::new(ResErrorKind::FnArmParamMismatch, decl.meta));
                 //     }
                 //     self.env.push();
                 //     let mut res_params = vec![];
@@ -209,26 +224,26 @@ impl Resolver {
     }
 
     fn resolve_expr(&mut self, expr: &ast::Expr) -> ResResult<Expr> {
-        match expr.kind.as_ref() {
+        match expr.value.as_ref() {
             ast::ExprKind::Lit(l) => match l {
-                ast::Lit::Byte(b) => Ok(Expr::new(ExprKind::Lit(Lit::Byte(*b)), expr.span)),
-                ast::Lit::Int(n) => Ok(Expr::new(ExprKind::Lit(Lit::Int(*n)), expr.span)),
-                ast::Lit::Rational(r) => Ok(Expr::new(ExprKind::Lit(Lit::Rational(*r)), expr.span)),
-                ast::Lit::Real(r) => Ok(Expr::new(ExprKind::Lit(Lit::Real(*r)), expr.span)),
-                ast::Lit::Bool(b) => Ok(Expr::new(ExprKind::Lit(Lit::Bool(*b)), expr.span)),
-                ast::Lit::String(s) => Ok(Expr::new(ExprKind::Lit(Lit::String(*s)), expr.span)),
-                ast::Lit::Char(c) => Ok(Expr::new(ExprKind::Lit(Lit::Char(*c)), expr.span)),
+                ast::Lit::Byte(b) => Ok(Expr::new(ExprKind::Lit(Lit::Byte(*b)), expr.meta)),
+                ast::Lit::Int(n) => Ok(Expr::new(ExprKind::Lit(Lit::Int(*n)), expr.meta)),
+                ast::Lit::Rational(r) => Ok(Expr::new(ExprKind::Lit(Lit::Rational(*r)), expr.meta)),
+                ast::Lit::Real(r) => Ok(Expr::new(ExprKind::Lit(Lit::Real(*r)), expr.meta)),
+                ast::Lit::Bool(b) => Ok(Expr::new(ExprKind::Lit(Lit::Bool(*b)), expr.meta)),
+                ast::Lit::String(s) => Ok(Expr::new(ExprKind::Lit(Lit::String(*s)), expr.meta)),
+                ast::Lit::Char(c) => Ok(Expr::new(ExprKind::Lit(Lit::Char(*c)), expr.meta)),
             },
             ast::ExprKind::Var(ident) => {
-                if let Some(id) = self.env.find(&ident.name) {
+                if let Some(id) = self.env.find(&ident.value) {
                     Ok(Expr::new(
-                        ExprKind::Var(ScopedIdent::new(id, ident.name, expr.span)),
-                        expr.span.clone(),
+                        ExprKind::Var(ScopedIdent::new(id, ident.value)),
+                        expr.meta.clone(),
                     ))
                 } else {
                     Err(ResError::new(
-                        ResErrorKind::UnboundName(ident.name),
-                        expr.span,
+                        ResErrorKind::UnboundName(ident.value),
+                        expr.meta,
                     ))
                 }
             }
@@ -250,7 +265,7 @@ impl Resolver {
                 self.env.pop();
 
                 Ok(res_params.into_iter().rev().fold(res_expr, |acc, p| {
-                    Expr::new(ExprKind::Lambda(p, acc), expr.span)
+                    Expr::new(ExprKind::Lambda(p, acc), expr.meta)
                 }))
             }
             ast::ExprKind::Apply(fun, args) => {
@@ -263,56 +278,56 @@ impl Resolver {
                     res_args
                         .into_iter()
                         .fold(res_fun, |acc, arg| {
-                            Expr::new(ExprKind::Apply(acc, arg), expr.span)
+                            Expr::new(ExprKind::Apply(acc, arg), expr.meta)
                         })
-                        .kind
+                        .value
                         .as_ref()
                         .clone(),
-                    expr.span,
+                    expr.meta,
                 ))
             }
             ast::ExprKind::UnaryOp(op, op_expr) => {
                 let name = InternedString::from(*op);
                 let id = self
                     .get_builtin(name)
-                    .ok_or(ResError::new(ResErrorKind::UnboundBuiltIn(name), op.span))?;
-                let ident = ScopedIdent::new(id, name, op.span);
+                    .ok_or(ResError::new(ResErrorKind::UnboundBuiltIn(name), op.meta))?;
+                let ident = ScopedIdent::new(id, name, op.meta);
                 Ok(Expr::new(
                     ExprKind::Apply(
-                        Expr::new(ExprKind::Var(ident), op.span),
+                        Expr::new(ExprKind::Var(ident), op.meta),
                         self.resolve_expr(op_expr)?,
                     ),
-                    expr.span,
+                    expr.meta,
                 ))
             }
             ast::ExprKind::BinaryOp(op, lhs, rhs) => {
                 let name = InternedString::from(*op);
                 let id = self
                     .get_builtin(name)
-                    .ok_or(ResError::new(ResErrorKind::UnboundBuiltIn(name), op.span))?;
-                let ident = ScopedIdent::new(id, name, op.span);
+                    .ok_or(ResError::new(ResErrorKind::UnboundBuiltIn(name), op.meta))?;
+                let ident = ScopedIdent::new(id, name, op.meta);
                 let res_lhs = self.resolve_expr(lhs)?;
                 Ok(Expr::new(
                     ExprKind::Apply(
                         Expr::new(
                             ExprKind::Apply(
-                                Expr::new(ExprKind::Var(ident), op.span),
+                                Expr::new(ExprKind::Var(ident), op.meta),
                                 res_lhs.clone(),
                             ),
-                            op.span.extend(res_lhs.span),
+                            op.meta.extend(res_lhs.meta),
                         ),
                         self.resolve_expr(rhs)?,
                     ),
-                    expr.span,
+                    expr.meta,
                 ))
             }
             ast::ExprKind::Or(lhs, rhs) => Ok(Expr::new(
                 ExprKind::Or(self.resolve_expr(lhs)?, self.resolve_expr(rhs)?),
-                expr.span,
+                expr.meta,
             )),
             ast::ExprKind::And(lhs, rhs) => Ok(Expr::new(
                 ExprKind::And(self.resolve_expr(lhs)?, self.resolve_expr(rhs)?),
-                expr.span,
+                expr.meta,
             )),
             ast::ExprKind::Let(pat, let_expr, body) => {
                 if let_expr.is_lambda() {
@@ -324,19 +339,19 @@ impl Resolver {
                                     ScopedIdent::new(
                                         self.env.define(ident.name),
                                         ident.name,
-                                        ident.span,
+                                        ident.meta,
                                     ),
                                     None,
                                 ),
-                                ident.span,
+                                ident.meta,
                             );
                             let res_expr = self.resolve_expr(&let_expr)?;
                             Ok(Expr::new(
                                 ExprKind::Let(res_pat, true, res_expr, self.resolve_expr(&body)?),
-                                expr.span,
+                                expr.meta,
                             ))
                         }
-                        _ => Err(ResError::new(ResErrorKind::InvalidLetPattern, pat.span)),
+                        _ => Err(ResError::new(ResErrorKind::InvalidLetPattern, pat.meta)),
                     }
                 } else {
                     let res_expr = self.resolve_expr(&let_expr)?;
@@ -347,7 +362,7 @@ impl Resolver {
 
                     Ok(Expr::new(
                         ExprKind::Let(res_pat, false, res_expr, res_body),
-                        expr.span,
+                        expr.meta,
                     ))
                 }
             }
@@ -371,17 +386,17 @@ impl Resolver {
                 self.env.pop();
 
                 let res_pat = Pattern::new(
-                    PatternKind::Ident(ScopedIdent::new(res_name, ident.name, ident.span), None),
-                    ident.span,
+                    PatternKind::Ident(ScopedIdent::new(res_name, ident.name, ident.meta), None),
+                    ident.meta,
                 );
 
                 let res_lam = res_params.into_iter().rev().fold(res_expr, |acc, p| {
-                    Expr::new(ExprKind::Lambda(p, acc), fn_expr.span)
+                    Expr::new(ExprKind::Lambda(p, acc), fn_expr.meta)
                 });
 
                 Ok(Expr::new(
                     ExprKind::Let(res_pat, true, res_lam, res_body),
-                    expr.span,
+                    expr.meta,
                 ))
             }
             ast::ExprKind::If(cond, then, else_) => Ok(Expr::new(
@@ -390,7 +405,7 @@ impl Resolver {
                     self.resolve_expr(&then)?,
                     self.resolve_expr(&else_)?,
                 ),
-                expr.span,
+                expr.meta,
             )),
             ast::ExprKind::Match(expr, arms) => {
                 let res_expr = self.resolve_expr(&expr)?;
@@ -402,7 +417,7 @@ impl Resolver {
                     self.env.pop();
                     res_arms.push((res_pat, res_body));
                 }
-                Ok(Expr::new(ExprKind::Match(res_expr, res_arms), expr.span))
+                Ok(Expr::new(ExprKind::Match(res_expr, res_arms), expr.meta))
             }
             ast::ExprKind::List(exprs) => Ok(Expr::new(
                 ExprKind::List(
@@ -411,9 +426,9 @@ impl Resolver {
                         .map(|e| self.resolve_expr(e))
                         .collect::<ResResult<Vec<Expr>>>()?,
                 ),
-                expr.span,
+                expr.meta,
             )),
-            ast::ExprKind::Unit => Ok(Expr::new(ExprKind::Unit, expr.span)),
+            ast::ExprKind::Unit => Ok(Expr::new(ExprKind::Unit, expr.meta)),
         }
     }
 
@@ -422,28 +437,28 @@ impl Resolver {
             ast::PatternKind::Ident(ident, hint) => {
                 let id = self.env.define(ident.name);
                 Ok(Pattern::new(
-                    PatternKind::Ident(ScopedIdent::new(id, ident.name, ident.span), {
+                    PatternKind::Ident(ScopedIdent::new(id, ident.name, ident.meta), {
                         if let Some(hint) = hint {
                             Some(self.resolve_hint(hint)?)
                         } else {
                             None
                         }
                     }),
-                    pat.span,
+                    pat.meta,
                 ))
             }
-            ast::PatternKind::Wildcard => Ok(Pattern::new(PatternKind::Wildcard, pat.span)),
+            ast::PatternKind::Wildcard => Ok(Pattern::new(PatternKind::Wildcard, pat.meta)),
             ast::PatternKind::List(pats) => Ok(Pattern::new(
                 PatternKind::List(
                     pats.iter()
                         .map(|p| self.resolve_pattern(p))
                         .collect::<ResResult<Vec<Pattern>>>()?,
                 ),
-                pat.span,
+                pat.meta,
             )),
             ast::PatternKind::Pair(head, tail) => Ok(Pattern::new(
                 PatternKind::Pair(self.resolve_pattern(head)?, self.resolve_pattern(tail)?),
-                pat.span,
+                pat.meta,
             )),
             ast::PatternKind::Lit(lit) => Ok(Pattern::new(
                 PatternKind::Lit(match lit {
@@ -455,9 +470,9 @@ impl Resolver {
                     ast::Lit::String(s) => Lit::String(*s),
                     ast::Lit::Char(c) => Lit::Char(*c),
                 }),
-                pat.span,
+                pat.meta,
             )),
-            ast::PatternKind::Unit => Ok(Pattern::new(PatternKind::Unit, pat.span)),
+            ast::PatternKind::Unit => Ok(Pattern::new(PatternKind::Unit, pat.meta)),
         }
     }
 
@@ -468,23 +483,23 @@ impl Resolver {
                 todo!()
                 // if let Some(name) = self.env.find(&ident.name) {
                 //     Ok(TypeHint::new(
-                //         TypeHintKind::Ident(Ident::new(name, ident.name, ident.span)),
-                //         hint.span,
+                //         TypeHintKind::Ident(Ident::new(name, ident.name, ident.meta)),
+                //         hint.meta,
                 //     ))
                 // } else {
                 //     Err(ResError::new(
                 //         ResErrorKind::UnboundName(ident.name),
-                //         ident.span,
+                //         ident.meta,
                 //     ))
                 // }
             }
-            Atk::Byte => Ok(TypeAnno::new(TypeAnnoKind::Byte, hint.span)),
-            Atk::Int => Ok(TypeAnno::new(TypeAnnoKind::Int, hint.span)),
-            Atk::Rational => Ok(TypeAnno::new(TypeAnnoKind::Rational, hint.span)),
-            Atk::Real => Ok(TypeAnno::new(TypeAnnoKind::Real, hint.span)),
-            Atk::Bool => Ok(TypeAnno::new(TypeAnnoKind::Bool, hint.span)),
-            Atk::String => Ok(TypeAnno::new(TypeAnnoKind::String, hint.span)),
-            Atk::Char => Ok(TypeAnno::new(TypeAnnoKind::Char, hint.span)),
+            Atk::Byte => Ok(TypeAnno::new(TypeAnnoKind::Byte, hint.meta)),
+            Atk::Int => Ok(TypeAnno::new(TypeAnnoKind::Int, hint.meta)),
+            Atk::Rational => Ok(TypeAnno::new(TypeAnnoKind::Rational, hint.meta)),
+            Atk::Real => Ok(TypeAnno::new(TypeAnnoKind::Real, hint.meta)),
+            Atk::Bool => Ok(TypeAnno::new(TypeAnnoKind::Bool, hint.meta)),
+            Atk::String => Ok(TypeAnno::new(TypeAnnoKind::String, hint.meta)),
+            Atk::Char => Ok(TypeAnno::new(TypeAnnoKind::Char, hint.meta)),
             Atk::Fn(params, ret) => Ok(TypeAnno::new(
                 TypeAnnoKind::Fn(
                     params
@@ -493,13 +508,13 @@ impl Resolver {
                         .collect::<ResResult<Vec<TypeAnno>>>()?,
                     self.resolve_hint(ret)?,
                 ),
-                hint.span,
+                hint.meta,
             )),
             ast::TypeAnnoKind::List(hint) => Ok(TypeAnno::new(
                 TypeAnnoKind::List(self.resolve_hint(hint)?),
-                hint.span,
+                hint.meta,
             )),
-            ast::TypeAnnoKind::Unit => Ok(TypeAnno::new(TypeAnnoKind::Unit, hint.span)),
+            ast::TypeAnnoKind::Unit => Ok(TypeAnno::new(TypeAnnoKind::Unit, hint.meta)),
         }
     }
 }

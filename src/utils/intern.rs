@@ -1,4 +1,3 @@
-use dbg_pls::DebugPls;
 use lasso::{Spur, ThreadedRodeo};
 use once_cell::sync::Lazy;
 use std::{
@@ -41,12 +40,6 @@ impl Debug for InternedString {
         write!(f, "InternedString({})", unsafe {
             INTERNER.resolve(&self.key)
         })
-    }
-}
-
-impl DebugPls for InternedString {
-    fn fmt(&self, f: dbg_pls::Formatter<'_>) {
-        f.debug_ident(&unsafe { INTERNER.resolve(&self.key) });
     }
 }
 

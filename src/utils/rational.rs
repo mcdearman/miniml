@@ -1,7 +1,6 @@
-use dbg_pls::DebugPls;
 use std::{fmt::Display, str::FromStr};
 
-#[derive(Debug, DebugPls, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Rational {
     numerator: i64,
     denominator: i64,

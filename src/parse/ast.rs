@@ -1,8 +1,7 @@
 use crate::{
     lex::token::Token,
     utils::{
-        box_node::BoxNode, ident::Ident, intern::InternedString, node::Node, rational::Rational,
-        span::Span,
+        box_node::BoxNode, intern::InternedString, node::Node, rational::Rational, span::Span,
     },
 };
 
@@ -19,10 +18,11 @@ pub type UnaryOp = SynNode<UnaryOpKind>;
 pub type BinaryOp = SynNode<BinaryOpKind>;
 pub type Pattern = SynBoxNode<PatternKind>;
 pub type TypeAnno = SynBoxNode<TypeAnnoKind>;
+pub type Ident = SynNode<InternedString>;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Module {
-    pub name: InternedString,
+    pub name: Ident,
     pub imports: Imports,
     pub decls: Decls,
 }
