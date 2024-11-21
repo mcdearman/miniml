@@ -90,7 +90,13 @@ impl Resolver {
             (
                 Some(SynNode::new(
                     Module {
-                        name: prog.value.name,
+                        name: SynNode::new(
+                            ScopedIdent::new(
+                                self.env.define(prog.value.name.value),
+                                prog.value.name.value,
+                            ),
+                            prog.meta,
+                        ),
                         imports: res_imports,
                         decls,
                     },

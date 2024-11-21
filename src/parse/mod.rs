@@ -36,7 +36,7 @@ fn file_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
     decl_parser().repeated().collect().map_with(|decls, e| {
         SynNode::new(
             Module {
-                name: InternedString::from("main"),
+                name: SynNode::new(InternedString::from("main"), e.span()),
                 imports: vec![],
                 decls,
             },
@@ -64,7 +64,7 @@ fn repl_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
         .map_with(|decl, e| {
             SynNode::new(
                 Module {
-                    name: InternedString::from("main"),
+                    name: SynNode::new(InternedString::from("main"), e.span()),
                     imports: vec![],
                     decls: vec![decl],
                 },
