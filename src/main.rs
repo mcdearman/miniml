@@ -56,6 +56,10 @@ fn main() {
                     //     log::debug!("Meta context: {:#?}", solver.meta_ctx);
                     //     continue;
                     // }
+                    "clear" => {
+                        rl.clear_history();
+                        continue;
+                    }
                     _ => (),
                 }
                 rl.add_history_entry(line.as_str())
