@@ -1,5 +1,5 @@
 use super::res_id::ResId;
-use crate::utils::intern::InternedString;
+use miniml_utils::intern::InternedString;
 
 #[derive(Debug, Clone, Copy)]
 pub struct ScopedIdent {

@@ -1,5 +1,5 @@
 use super::{res_id::ResId, scoped_intern::ScopedInterner};
-use crate::utils::intern::InternedString;
+use miniml_utils::intern::InternedString;
 use std::collections::HashMap;
 
 #[derive(Debug, Clone, PartialEq)]

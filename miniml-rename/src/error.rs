@@ -1,4 +1,4 @@
-use crate::utils::{intern::InternedString, span::Span};
+use miniml_utils::{intern::InternedString, span::Span};
 use std::fmt::Display;
 
 #[derive(Debug, Clone, PartialEq)]

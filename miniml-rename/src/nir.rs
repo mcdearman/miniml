@@ -1,8 +1,6 @@
 use super::scoped_ident::ScopedIdent;
-use crate::{
-    parse::ast::{SynBoxNode, SynNode},
-    utils::{intern::InternedString, rational::Rational},
-};
+use miniml_syntax::ast::{SynBoxNode, SynNode};
+use miniml_utils::{intern::InternedString, rational::Rational};
 
 pub type Prog = SynNode<Module>;
 pub type Imports = Vec<Path>;

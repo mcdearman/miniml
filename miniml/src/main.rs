@@ -1,19 +1,8 @@
-// use analysis::infer::TypeSolver;
-use lex::token_iter::TokenIter;
-use parse::parse;
-use rename::resolver::Resolver;
-// use rename::resolver::Resolver;
-// use runtime::interpreter::Interpreter;
+use miniml_rename::resolver::Resolver;
+use miniml_syntax::{parse::parse, token_iter::TokenIter};
 use rustyline::{
     error::ReadlineError, validate::Validator, Completer, Editor, Helper, Highlighter, Hinter,
 };
-
-// mod analysis;
-mod lex;
-mod parse;
-mod rename;
-// mod runtime;
-mod utils;
 
 #[derive(Completer, Helper, Highlighter, Hinter)]
 struct TermValidator;

@@ -5,10 +5,8 @@ use super::{
     res_id::ResId,
     scoped_ident::ScopedIdent,
 };
-use crate::{
-    parse::ast::{self, SynNode},
-    utils::intern::InternedString,
-};
+use miniml_syntax::ast::{self, SynNode};
+use miniml_utils::intern::InternedString;
 use std::collections::HashMap;
 
 #[derive(Debug)]

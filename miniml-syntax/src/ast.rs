@@ -1,8 +1,6 @@
-use crate::{
-    lex::token::Token,
-    utils::{
-        box_node::BoxNode, intern::InternedString, node::Node, rational::Rational, span::Span,
-    },
+use crate::token::Token;
+use miniml_utils::{
+    box_node::BoxNode, intern::InternedString, node::Node, rational::Rational, span::Span,
 };
 
 pub type SynNode<T> = Node<T, Span>;

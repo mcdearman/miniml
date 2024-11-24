@@ -1,5 +1,5 @@
-use crate::utils::{intern::InternedString, rational::Rational};
 use logos::Logos;
+use miniml_utils::{intern::InternedString, rational::Rational};
 use std::fmt::Display;
 
 #[derive(Logos, Debug, Clone, PartialEq)]
@@ -22,7 +22,7 @@ pub enum Token {
         priority = 2
     )]
     Real(f64),
-   #[regex(
+    #[regex(
         r"-?((0b[0-1]+)|(0o[0-7]+)|(0x[0-9a-fA-F]+)|([1-9]\d*|0))(/-?((0b[0-1]+)|(0o[0-7]+)|(0x[0-9a-fA-F]+)|([1-9]\d*|0)))",
         |lex| lex.slice().parse().ok())]
     Rational(Rational),

@@ -1,6 +1,6 @@
 use super::token::Token;
-use crate::utils::span::Span;
 use logos::Logos;
+use miniml_utils::span::Span;
 
 #[derive(Debug, Clone)]
 pub struct TokenIter<'src> {

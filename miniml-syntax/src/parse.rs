@@ -1,8 +1,4 @@
-use self::ast::*;
-use crate::{
-    lex::token::Token,
-    utils::{intern::InternedString, span::Span},
-};
+use crate::{ast::*, token::Token};
 use chumsky::{
     error::Rich,
     extra,
@@ -11,8 +7,7 @@ use chumsky::{
     recursive::recursive,
     select, IterParser, Parser as ChumskyParser,
 };
-
-pub mod ast;
+use miniml_utils::{intern::InternedString, span::Span};
 
 pub fn parse<'src>(
     tokens: impl Iterator<Item = (Token, Span)> + Clone + 'src,
