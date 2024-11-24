@@ -1,4 +1,4 @@
-use crate::utils::{intern::InternedString, span::Span};
+use miniml_utils::{intern::InternedString, span::Span};
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct AnalysisError {

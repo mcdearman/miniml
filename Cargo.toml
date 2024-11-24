@@ -2,7 +2,7 @@
 
 members = [
     "miniml",
-    # "miniml-analysis",
+    "miniml-analysis",
     # "miniml-core",
     "miniml-rename",
     "miniml-syntax",

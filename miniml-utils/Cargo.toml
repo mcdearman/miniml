@@ -15,13 +15,7 @@ itertools = "0.10.5"
 num-bigint = "0.4.3"
 num-complex = "0.4.3"
 num-rational = "0.4.1"
-logos = "0.13.0"
-cstree = { version = "0.12.0", features = ["derive"] }
-clap = { version = "4.3.0", features = ["cargo", "derive"] }
-rustyline = { version = "11.0.0", features = ["with-file-history", "derive"] }
-notify = "6.1.1"
 chumsky = { version = "1.0.0-alpha.6", features = ["pratt"] }
 num-traits = "0.2.17"
-libc = "0.2.153"
 pretty = "0.12.3"
 colored = "2.1.0"
