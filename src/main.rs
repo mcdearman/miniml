@@ -1,6 +1,7 @@
 // use analysis::infer::TypeSolver;
 use lex::token_iter::TokenIter;
 use parse::parse;
+use rename::resolver::Resolver;
 // use rename::resolver::Resolver;
 // use runtime::interpreter::Interpreter;
 use rustyline::{
@@ -39,7 +40,9 @@ fn main() {
         println!("No previous history.");
     }
 
-    // let mut res = Resolver::new();
+    println!("Welcome to MiniML!");
+
+    let mut res = Resolver::new();
     // let mut solver = TypeSolver::new();
 
     loop {
@@ -69,22 +72,22 @@ fn main() {
                 match parse(stream, true) {
                     (Some(ast), _) => {
                         log::debug!("AST: {:#?}", ast);
-                        // match res.resolve(&ast) {
-                        //     (Some(nir), _) => {
-                        //         log::debug!("NIR: {:#?}", nir);
+                        match res.resolve(&ast) {
+                            (Some(nir), _) => {
+                                log::debug!("NIR: {:#?}", nir);
 
-                        //         let (tir, type_errors) = solver.infer(&line, &nir);
-                        //         if !type_errors.is_empty() {
-                        //             log::error!("Type errors: {:#?}", type_errors);
-                        //             continue;
-                        //         }
-                        //         log::debug!("TIR: {:#?}", tir);
-                        //     }
-                        //     (None, res_errors) => {
-                        //         log::error!("Resolution errors: {:#?}", res_errors);
-                        //         continue;
-                        //     }
-                        // }
+                                // let (tir, type_errors) = solver.infer(&line, &nir);
+                                // if !type_errors.is_empty() {
+                                //     log::error!("Type errors: {:#?}", type_errors);
+                                //     continue;
+                                // }
+                                // log::debug!("TIR: {:#?}", tir);
+                            }
+                            (None, res_errors) => {
+                                log::error!("Resolution errors: {:#?}", res_errors);
+                                continue;
+                            }
+                        }
                     }
                     (None, parse_errors) => {
                         log::error!("Parse errors: {:#?}", parse_errors);

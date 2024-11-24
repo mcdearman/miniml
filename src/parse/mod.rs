@@ -48,8 +48,11 @@ fn file_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
 fn repl_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
 ) -> impl ChumskyParser<'a, I, Prog, extra::Err<Rich<'a, Token, Span>>> {
     decl_parser()
+        .repeated()
+        .at_least(1)
+        .collect()
         .or(expr_parser().map(|e| {
-            SynNode::new(
+            vec![SynNode::new(
                 DeclKind::Fn(
                     Ident::new(InternedString::from("main"), e.meta),
                     vec![Pattern::new(
@@ -59,14 +62,14 @@ fn repl_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
                     e.clone(),
                 ),
                 e.meta,
-            )
+            )]
         }))
-        .map_with(|decl, e| {
+        .map_with(|decls, e| {
             SynNode::new(
                 Module {
                     name: SynNode::new(InternedString::from("main"), e.span()),
                     imports: vec![],
-                    decls: vec![decl],
+                    decls: decls,
                 },
                 e.span(),
             )

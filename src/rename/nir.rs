@@ -50,7 +50,7 @@ pub struct Def {
 #[derive(Debug, Clone, PartialEq)]
 pub enum ExprKind {
     Lit(Lit),
-    Var(ScopedIdent),
+    Var(Ident),
     Apply(Expr, Expr),
     Lambda(Pattern, Expr),
     Or(Expr, Expr),
@@ -66,7 +66,7 @@ pub enum ExprKind {
 pub enum PatternKind {
     Wildcard,
     Lit(Lit),
-    Ident(ScopedIdent, Option<TypeAnno>),
+    Ident(Ident, Option<TypeAnno>),
     List(Vec<Pattern>),
     Pair(Pattern, Pattern),
     Unit,
@@ -81,7 +81,7 @@ pub enum TypeAnnoKind {
     Bool,
     String,
     Char,
-    ScopedIdent(ScopedIdent),
+    Ident(Ident),
     Fn(Vec<TypeAnno>, TypeAnno),
     List(TypeAnno),
     Unit,

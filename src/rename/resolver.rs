@@ -65,7 +65,7 @@ impl Resolver {
         None
     }
 
-    fn resolve(&mut self, prog: &ast::Prog) -> (Option<Prog>, Vec<ResError>) {
+    pub fn resolve(&mut self, prog: &ast::Prog) -> (Option<Prog>, Vec<ResError>) {
         let mut decls = Vec::new();
         let mut errors = Vec::new();
 
@@ -243,7 +243,7 @@ impl Resolver {
             ast::ExprKind::Var(ident) => {
                 if let Some(id) = self.env.find(&ident.value) {
                     Ok(Expr::new(
-                        ExprKind::Var(ScopedIdent::new(id, ident.value)),
+                        ExprKind::Var(SynNode::new(ScopedIdent::new(id, ident.value), ident.meta)),
                         expr.meta.clone(),
                     ))
                 } else {
@@ -293,11 +293,11 @@ impl Resolver {
                 ))
             }
             ast::ExprKind::UnaryOp(op, op_expr) => {
-                let name = InternedString::from(*op);
+                let name = InternedString::from(op.value);
                 let id = self
                     .get_builtin(name)
                     .ok_or(ResError::new(ResErrorKind::UnboundBuiltIn(name), op.meta))?;
-                let ident = ScopedIdent::new(id, name, op.meta);
+                let ident = SynNode::new(ScopedIdent::new(id, name), op.meta);
                 Ok(Expr::new(
                     ExprKind::Apply(
                         Expr::new(ExprKind::Var(ident), op.meta),
@@ -307,11 +307,11 @@ impl Resolver {
                 ))
             }
             ast::ExprKind::BinaryOp(op, lhs, rhs) => {
-                let name = InternedString::from(*op);
+                let name = InternedString::from(op.value);
                 let id = self
                     .get_builtin(name)
                     .ok_or(ResError::new(ResErrorKind::UnboundBuiltIn(name), op.meta))?;
-                let ident = ScopedIdent::new(id, name, op.meta);
+                let ident = SynNode::new(ScopedIdent::new(id, name), op.meta);
                 let res_lhs = self.resolve_expr(lhs)?;
                 Ok(Expr::new(
                     ExprKind::Apply(
@@ -336,15 +336,14 @@ impl Resolver {
                 expr.meta,
             )),
             ast::ExprKind::Let(pat, let_expr, body) => {
-                if let_expr.is_lambda() {
+                if matches!(let_expr.value.as_ref(), &ast::ExprKind::Lambda(_, _)) {
                     match pat.value.as_ref() {
                         ast::PatternKind::Ident(ident, _) => {
                             self.env.push();
                             let res_pat = Pattern::new(
                                 PatternKind::Ident(
-                                    ScopedIdent::new(
-                                        self.env.define(ident.name),
-                                        ident.name,
+                                    SynNode::new(
+                                        ScopedIdent::new(self.env.define(ident.value), ident.value),
                                         ident.meta,
                                     ),
                                     None,
@@ -374,7 +373,7 @@ impl Resolver {
             }
             ast::ExprKind::Fn(ident, params, fn_expr, body) => {
                 self.env.push();
-                let res_name = self.env.define(ident.name);
+                let res_name = self.env.define(ident.value);
                 self.env.push();
                 let mut res_params = vec![];
                 for p in params {
@@ -392,7 +391,10 @@ impl Resolver {
                 self.env.pop();
 
                 let res_pat = Pattern::new(
-                    PatternKind::Ident(ScopedIdent::new(res_name, ident.name, ident.meta), None),
+                    PatternKind::Ident(
+                        SynNode::new(ScopedIdent::new(res_name, ident.value), ident.meta),
+                        None,
+                    ),
                     ident.meta,
                 );
 
@@ -439,17 +441,20 @@ impl Resolver {
     }
 
     fn resolve_pattern(&mut self, pat: &ast::Pattern) -> ResResult<Pattern> {
-        match pat.kind.as_ref() {
+        match pat.value.as_ref() {
             ast::PatternKind::Ident(ident, hint) => {
-                let id = self.env.define(ident.name);
+                let id = self.env.define(ident.value);
                 Ok(Pattern::new(
-                    PatternKind::Ident(ScopedIdent::new(id, ident.name, ident.meta), {
-                        if let Some(hint) = hint {
-                            Some(self.resolve_hint(hint)?)
-                        } else {
-                            None
-                        }
-                    }),
+                    PatternKind::Ident(
+                        SynNode::new(ScopedIdent::new(id, ident.value), ident.meta),
+                        {
+                            if let Some(hint) = hint {
+                                Some(self.resolve_hint(hint)?)
+                            } else {
+                                None
+                            }
+                        },
+                    ),
                     pat.meta,
                 ))
             }
@@ -482,9 +487,9 @@ impl Resolver {
         }
     }
 
-    fn resolve_hint(&mut self, hint: &ast::TypeHint) -> ResResult<TypeAnno> {
+    fn resolve_hint(&mut self, hint: &ast::TypeAnno) -> ResResult<TypeAnno> {
         use ast::TypeAnnoKind as Atk;
-        match hint.kind.as_ref() {
+        match hint.value.as_ref() {
             ast::TypeAnnoKind::Ident(ident) => {
                 todo!()
                 // if let Some(name) = self.env.find(&ident.name) {

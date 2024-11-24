@@ -1,7 +1,6 @@
+use super::{res_id::ResId, scoped_intern::ScopedInterner};
 use crate::utils::intern::InternedString;
 use std::collections::HashMap;
-
-use super::{res_id::ResId, scoped_intern::ScopedInterner};
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Env {

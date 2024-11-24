@@ -52,18 +52,6 @@ pub enum ExprKind {
     Unit,
 }
 
-// #[derive(Debug, Clone, Copy, PartialEq)]
-// pub struct UnaryOp {
-//     pub kind: UnaryOpKind,
-//     pub span: Span,
-// }
-
-// impl From<UnaryOp> for InternedString {
-//     fn from(op: UnaryOp) -> Self {
-//         InternedString::from(op.kind.to_string())
-//     }
-// }
-
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum UnaryOpKind {
     Neg,
@@ -89,17 +77,11 @@ impl ToString for UnaryOpKind {
     }
 }
 
-// #[derive(Debug, Clone, Copy, PartialEq)]
-// pub struct BinaryOp {
-//     pub kind: BinaryOpKind,
-//     pub span: Span,
-// }
-
-// impl From<BinaryOp> for InternedString {
-//     fn from(op: BinaryOp) -> Self {
-//         InternedString::from(op.kind.to_string())
-//     }
-// }
+impl From<UnaryOpKind> for InternedString {
+    fn from(value: UnaryOpKind) -> Self {
+        InternedString::from(value.to_string())
+    }
+}
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum BinaryOpKind {
@@ -156,6 +138,12 @@ impl ToString for BinaryOpKind {
             Self::Gte => "__gte__".to_string(),
             Self::Pair => "__pair__".to_string(),
         }
+    }
+}
+
+impl From<BinaryOpKind> for InternedString {
+    fn from(value: BinaryOpKind) -> Self {
+        InternedString::from(value.to_string())
     }
 }
 
