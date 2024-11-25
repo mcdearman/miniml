@@ -1,5 +1,6 @@
+use miniml_ast::token_stream::TokenStream;
 use miniml_rename::resolver::Resolver;
-use miniml_syntax::{parse::parse, token_iter::TokenIter};
+use miniml_syntax::parse::parse;
 use rustyline::{
     error::ReadlineError, validate::Validator, Completer, Editor, Helper, Highlighter, Hinter,
 };
@@ -56,7 +57,7 @@ fn main() {
                 }
                 rl.add_history_entry(line.as_str())
                     .expect("Failed to add history entry");
-                let stream = TokenIter::new(&line);
+                let stream = TokenStream::new(&line);
 
                 match parse(stream, true) {
                     (Some(ast), _) => {

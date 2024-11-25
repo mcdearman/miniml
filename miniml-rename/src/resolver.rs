@@ -5,7 +5,7 @@ use super::{
     res_id::ResId,
     scoped_ident::ScopedIdent,
 };
-use miniml_syntax::ast::{self, SynNode};
+use miniml_ast::{self as ast, SynNode};
 use miniml_utils::intern::InternedString;
 use std::collections::HashMap;
 

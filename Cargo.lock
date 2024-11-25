@@ -514,6 +514,7 @@ dependencies = [
  "env_logger",
  "insta",
  "log",
+ "miniml-ast",
  "miniml-rename",
  "miniml-syntax",
  "miniml-utils",
@@ -538,6 +539,23 @@ dependencies = [
 ]
 
 [[package]]
+name = "miniml-ast"
+version = "0.1.0"
+dependencies = [
+ "colored",
+ "env_logger",
+ "insta",
+ "itertools",
+ "log",
+ "logos",
+ "miniml-utils",
+ "num-bigint",
+ "num-complex",
+ "num-rational",
+ "pretty",
+]
+
+[[package]]
 name = "miniml-rename"
 version = "0.1.0"
 dependencies = [
@@ -546,6 +564,7 @@ dependencies = [
  "insta",
  "itertools",
  "log",
+ "miniml-ast",
  "miniml-syntax",
  "miniml-utils",
  "num-bigint",
@@ -565,6 +584,7 @@ dependencies = [
  "itertools",
  "log",
  "logos",
+ "miniml-ast",
  "miniml-utils",
  "num-bigint",
  "num-complex",

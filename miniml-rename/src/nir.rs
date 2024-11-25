@@ -1,5 +1,5 @@
 use super::scoped_ident::ScopedIdent;
-use miniml_syntax::ast::{SynBoxNode, SynNode};
+use miniml_ast::{SynBoxNode, SynNode};
 use miniml_utils::{intern::InternedString, rational::Rational};
 
 pub type Prog = SynNode<Module>;

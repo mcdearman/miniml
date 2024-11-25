@@ -3,11 +3,11 @@ use logos::Logos;
 use miniml_utils::span::Span;
 
 #[derive(Debug, Clone)]
-pub struct TokenIter<'src> {
+pub struct TokenStream<'src> {
     logos: logos::Lexer<'src, Token>,
 }
 
-impl<'src> TokenIter<'src> {
+impl<'src> TokenStream<'src> {
     pub fn new(src: &'src str) -> Self {
         Self {
             logos: Token::lexer(src),
@@ -15,7 +15,7 @@ impl<'src> TokenIter<'src> {
     }
 }
 
-impl<'src> Iterator for TokenIter<'src> {
+impl<'src> Iterator for TokenStream<'src> {
     type Item = (Token, Span);
 
     fn next(&mut self) -> Option<Self::Item> {

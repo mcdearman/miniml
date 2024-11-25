@@ -6,6 +6,7 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+miniml-ast = { path = "../miniml-ast" }
 miniml-utils = { path = "../miniml-utils" }
 miniml-syntax = { path = "../miniml-syntax" }
 miniml-rename = { path = "../miniml-rename" }

@@ -1,4 +1,3 @@
-use crate::{ast::*, token::Token};
 use chumsky::{
     error::Rich,
     extra,
@@ -7,6 +6,7 @@ use chumsky::{
     recursive::recursive,
     select, IterParser, Parser as ChumskyParser,
 };
+use miniml_ast::{token::Token, *};
 use miniml_utils::{intern::InternedString, span::Span};
 
 pub fn parse<'src>(
