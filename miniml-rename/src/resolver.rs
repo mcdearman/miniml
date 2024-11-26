@@ -6,7 +6,7 @@ use miniml_ast::{self as ast, SynNode};
 use miniml_nir::{res_id::ResId, *};
 use miniml_utils::intern::InternedString;
 use scoped_ident::ScopedIdent;
-use std::collections::HashMap;
+use std::{collections::HashMap, vec};
 
 #[derive(Debug)]
 pub struct Resolver {
@@ -64,6 +64,10 @@ impl Resolver {
         None
     }
 
+    pub fn clear_errors(&mut self) {
+        self.errors.clear();
+    }
+
     pub fn resolve(&mut self, prog: &ast::Prog) -> (Option<Prog>, Vec<ResError>) {
         let mut decls = Vec::new();
 
@@ -109,25 +113,37 @@ impl Resolver {
 
     /// First pass to define top-level names
     fn define_top_level(&mut self, prog: &ast::Prog) -> Vec<ResError> {
+        let mut names = vec![];
+
         for decl in &prog.value.decls {
             match &decl.value {
-                ast::DeclKind::Def(pat, expr) => match {
-                    match expr.value.as_ref() {
-                        &ast::ExprKind::Lambda(_, _) => match pat.value.as_ref() {
-                            ast::PatternKind::Ident(ident, _) => {
+                ast::DeclKind::Def(pat, expr) => match expr.value.as_ref() {
+                    &ast::ExprKind::Lambda(_, _) => match pat.value.as_ref() {
+                        ast::PatternKind::Ident(ident, _) => {
+                            if names.contains(&ident.value) {
+                                self.errors.push(ResError::new(
+                                    ResErrorKind::DuplicateName(ident.value),
+                                    ident.meta,
+                                ));
+                            } else {
                                 self.env.define(ident.value);
-                                None
+                                names.push(ident.value);
                             }
-                            _ => continue,
-                        },
+                        }
                         _ => continue,
-                    }
-                } {
-                    Some(e) => self.errors.push(e),
-                    None => (),
+                    },
+                    _ => continue,
                 },
                 ast::DeclKind::Fn(name, _, _) | ast::DeclKind::FnMatch(name, _) => {
-                    self.env.define(name.value);
+                    if names.contains(&name.value) {
+                        self.errors.push(ResError::new(
+                            ResErrorKind::DuplicateName(name.value),
+                            name.meta,
+                        ));
+                    } else {
+                        self.env.define(name.value);
+                        names.push(name.value);
+                    }
                 }
             }
         }

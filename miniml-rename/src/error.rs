@@ -31,6 +31,7 @@ impl Display for ResError {
 pub enum ResErrorKind {
     UnboundName(InternedString),
     UnboundBuiltIn(InternedString),
+    DuplicateName(InternedString),
     InvalidDefPattern,
     InvalidLetPattern,
     EmptyFnMatch,
@@ -46,6 +47,9 @@ impl Display for ResErrorKind {
             }
             ResErrorKind::UnboundBuiltIn(name) => {
                 write!(f, "unbound built-in '{}'", name)
+            }
+            ResErrorKind::DuplicateName(name) => {
+                write!(f, "duplicate name '{}'", name)
             }
             ResErrorKind::InvalidDefPattern => {
                 write!(f, "invalid definition pattern")

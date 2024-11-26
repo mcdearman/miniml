@@ -66,16 +66,10 @@ fn main() {
                             (Some(nir), errors) => {
                                 if !errors.is_empty() {
                                     log::error!("Resolution errors: {:#?}", errors);
+                                    res.clear_errors();
                                     continue;
                                 }
                                 log::debug!("NIR: {:#?}", nir);
-
-                                // let (tir, type_errors) = solver.infer(&line, &nir);
-                                // if !type_errors.is_empty() {
-                                //     log::error!("Type errors: {:#?}", type_errors);
-                                //     continue;
-                                // }
-                                // log::debug!("TIR: {:#?}", tir);
                             }
                             (None, res_errors) => {
                                 log::error!("Resolution errors: {:#?}", res_errors);
