@@ -30,21 +30,21 @@ pub enum DeclKind {
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum DefGroup {
-    Rec(Vec<DefRec>),
+    Rec(Vec<Def>),
     NonRec(Def),
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct DefRec {
-    pub ident: Ident,
-    pub anno: Option<TypeAnno>,
-    pub body: Expr,
-}
-
-#[derive(Debug, Clone, PartialEq)]
-pub struct Def {
-    pub pat: Pattern,
-    pub body: Expr,
+pub enum Def {
+    Rec {
+        ident: Ident,
+        anno: Option<TypeAnno>,
+        body: Expr,
+    },
+    NonRec {
+        pat: Pattern,
+        body: Expr,
+    },
 }
 
 #[derive(Debug, Clone, PartialEq)]

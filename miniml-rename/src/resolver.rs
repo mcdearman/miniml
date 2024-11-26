@@ -179,11 +179,11 @@ impl Resolver {
                             let res_expr = self.resolve_expr(&expr)?;
 
                             Ok(SynNode::new(
-                                DeclKind::Def(DefGroup::Rec(vec![DefRec {
+                                DeclKind::Def(DefGroup::NonRec(Def::Rec {
                                     ident: res_name,
                                     anno: None,
                                     body: res_expr,
-                                }])),
+                                })),
                                 decl.meta,
                             ))
                         }
@@ -194,7 +194,7 @@ impl Resolver {
                     let res_pat = self.resolve_pattern(&pattern)?;
 
                     Ok(SynNode::new(
-                        DeclKind::Def(DefGroup::NonRec(Def {
+                        DeclKind::Def(DefGroup::NonRec(Def::NonRec {
                             pat: res_pat,
                             body: res_expr,
                         })),
@@ -234,11 +234,11 @@ impl Resolver {
                 });
 
                 Ok(SynNode::new(
-                    DeclKind::Def(DefGroup::Rec(vec![DefRec {
+                    DeclKind::Def(DefGroup::NonRec(Def::Rec {
                         ident: res_name,
                         anno: None,
                         body: res_lam,
-                    }])),
+                    })),
                     decl.meta,
                 ))
             }
