@@ -1,6 +1,10 @@
-use super::scoped_ident::ScopedIdent;
 use miniml_ast::{SynBoxNode, SynNode};
 use miniml_utils::{intern::InternedString, rational::Rational};
+use scoped_ident::ScopedIdent;
+
+pub mod res_id;
+pub mod scoped_ident;
+pub mod scoped_intern;
 
 pub type Prog = SynNode<Module>;
 pub type Imports = Vec<Path>;

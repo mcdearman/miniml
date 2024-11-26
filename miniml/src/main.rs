@@ -1,6 +1,6 @@
 use miniml_ast::token_stream::TokenStream;
+use miniml_parse::parse;
 use miniml_rename::resolver::Resolver;
-use miniml_syntax::parse::parse;
 use rustyline::{
     error::ReadlineError, validate::Validator, Completer, Editor, Helper, Highlighter, Hinter,
 };

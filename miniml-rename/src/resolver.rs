@@ -1,12 +1,11 @@
 use super::{
     env::Env,
     error::{ResError, ResErrorKind, ResResult},
-    nir::*,
-    res_id::ResId,
-    scoped_ident::ScopedIdent,
 };
 use miniml_ast::{self as ast, SynNode};
+use miniml_nir::{res_id::ResId, *};
 use miniml_utils::intern::InternedString;
+use scoped_ident::ScopedIdent;
 use std::collections::HashMap;
 
 #[derive(Debug)]

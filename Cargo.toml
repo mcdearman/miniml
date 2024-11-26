@@ -6,8 +6,8 @@ members = [
     "miniml-ast",
     "miniml-nir",
     # "miniml-core",
+    "miniml-parse",
     "miniml-rename",
-    "miniml-syntax",
     # "miniml-tree-walk",
     "miniml-utils",
 ]

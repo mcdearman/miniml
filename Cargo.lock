@@ -515,8 +515,9 @@ dependencies = [
  "insta",
  "log",
  "miniml-ast",
+ "miniml-nir",
+ "miniml-parse",
  "miniml-rename",
- "miniml-syntax",
  "miniml-utils",
  "rustyline",
 ]
@@ -564,7 +565,26 @@ dependencies = [
  "insta",
  "itertools",
  "log",
- "miniml-syntax",
+ "miniml-ast",
+ "miniml-utils",
+ "num-bigint",
+ "num-complex",
+ "num-rational",
+ "pretty",
+]
+
+[[package]]
+name = "miniml-parse"
+version = "0.1.0"
+dependencies = [
+ "chumsky",
+ "colored",
+ "env_logger",
+ "insta",
+ "itertools",
+ "log",
+ "logos",
+ "miniml-ast",
  "miniml-utils",
  "num-bigint",
  "num-complex",
@@ -582,26 +602,7 @@ dependencies = [
  "itertools",
  "log",
  "miniml-ast",
- "miniml-syntax",
- "miniml-utils",
- "num-bigint",
- "num-complex",
- "num-rational",
- "pretty",
-]
-
-[[package]]
-name = "miniml-syntax"
-version = "0.1.0"
-dependencies = [
- "chumsky",
- "colored",
- "env_logger",
- "insta",
- "itertools",
- "log",
- "logos",
- "miniml-ast",
+ "miniml-nir",
  "miniml-utils",
  "num-bigint",
  "num-complex",
