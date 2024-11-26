@@ -50,7 +50,7 @@ fn main() {
                     //     continue;
                     // }
                     "clear" => {
-                        rl.clear_history();
+                        rl.clear_history().expect("history failed to clear");
                         continue;
                     }
                     _ => (),

@@ -556,6 +556,23 @@ dependencies = [
 ]
 
 [[package]]
+name = "miniml-nir"
+version = "0.1.0"
+dependencies = [
+ "colored",
+ "env_logger",
+ "insta",
+ "itertools",
+ "log",
+ "miniml-syntax",
+ "miniml-utils",
+ "num-bigint",
+ "num-complex",
+ "num-rational",
+ "pretty",
+]
+
+[[package]]
 name = "miniml-rename"
 version = "0.1.0"
 dependencies = [
