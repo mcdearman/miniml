@@ -26,8 +26,6 @@ pub struct Module {
 #[derive(Debug, Clone, PartialEq)]
 pub enum DeclKind {
     Def(DefGroup),
-    // TypeAlias(ScopedIdent, TypeHint),
-    // Data(ScopedIdent, Vec<(ScopedIdent, Vec<TypeHint>)>),
 }
 
 #[derive(Debug, Clone, PartialEq)]

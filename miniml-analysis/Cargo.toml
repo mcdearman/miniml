@@ -7,7 +7,8 @@ edition = "2021"
 
 [dependencies]
 miniml-utils = { path = "../miniml-utils" }
-miniml-rename = { path = "../miniml-rename" }
+miniml-ast = { path = "../miniml-ast" }
+miniml-nir = { path = "../miniml-nir" }
 log = "0.4.18"
 env_logger = "0.10.0"
 insta = { version = "1.28.0", features = ["yaml"] }

@@ -12,6 +12,7 @@ use std::collections::HashMap;
 pub struct Resolver {
     builtins: HashMap<ResId, InternedString>,
     env: Env,
+    errors: Vec<ResError>,
 }
 
 impl Resolver {
@@ -42,6 +43,7 @@ impl Resolver {
         Self {
             builtins: builtins.clone(),
             env: Env::new_with_builtins(builtins),
+            errors: vec![],
         }
     }
 
@@ -64,12 +66,13 @@ impl Resolver {
 
     pub fn resolve(&mut self, prog: &ast::Prog) -> (Option<Prog>, Vec<ResError>) {
         let mut decls = Vec::new();
-        let mut errors = Vec::new();
+
+        self.define_top_level(prog);
 
         for decl in &prog.value.decls {
             match self.resolve_decl(decl) {
                 Ok(decl) => decls.push(decl),
-                Err(e) => errors.push(e),
+                Err(e) => self.errors.push(e),
             }
         }
 
@@ -77,12 +80,12 @@ impl Resolver {
         for i in &prog.value.imports {
             match self.resolve_path(i) {
                 Ok(p) => res_imports.push(p),
-                Err(e) => errors.push(e),
+                Err(e) => self.errors.push(e),
             }
         }
 
         if decls.is_empty() {
-            (None, errors)
+            (None, self.errors.clone())
         } else {
             (
                 Some(SynNode::new(
@@ -99,9 +102,37 @@ impl Resolver {
                     },
                     prog.meta,
                 )),
-                errors,
+                self.errors.clone(),
             )
         }
+    }
+
+    /// First pass to define top-level names
+    fn define_top_level(&mut self, prog: &ast::Prog) -> Vec<ResError> {
+        for decl in &prog.value.decls {
+            match &decl.value {
+                ast::DeclKind::Def(pat, expr) => match {
+                    match expr.value.as_ref() {
+                        &ast::ExprKind::Lambda(_, _) => match pat.value.as_ref() {
+                            ast::PatternKind::Ident(ident, _) => {
+                                self.env.define(ident.value);
+                                None
+                            }
+                            _ => continue,
+                        },
+                        _ => continue,
+                    }
+                } {
+                    Some(e) => self.errors.push(e),
+                    None => (),
+                },
+                ast::DeclKind::Fn(name, _, _) | ast::DeclKind::FnMatch(name, _) => {
+                    self.env.define(name.value);
+                }
+            }
+        }
+
+        self.errors.clone()
     }
 
     fn resolve_path(&mut self, path: &ast::Path) -> ResResult<Path> {
@@ -120,7 +151,13 @@ impl Resolver {
                     match pattern.value.as_ref() {
                         ast::PatternKind::Ident(ident, _) => {
                             let res_name = SynNode::new(
-                                ScopedIdent::new(self.env.define(ident.value), ident.value),
+                                ScopedIdent::new(
+                                    self.env.find(&ident.value).ok_or(ResError::new(
+                                        ResErrorKind::UnboundName(ident.value),
+                                        ident.meta,
+                                    ))?,
+                                    ident.value,
+                                ),
                                 ident.meta,
                             );
                             let res_expr = self.resolve_expr(&expr)?;
@@ -151,7 +188,13 @@ impl Resolver {
             }
             ast::DeclKind::Fn(ident, params, fn_expr) => {
                 let res_name = SynNode::new(
-                    ScopedIdent::new(self.env.define(ident.value), ident.value),
+                    ScopedIdent::new(
+                        self.env.find(&ident.value).ok_or(ResError::new(
+                            ResErrorKind::UnboundName(ident.value),
+                            ident.meta,
+                        ))?,
+                        ident.value,
+                    ),
                     ident.meta,
                 );
 
@@ -184,6 +227,16 @@ impl Resolver {
                 ))
             }
             ast::DeclKind::FnMatch(name, arms) => {
+                // let res_name = SynNode::new(
+                //     ScopedIdent::new(
+                //         self.env.find(&ident.value).ok_or(ResError::new(
+                //             ResErrorKind::UnboundName(ident.value),
+                //             ident.meta,
+                //         ))?,
+                //         ident.value,
+                //     ),
+                //     ident.meta,
+                // );
                 // if arms.is_empty() {
                 //     return Err(ResError::new(ResErrorKind::EmptyFnMatch, decl.meta));
                 // }
