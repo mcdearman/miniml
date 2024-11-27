@@ -108,6 +108,16 @@ def fib
   | 1 = 1
   | n = fib (n - 1) + fib (n - 2)
 
+def fact
+  | 0 = 1
+  | n = n * fact (n - 1)
+
+def fact n =
+  let loop acc n =
+    if n = 0 then acc
+    else loop (acc * n) (n - 1)
+  in loop 1 n
+
 -- with guards
 def gcd a b = 
   match (a, b)
