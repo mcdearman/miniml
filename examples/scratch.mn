@@ -142,19 +142,19 @@ def map : 'a 'b. ('a -> 'b), ['a] -> ['b]
   | f [] = []
   | f (x :: xs) = f x :: map f xs
 
-def map f xs = 
+map f xs = 
   match xs
-  | [] -> []
-  | (x::xs) -> f x :: map f xs
+    [] -> []
+    (x::xs) -> f x :: map f xs
 
 def foldl : 'a 'b. ('a -> 'b -> 'a) -> 'a -> ['b] -> 'a
   | f acc [] = acc
   | f acc (x :: xs) = foldl f (f acc x) xs
 
-def foldl f acc xs =
+foldl f acc xs =
   match xs
-  | [] -> acc
-  | (x::xs) -> foldl f (f acc x) xs
+    [] -> acc
+    (x::xs) -> foldl f (f acc x) xs
 
 def foldr : 'a 'b. ('a -> 'b -> 'b) -> 'b -> ['a] -> 'b
   | f acc [] = acc
@@ -163,6 +163,10 @@ def foldr : 'a 'b. ('a -> 'b -> 'b) -> 'b -> ['a] -> 'b
 def foldr : 'a 'b. ('a, 'b -> 'b), 'b, ['a] -> 'b
   | f acc [] = acc
   | f acc (x :: xs) = f x (foldr f acc xs)
+
+foldr : a b. (a -> b -> b) -> b -> [a] -> b
+foldr f acc [] = acc
+foldr f acc (x :: xs) = f x (foldr f acc xs)
 
 def foldr f acc xs =
   match xs
