@@ -1,7 +1,7 @@
 use super::res_id::ResId;
 use miniml_utils::intern::InternedString;
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, Eq, PartialOrd, Ord)]
 pub struct ScopedIdent {
     pub id: ResId,
     pub name: InternedString,

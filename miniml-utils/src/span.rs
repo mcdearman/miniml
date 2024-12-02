@@ -4,7 +4,7 @@ use std::{
     ops::{Index, Range},
 };
 
-#[derive(Clone, Copy, Eq, PartialEq, Default, Hash)]
+#[derive(Clone, Copy, PartialEq, Eq, Default, Hash, PartialOrd, Ord)]
 pub struct Span {
     start: u32,
     end: u32,

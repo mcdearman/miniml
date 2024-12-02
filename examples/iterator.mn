@@ -1,0 +1,2 @@
+pub class Iterator i where
+  next : i a -> Option (a, i a)
