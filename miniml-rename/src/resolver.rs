@@ -242,54 +242,17 @@ impl Resolver {
                     decl.meta,
                 ))
             }
-            ast::DeclKind::FnMatch(name, arms) => {
-                // let res_name = SynNode::new(
-                //     ScopedIdent::new(
-                //         self.env.find(&ident.value).ok_or(ResError::new(
-                //             ResErrorKind::UnboundName(ident.value),
-                //             ident.meta,
-                //         ))?,
-                //         ident.value,
-                //     ),
-                //     ident.meta,
-                // );
-                // if arms.is_empty() {
-                //     return Err(ResError::new(ResErrorKind::EmptyFnMatch, decl.meta));
-                // }
-
-                // let name = arms[0].0;
-                // let res_name = self.env.define(name.str);
-
-                // let param_len = arms[0].1.len();
-
-                // // let mut res_params = vec![];
-                // let mut res_arms = vec![];
-                // for (n, params, body) in arms {
-                //     if *n != name {
-                //         return Err(ResError::new(ResErrorKind::TooManyFnNames, decl.meta));
-                //     }
-                //     if params.len() != param_len {
-                //         return Err(ResError::new(ResErrorKind::FnArmParamMismatch, decl.meta));
-                //     }
-                //     self.env.push();
-                //     let mut res_params = vec![];
-                //     for p in params {
-                //         match self.resolve_pattern(p) {
-                //             Ok(p) => res_params.push(p),
-                //             Err(e) => {
-                //                 self.env.pop();
-                //                 return Err(e);
-                //             }
-                //         }
-                //     }
-                //     let res_body = self.resolve_expr(body)?;
-                //     self.env.pop();
-                //     res_arms.push((res_params, res_body));
-                // }
-
-                // Ok(Decl {
-                //     kind: DeclKind::Fn(res_name,
-                // })
+            ast::DeclKind::FnMatch(ident, arms) => {
+                let res_name = SynNode::new(
+                    ScopedIdent::new(
+                        self.env.find(&ident.value).ok_or(ResError::new(
+                            ResErrorKind::UnboundName(ident.value),
+                            ident.meta,
+                        ))?,
+                        ident.value,
+                    ),
+                    ident.meta,
+                );
                 todo!()
             }
         }
@@ -481,18 +444,7 @@ impl Resolver {
                 ),
                 expr.meta,
             )),
-            ast::ExprKind::Match(expr, arms) => {
-                let res_expr = self.resolve_expr(&expr)?;
-                let mut res_arms = vec![];
-                for (pat, body) in arms {
-                    self.env.push();
-                    let res_pat = self.resolve_pattern(pat)?;
-                    let res_body = self.resolve_expr(body)?;
-                    self.env.pop();
-                    res_arms.push((res_pat, res_body));
-                }
-                Ok(Expr::new(ExprKind::Match(res_expr, res_arms), expr.meta))
-            }
+            ast::ExprKind::Match(expr, arms) => self.resolve_match(expr, arms),
             ast::ExprKind::List(exprs) => Ok(Expr::new(
                 ExprKind::List(
                     exprs
@@ -504,6 +456,23 @@ impl Resolver {
             )),
             ast::ExprKind::Unit => Ok(Expr::new(ExprKind::Unit, expr.meta)),
         }
+    }
+
+    fn resolve_match(
+        &mut self,
+        expr: &ast::Expr,
+        arms: &Vec<(ast::Pattern, ast::Expr)>,
+    ) -> ResResult<Expr> {
+        let res_expr = self.resolve_expr(expr)?;
+        let mut res_arms = vec![];
+        for (pat, body) in arms {
+            self.env.push();
+            let res_pat = self.resolve_pattern(pat)?;
+            let res_body = self.resolve_expr(body)?;
+            self.env.pop();
+            res_arms.push((res_pat, res_body));
+        }
+        Ok(Expr::new(ExprKind::Match(res_expr, res_arms), expr.meta))
     }
 
     fn resolve_pattern(&mut self, pat: &ast::Pattern) -> ResResult<Pattern> {

@@ -142,6 +142,10 @@ def map : 'a 'b. ('a -> 'b), ['a] -> ['b]
   | f [] = []
   | f (x :: xs) = f x :: map f xs
 
+map : a b. (a -> b) -> [a] -> [b]
+map f [] = []
+map f (x :: xs) = f x :: map f xs
+
 map f xs = 
   match xs
     [] -> []
@@ -168,8 +172,7 @@ foldr : a b. (a -> b -> b) -> b -> [a] -> b
 foldr f acc [] = acc
 foldr f acc (x :: xs) = f x (foldr f acc xs)
 
-def foldr f acc xs =
-  match xs
+def foldr f acc xs = match xs with
   | [] -> acc
   | (x::xs) -> f x (foldr f acc xs)
 

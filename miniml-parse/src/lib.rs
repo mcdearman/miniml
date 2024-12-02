@@ -162,6 +162,7 @@ fn expr_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
 
         let match_ = just(Token::Match)
             .ignore_then(expr.clone())
+            .then_ignore(just(Token::With))
             .then(
                 just(Token::Bar)
                     .ignore_then(pattern_parser())
