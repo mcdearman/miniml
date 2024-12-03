@@ -242,19 +242,6 @@ impl Resolver {
                     decl.meta,
                 ))
             }
-            ast::DeclKind::FnMatch(ident, arms) => {
-                let res_name = SynNode::new(
-                    ScopedIdent::new(
-                        self.env.find(&ident.value).ok_or(ResError::new(
-                            ResErrorKind::UnboundName(ident.value),
-                            ident.meta,
-                        ))?,
-                        ident.value,
-                    ),
-                    ident.meta,
-                );
-                todo!()
-            }
         }
     }
 

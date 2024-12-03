@@ -103,81 +103,34 @@ def fib n =
   | 1 -> 1
   | n -> fib (n - 1) + fib (n - 2)
 
-def fib 
-  | 0 = 0
-  | 1 = 1
-  | n = fib (n - 1) + fib (n - 2)
-
-def fact
-  | 0 = 1
-  | n = n * fact (n - 1)
-
 def fact n =
   let loop acc n =
     if n = 0 then acc
     else loop (acc * n) (n - 1)
   in loop 1 n
 
--- with guards
-def gcd a b = 
-  match (a, b)
-  | (a, 0) -> a
-  | (a, b) if a > b -> gcd b (a % b)
-  | (a, b) -> gcd a (b % a)
-
-def gcd : Int -> Int -> Int
-  | a 0 = a
-  | a b = gcd b (a % b)
-
-def map {a b} (f : a -> b) (xs : [a]) : [b] = 
-  match xs with
+def map 'a 'b (f : 'a -> 'b) (xs : ['a]) : ['b] =
+  match xs
   | [] -> []
   | (x::xs) -> f x :: map f xs
 
-def map : 'a 'b. ('a -> 'b) -> ['a] -> ['b]
-  | f [] = []
-  | f (x :: xs) = f x :: map f xs
-
-def map : 'a 'b. ('a -> 'b), ['a] -> ['b]
-  | f [] = []
-  | f (x :: xs) = f x :: map f xs
-
-map : a b. (a -> b) -> [a] -> [b]
-map f [] = []
-map f (x :: xs) = f x :: map f xs
-
-map f xs = 
+pub def map f xs = 
   match xs
     [] -> []
     (x::xs) -> f x :: map f xs
 
-def foldl : 'a 'b. ('a -> 'b -> 'a) -> 'a -> ['b] -> 'a
+def foldl 'a 'b (f : 'a -> 'b -> 'a) (acc : 'a) (xs : ['b]) : 'a =
+  match xs
   | f acc [] = acc
   | f acc (x :: xs) = foldl f (f acc x) xs
 
-foldl f acc xs =
-  match xs
-    [] -> acc
-    (x::xs) -> foldl f (f acc x) xs
-
-def foldr : 'a 'b. ('a -> 'b -> 'b) -> 'b -> ['a] -> 'b
-  | f acc [] = acc
-  | f acc (x :: xs) = f x (foldr f acc xs)
-
-def foldr : 'a 'b. ('a, 'b -> 'b), 'b, ['a] -> 'b
-  | f acc [] = acc
-  | f acc (x :: xs) = f x (foldr f acc xs)
-
-foldr : a b. (a -> b -> b) -> b -> [a] -> b
-foldr f acc [] = acc
-foldr f acc (x :: xs) = f x (foldr f acc xs)
+def foldl f acc xs = match xs
+  [] -> acc
+  (x::xs) -> foldl f (f acc x) xs
 
 def foldr f acc xs = match xs with
   | [] -> acc
   | (x::xs) -> f x (foldr f acc xs)
-
-sum : Add a => [a] -> b
-sum = foldr (+) 0
 
 def binary_search (x : Int) (xs : #[Int] -> Int) : Int =
   let loop l r =
