@@ -11,9 +11,9 @@ impl Module {
             .filter_map(|decl| match &decl.value {
                 DeclKind::Def(def_group) => match def_group {
                     DefGroup::NonRec(def) => match def {
-                        Def::Rec { ident, .. } => Some(ident.clone()),
+                        Def::Rec { ident, .. } => Some(ident.value),
                         Def::NonRec { pat, .. } => match pat.value.as_ref() {
-                            PatternKind::Ident(ident, _) => Some(ident.clone()),
+                            PatternKind::Ident(ident, _) => Some(ident.value),
                             _ => None,
                         },
                     },
