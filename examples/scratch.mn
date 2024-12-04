@@ -109,20 +109,30 @@ def fact n =
     else loop (acc * n) (n - 1)
   in loop 1 n
 
-def map 'a 'b (f : 'a -> 'b) (xs : ['a]) : ['b] =
+def map a b. (f : a -> b) (xs : [a]) : [b] =
   match xs
   | [] -> []
   | (x::xs) -> f x :: map f xs
+
+-- possible uncurried version of sigs
+def map : a b. [a] (a -> b) -> [b]
+  | [] f -> []
+  | (x::xs) f -> f x :: map f xs
 
 pub def map f xs = 
   match xs
     [] -> []
     (x::xs) -> f x :: map f xs
 
-def foldl 'a 'b (f : 'a -> 'b -> 'a) (acc : 'a) (xs : ['b]) : 'a =
+def foldl a b. (f : a b -> a) (acc : a) (xs : [b]) : a =
   match xs
-  | f acc [] = acc
-  | f acc (x :: xs) = foldl f (f acc x) xs
+  | [] = acc
+  | (x :: xs) = foldl f (f acc x) xs
+
+-- possible uncurried version of sigs
+def foldl : a b. [b] (a b -> a) a -> a
+  | f acc [] -> acc
+  | f acc (x::xs) -> foldl f (f acc x) xs
 
 def foldl f acc xs = match xs
   [] -> acc
@@ -154,10 +164,14 @@ type Option a = None | Some a
 
 type List a = Empty | Pair a (List a)
 
-def (|>) : 'a 'b. 'a -> ('a -> 'b) -> 'b
+def (|>) : a b. a -> (a -> b) -> b
   | x |> f = f x
 
-def (::) : 'a. 'a -> ['a] -> ['a]
+-- possible uncurried version of sigs
+def (|>) : a b c. a (a ..b -> c) -> (..b -> c)
+  | x f -> f x _..
+
+def (::) : a. a -> [a] -> [a]
   | x :: xs = Pair x xs
 
 -- methods with pipe
