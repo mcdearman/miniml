@@ -1,5 +1,5 @@
 use crate::*;
-use miniml_utils::scc::Graph;
+use miniml_utils::graph::Graph;
 
 impl Module {
     pub fn scc(&self) -> Self {
@@ -27,10 +27,10 @@ impl Module {
                 DeclKind::Def(def_group) => match def_group {
                     DefGroup::NonRec(def) => match &def {
                         Def::Rec { ident, body, .. } => {
-                            graph.add_edge(ident.clone(), body.clone());
+                            // graph.add_edge(ident.clone(), body.clone());
                         }
                         Def::NonRec { pat, body } => {
-                            graph.add_edge(pat.clone(), body.clone());
+                            // graph.add_edge(pat.clone(), body.clone());
                         }
                     },
                     _ => {}
@@ -38,6 +38,12 @@ impl Module {
             }
         }
 
+        todo!()
+    }
+}
+
+impl ExprKind {
+    pub fn scc(&self) -> Self {
         todo!()
     }
 }

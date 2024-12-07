@@ -4,6 +4,6 @@ pub mod list;
 pub mod node;
 pub mod pretty;
 pub mod rational;
-pub mod scc;
+pub mod graph;
 pub mod span;
 pub mod unique_id;
