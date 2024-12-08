@@ -109,7 +109,7 @@ def fact n =
     else loop (acc * n) (n - 1)
   in loop 1 n
 
-def map a b. (xs : [a]) (f : a -> b) : [b] =
+def map a b. (f : a -> b) (xs : [a]) : [b] =
   match xs with
   | [] -> []
   | (x::xs) -> f x :: map f xs
@@ -119,14 +119,18 @@ def map : a b. [a] (a -> b) -> [b]
   | [] f -> []
   | (x::xs) f -> f x :: map f xs
 
-pub def map xs f = match xs with
+pub def map f xs = match xs with
   [] -> []
   (x::xs) -> f x :: map f xs
 
-def foldl a b. (xs : [b]) (f : a b -> a) (acc : a) : a =
+def foldl a b. (f : a -> b -> a) (acc : a) (xs : [b]) : a =
   match xs with
   | [] = acc
   | (x :: xs) = foldl f (f acc x) xs
+
+foldl : a b. (a -> b -> a) -> a -> [b] -> a
+foldl f acc [] -> acc
+foldl f acc (x::xs) -> foldl f (f acc x) xs
 
 -- possible uncurried version of sigs
 def foldl : a b. [b] (a b -> a) a -> a
