@@ -179,11 +179,14 @@ impl Resolver {
                             let res_expr = self.resolve_expr(&expr)?;
 
                             Ok(SynNode::new(
-                                DeclKind::Def(DefKind::Rec {
-                                    ident: res_name,
-                                    anno: None,
-                                    body: res_expr,
-                                }),
+                                DeclKind::Def(Def::new(
+                                    DefKind::Rec {
+                                        ident: res_name,
+                                        anno: None,
+                                        body: res_expr,
+                                    },
+                                    expr.meta,
+                                )),
                                 decl.meta,
                             ))
                         }
@@ -194,10 +197,13 @@ impl Resolver {
                     let res_pat = self.resolve_pattern(&pattern)?;
 
                     Ok(SynNode::new(
-                        DeclKind::Def(DefKind::NonRec {
-                            pat: res_pat,
-                            body: res_expr,
-                        }),
+                        DeclKind::Def(Def::new(
+                            DefKind::NonRec {
+                                pat: res_pat,
+                                body: res_expr,
+                            },
+                            expr.meta,
+                        )),
                         decl.meta,
                     ))
                 }
@@ -234,11 +240,14 @@ impl Resolver {
                 });
 
                 Ok(SynNode::new(
-                    DeclKind::Def(DefKind::Rec {
-                        ident: res_name,
-                        anno: None,
-                        body: res_lam,
-                    }),
+                    DeclKind::Def(Def::new(
+                        DefKind::Rec {
+                            ident: res_name,
+                            anno: None,
+                            body: res_lam,
+                        },
+                        decl.meta,
+                    )),
                     decl.meta,
                 ))
             }

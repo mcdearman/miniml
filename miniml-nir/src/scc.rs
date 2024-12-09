@@ -6,13 +6,13 @@ use std::collections::HashMap;
 impl Module {
     pub fn scc(&self) -> Self {
         let mut graph = Graph::new();
-        let mut decl_map: HashMap<ScopedIdent, DefKind> = HashMap::new();
+        let mut decl_map: HashMap<ScopedIdent, Def> = HashMap::new();
 
         let top_level_names = self
             .decls
             .iter()
             .filter_map(|decl| match &decl.value {
-                DeclKind::Def(def) => match def {
+                DeclKind::Def(def) => match &def.value {
                     DefKind::Rec { ident, .. } => {
                         decl_map.insert(ident.value.clone(), def.clone());
                         Some(ident.value)
@@ -32,7 +32,7 @@ impl Module {
 
         for decl in &self.decls {
             match &decl.value {
-                DeclKind::Def(def) => match def {
+                DeclKind::Def(def) => match &def.value {
                     DefKind::Rec { ident, body, .. } => {
                         let scc = body.value.scc(top_level_names.clone());
                         graph.add_edges(ident.value.clone(), scc);
@@ -42,8 +42,6 @@ impl Module {
                 _ => {}
             }
         }
-
-        let sccs = graph.scc();
 
         Self {
             name: self.name.clone(),
@@ -56,7 +54,15 @@ impl Module {
                         .iter()
                         .map(|ident| decl_map.get(ident).unwrap().clone())
                         .collect_vec();
-                    Decl::new(DeclKind::DefGroup(decls), decls[0])
+
+                    if decls.len() == 1 {
+                        Decl::new(DeclKind::Def(decls[0].clone()), decls[0].meta)
+                    } else {
+                        Decl::new(
+                            DeclKind::DefGroup(decls.clone()),
+                            decls[0].meta.extend(decls.last().unwrap().meta),
+                        )
+                    }
                 })
                 .collect_vec(),
         }
