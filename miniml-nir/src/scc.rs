@@ -1,26 +1,25 @@
 use crate::*;
 use itertools::Itertools;
 use miniml_utils::graph::Graph;
-use std::collections::HashMap;
+use std::collections::BTreeMap;
 
 impl Module {
     pub fn scc(&self) -> Self {
         let mut graph = Graph::new();
-        let mut decl_map: HashMap<ScopedIdent, (usize, Def)> = HashMap::new();
+        let mut decl_map: BTreeMap<ScopedIdent, Def> = BTreeMap::new();
 
         let top_level_names = self
             .decls
             .iter()
-            .enumerate()
-            .filter_map(|(i, decl)| match &decl.value {
+            .filter_map(|decl| match &decl.value {
                 DeclKind::Def(def) => match &def.value {
                     DefKind::Rec { ident, .. } => {
-                        decl_map.insert(ident.value.clone(), (i, def.clone()));
+                        decl_map.insert(ident.value.clone(), def.clone());
                         Some(ident.value)
                     }
                     DefKind::NonRec { pat, .. } => match pat.value.as_ref() {
                         PatternKind::Ident(ident, _) => {
-                            decl_map.insert(ident.value.clone(), (i, def.clone()));
+                            decl_map.insert(ident.value.clone(), def.clone());
                             Some(ident.value)
                         }
                         _ => None,
@@ -54,7 +53,8 @@ impl Module {
                     let decls = scc
                         .iter()
                         .map(|ident| decl_map.get(ident).unwrap().clone())
-                        .sorted_by(|(i, _), (j, _)| i.cmp(j))
+                        .enumerate()
+                        .sorted_by(|(i, _), (j, _)| j.cmp(i))
                         .map(|(_, def)| def)
                         .collect_vec();
 
