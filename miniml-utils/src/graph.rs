@@ -15,6 +15,10 @@ impl<T: Clone + Ord> Graph<T> {
     pub fn add_edge(&mut self, from: T, to: T) {
         self.0.entry(from).or_insert_with(Vec::new).push(to);
     }
+    
+    pub fn add_edges(&mut self, from: T, to: Vec<T>) {
+        self.0.entry(from).or_insert_with(Vec::new).extend(to);
+    }
 
     pub fn remove_edge(&mut self, from: T, to: T) {
         if let Some(edges) = self.0.get_mut(&from) {

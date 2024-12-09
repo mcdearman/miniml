@@ -108,7 +108,22 @@ fn decl_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
         .then(expr_parser())
         .map(|((name, params), expr)| DeclKind::Fn(name, params, expr));
 
-    def.or(fn_).map_with(|kind, e| SynNode::new(kind, e.span()))
+    let fn_match = just(Token::Def)
+        .ignore_then(ident_parser())
+        .then(
+            just(Token::Bar)
+                .ignore_then(pattern_parser().repeated().at_least(1).collect())
+                .then_ignore(just(Token::Eq))
+                .then(expr_parser())
+                .repeated()
+                .at_least(1)
+                .collect(),
+        )
+        .map(|(name, arms)| DeclKind::FnMatch(name, arms));
+
+    def.or(fn_)
+        .or(fn_match)
+        .map_with(|kind, e| SynNode::new(kind, e.span()))
 }
 
 fn expr_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(

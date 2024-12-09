@@ -32,6 +32,7 @@ pub struct Module {
 pub enum DeclKind {
     Def(Pattern, Expr),
     Fn(Ident, Vec<Pattern>, Expr),
+    FnMatch(Ident, Vec<(Vec<Pattern>, Expr)>),
 }
 
 #[derive(Debug, Clone, PartialEq)]

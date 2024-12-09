@@ -179,11 +179,11 @@ impl Resolver {
                             let res_expr = self.resolve_expr(&expr)?;
 
                             Ok(SynNode::new(
-                                DeclKind::Def(DefGroup::NonRec(Def::Rec {
+                                DeclKind::Def(DefKind::Rec {
                                     ident: res_name,
                                     anno: None,
                                     body: res_expr,
-                                })),
+                                }),
                                 decl.meta,
                             ))
                         }
@@ -194,10 +194,10 @@ impl Resolver {
                     let res_pat = self.resolve_pattern(&pattern)?;
 
                     Ok(SynNode::new(
-                        DeclKind::Def(DefGroup::NonRec(Def::NonRec {
+                        DeclKind::Def(DefKind::NonRec {
                             pat: res_pat,
                             body: res_expr,
-                        })),
+                        }),
                         decl.meta,
                     ))
                 }
@@ -234,13 +234,46 @@ impl Resolver {
                 });
 
                 Ok(SynNode::new(
-                    DeclKind::Def(DefGroup::NonRec(Def::Rec {
+                    DeclKind::Def(DefKind::Rec {
                         ident: res_name,
                         anno: None,
                         body: res_lam,
-                    })),
+                    }),
                     decl.meta,
                 ))
+            }
+            ast::DeclKind::FnMatch(ident, arms) => {
+                let res_name = SynNode::new(
+                    ScopedIdent::new(
+                        self.env.find(&ident.value).ok_or(ResError::new(
+                            ResErrorKind::UnboundName(ident.value),
+                            ident.meta,
+                        ))?,
+                        ident.value,
+                    ),
+                    ident.meta,
+                );
+
+                let mut res_arms = vec![];
+                for (params, body) in arms {
+                    self.env.push();
+                    let res_params = params
+                        .iter()
+                        .map(|p| self.resolve_pattern(p))
+                        .collect::<ResResult<Vec<Pattern>>>()?;
+                    let res_body = self.resolve_expr(body)?;
+                    self.env.pop();
+                    res_arms.push((res_params, res_body));
+                }
+
+                // Ok(SynNode::new(
+                //     DeclKind::Def(DefGroup::NonRec(Def::FnMatch {
+                //         ident: res_name,
+                //         arms: res_arms,
+                //     })),
+                //     decl.meta,
+                // ))
+                todo!()
             }
         }
     }

@@ -12,6 +12,7 @@ pub type Imports = Vec<Path>;
 pub type Path = Vec<SynNode<ScopedIdent>>;
 pub type Decls = Vec<Decl>;
 pub type Decl = SynNode<DeclKind>;
+pub type Def = SynNode<DefKind>;
 pub type Expr = SynBoxNode<ExprKind>;
 pub type Pattern = SynBoxNode<PatternKind>;
 pub type TypeAnno = SynBoxNode<TypeAnnoKind>;
@@ -26,17 +27,12 @@ pub struct Module {
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum DeclKind {
-    Def(DefGroup),
+    Def(Def),
+    DefGroup(Vec<Def>),
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub enum DefGroup {
-    Rec(Vec<Def>),
-    NonRec(Def),
-}
-
-#[derive(Debug, Clone, PartialEq)]
-pub enum Def {
+pub enum DefKind {
     Rec {
         ident: Ident,
         anno: Option<TypeAnno>,

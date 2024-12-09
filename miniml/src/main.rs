@@ -70,6 +70,8 @@ fn main() {
                                     continue;
                                 }
                                 log::debug!("NIR: {:#?}", nir);
+                                let scc = nir.map(|nir| nir.scc());
+                                log::debug!("SCC: {:#?}", scc);
                             }
                             (None, res_errors) => {
                                 log::error!("Resolution errors: {:#?}", res_errors);
