@@ -43,7 +43,12 @@ impl Module {
 }
 
 impl ExprKind {
-    pub fn scc(&self) -> Self {
+    pub fn scc(
+        &self,
+        names: Vec<ScopedIdent>,
+        graph: &mut Graph<ScopedIdent>,
+        cur: ScopedIdent,
+    ) -> Self {
         todo!()
     }
 }
