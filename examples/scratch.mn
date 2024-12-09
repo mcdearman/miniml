@@ -132,6 +132,10 @@ foldl : a b. (a -> b -> a) -> a -> [b] -> a
 foldl f acc [] -> acc
 foldl f acc (x::xs) -> foldl f (f acc x) xs
 
+def foldl : a b. (a -> b -> a) -> a -> [b] -> a
+  | f acc [] -> acc
+  | f acc (x::xs) -> foldl f (f acc x) xs
+
 -- possible uncurried version of sigs
 def foldl : a b. [b] (a b -> a) a -> a
   | [] f acc -> acc
