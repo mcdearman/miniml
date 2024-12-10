@@ -3,39 +3,67 @@ use itertools::Itertools;
 use miniml_utils::graph::Graph;
 use std::collections::BTreeMap;
 
+#[derive(Debug)]
+pub struct SCC {
+    graph: Graph<usize>,
+    decl_map: BTreeMap<usize, Def>,
+    id: usize,
+}
+
+impl SCC {
+    pub fn new() -> Self {
+        Self {
+            graph: Graph::new(),
+            decl_map: BTreeMap::new(),
+            id: 0,
+        }
+    }
+}
+
 impl Module {
     pub fn scc(&self) -> Self {
-        let mut graph = Graph::new();
-        let mut decl_map: BTreeMap<ScopedIdent, Def> = BTreeMap::new();
+        let mut graph: Graph<usize> = Graph::new();
+        let mut decl_map: BTreeMap<usize, Def> = BTreeMap::new(); // using b-trees instead of vec because we may use non-sequential IDs later
+        let mut id = 0;
 
         let top_level_names = self
             .decls
             .iter()
-            .filter_map(|decl| match &decl.value {
+            .filter_map(|decl| search_decls(decl))
+            .flatten()
+            .collect::<Vec<_>>();
+
+        fn search_decls(decl: &Decl) -> Option<Vec<ScopedIdent>> {
+            match &decl.value {
                 DeclKind::Def(def) => match &def.value {
                     DefKind::Rec { ident, .. } => {
-                        decl_map.insert(ident.value.clone(), def.clone());
-                        Some(ident.value)
+                        id += 1;
+                        decl_map.insert(id, def.clone());
+                        Some(vec![ident.value])
                     }
                     DefKind::NonRec { pat, .. } => match pat.value.as_ref() {
                         PatternKind::Ident(ident, _) => {
-                            decl_map.insert(ident.value.clone(), def.clone());
+                            id += 1;
+                            decl_map.insert(id, def.clone());
                             Some(ident.value)
                         }
+                        PatternKind::Tuple(xs) => {}
+
                         _ => None,
                     },
                     _ => None,
                 },
                 _ => None,
-            })
-            .collect::<Vec<_>>();
+            }
+        }
 
         for decl in &self.decls {
             match &decl.value {
                 DeclKind::Def(def) => match &def.value {
                     DefKind::Rec { ident, body, .. } => {
                         let scc = body.value.scc(top_level_names.clone());
-                        graph.add_edges(ident.value.clone(), scc);
+                        id += 1;
+                        graph.add_edges(id, scc);
                     }
                     _ => {}
                 },
@@ -73,7 +101,7 @@ impl Module {
 }
 
 impl ExprKind {
-    pub fn scc(&self, top_level_names: Vec<ScopedIdent>) -> Vec<ScopedIdent> {
+    pub fn scc(&self, top_level_names: Vec<ScopedIdent>) -> Vec<usize> {
         match self {
             ExprKind::Apply(fun, arg) => {
                 if let ExprKind::Var(ident) = fun.value.as_ref() {
