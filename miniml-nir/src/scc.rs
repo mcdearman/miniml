@@ -7,7 +7,6 @@ pub struct SCC {
     graph: Graph<usize>,
     decls: Vec<Def>,
     top_level_names: Vec<ScopedIdent>,
-    // id: usize,
 }
 
 impl SCC {
@@ -16,7 +15,6 @@ impl SCC {
             graph: Graph::new(),
             decls: vec![],
             top_level_names: vec![],
-            // id: 0,
         }
     }
 
