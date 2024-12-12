@@ -33,7 +33,7 @@ impl SCC {
         for (i, decl) in prog.value.decls.iter().enumerate() {
             match &decl.value {
                 DeclKind::Def(def) => match &def.value {
-                    DefKind::Rec { ident, body, .. } => {
+                    DefKind::Rec { ident: _, body, .. } => {
                         let scc = self.scc_expr(body);
                         self.graph.add_edges(i, scc);
                     }
