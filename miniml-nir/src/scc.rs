@@ -1,11 +1,12 @@
 use crate::*;
 use itertools::Itertools;
 use miniml_utils::graph::Graph;
+use std::collections::HashMap;
 
 #[derive(Debug)]
 pub struct SCC {
     graph: Graph<usize>,
-    decls: Vec<Def>,
+    decl_map: HashMap<ScopedIdent, usize>,
     top_level_names: Vec<ScopedIdent>,
 }
 
@@ -13,28 +14,35 @@ impl SCC {
     pub fn new() -> Self {
         Self {
             graph: Graph::new(),
-            decls: vec![],
+            decl_map: HashMap::new(),
             top_level_names: vec![],
         }
     }
 
-    pub fn scc(&mut self, prog: &Prog) -> Prog {
-        self.top_level_names = self
+    pub fn run(&mut self, prog: &Prog) -> Prog {
+        self.top_level_names = prog
+            .value
             .decls
             .clone()
             .into_iter()
-            .filter_map(|def| self.search_defs(&def))
+            .enumerate()
+            .filter_map(|(i, decl)| self.search_decls(&decl, i))
             .flatten()
             .collect::<Vec<_>>();
 
-        for decl in &prog.value.decls {
+        for (i, decl) in prog.value.decls.iter().enumerate() {
             match &decl.value {
                 DeclKind::Def(def) => match &def.value {
                     DefKind::Rec { ident, body, .. } => {
                         let scc = self.scc_expr(body);
-                        self.graph.add_edges(self.id, scc);
+                        self.graph.add_edges(i, scc);
                     }
-                    _ => {}
+                    DefKind::NonRec { pat, body: _ } => {
+                        self.graph.add_edges(i, vec![]);
+                        if let Some(names) = self.search_decl_pats(pat) {
+                            self.top_level_names.extend(names);
+                        }
+                    }
                 },
                 _ => {}
             }
@@ -51,17 +59,32 @@ impl SCC {
                     .map(|scc| {
                         let decls = scc
                             .iter()
-                            .map(|ident| self.decls.get(ident).unwrap().clone())
+                            .map(|id| {
+                                prog.value
+                                    .decls
+                                    .get(*id)
+                                    .expect(&*format!("id {} out of bounds", id))
+                                    .clone()
+                            })
                             .enumerate()
                             .sorted_by(|(i, _), (j, _)| j.cmp(i))
-                            .map(|(_, (_, def))| def)
+                            .map(|(_, decl)| decl)
                             .collect_vec();
 
                         if decls.len() == 1 {
-                            Decl::new(DeclKind::Def(decls[0].clone()), decls[0].meta)
+                            decls[0].clone()
                         } else {
                             Decl::new(
-                                DeclKind::DefGroup(decls.clone()),
+                                DeclKind::DefGroup(
+                                    decls
+                                        .iter()
+                                        .map(|decl| match &decl.value {
+                                            DeclKind::Def(def) => vec![def.clone()],
+                                            DeclKind::DefGroup(defs) => defs.clone(),
+                                        })
+                                        .flatten()
+                                        .collect_vec(),
+                                ),
                                 decls[0].meta.extend(decls.last().unwrap().meta),
                             )
                         }
@@ -77,8 +100,8 @@ impl SCC {
             ExprKind::Apply(fun, arg) => {
                 if let ExprKind::Var(ident) = fun.value.as_ref() {
                     if self.top_level_names.contains(&ident.value) {
-                        let id = self.decls.
-                        vec![ident.value.clone()]
+                        let tid = self.decl_map.get(&ident.value).expect("decl not found");
+                        vec![*tid]
                             .into_iter()
                             .chain(self.scc_expr(arg))
                             .collect_vec()
@@ -134,21 +157,40 @@ impl SCC {
         }
     }
 
-    fn search_defs(&mut self, def: &Def) -> Option<Vec<ScopedIdent>> {
-        match &def.value {
-            DefKind::Rec { ident, .. } => {
-                self.decls.insert(self.id, (self.id, def.clone()));
-                self.id += 1;
-                Some(vec![ident.value])
-            }
-            DefKind::NonRec { pat, .. } => match pat.value.as_ref() {
-                PatternKind::Ident(ident, _) => {
-                    self.decls.insert(self.id, (self.id, def.clone()));
-                    self.id += 1;
+    fn search_decls(&mut self, decl: &Decl, i: usize) -> Option<Vec<ScopedIdent>> {
+        match &decl.value {
+            DeclKind::Def(def) => match &def.value {
+                DefKind::Rec { ident, .. } => {
+                    self.decl_map.insert(ident.value.clone(), i);
                     Some(vec![ident.value])
                 }
-                _ => None,
+                DefKind::NonRec { pat, .. } => self.search_decl_pats(pat),
             },
+            _ => None,
+        }
+    }
+
+    fn search_decl_pats(&mut self, pat: &Pattern) -> Option<Vec<ScopedIdent>> {
+        match pat.value.as_ref() {
+            PatternKind::Ident(ident, _) => Some(vec![ident.value]),
+            PatternKind::List(xs) => Some(
+                xs.iter()
+                    .map(|x| self.search_decl_pats(x))
+                    .flatten()
+                    .flatten()
+                    .collect_vec(),
+            ),
+            PatternKind::Pair(head, tail) => {
+                let head = self.search_decl_pats(head);
+                let tail = self.search_decl_pats(tail);
+                match (head, tail) {
+                    (Some(head), Some(tail)) => {
+                        Some(head.into_iter().chain(tail.into_iter()).collect_vec())
+                    }
+                    _ => None,
+                }
+            }
+            _ => None,
         }
     }
 }

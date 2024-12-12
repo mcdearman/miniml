@@ -171,6 +171,8 @@ type Option a = None | Some a
 
 type List a = Empty | Pair a (List a)
 
+type NonEmptyList a = NonEmpty a (List a)
+
 def (|>) : a b. a -> (a -> b) -> b
   | x |> f = f x
 
