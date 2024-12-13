@@ -514,6 +514,7 @@ dependencies = [
  "env_logger",
  "insta",
  "log",
+ "miniml-analysis",
  "miniml-ast",
  "miniml-nir",
  "miniml-parse",
@@ -550,6 +551,25 @@ dependencies = [
  "itertools",
  "log",
  "logos",
+ "miniml-utils",
+ "num-bigint",
+ "num-complex",
+ "num-rational",
+ "pretty",
+]
+
+[[package]]
+name = "miniml-infer"
+version = "0.1.0"
+dependencies = [
+ "colored",
+ "env_logger",
+ "insta",
+ "itertools",
+ "log",
+ "miniml-ast",
+ "miniml-nir",
+ "miniml-tir",
  "miniml-utils",
  "num-bigint",
  "num-complex",
@@ -596,6 +616,24 @@ dependencies = [
 
 [[package]]
 name = "miniml-rename"
+version = "0.1.0"
+dependencies = [
+ "colored",
+ "env_logger",
+ "insta",
+ "itertools",
+ "log",
+ "miniml-ast",
+ "miniml-nir",
+ "miniml-utils",
+ "num-bigint",
+ "num-complex",
+ "num-rational",
+ "pretty",
+]
+
+[[package]]
+name = "miniml-tir"
 version = "0.1.0"
 dependencies = [
  "colored",

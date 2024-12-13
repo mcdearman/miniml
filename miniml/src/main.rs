@@ -1,3 +1,4 @@
+use miniml_analysis::scc::SCC;
 use miniml_ast::token_stream::TokenStream;
 use miniml_parse::parse;
 use miniml_rename::resolver::Resolver;
@@ -70,7 +71,7 @@ fn main() {
                                     continue;
                                 }
                                 log::debug!("NIR: {:#?}", nir);
-                                let mut scc = miniml_nir::scc::SCC::new();
+                                let mut scc = SCC::new();
                                 let sir = scc.run(&nir);
                                 log::debug!("SCC: {:#?}", sir);
                             }

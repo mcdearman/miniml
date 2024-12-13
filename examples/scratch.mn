@@ -167,15 +167,18 @@ def binary_search (x : Int) (xs : #[Int] -> Int) : Int =
 type Point = (Int, Int)
 
 -- records
-type Person = { name : String, age : Int }
+data Person = { name : String, age : Int }
 def p = { name = "Alice", age = 30 }
 
+-- records with public fields
+data Person = { pub name : String, pub age : Int }
+
 -- sum types
-type Option a = None | Some a
+data Option a = None | Some a
 
-type List a = Empty | Pair a (List a)
+data List a = Empty | Pair a (List a)
 
-type NonEmptyList a = NonEmpty a (List a)
+data NonEmptyList a = NonEmpty a (List a)
 
 def (|>) : a b. a -> (a -> b) -> b
   | x |> f = f x

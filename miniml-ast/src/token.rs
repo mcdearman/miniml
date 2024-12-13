@@ -138,6 +138,8 @@ pub enum Token {
     Alias,
     #[token("class")]
     Class,
+    #[token("instance")]
+    Instance,
     #[token("as")]
     As,
 }
@@ -206,6 +208,7 @@ impl Display for Token {
             Type => write!(f, "Type"),
             Alias => write!(f, "Alias"),
             Class => write!(f, "Class"),
+            Instance => write!(f, "Instance"),
             As => write!(f, "As"),
         }
     }

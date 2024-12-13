@@ -4,10 +4,12 @@ members = [
     "miniml",
     "miniml-analysis",
     "miniml-ast",
-    "miniml-nir",
     # "miniml-core",
+    "miniml-infer",
+    "miniml-nir",
     "miniml-parse",
     "miniml-rename",
+    "miniml-tir",
     # "miniml-tree-walk",
     "miniml-utils",
 ]

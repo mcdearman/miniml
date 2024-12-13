@@ -1,5 +1,7 @@
-use crate::*;
 use itertools::Itertools;
+use miniml_ast::SynNode;
+use miniml_nir::scoped_ident::ScopedIdent;
+use miniml_nir::*;
 use miniml_utils::graph::Graph;
 use std::collections::HashMap;
 

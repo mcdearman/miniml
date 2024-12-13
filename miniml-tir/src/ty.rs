@@ -1,10 +1,3 @@
-use super::{
-    context::Context,
-    meta::{Meta, MetaId},
-    meta_context::{MetaContext, MetaRef},
-    poly_type::PolyType,
-};
-use crate::utils::{intern::InternedString, unique_id::UniqueId};
 use std::{
     collections::{HashMap, HashSet},
     fmt::{Debug, Display},

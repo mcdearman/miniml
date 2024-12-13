@@ -3,7 +3,6 @@ use miniml_utils::{intern::InternedString, rational::Rational};
 use scoped_ident::ScopedIdent;
 
 pub mod res_id;
-pub mod scc;
 pub mod scoped_ident;
 pub mod scoped_intern;
 
