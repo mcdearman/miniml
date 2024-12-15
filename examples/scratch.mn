@@ -123,18 +123,15 @@ pub def map f xs = match xs with
   [] -> []
   (x::xs) -> f x :: map f xs
 
-map : a b. (a -> b) -> [a] -> [b]
-map f [] -> []
-map f (x::xs) -> f x :: map f xs
+-- or
+pub def map : a b. (a -> b) -> [a] -> [b]
+  f [] -> []
+  f (x::xs) -> f x :: map f xs
 
 def foldl a b. (f : a -> b -> a) (acc : a) (xs : [b]) : a =
   match xs with
   | [] = acc
   | (x :: xs) = foldl f (f acc x) xs
-
-foldl : a b. (a -> b -> a) -> a -> [b] -> a
-foldl f acc [] -> acc
-foldl f acc (x::xs) -> foldl f (f acc x) xs
 
 def foldl : a b. (a -> b -> a) -> a -> [b] -> a
   | f acc [] -> acc
