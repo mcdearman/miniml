@@ -4,9 +4,12 @@
 //     utils::{intern::InternedString, rational::Rational, span::Span},
 // };
 use itertools::{join, Itertools};
-use miniml_utils::{node::Node, span::Span};
-use ty::Ty;
+use miniml_nir::scoped_ident::ScopedIdent;
+use miniml_utils::{
+    box_node::BoxNode, intern::InternedString, node::Node, rational::Rational, span::Span,
+};
 use std::fmt::{Debug, Display};
+use ty::Ty;
 
 pub mod ty;
 // #[derive(Debug, Clone, PartialEq)]
@@ -314,17 +317,18 @@ pub mod ty;
 // }
 
 pub type TyNode<T> = Node<T, (Ty, Span)>;
+pub type TyBoxNode<T> = BoxNode<T, (Ty, Span)>;
 
-pub type Prog = SynNode<Module>;
+pub type Prog = TyNode<Module>;
 pub type Imports = Vec<Path>;
-pub type Path = Vec<SynNode<ScopedIdent>>;
+pub type Path = Vec<TyNode<ScopedIdent>>;
 pub type Decls = Vec<Decl>;
-pub type Decl = SynNode<DeclKind>;
-pub type Def = SynNode<DefKind>;
-pub type Expr = SynBoxNode<ExprKind>;
-pub type Pattern = SynBoxNode<PatternKind>;
-pub type TypeAnno = SynBoxNode<TypeAnnoKind>;
-pub type Ident = SynNode<ScopedIdent>;
+pub type Decl = TyNode<DeclKind>;
+pub type Def = TyNode<DefKind>;
+pub type Expr = TyBoxNode<ExprKind>;
+pub type Pattern = TyBoxNode<PatternKind>;
+pub type TypeAnno = TyBoxNode<TypeAnnoKind>;
+pub type Ident = TyNode<ScopedIdent>;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Module {
