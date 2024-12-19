@@ -62,7 +62,7 @@ fn main() {
 
                 match parse(stream, true) {
                     (Some(ast), _) => {
-                        log::debug!("AST: {:#?}", ast);
+                        // log::debug!("AST: {:#?}", ast);
                         match res.resolve(&ast) {
                             (Some(nir), errors) => {
                                 if !errors.is_empty() {

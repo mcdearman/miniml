@@ -1,8 +1,5 @@
-use itertools::{join, Itertools};
 use miniml_nir::{scoped_ident::ScopedIdent, *};
-use miniml_utils::{
-    box_node::BoxNode, intern::InternedString, node::Node, rational::Rational, span::Span,
-};
+use miniml_utils::{box_node::BoxNode, node::Node, span::Span};
 use ty::Ty;
 
 pub mod ty;
