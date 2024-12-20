@@ -189,8 +189,18 @@ def (::) : a. a -> [a] -> [a]
 
 -- methods with pipe
 [1, 2, 3]
+  |> into_iter
   |> map (+ 1)
   |> filter ((= 0) ∘ (% 2))
+
+-- into_iter postfix operator
+[1, 2, 3]!
+  |> map (+ 1)
+  |> filter ((= 0) ∘ (% 2))
+  |> reduce (+)
+
+-- iterator comprehensions
+[for x in [1, 2, 3] if x % 2 = 0]
 
 -- type classes
 class Eq a where
