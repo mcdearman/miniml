@@ -66,23 +66,28 @@ fn main() {
                         match res.resolve(&ast) {
                             (Some(nir), errors) => {
                                 if !errors.is_empty() {
-                                    log::error!("Resolution errors: {:#?}", errors);
+                                    // log::error!("Resolution errors: {:#?}", errors);
+                                    eprint!("Resolution errors: {:#?}", errors);
                                     res.clear_errors();
                                     continue;
                                 }
-                                log::debug!("NIR: {:#?}", nir);
+                                // log::debug!("NIR: {:#?}", nir);
+                                println!("NIR: {:#?}", nir);
                                 let mut scc = SCC::new();
                                 let sir = scc.run(&nir);
-                                log::debug!("SCC: {:#?}", sir);
+                                // log::debug!("SCC: {:#?}", sir);
+                                println!("SCC: {:#?}", sir);
                             }
                             (None, res_errors) => {
-                                log::error!("Resolution errors: {:#?}", res_errors);
+                                // log::error!("Resolution errors: {:#?}", res_errors);
+                                eprint!("Resolution errors: {:#?}", res_errors);
                                 continue;
                             }
                         }
                     }
                     (None, parse_errors) => {
-                        log::error!("Parse errors: {:#?}", parse_errors);
+                        // log::error!("Parse errors: {:#?}", parse_errors);
+                        eprint!("Parse errors: {:#?}", parse_errors);
                         continue;
                     }
                 };

@@ -13,4 +13,5 @@ members = [
     # "miniml-tree-walk",
     "miniml-utils",
 ]
+default-members = ["miniml"]
 resolver = "2"
