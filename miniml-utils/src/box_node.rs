@@ -29,4 +29,11 @@ impl<T, M: Clone> BoxNode<T, M> {
             meta: self.meta.clone(),
         }
     }
+
+    pub fn map_meta<N, F: FnOnce(M) -> N>(self, f: F) -> BoxNode<T, N> {
+        BoxNode {
+            value: self.value,
+            meta: f(self.meta.clone()),
+        }
+    }
 }

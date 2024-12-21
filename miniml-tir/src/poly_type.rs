@@ -1,5 +1,5 @@
 use super::{meta::MetaId, meta_context::MetaContext, ty::Ty};
-use crate::analysis::infer::meta::Meta;
+use crate::meta::Meta;
 use itertools::join;
 use std::{
     collections::{HashMap, HashSet},

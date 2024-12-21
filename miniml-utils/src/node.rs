@@ -22,4 +22,11 @@ impl<T, M: Clone> Node<T, M> {
             meta: self.meta.clone(),
         }
     }
+
+    pub fn map_meta<N, F: FnOnce(M) -> N>(self, f: F) -> Node<T, N> {
+        Node {
+            value: self.value,
+            meta: f(self.meta.clone()),
+        }
+    }
 }

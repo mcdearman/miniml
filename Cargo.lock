@@ -516,9 +516,11 @@ dependencies = [
  "log",
  "miniml-analysis",
  "miniml-ast",
+ "miniml-infer",
  "miniml-nir",
  "miniml-parse",
  "miniml-rename",
+ "miniml-tir",
  "miniml-utils",
  "rustyline",
 ]
@@ -647,6 +649,7 @@ dependencies = [
  "num-bigint",
  "num-complex",
  "num-rational",
+ "once_cell",
  "pretty",
 ]
 
