@@ -29,18 +29,7 @@ pub enum Ty {
 }
 
 impl Ty {
-    pub(super) fn is_numeric(&self) -> bool {
-        match self {
-            Self::Byte | Self::Int | Self::Rational | Self::Real => true,
-            _ => false,
-        }
-    }
-
-    pub fn generalize(
-        &self,
-        ctx_free_vars: HashSet<u32>,
-        meta_ctx: &MetaContext,
-    ) -> PolyType {
+    pub fn generalize(&self, ctx_free_vars: HashSet<u32>, meta_ctx: &MetaContext) -> PolyType {
         // log::debug!("generalize: {:?}", self);
         // log::debug!("free vars: {:?}", self.free_vars(meta_ctx));
         // log::debug!("ctx free vars: {:?}", ctx.free_vars(meta_ctx));

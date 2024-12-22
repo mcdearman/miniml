@@ -58,7 +58,9 @@ impl MetaContext {
         self.bindings.get(meta_ref).cloned()
     }
 
-    pub fn insert(&mut self, meta_ref: MetaRef, meta: Meta) {}
+    pub fn insert(&mut self, meta_ref: MetaRef, meta: Meta) {
+        self.bindings.insert(meta_ref, meta);
+    }
 
     pub fn force(&mut self, ty: &Ty) -> Ty {
         match ty {

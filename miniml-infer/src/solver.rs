@@ -351,7 +351,7 @@ impl TypeSolver {
                             },
                             (solved_expr.meta.0.clone(), decl.meta),
                         )),
-                        (solved_expr.meta.0, decl.meta),
+                        decl.meta,
                     ))
                 }
             },
@@ -671,7 +671,7 @@ impl TypeSolver {
         }
     }
 
-    fn zonk(&self, prog: Prog) -> Prog {
+    fn zonk(&mut self, prog: Prog) -> Prog {
         prog.map(|m| {
             let decls = m.decls.iter().map(|d| self.zonk_decl(d)).collect();
             Module {
@@ -682,12 +682,19 @@ impl TypeSolver {
         })
     }
 
-    fn zonk_decl(&self, decl: &Decl) -> Decl {
+    fn zonk_decl(&mut self, decl: &Decl) -> Decl {
         match &decl.value {
-            DeclKind::Def(def) => todo!(),
-            DeclKind::DefGroup(defs) => {
-                todo!()
-            }
+            DeclKind::Def(def) => decl.map_ref(|_| DeclKind::Def(self.zonk_def(def))),
+            DeclKind::DefGroup(defs) => decl.map_ref(|_| {
+                DeclKind::DefGroup(defs.iter().map(|def| self.zonk_def(def)).collect_vec())
+            }),
+        }
+    }
+
+    fn zonk_def(&self, def: &Def) -> Def {
+        match &def.value {
+            DefKind::Rec { ident, anno, body } => todo!(),
+            DefKind::NonRec { pat, body } => todo!(),
         }
     }
 
