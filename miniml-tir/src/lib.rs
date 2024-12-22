@@ -39,15 +39,8 @@ pub enum DeclKind {
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum DefKind {
-    Rec {
-        ident: Ident,
-        anno: Option<TypeAnno>,
-        body: Expr,
-    },
-    NonRec {
-        pat: Pattern,
-        body: Expr,
-    },
+    Rec { ident: Ident, body: Expr },
+    NonRec { pat: Pattern, body: Expr },
 }
 
 #[derive(Debug, Clone, PartialEq)]

@@ -691,18 +691,86 @@ impl TypeSolver {
         }
     }
 
-    fn zonk_def(&self, def: &Def) -> Def {
+    fn zonk_def(&mut self, def: &Def) -> Def {
         match &def.value {
-            DefKind::Rec { ident, anno, body } => todo!(),
-            DefKind::NonRec { pat, body } => todo!(),
+            DefKind::Rec { ident, body } => Def::new(
+                DefKind::Rec {
+                    ident: ident.clone(),
+                    body: self.zonk_expr(body),
+                },
+                (def.meta.0.zonk(&mut self.meta_ctx), def.meta.1),
+            ),
+            DefKind::NonRec { pat, body } => Def::new(
+                DefKind::NonRec {
+                    pat: self.zonk_pattern(pat),
+                    body: self.zonk_expr(body),
+                },
+                (def.meta.0.zonk(&mut self.meta_ctx), def.meta.1),
+            ),
         }
     }
 
-    fn zonk_expr(&self, expr: &Expr) -> Expr {
-        todo!()
+    fn zonk_expr(&mut self, expr: &Expr) -> Expr {
+        match expr.value.as_ref() {
+            ExprKind::Apply(fun, arg) => Expr::new(
+                ExprKind::Apply(self.zonk_expr(fun), self.zonk_expr(arg)),
+                (expr.meta.0.zonk(&mut self.meta_ctx), expr.meta.1),
+            ),
+            ExprKind::Lambda(param, expr) => Expr::new(
+                ExprKind::Lambda(self.zonk_pattern(param), self.zonk_expr(expr)),
+                (expr.meta.0.zonk(&mut self.meta_ctx), expr.meta.1),
+            ),
+            ExprKind::Or(lhs, rhs) => Expr::new(
+                ExprKind::Or(self.zonk_expr(lhs), self.zonk_expr(rhs)),
+                (expr.meta.0.zonk(&mut self.meta_ctx), expr.meta.1),
+            ),
+            ExprKind::And(lhs, rhs) => Expr::new(
+                ExprKind::And(self.zonk_expr(lhs), self.zonk_expr(rhs)),
+                (expr.meta.0.zonk(&mut self.meta_ctx), expr.meta.1),
+            ),
+            ExprKind::Let(pat, _, expr, body) => Expr::new(
+                ExprKind::Let(
+                    self.zonk_pattern(pat),
+                    true,
+                    self.zonk_expr(expr),
+                    self.zonk_expr(body),
+                ),
+                (expr.meta.0.zonk(&mut self.meta_ctx), expr.meta.1),
+            ),
+            ExprKind::If(cond, then, else_) => Expr::new(
+                ExprKind::If(
+                    self.zonk_expr(cond),
+                    self.zonk_expr(then),
+                    self.zonk_expr(else_),
+                ),
+                (expr.meta.0.zonk(&mut self.meta_ctx), expr.meta.1),
+            ),
+            ExprKind::Match(expr, cases) => Expr::new(
+                ExprKind::Match(
+                    self.zonk_expr(expr),
+                    cases
+                        .iter()
+                        .map(|(pat, body)| (self.zonk_pattern(pat), self.zonk_expr(body)))
+                        .collect_vec(),
+                ),
+                (expr.meta.0.zonk(&mut self.meta_ctx), expr.meta.1),
+            ),
+            ExprKind::List(xs) => Expr::new(
+                ExprKind::List(xs.iter().map(|x| self.zonk_expr(x)).collect_vec()),
+                (expr.meta.0.zonk(&mut self.meta_ctx), expr.meta.1),
+            ),
+            _ => expr.clone(),
+        }
     }
 
-    fn zonk_pattern(&self, pat: &Pattern) -> Pattern {
-        todo!()
+    fn zonk_pattern(&mut self, pat: &Pattern) -> Pattern {
+        match pat.value.as_ref() {
+            PatternKind::Wildcard => todo!(),
+            PatternKind::Lit(lit) => todo!(),
+            PatternKind::Ident(node) => todo!(),
+            PatternKind::List(vec) => todo!(),
+            PatternKind::Pair(box_node, box_node1) => todo!(),
+            PatternKind::Unit => todo!(),
+        }
     }
 }
