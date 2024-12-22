@@ -1,4 +1,4 @@
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Node<T, M = ()> {
     pub value: T,
     pub meta: M,

@@ -1,10 +1,5 @@
-use super::{
-    meta::{self, Meta, MetaId},
-    meta_context::{MetaContext, MetaRef},
-    poly_type::PolyType,
-    ty::Ty,
-};
-use crate::utils::intern::InternedString;
+use miniml_tir::{meta::MetaId, meta_context::MetaContext, poly_type::PolyType};
+use miniml_utils::intern::InternedString;
 use std::collections::{HashMap, HashSet};
 
 #[derive(Debug, Clone, PartialEq)]
