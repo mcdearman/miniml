@@ -8,7 +8,7 @@ use miniml_tir::{
     ty::Ty,
     *,
 };
-use miniml_utils::intern::InternedString;
+use miniml_utils::{intern::InternedString, node::Node};
 
 use crate::{
     constraint::Constraint,
@@ -684,9 +684,7 @@ impl TypeSolver {
 
     fn zonk_decl(&self, decl: &Decl) -> Decl {
         match &decl.value {
-            DeclKind::Def(def) => {
-                todo!()
-            }
+            DeclKind::Def(def) => todo!(),
             DeclKind::DefGroup(defs) => {
                 todo!()
             }

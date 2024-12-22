@@ -1,5 +1,6 @@
 use miniml_analysis::scc::SCC;
 use miniml_ast::token_stream::TokenStream;
+use miniml_infer::solver::TypeSolver;
 use miniml_parse::parse;
 use miniml_rename::resolver::Resolver;
 use rustyline::{
@@ -34,7 +35,7 @@ fn main() {
     println!("Welcome to MiniML!");
 
     let mut res = Resolver::new();
-    // let mut solver = TypeSolver::new();
+    let mut solver = TypeSolver::new();
 
     loop {
         let readline = rl.readline("> ");
@@ -72,11 +73,13 @@ fn main() {
                                     continue;
                                 }
                                 // log::debug!("NIR: {:#?}", nir);
-                                println!("NIR: {:#?}", nir);
+                                // println!("NIR: {:#?}", nir);
                                 let mut scc = SCC::new();
                                 let sir = scc.run(&nir);
                                 // log::debug!("SCC: {:#?}", sir);
-                                println!("SCC: {:#?}", sir);
+                                // println!("SCC: {:#?}", sir);
+                                let tir = solver.infer(&*line, &sir);
+                                println!("TIR: {:#?}", tir);
                             }
                             (None, res_errors) => {
                                 // log::error!("Resolution errors: {:#?}", res_errors);
