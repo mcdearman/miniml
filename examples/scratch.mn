@@ -89,6 +89,9 @@ def fib (n : Int) : Int =
   if n <= 1 then n 
   else fib (n - 1) + fib (n - 2)
 
+def lcm (a : Int) (b : Int) : Int =
+  a * b / gcd a b
+
 -- tail recursive fib
 def fib n = 
   let loop a b i = 
@@ -130,12 +133,22 @@ pub def map : a b. (a -> b) -> [a] -> [b]
 
 def foldl a b. (f : a -> b -> a) (acc : a) (xs : [b]) : a =
   match xs with
-  | [] = acc
-  | (x :: xs) = foldl f (f acc x) xs
+  | [] -> acc
+  | (x :: xs) -> foldl f (f acc x) xs
+
+def foldl f acc xs =
+  match xs with
+  | [] -> acc
+  | (x :: xs) -> foldl f (f acc x) xs
+
+def foldl = \f acc xs ->
+  match xs with
+  | [] -> acc
+  | (x :: xs) -> foldl f (f acc x) xs
 
 def foldl : a b. (a -> b -> a) -> a -> [b] -> a
-  | f acc [] -> acc
-  | f acc (x::xs) -> foldl f (f acc x) xs
+  | f acc [] = acc
+  | f acc (x::xs) = foldl f (f acc x) xs
 
 -- possible uncurried version of sigs
 def foldl : a b. [b] (a b -> a) a -> a

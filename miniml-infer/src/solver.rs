@@ -337,7 +337,40 @@ impl TypeSolver {
     ) -> InferResult<Decl> {
         match &decl.value {
             nir::DeclKind::Def(def) => match &def.value {
-                nir::DefKind::Rec { ident, anno, body } => todo!(),
+                nir::DefKind::Rec { ident, anno, body } => {
+                    if let Some(hint) = anno {
+                        todo!()
+                    } else {
+                        let var = Ty::MetaRef(self.meta_ctx.fresh());
+                        log::debug!("fresh rec def var: {:?}", var);
+
+                        self.ctx.push();
+                        self.ctx
+                            .insert(ident.value.name, PolyType::new(vec![], var.clone()));
+                        let solved_body = self.generate_expr_constraints(src, body)?;
+                        self.ctx.pop();
+
+                        let scm = solved_body
+                            .meta
+                            .0
+                            .generalize(self.ctx.free_vars(&self.meta_ctx), &self.meta_ctx);
+                        self.ctx.insert(ident.value.name, scm.clone());
+
+                        self.constraints
+                            .push(Constraint::Eq(var.clone(), solved_body.meta.0.clone()));
+
+                        Ok(Decl::new(
+                            DeclKind::Def(Def::new(
+                                DefKind::Rec {
+                                    ident: ident.clone(),
+                                    body: solved_body.clone(),
+                                },
+                                (solved_body.meta.0.clone(), decl.meta),
+                            )),
+                            decl.meta,
+                        ))
+                    }
+                }
                 nir::DefKind::NonRec { pat, body } => {
                     let solved_expr = self.generate_expr_constraints(src, body)?;
                     let solved_pat =
@@ -357,28 +390,7 @@ impl TypeSolver {
             },
             nir::DeclKind::DefGroup(defs) => {
                 todo!()
-            } // nir::DeclKind::DefRec(ident, expr) => {
-              //     let var = Ty::MetaRef(self.meta_ctx.fresh());
-              //     log::debug!("fresh def var: {:?}", var);
-
-              //     self.ctx.push();
-              //     self.ctx
-              //         .insert(ident.name, PolyType::new(vec![], var.clone()));
-              //     let solved_expr = self.generate_expr_constraints(src, expr)?;
-              //     self.ctx.pop();
-
-              //     let scm = solved_expr.ty.generalize(&self.ctx, &self.meta_ctx);
-              //     self.ctx.insert(ident.name, scm.clone());
-
-              //     self.constraints
-              //         .push(Constraint::Eq(var.clone(), solved_expr.ty.clone()));
-
-              //     Ok(Decl {
-              //         kind: DeclKind::DefRec(*ident, solved_expr.clone()),
-              //         ty: var,
-              //         span: decl.span,
-              //     })
-              // }
+            }
         }
     }
 
@@ -449,18 +461,18 @@ impl TypeSolver {
                     (ty_ret, expr.meta),
                 ))
             }
-            nir::ExprKind::Lambda(pattern, expr) => {
+            nir::ExprKind::Lambda(pattern, body) => {
                 let param_ty = Ty::MetaRef(self.meta_ctx.fresh());
                 log::debug!("fresh lambda var: {:?}", param_ty);
                 self.ctx.push();
                 let solved_pat =
                     self.generate_pattern_constraints(src, pattern, &param_ty, false)?;
-                let solved_expr = self.generate_expr_constraints(src, expr)?;
-                let fun_ty = Ty::Lambda(Box::new(param_ty), Box::new(solved_expr.meta.0.clone()));
+                let solved_body = self.generate_expr_constraints(src, body)?;
+                let fun_ty = Ty::Lambda(Box::new(param_ty), Box::new(solved_body.meta.0.clone()));
                 self.ctx.pop();
 
                 Ok(Expr::new(
-                    ExprKind::Lambda(solved_pat, solved_expr),
+                    ExprKind::Lambda(solved_pat, solved_body),
                     (fun_ty, expr.meta),
                 ))
             }
@@ -535,8 +547,8 @@ impl TypeSolver {
                     (solved_then.meta.0, expr.meta),
                 ))
             }
-            nir::ExprKind::Match(expr, arms) => {
-                let solved_expr = self.generate_expr_constraints(src, &expr)?;
+            nir::ExprKind::Match(e, arms) => {
+                let solved_expr = self.generate_expr_constraints(src, &e)?;
                 let ty = Ty::MetaRef(self.meta_ctx.fresh());
                 log::debug!("fresh match var: {:?}", ty);
 
@@ -712,6 +724,14 @@ impl TypeSolver {
 
     fn zonk_expr(&mut self, expr: &Expr) -> Expr {
         match expr.value.as_ref() {
+            ExprKind::Lit(lit) => Expr::new(
+                ExprKind::Lit(lit.clone()),
+                (expr.meta.0.zonk(&mut self.meta_ctx), expr.meta.1),
+            ),
+            ExprKind::Var(node) => Expr::new(
+                ExprKind::Var(node.clone()),
+                (expr.meta.0.zonk(&mut self.meta_ctx), expr.meta.1),
+            ),
             ExprKind::Apply(fun, arg) => Expr::new(
                 ExprKind::Apply(self.zonk_expr(fun), self.zonk_expr(arg)),
                 (expr.meta.0.zonk(&mut self.meta_ctx), expr.meta.1),
@@ -759,18 +779,36 @@ impl TypeSolver {
                 ExprKind::List(xs.iter().map(|x| self.zonk_expr(x)).collect_vec()),
                 (expr.meta.0.zonk(&mut self.meta_ctx), expr.meta.1),
             ),
-            _ => expr.clone(),
+            ExprKind::Unit => Expr::new(ExprKind::Unit, (Ty::Unit, expr.meta.1)),
         }
     }
 
     fn zonk_pattern(&mut self, pat: &Pattern) -> Pattern {
         match pat.value.as_ref() {
-            PatternKind::Wildcard => todo!(),
-            PatternKind::Lit(lit) => todo!(),
-            PatternKind::Ident(node) => todo!(),
-            PatternKind::List(vec) => todo!(),
-            PatternKind::Pair(box_node, box_node1) => todo!(),
-            PatternKind::Unit => todo!(),
+            PatternKind::Wildcard => Pattern::new(
+                PatternKind::Wildcard,
+                (pat.meta.0.zonk(&mut self.meta_ctx), pat.meta.1),
+            ),
+            PatternKind::Lit(lit) => Pattern::new(
+                PatternKind::Lit(lit.clone()),
+                (pat.meta.0.zonk(&mut self.meta_ctx), pat.meta.1),
+            ),
+            PatternKind::Ident(ident) => Pattern::new(
+                PatternKind::Ident(ident.clone()),
+                (pat.meta.0.zonk(&mut self.meta_ctx), pat.meta.1),
+            ),
+            PatternKind::List(xs) => Pattern::new(
+                PatternKind::List(xs.iter().map(|x| self.zonk_pattern(x)).collect_vec()),
+                (pat.meta.0.zonk(&mut self.meta_ctx), pat.meta.1),
+            ),
+            PatternKind::Pair(head, tail) => Pattern::new(
+                PatternKind::Pair(self.zonk_pattern(head), self.zonk_pattern(tail)),
+                (pat.meta.0.zonk(&mut self.meta_ctx), pat.meta.1),
+            ),
+            PatternKind::Unit => Pattern::new(
+                PatternKind::Unit,
+                (pat.meta.0.zonk(&mut self.meta_ctx), pat.meta.1),
+            ),
         }
     }
 }
