@@ -223,6 +223,10 @@ impl TypeSolver {
                         errors.push(e);
                     }
                 }
+                Constraint::Gen(name, t) => {
+                    let p = t.generalize(self.ctx.free_vars(&self.meta_ctx), &self.meta_ctx);
+                    self.ctx.insert(name.clone(), p);
+                }
             }
         }
         errors
@@ -350,11 +354,10 @@ impl TypeSolver {
                         let solved_body = self.generate_expr_constraints(src, body)?;
                         self.ctx.pop();
 
-                        let scm = solved_body
-                            .meta
-                            .0
-                            .generalize(self.ctx.free_vars(&self.meta_ctx), &self.meta_ctx);
-                        self.ctx.insert(ident.value.name, scm.clone());
+                        self.constraints.push(Constraint::Gen(
+                            ident.value.name.clone(),
+                            solved_body.meta.0.clone(),
+                        ));
 
                         self.constraints
                             .push(Constraint::Eq(var.clone(), solved_body.meta.0.clone()));
@@ -633,7 +636,6 @@ impl TypeSolver {
                     self.ctx.insert(ident.value.name, scm.clone());
                     Ok(Pattern::new(
                         PatternKind::Ident(*ident),
-                        // scm.instantiate(&mut self.meta_ctx),
                         (ty.clone(), pat.meta),
                     ))
                 } else {

@@ -92,6 +92,8 @@ def fib (n : Int) : Int =
 def lcm (a : Int) (b : Int) : Int =
   a * b / gcd a b
 
+def lcm a b = a * b / gcd a b
+
 -- tail recursive fib
 def fib n = 
   let loop a b i = 
