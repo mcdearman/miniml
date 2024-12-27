@@ -37,7 +37,7 @@ impl Context {
         }
     }
 
-    pub(super) fn free_vars(&self, meta_ctx: &VarContext) -> HashSet<MetaId> {
+    pub(super) fn free_vars(&self, meta_ctx: &VarContext) -> HashSet<u32> {
         self.frames
             .iter()
             .map(|frame| frame.free_vars(meta_ctx))
@@ -81,7 +81,7 @@ impl Frame {
         self.bindings.insert(name, scheme);
     }
 
-    pub(super) fn free_vars(&self, meta_ctx: &VarContext) -> HashSet<MetaId> {
+    pub(super) fn free_vars(&self, meta_ctx: &VarContext) -> HashSet<u32> {
         self.clone()
             .bindings
             .into_iter()

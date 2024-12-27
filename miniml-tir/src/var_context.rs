@@ -54,12 +54,12 @@ impl VarContext {
         r
     }
 
-    pub fn get(&self, meta_ref: &VarId) -> Option<TyVar> {
-        self.bindings.get(meta_ref).cloned()
+    pub fn get(&self, var_id: &VarId) -> Option<TyVar> {
+        self.bindings.get(var_id).cloned()
     }
 
-    pub fn insert(&mut self, meta_ref: VarId, meta: TyVar) {
-        self.bindings.insert(meta_ref, meta);
+    pub fn insert(&mut self, var_id: VarId, meta: TyVar) {
+        self.bindings.insert(var_id, meta);
     }
 
     pub fn force(&mut self, ty: &Ty) -> Ty {

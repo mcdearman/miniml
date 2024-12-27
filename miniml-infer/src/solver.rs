@@ -279,17 +279,17 @@ impl TypeSolver {
         }
     }
 
-    pub fn bind(&mut self, meta_ref: &VarId, ty: &Ty, c: &Constraint) -> InferResult<()> {
-        match self.meta_ctx.get(meta_ref).ok_or(TypeError::from(format!(
+    pub fn bind(&mut self, var_id: &VarId, ty: &Ty, c: &Constraint) -> InferResult<()> {
+        match self.meta_ctx.get(var_id).ok_or(TypeError::from(format!(
             "unbound meta variable: {:?}",
-            meta_ref
+            var_id
         )))? {
             TyVar::Bound(t) => Err(TypeError::from(format!(
                 "cannot bind {:?} to {:?}, already bound to {:?}",
-                meta_ref, ty, t
+                var_id, ty, t
             ))),
             m @ TyVar::Unbound(id) => {
-                if *ty == Ty::Meta(Box::new(TyVar::Unbound(id))) {
+                if *ty == Ty::Var(*var_id) {
                     Ok(())
                 } else if ty.free_vars(&self.meta_ctx).contains(&id) {
                     Err(TypeError::from(format!(
@@ -297,7 +297,7 @@ impl TypeSolver {
                         m, ty, c
                     )))
                 } else {
-                    self.meta_ctx.insert(*meta_ref, TyVar::Bound(ty.clone()));
+                    self.meta_ctx.insert(*var_id, TyVar::Bound(ty.clone()));
                     Ok(())
                 }
             }
