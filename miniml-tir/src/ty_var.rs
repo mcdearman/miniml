@@ -4,17 +4,15 @@ use std::{
     sync::atomic::AtomicU32,
 };
 
-pub type MetaId = u32;
-
 #[derive(Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub enum Meta {
+pub enum TyVar {
     Bound(Ty),
-    Unbound(MetaId),
+    Unbound(u32),
 }
 
 static COUNTER: AtomicU32 = AtomicU32::new(0);
 
-impl Meta {
+impl TyVar {
     pub fn new(ty: Ty) -> Self {
         Self::Bound(ty)
     }
@@ -31,7 +29,7 @@ impl Meta {
     }
 }
 
-impl Debug for Meta {
+impl Debug for TyVar {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}", self)
     }
@@ -46,7 +44,7 @@ const ALPHABET: &[char] = &[
     'y', 'z',
 ];
 
-impl Display for Meta {
+impl Display for TyVar {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Self::Bound(ty) => write!(f, "{:?}", ty),

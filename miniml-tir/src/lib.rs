@@ -5,8 +5,9 @@ use miniml_utils::{
 };
 use ty::Ty;
 
-pub mod meta;
-pub mod meta_context;
+pub mod kind;
+pub mod ty_var;
+pub mod var_context;
 pub mod poly_type;
 pub mod ty;
 

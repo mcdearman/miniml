@@ -2,10 +2,10 @@ use itertools::Itertools;
 use miniml_ast::SynNode;
 use miniml_nir as nir;
 use miniml_tir::{
-    meta::Meta,
-    meta_context::{MetaContext, MetaRef},
     poly_type::PolyType,
     ty::Ty,
+    ty_var::TyVar,
+    var_context::{VarContext, VarId},
     *,
 };
 use miniml_utils::{intern::InternedString, node::Node};
@@ -20,40 +20,40 @@ use crate::{
 pub struct TypeSolver {
     src: InternedString,
     pub ctx: Context,
-    pub meta_ctx: MetaContext,
+    pub meta_ctx: VarContext,
     constraints: Vec<Constraint>,
 }
 
 impl TypeSolver {
     pub fn new() -> Self {
-        let mut meta_ctx = MetaContext::new();
+        let mut meta_ctx = VarContext::new();
         let mut ctx = Context::new();
 
         ctx.insert(
             "main".into(),
             PolyType::new(
                 vec![],
-                Ty::Lambda(Box::new(Ty::Array(Box::new(Ty::String))), Box::new(Ty::Int)),
+                Ty::Arrow(Box::new(Ty::Array(Box::new(Ty::String))), Box::new(Ty::Int)),
             ),
         );
 
         ctx.insert(
             "__neg__".into(),
-            PolyType::new(vec![], Ty::Lambda(Box::new(Ty::Int), Box::new(Ty::Int))),
+            PolyType::new(vec![], Ty::Arrow(Box::new(Ty::Int), Box::new(Ty::Int))),
         );
 
         ctx.insert(
             "__not__".into(),
-            PolyType::new(vec![], Ty::Lambda(Box::new(Ty::Bool), Box::new(Ty::Bool))),
+            PolyType::new(vec![], Ty::Arrow(Box::new(Ty::Bool), Box::new(Ty::Bool))),
         );
 
         ctx.insert(
             "__add__".into(),
             PolyType::new(
                 vec![],
-                Ty::Lambda(
+                Ty::Arrow(
                     Box::new(Ty::Int),
-                    Box::new(Ty::Lambda(Box::new(Ty::Int), Box::new(Ty::Int))),
+                    Box::new(Ty::Arrow(Box::new(Ty::Int), Box::new(Ty::Int))),
                 ),
             ),
         );
@@ -62,9 +62,9 @@ impl TypeSolver {
             "__sub__".into(),
             PolyType::new(
                 vec![],
-                Ty::Lambda(
+                Ty::Arrow(
                     Box::new(Ty::Int),
-                    Box::new(Ty::Lambda(Box::new(Ty::Int), Box::new(Ty::Int))),
+                    Box::new(Ty::Arrow(Box::new(Ty::Int), Box::new(Ty::Int))),
                 ),
             ),
         );
@@ -73,9 +73,9 @@ impl TypeSolver {
             "__mul__".into(),
             PolyType::new(
                 vec![],
-                Ty::Lambda(
+                Ty::Arrow(
                     Box::new(Ty::Int),
-                    Box::new(Ty::Lambda(Box::new(Ty::Int), Box::new(Ty::Int))),
+                    Box::new(Ty::Arrow(Box::new(Ty::Int), Box::new(Ty::Int))),
                 ),
             ),
         );
@@ -84,9 +84,9 @@ impl TypeSolver {
             "__div__".into(),
             PolyType::new(
                 vec![],
-                Ty::Lambda(
+                Ty::Arrow(
                     Box::new(Ty::Int),
-                    Box::new(Ty::Lambda(Box::new(Ty::Int), Box::new(Ty::Int))),
+                    Box::new(Ty::Arrow(Box::new(Ty::Int), Box::new(Ty::Int))),
                 ),
             ),
         );
@@ -95,9 +95,9 @@ impl TypeSolver {
             "__rem__".into(),
             PolyType::new(
                 vec![],
-                Ty::Lambda(
+                Ty::Arrow(
                     Box::new(Ty::Int),
-                    Box::new(Ty::Lambda(Box::new(Ty::Int), Box::new(Ty::Int))),
+                    Box::new(Ty::Arrow(Box::new(Ty::Int), Box::new(Ty::Int))),
                 ),
             ),
         );
@@ -106,9 +106,9 @@ impl TypeSolver {
             "__pow__".into(),
             PolyType::new(
                 vec![],
-                Ty::Lambda(
+                Ty::Arrow(
                     Box::new(Ty::Int),
-                    Box::new(Ty::Lambda(Box::new(Ty::Int), Box::new(Ty::Int))),
+                    Box::new(Ty::Arrow(Box::new(Ty::Int), Box::new(Ty::Int))),
                 ),
             ),
         );
@@ -117,9 +117,9 @@ impl TypeSolver {
             "__eq__".into(),
             PolyType::new(
                 vec![],
-                Ty::Lambda(
+                Ty::Arrow(
                     Box::new(Ty::Int),
-                    Box::new(Ty::Lambda(Box::new(Ty::Int), Box::new(Ty::Bool))),
+                    Box::new(Ty::Arrow(Box::new(Ty::Int), Box::new(Ty::Bool))),
                 ),
             ),
         );
@@ -128,9 +128,9 @@ impl TypeSolver {
             "__neq__".into(),
             PolyType::new(
                 vec![],
-                Ty::Lambda(
+                Ty::Arrow(
                     Box::new(Ty::Int),
-                    Box::new(Ty::Lambda(Box::new(Ty::Int), Box::new(Ty::Bool))),
+                    Box::new(Ty::Arrow(Box::new(Ty::Int), Box::new(Ty::Bool))),
                 ),
             ),
         );
@@ -139,9 +139,9 @@ impl TypeSolver {
             "__lt__".into(),
             PolyType::new(
                 vec![],
-                Ty::Lambda(
+                Ty::Arrow(
                     Box::new(Ty::Int),
-                    Box::new(Ty::Lambda(Box::new(Ty::Int), Box::new(Ty::Bool))),
+                    Box::new(Ty::Arrow(Box::new(Ty::Int), Box::new(Ty::Bool))),
                 ),
             ),
         );
@@ -150,9 +150,9 @@ impl TypeSolver {
             "__lte__".into(),
             PolyType::new(
                 vec![],
-                Ty::Lambda(
+                Ty::Arrow(
                     Box::new(Ty::Int),
-                    Box::new(Ty::Lambda(Box::new(Ty::Int), Box::new(Ty::Bool))),
+                    Box::new(Ty::Arrow(Box::new(Ty::Int), Box::new(Ty::Bool))),
                 ),
             ),
         );
@@ -161,9 +161,9 @@ impl TypeSolver {
             "__gt__".into(),
             PolyType::new(
                 vec![],
-                Ty::Lambda(
+                Ty::Arrow(
                     Box::new(Ty::Int),
-                    Box::new(Ty::Lambda(Box::new(Ty::Int), Box::new(Ty::Bool))),
+                    Box::new(Ty::Arrow(Box::new(Ty::Int), Box::new(Ty::Bool))),
                 ),
             ),
         );
@@ -172,9 +172,9 @@ impl TypeSolver {
             "__gte__".into(),
             PolyType::new(
                 vec![],
-                Ty::Lambda(
+                Ty::Arrow(
                     Box::new(Ty::Int),
-                    Box::new(Ty::Lambda(Box::new(Ty::Int), Box::new(Ty::Bool))),
+                    Box::new(Ty::Arrow(Box::new(Ty::Int), Box::new(Ty::Bool))),
                 ),
             ),
         );
@@ -182,11 +182,11 @@ impl TypeSolver {
         let r = meta_ctx.fresh();
         ctx.insert(
             "__pair__".into(),
-            Ty::Lambda(
-                Box::new(Ty::MetaRef(r)),
-                Box::new(Ty::Lambda(
-                    Box::new(Ty::List(Box::new(Ty::MetaRef(r)))),
-                    Box::new(Ty::List(Box::new(Ty::MetaRef(r)))),
+            Ty::Arrow(
+                Box::new(Ty::Var(r)),
+                Box::new(Ty::Arrow(
+                    Box::new(Ty::List(Box::new(Ty::Var(r)))),
+                    Box::new(Ty::List(Box::new(Ty::Var(r)))),
                 )),
             )
             .generalize(ctx.free_vars(&meta_ctx), &meta_ctx),
@@ -246,18 +246,18 @@ impl TypeSolver {
             | (Ty::String, Ty::String)
             | (Ty::Char, Ty::Char)
             | (Ty::Unit, Ty::Unit) => Ok(()),
-            (Ty::Lambda(p1, b1), Ty::Lambda(p2, b2)) => {
+            (Ty::Arrow(p1, b1), Ty::Arrow(p2, b2)) => {
                 self.unify(p1, p2, c)?;
                 self.unify(b1, b2, c)
             }
             (Ty::List(l1), Ty::List(l2)) => self.unify(l1, l2, c),
-            (_, Ty::MetaRef(meta_ref)) => {
+            (_, Ty::Var(meta_ref)) => {
                 self.bind(meta_ref, &t1, c)?;
                 log::debug!("bind: {:?} to {:?}", meta_ref, t1);
                 // log::debug!("meta_ctx: {:#?}", self);
                 Ok(())
             }
-            (Ty::MetaRef(meta_ref), _) => {
+            (Ty::Var(meta_ref), _) => {
                 self.bind(meta_ref, &t2, c)?;
                 log::debug!("bind: {:?} to {:?}", meta_ref, t2);
                 // log::debug!("meta_ctx: {:#?}", self);
@@ -279,17 +279,17 @@ impl TypeSolver {
         }
     }
 
-    pub fn bind(&mut self, meta_ref: &MetaRef, ty: &Ty, c: &Constraint) -> InferResult<()> {
+    pub fn bind(&mut self, meta_ref: &VarId, ty: &Ty, c: &Constraint) -> InferResult<()> {
         match self.meta_ctx.get(meta_ref).ok_or(TypeError::from(format!(
             "unbound meta variable: {:?}",
             meta_ref
         )))? {
-            Meta::Bound(t) => Err(TypeError::from(format!(
+            TyVar::Bound(t) => Err(TypeError::from(format!(
                 "cannot bind {:?} to {:?}, already bound to {:?}",
                 meta_ref, ty, t
             ))),
-            m @ Meta::Unbound(id) => {
-                if *ty == Ty::Meta(Box::new(Meta::Unbound(id))) {
+            m @ TyVar::Unbound(id) => {
+                if *ty == Ty::Meta(Box::new(TyVar::Unbound(id))) {
                     Ok(())
                 } else if ty.free_vars(&self.meta_ctx).contains(&id) {
                     Err(TypeError::from(format!(
@@ -297,7 +297,7 @@ impl TypeSolver {
                         m, ty, c
                     )))
                 } else {
-                    self.meta_ctx.insert(*meta_ref, Meta::Bound(ty.clone()));
+                    self.meta_ctx.insert(*meta_ref, TyVar::Bound(ty.clone()));
                     Ok(())
                 }
             }
@@ -345,7 +345,7 @@ impl TypeSolver {
                     if let Some(hint) = anno {
                         todo!()
                     } else {
-                        let var = Ty::MetaRef(self.meta_ctx.fresh());
+                        let var = Ty::Var(self.meta_ctx.fresh());
                         log::debug!("fresh rec def var: {:?}", var);
 
                         self.ctx.push();
@@ -451,8 +451,8 @@ impl TypeSolver {
                 let solved_fun = self.generate_expr_constraints(src, fun)?;
                 let solved_arg = self.generate_expr_constraints(src, arg)?;
 
-                let ty_ret = Ty::MetaRef(self.meta_ctx.fresh());
-                let ty_fun = Ty::Lambda(
+                let ty_ret = Ty::Var(self.meta_ctx.fresh());
+                let ty_fun = Ty::Arrow(
                     Box::new(solved_arg.meta.0.clone()),
                     Box::new(ty_ret.clone()),
                 );
@@ -465,13 +465,13 @@ impl TypeSolver {
                 ))
             }
             nir::ExprKind::Lambda(pattern, body) => {
-                let param_ty = Ty::MetaRef(self.meta_ctx.fresh());
+                let param_ty = Ty::Var(self.meta_ctx.fresh());
                 log::debug!("fresh lambda var: {:?}", param_ty);
                 self.ctx.push();
                 let solved_pat =
                     self.generate_pattern_constraints(src, pattern, &param_ty, false)?;
                 let solved_body = self.generate_expr_constraints(src, body)?;
-                let fun_ty = Ty::Lambda(Box::new(param_ty), Box::new(solved_body.meta.0.clone()));
+                let fun_ty = Ty::Arrow(Box::new(param_ty), Box::new(solved_body.meta.0.clone()));
                 self.ctx.pop();
 
                 Ok(Expr::new(
@@ -508,7 +508,7 @@ impl TypeSolver {
                 ))
             }
             nir::ExprKind::Let(pattern, true, expr, body) => {
-                let var = Ty::MetaRef(self.meta_ctx.fresh());
+                let var = Ty::Var(self.meta_ctx.fresh());
                 log::debug!("fresh let var: {:?}", var);
 
                 self.ctx.push();
@@ -552,7 +552,7 @@ impl TypeSolver {
             }
             nir::ExprKind::Match(e, arms) => {
                 let solved_expr = self.generate_expr_constraints(src, &e)?;
-                let ty = Ty::MetaRef(self.meta_ctx.fresh());
+                let ty = Ty::Var(self.meta_ctx.fresh());
                 log::debug!("fresh match var: {:?}", ty);
 
                 let mut solved_arms = vec![];
@@ -576,7 +576,7 @@ impl TypeSolver {
                 ))
             }
             nir::ExprKind::List(vec) => {
-                let elem_ty = Ty::MetaRef(self.meta_ctx.fresh());
+                let elem_ty = Ty::Var(self.meta_ctx.fresh());
                 log::debug!("fresh list var: {:?}", elem_ty);
                 let list_ty = Ty::List(Box::new(elem_ty.clone()));
                 let solved_vec = vec
@@ -649,7 +649,7 @@ impl TypeSolver {
             }
             nir::PatternKind::List(vec) => {
                 let v = self.meta_ctx.fresh();
-                let elem_ty = Ty::MetaRef(v);
+                let elem_ty = Ty::Var(v);
                 log::debug!(
                     "fresh list pat var: {:?} is {:?}",
                     elem_ty,
@@ -668,7 +668,7 @@ impl TypeSolver {
                 ))
             }
             nir::PatternKind::Pair(head, tail) => {
-                let var = Ty::MetaRef(self.meta_ctx.fresh());
+                let var = Ty::Var(self.meta_ctx.fresh());
                 log::debug!("fresh pair pat var: {:?}", var);
                 let pair_ty = Ty::List(Box::new(var.clone()));
                 let solved_head = self.generate_pattern_constraints(src, head, &var, generalize)?;

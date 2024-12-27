@@ -1,7 +1,7 @@
 use crate::{
-    meta::{Meta, MetaId},
-    meta_context::{MetaContext, MetaRef},
     poly_type::PolyType,
+    ty_var::TyVar,
+    var_context::{VarContext, VarId},
 };
 use miniml_utils::{intern::InternedString, unique_id::UniqueId};
 use std::{
@@ -18,10 +18,9 @@ pub enum Ty {
     Bool,
     String,
     Char,
-    MetaRef(MetaRef),
-    Meta(Box<Meta>),
-    // Poly(PolyType),
-    Lambda(Box<Self>, Box<Self>),
+    Var(VarId),
+    Arrow(Box<Self>, Box<Self>),
+    Gen(UniqueId),
     List(Box<Self>),
     Array(Box<Self>),
     Record(UniqueId, Vec<(InternedString, Self)>),
@@ -29,7 +28,7 @@ pub enum Ty {
 }
 
 impl Ty {
-    pub fn generalize(&self, ctx_free_vars: HashSet<u32>, meta_ctx: &MetaContext) -> PolyType {
+    pub fn generalize(&self, ctx_free_vars: HashSet<u32>, meta_ctx: &VarContext) -> PolyType {
         // log::debug!("generalize: {:?}", self);
         // log::debug!("free vars: {:?}", self.free_vars(meta_ctx));
         // log::debug!("ctx free vars: {:?}", ctx.free_vars(meta_ctx));
@@ -42,14 +41,14 @@ impl Ty {
         )
     }
 
-    pub fn free_vars(&self, meta_ctx: &MetaContext) -> HashSet<MetaId> {
+    pub fn free_vars(&self, meta_ctx: &VarContext) -> HashSet<u32> {
         match self {
-            Self::MetaRef(n) => match meta_ctx.get(n) {
-                Some(Meta::Bound(ty)) => ty.free_vars(meta_ctx),
-                Some(Meta::Unbound(tv)) => vec![tv].into_iter().collect(),
+            Self::Var(n) => match meta_ctx.get(n) {
+                Some(TyVar::Bound(ty)) => ty.free_vars(meta_ctx),
+                Some(TyVar::Unbound(tv)) => vec![tv].into_iter().collect(),
                 None => HashSet::new(),
             },
-            Self::Lambda(param, body) => param
+            Self::Arrow(param, body) => param
                 .free_vars(meta_ctx)
                 .union(&body.free_vars(meta_ctx))
                 .cloned()
@@ -58,7 +57,7 @@ impl Ty {
         }
     }
 
-    pub fn zonk(&self, meta_ctx: &mut MetaContext) -> Ty {
+    pub fn zonk(&self, meta_ctx: &mut VarContext) -> Ty {
         // log::debug!("zonk: {:?}", self);
         match meta_ctx.force(self) {
             Ty::Byte => Ty::Byte,
@@ -69,17 +68,16 @@ impl Ty {
             Ty::String => Ty::String,
             Ty::Char => Ty::Char,
             Ty::Unit => Ty::Unit,
-            Ty::MetaRef(n) => match meta_ctx.get(&n) {
-                Some(Meta::Bound(ty)) => ty.zonk(meta_ctx),
-                Some(Meta::Unbound(tv)) => Ty::Meta(Box::new(Meta::Unbound(tv))),
-                None => Ty::MetaRef(n),
+            Ty::Var(n) => match meta_ctx.get(&n) {
+                Some(TyVar::Bound(ty)) => ty.zonk(meta_ctx),
+                Some(TyVar::Unbound(tv)) => panic!("unbound type variable: {:?}", tv),
+                None => Ty::Var(n),
             },
-            m @ Ty::Meta(_) => m,
-            // Type::Poly(poly) => Type::Poly(poly.clone()),
-            Ty::Lambda(param, body) => Ty::Lambda(
+            Ty::Arrow(param, body) => Ty::Arrow(
                 Box::new(param.zonk(meta_ctx)),
                 Box::new(body.zonk(meta_ctx)),
             ),
+            Ty::Gen(id) => Ty::Gen(id),
             Ty::List(ty) => Ty::List(Box::new(ty.zonk(meta_ctx))),
             Ty::Array(ty) => Ty::Array(Box::new(ty.zonk(meta_ctx))),
             Ty::Record(id, fields) => Ty::Record(
@@ -103,16 +101,15 @@ impl Debug for Ty {
             Self::Bool => write!(f, "Bool"),
             Self::String => write!(f, "String"),
             Self::Char => write!(f, "Char"),
-            Self::MetaRef(n) => write!(f, "{}", n),
-            Self::Meta(m) => write!(f, "{:?}", m),
-            // Self::Poly(poly) => write!(f, "{:?}", poly),
-            Self::Lambda(param, body) => {
-                if matches!(**param, Self::Lambda(_, _)) {
+            Self::Var(n) => write!(f, "{}", n),
+            Self::Arrow(param, body) => {
+                if matches!(**param, Self::Arrow(_, _)) {
                     write!(f, "({:?}) -> {:?}", param, body)
                 } else {
                     write!(f, "{:?} -> {:?}", param, body)
                 }
             }
+            Self::Gen(id) => write!(f, "Gen({})", id),
             Self::List(ty) => write!(f, "[{:?}]", ty),
             Self::Array(ty) => write!(f, "#[{:?}]", ty),
             Self::Record(id, fields) => write!(f, "{:?} = {:?}", id, fields),
@@ -125,20 +122,20 @@ impl Display for Ty {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         fn lower(ty: &Ty, metas: &mut HashMap<u32, u32>) -> Ty {
             match ty {
-                Ty::Meta(m) => match m.as_ref() {
-                    Meta::Bound(ty) => lower(ty, metas),
-                    Meta::Unbound(tv) => {
-                        if let Some(lowered) = metas.get(tv) {
-                            Ty::Meta(Box::new(Meta::Unbound(*lowered)))
-                        } else {
-                            let id = metas.len() as u32;
-                            metas.insert(*tv, id);
-                            Ty::Meta(Box::new(Meta::Unbound(id)))
-                        }
-                    }
-                },
-                Ty::Lambda(param, body) => {
-                    Ty::Lambda(Box::new(lower(param, metas)), Box::new(lower(body, metas)))
+                // Ty::Meta(m) => match m.as_ref() {
+                //     TyVar::Bound(ty) => lower(ty, metas),
+                //     TyVar::Unbound(tv) => {
+                //         if let Some(lowered) = metas.get(tv) {
+                //             Ty::Meta(Box::new(TyVar::Unbound(*lowered)))
+                //         } else {
+                //             let id = metas.len() as u32;
+                //             metas.insert(*tv, id);
+                //             Ty::Meta(Box::new(TyVar::Unbound(id)))
+                //         }
+                //     }
+                // },
+                Ty::Arrow(param, body) => {
+                    Ty::Arrow(Box::new(lower(param, metas)), Box::new(lower(body, metas)))
                 }
                 Ty::List(list_ty) => Ty::List(Box::new(lower(list_ty, metas))),
                 // Type::Record(name, fields) => {
@@ -162,16 +159,15 @@ impl Display for Ty {
             Self::Bool => write!(f, "Bool"),
             Self::String => write!(f, "String"),
             Self::Char => write!(f, "Char"),
-            Self::MetaRef(n) => write!(f, "{}", n),
-            Self::Meta(m) => write!(f, "{}", m),
-            // Self::Poly(poly) => write!(f, "{}", poly),
-            Self::Lambda(param, body) => {
-                if matches!(*param, Self::Lambda(_, _)) {
+            Self::Var(n) => write!(f, "{}", n),
+            Self::Arrow(param, body) => {
+                if matches!(*param, Self::Arrow(_, _)) {
                     write!(f, "({:?}) -> {:?}", param, body)
                 } else {
                     write!(f, "{:?} -> {:?}", param, body)
                 }
             }
+            Self::Gen(id) => write!(f, "Gen({})", id),
             Self::List(ty) => write!(f, "[{}]", ty),
             Self::Array(ty) => write!(f, "[{}]", ty),
             Self::Record(name, fields) => write!(f, "{:?} = {:?}", name, fields),

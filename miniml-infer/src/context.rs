@@ -1,4 +1,4 @@
-use miniml_tir::{meta::MetaId, meta_context::MetaContext, poly_type::PolyType};
+use miniml_tir::{poly_type::PolyType, var_context::VarContext};
 use miniml_utils::intern::InternedString;
 use std::collections::{HashMap, HashSet};
 
@@ -37,7 +37,7 @@ impl Context {
         }
     }
 
-    pub(super) fn free_vars(&self, meta_ctx: &MetaContext) -> HashSet<MetaId> {
+    pub(super) fn free_vars(&self, meta_ctx: &VarContext) -> HashSet<MetaId> {
         self.frames
             .iter()
             .map(|frame| frame.free_vars(meta_ctx))
@@ -46,7 +46,7 @@ impl Context {
             })
     }
 
-    pub fn zonk(&self, meta_ctx: &mut MetaContext) -> Self {
+    pub fn zonk(&self, meta_ctx: &mut VarContext) -> Self {
         Self {
             frames: self
                 .frames
@@ -81,7 +81,7 @@ impl Frame {
         self.bindings.insert(name, scheme);
     }
 
-    pub(super) fn free_vars(&self, meta_ctx: &MetaContext) -> HashSet<MetaId> {
+    pub(super) fn free_vars(&self, meta_ctx: &VarContext) -> HashSet<MetaId> {
         self.clone()
             .bindings
             .into_iter()
@@ -91,7 +91,7 @@ impl Frame {
             })
     }
 
-    pub fn zonk(&self, meta_ctx: &mut MetaContext) -> Self {
+    pub fn zonk(&self, meta_ctx: &mut VarContext) -> Self {
         let mut frame = Frame::new();
         for (name, scheme) in self.iter() {
             frame.insert(*name, scheme.zonk(meta_ctx));

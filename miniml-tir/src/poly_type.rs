@@ -1,5 +1,5 @@
-use super::{meta::MetaId, meta_context::MetaContext, ty::Ty};
-use crate::meta::Meta;
+use super::{ty::Ty, var_context::VarContext};
+use crate::ty_var::TyVar;
 use itertools::join;
 use std::{
     collections::{HashMap, HashSet},
@@ -8,23 +8,23 @@ use std::{
 
 #[derive(Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct PolyType {
-    pub vars: Vec<MetaId>,
+    pub vars: Vec<u32>,
     pub ty: Box<Ty>,
 }
 
 impl PolyType {
-    pub fn new(vars: Vec<MetaId>, ty: Ty) -> Self {
+    pub fn new(vars: Vec<u32>, ty: Ty) -> Self {
         Self {
             vars,
             ty: Box::new(ty),
         }
     }
 
-    pub fn zonk(&self, meta_ctx: &mut MetaContext) -> PolyType {
+    pub fn zonk(&self, meta_ctx: &mut VarContext) -> PolyType {
         Self::new(self.vars.clone(), self.ty.zonk(meta_ctx))
     }
 
-    pub fn free_vars(&self, meta_ctx: &MetaContext) -> HashSet<MetaId> {
+    pub fn free_vars(&self, meta_ctx: &VarContext) -> HashSet<u32> {
         self.ty
             .free_vars(meta_ctx)
             .difference(&self.vars.iter().cloned().collect())
@@ -32,18 +32,18 @@ impl PolyType {
             .collect()
     }
 
-    pub fn instantiate(&self, meta_ctx: &mut MetaContext) -> Ty {
-        fn substitute(ty: &Ty, subst: &HashMap<u32, Ty>, meta_ctx: &mut MetaContext) -> Ty {
+    pub fn instantiate(&self, meta_ctx: &mut VarContext) -> Ty {
+        fn substitute(ty: &Ty, subst: &HashMap<u32, Ty>, meta_ctx: &mut VarContext) -> Ty {
             match ty {
-                Ty::MetaRef(id) => match meta_ctx.get(id) {
-                    Some(Meta::Bound(ty)) => substitute(&ty, subst, meta_ctx),
-                    Some(Meta::Unbound(tv)) => match subst.get(&tv) {
+                Ty::Var(id) => match meta_ctx.get(id) {
+                    Some(TyVar::Bound(ty)) => substitute(&ty, subst, meta_ctx),
+                    Some(TyVar::Unbound(tv)) => match subst.get(&tv) {
                         Some(t) => t.clone(),
                         None => ty.clone(),
                     },
                     None => ty.clone(),
                 },
-                Ty::Lambda(param, body) => Ty::Lambda(
+                Ty::Arrow(param, body) => Ty::Arrow(
                     Box::new(substitute(param, subst, meta_ctx)),
                     Box::new(substitute(body, subst, meta_ctx)),
                 ),
@@ -54,7 +54,7 @@ impl PolyType {
 
         let mut subst = HashMap::new();
         for m in self.vars.iter() {
-            subst.insert(*m, Ty::MetaRef(meta_ctx.fresh()));
+            subst.insert(*m, Ty::Var(meta_ctx.fresh()));
         }
 
         let ty = meta_ctx.force(&self.ty);
