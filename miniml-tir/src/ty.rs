@@ -20,7 +20,7 @@ pub enum Ty {
     Char,
     Var(VarId),
     Arrow(Box<Self>, Box<Self>),
-    Gen(UniqueId),
+    Gen(u16),
     List(Box<Self>),
     Array(Box<Self>),
     Record(UniqueId, Vec<(InternedString, Self)>),
@@ -36,6 +36,7 @@ impl Ty {
             self.free_vars(meta_ctx)
                 .difference(&ctx_free_vars)
                 .cloned()
+                .map(|x| x as u16)
                 .collect(),
             self.clone(),
         )

@@ -82,13 +82,14 @@ impl Frame {
     }
 
     pub(super) fn free_vars(&self, meta_ctx: &VarContext) -> HashSet<u32> {
-        self.clone()
-            .bindings
-            .into_iter()
-            .map(|(_, scheme)| scheme.free_vars(meta_ctx))
-            .fold(HashSet::new(), |acc, set| {
-                acc.union(&set).cloned().collect()
-            })
+        // self.clone()
+        //     .bindings
+        //     .into_iter()
+        //     .map(|(_, scheme)| scheme.free_vars(meta_ctx))
+        //     .fold(HashSet::new(), |acc, set| {
+        //         acc.union(&set).cloned().collect()
+        //     })
+        todo!()
     }
 
     pub fn zonk(&self, meta_ctx: &mut VarContext) -> Self {
