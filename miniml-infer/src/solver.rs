@@ -2,7 +2,7 @@ use itertools::Itertools;
 use miniml_ast::SynNode;
 use miniml_nir as nir;
 use miniml_tir::{
-    poly_type::PolyType,
+    scheme::Scheme,
     ty::Ty,
     ty_var::TyVar,
     var_context::{VarContext, VarId},
@@ -31,7 +31,7 @@ impl TypeSolver {
 
         ctx.insert(
             "main".into(),
-            PolyType::new(
+            Scheme::new(
                 vec![],
                 Ty::Arrow(Box::new(Ty::Array(Box::new(Ty::String))), Box::new(Ty::Int)),
             ),
@@ -39,17 +39,17 @@ impl TypeSolver {
 
         ctx.insert(
             "__neg__".into(),
-            PolyType::new(vec![], Ty::Arrow(Box::new(Ty::Int), Box::new(Ty::Int))),
+            Scheme::new(vec![], Ty::Arrow(Box::new(Ty::Int), Box::new(Ty::Int))),
         );
 
         ctx.insert(
             "__not__".into(),
-            PolyType::new(vec![], Ty::Arrow(Box::new(Ty::Bool), Box::new(Ty::Bool))),
+            Scheme::new(vec![], Ty::Arrow(Box::new(Ty::Bool), Box::new(Ty::Bool))),
         );
 
         ctx.insert(
             "__add__".into(),
-            PolyType::new(
+            Scheme::new(
                 vec![],
                 Ty::Arrow(
                     Box::new(Ty::Int),
@@ -60,7 +60,7 @@ impl TypeSolver {
 
         ctx.insert(
             "__sub__".into(),
-            PolyType::new(
+            Scheme::new(
                 vec![],
                 Ty::Arrow(
                     Box::new(Ty::Int),
@@ -71,7 +71,7 @@ impl TypeSolver {
 
         ctx.insert(
             "__mul__".into(),
-            PolyType::new(
+            Scheme::new(
                 vec![],
                 Ty::Arrow(
                     Box::new(Ty::Int),
@@ -82,7 +82,7 @@ impl TypeSolver {
 
         ctx.insert(
             "__div__".into(),
-            PolyType::new(
+            Scheme::new(
                 vec![],
                 Ty::Arrow(
                     Box::new(Ty::Int),
@@ -93,7 +93,7 @@ impl TypeSolver {
 
         ctx.insert(
             "__rem__".into(),
-            PolyType::new(
+            Scheme::new(
                 vec![],
                 Ty::Arrow(
                     Box::new(Ty::Int),
@@ -104,7 +104,7 @@ impl TypeSolver {
 
         ctx.insert(
             "__pow__".into(),
-            PolyType::new(
+            Scheme::new(
                 vec![],
                 Ty::Arrow(
                     Box::new(Ty::Int),
@@ -115,7 +115,7 @@ impl TypeSolver {
 
         ctx.insert(
             "__eq__".into(),
-            PolyType::new(
+            Scheme::new(
                 vec![],
                 Ty::Arrow(
                     Box::new(Ty::Int),
@@ -126,7 +126,7 @@ impl TypeSolver {
 
         ctx.insert(
             "__neq__".into(),
-            PolyType::new(
+            Scheme::new(
                 vec![],
                 Ty::Arrow(
                     Box::new(Ty::Int),
@@ -137,7 +137,7 @@ impl TypeSolver {
 
         ctx.insert(
             "__lt__".into(),
-            PolyType::new(
+            Scheme::new(
                 vec![],
                 Ty::Arrow(
                     Box::new(Ty::Int),
@@ -148,7 +148,7 @@ impl TypeSolver {
 
         ctx.insert(
             "__lte__".into(),
-            PolyType::new(
+            Scheme::new(
                 vec![],
                 Ty::Arrow(
                     Box::new(Ty::Int),
@@ -159,7 +159,7 @@ impl TypeSolver {
 
         ctx.insert(
             "__gt__".into(),
-            PolyType::new(
+            Scheme::new(
                 vec![],
                 Ty::Arrow(
                     Box::new(Ty::Int),
@@ -170,7 +170,7 @@ impl TypeSolver {
 
         ctx.insert(
             "__gte__".into(),
-            PolyType::new(
+            Scheme::new(
                 vec![],
                 Ty::Arrow(
                     Box::new(Ty::Int),
@@ -350,7 +350,7 @@ impl TypeSolver {
 
                         self.ctx.push();
                         self.ctx
-                            .insert(ident.value.name, PolyType::new(vec![], var.clone()));
+                            .insert(ident.value.name, Scheme::new(vec![], var.clone()));
                         let solved_body = self.generate_expr_constraints(src, body)?;
                         self.ctx.pop();
 
@@ -640,7 +640,7 @@ impl TypeSolver {
                     ))
                 } else {
                     self.ctx
-                        .insert(ident.value.name, PolyType::new(vec![], ty.clone()));
+                        .insert(ident.value.name, Scheme::new(vec![], ty.clone()));
                     Ok(Pattern::new(
                         PatternKind::Ident(*ident),
                         (ty.clone(), pat.meta),

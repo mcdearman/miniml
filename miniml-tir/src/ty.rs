@@ -1,5 +1,5 @@
 use crate::{
-    poly_type::PolyType,
+    scheme::Scheme,
     ty_var::TyVar,
     var_context::{VarContext, VarId},
 };
@@ -28,11 +28,11 @@ pub enum Ty {
 }
 
 impl Ty {
-    pub fn generalize(&self, ctx_free_vars: HashSet<u32>, meta_ctx: &VarContext) -> PolyType {
+    pub fn generalize(&self, ctx_free_vars: HashSet<u32>, meta_ctx: &VarContext) -> Scheme {
         // log::debug!("generalize: {:?}", self);
         // log::debug!("free vars: {:?}", self.free_vars(meta_ctx));
         // log::debug!("ctx free vars: {:?}", ctx.free_vars(meta_ctx));
-        PolyType::new(
+        Scheme::new(
             self.free_vars(meta_ctx)
                 .difference(&ctx_free_vars)
                 .cloned()

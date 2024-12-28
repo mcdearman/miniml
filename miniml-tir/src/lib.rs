@@ -8,7 +8,7 @@ use ty::Ty;
 pub mod kind;
 pub mod ty_var;
 pub mod var_context;
-pub mod poly_type;
+pub mod scheme;
 pub mod ty;
 
 pub type TyNode<T> = Node<T, (Ty, Span)>;

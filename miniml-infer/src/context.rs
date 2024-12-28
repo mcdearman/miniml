@@ -1,4 +1,4 @@
-use miniml_tir::{poly_type::PolyType, var_context::VarContext};
+use miniml_tir::{scheme::Scheme, var_context::VarContext};
 use miniml_utils::intern::InternedString;
 use std::collections::{HashMap, HashSet};
 
@@ -23,11 +23,11 @@ impl Context {
         self.frames.pop();
     }
 
-    pub fn get(&self, id: &InternedString) -> Option<PolyType> {
+    pub fn get(&self, id: &InternedString) -> Option<Scheme> {
         self.frames.iter().rev().find_map(|frame| frame.get(id))
     }
 
-    pub fn insert(&mut self, id: InternedString, scheme: PolyType) {
+    pub fn insert(&mut self, id: InternedString, scheme: Scheme) {
         if let Some(frame) = self.frames.last_mut() {
             frame.insert(id, scheme);
         } else {
@@ -59,7 +59,7 @@ impl Context {
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Frame {
-    bindings: HashMap<InternedString, PolyType>,
+    bindings: HashMap<InternedString, Scheme>,
 }
 
 impl Frame {
@@ -69,15 +69,15 @@ impl Frame {
         }
     }
 
-    pub fn iter(&self) -> impl Iterator<Item = (&InternedString, &PolyType)> {
+    pub fn iter(&self) -> impl Iterator<Item = (&InternedString, &Scheme)> {
         self.bindings.iter()
     }
 
-    pub fn get(&self, name: &InternedString) -> Option<PolyType> {
+    pub fn get(&self, name: &InternedString) -> Option<Scheme> {
         self.bindings.get(name).cloned()
     }
 
-    pub fn insert(&mut self, name: InternedString, scheme: PolyType) {
+    pub fn insert(&mut self, name: InternedString, scheme: Scheme) {
         self.bindings.insert(name, scheme);
     }
 
