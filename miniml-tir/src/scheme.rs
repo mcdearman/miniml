@@ -20,20 +20,20 @@ impl Scheme {
         }
     }
 
-    pub fn zonk(&self, meta_ctx: &mut VarContext) -> Scheme {
-        Self::new(self.vars.clone(), self.ty.zonk(meta_ctx))
+    pub fn zonk(&self, var_ctx: &mut VarContext) -> Scheme {
+        Self::new(self.vars.clone(), self.ty.zonk(var_ctx))
     }
 
-    pub fn free_vars(&self, meta_ctx: &VarContext) -> HashSet<u16> {
+    pub fn free_vars(&self, var_ctx: &VarContext) -> HashSet<u16> {
         // self.ty
-        //     .free_vars(meta_ctx)
+        //     .free_vars(var_ctx)
         //     .difference(&self.vars.iter().cloned().collect())
         //     .cloned()
         //     .collect()
         todo!()
     }
 
-    pub fn instantiate(&self, meta_ctx: &mut VarContext) -> Ty {
+    pub fn instantiate(&self, var_ctx: &mut VarContext) -> Ty {
         fn substitute(ty: &Ty, subst: &HashMap<u16, VarId>, var_ctx: &mut VarContext) -> Ty {
             match ty {
                 Ty::Var(id) => match var_ctx.get(id) {
@@ -55,11 +55,11 @@ impl Scheme {
 
         let mut subst = HashMap::new();
         for m in self.vars.iter() {
-            subst.insert(*m, meta_ctx.fresh());
+            subst.insert(*m, var_ctx.fresh());
         }
 
-        let ty = meta_ctx.force(&self.ty);
-        let inst = substitute(&ty, &subst, meta_ctx);
+        let ty = var_ctx.force(&self.ty);
+        let inst = substitute(&ty, &subst, var_ctx);
         log::debug!("instantiate: {:?} -- {:?}", self, inst);
         inst
     }

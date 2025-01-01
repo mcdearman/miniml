@@ -10,16 +10,20 @@ true -- Bool
 
 -- Files are composed of declarations at the top level. In the notebook 
 -- or repl, you can use expressions at the top level. You can think of 
--- this as a shorthand for `let main args = <expr>`. In files, the main 
+-- this as a shorthand for `def main args = <expr>`. In files, the main 
 -- function must be defined explicitly:
-main : #[String] -> ()
-main args = ()
+def main : console () =
+  println "Hello, world!"
 
 -- Bindings are immutable by default.
 def x = 1
 
--- pattern binding
+-- pattern bindings at the top level must be irrefutable
 def [a, b, c] = [1, 2, 3]
+-- > ERROR: Pattern match is not exhaustive
+
+def (a, b, c) = (1, 2, 3) -- this is fine because the pattern is exhaustive
+-- > a = 1, b = 2, c = 3
 
 -- ints
 1
@@ -32,14 +36,14 @@ true
 
 -- Unary operators
 -1
--- => -1
+-- > -1
 
 not true
--- => false
+-- > false
 
 -- Boolean operators
 true and false or true
--- => true
+-- > true
 
 -- Comparison
 1 < 2 and 2 <= 3 and 3 > 2 and 3 >= 2 and 2 = 2 and 2 != 3
@@ -133,7 +137,7 @@ pub def map : a b. (a -> b) -> [a] -> [b]
   f [] -> []
   f (x::xs) -> f x :: map f xs
 
-def foldl a b. (f : a -> b -> a) (acc : a) (xs : [b]) : a =
+pub def foldl a b e. (f : a -> b -> a | e) (acc : a) (xs : [b]) : a | e =
   match xs with
   | [] -> acc
   | (x :: xs) -> foldl f (f acc x) xs
@@ -152,10 +156,20 @@ def foldl : a b. (a -> b -> a) -> a -> [b] -> a
   | f acc [] = acc
   | f acc (x::xs) = foldl f (f acc x) xs
 
+def foldl : a b e. (a -> b -> a | e) -> a -> [b] -> a | e
+  | f acc []      = acc
+  | f acc (x::xs) = foldl f (f acc x) xs
+
 -- possible uncurried version of sigs
 def foldl : a b. [b] (a b -> a) a -> a
   | [] f acc -> acc
   | (x::xs) f acc -> foldl f (f acc x) xs
+
+-- or
+def foldl a b. (xs : [b], f : (a, b) -> a,  acc : a) -> a =
+  match xs with
+  | [] f acc -> acc
+  | (x::xs) f acc -> foldl(xs, f, f acc x)
 
 def foldl f acc xs = match xs with
   [] -> acc
@@ -184,6 +198,10 @@ def p = { name = "Alice", age = 30 }
 
 -- records with public fields
 data Person = { pub name : String, pub age : Int }
+
+-- functional update
+def p = { name = "Alice", age = 30 }
+def p' = { p with age = 31 }
 
 -- sum types
 data Option a = None | Some a
@@ -230,21 +248,21 @@ instance Eq (Option a) where
     | (Some x) (Some y) = eq x y
     |  _ _ = false
 
-class Ord a where
+class Ord a <: Eq + PartialOrd where
   def compare : a -> a -> Ordering
 
 class Add a b where
-  type Output = a
-  add : a -> a -> Output
+  def data Output = a
+  def add : a -> b -> Output
 
-class Iterator i where
-  next : i a -> Option (a, i a)
+class Eq a where
+  def eq : a -> a -> Bool
 
-class IntoIterator i where
-  into_iter : i a -> Iterator a
+class PartialOrd a where
+  def partial_compare : a -> a -> Option Ordering
 
-instance IntoIterator [a] where
-  into_iter = ListIterator
+class (Eq a, PartialOrd a) => Ord a where
+  def compare : a -> a -> Ordering
 
 
 

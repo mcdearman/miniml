@@ -36,22 +36,22 @@ impl Ty {
             self.free_vars(meta_ctx)
                 .difference(&ctx_free_vars)
                 .cloned()
-                .map(|x| x as u16)
+                .for_each(|v| );
                 .collect(),
             self.clone(),
         )
     }
 
-    pub fn free_vars(&self, meta_ctx: &VarContext) -> HashSet<u32> {
+    pub fn free_vars(&self, var_ctx: &VarContext) -> HashSet<u32> {
         match self {
-            Self::Var(n) => match meta_ctx.get(n) {
-                Some(TyVar::Bound(ty)) => ty.free_vars(meta_ctx),
+            Self::Var(n) => match var_ctx.get(n) {
+                Some(TyVar::Bound(ty)) => ty.free_vars(var_ctx),
                 Some(TyVar::Unbound(tv)) => vec![tv].into_iter().collect(),
                 None => HashSet::new(),
             },
             Self::Arrow(param, body) => param
-                .free_vars(meta_ctx)
-                .union(&body.free_vars(meta_ctx))
+                .free_vars(var_ctx)
+                .union(&body.free_vars(var_ctx))
                 .cloned()
                 .collect(),
             _ => HashSet::new(),
