@@ -160,6 +160,12 @@ def foldl : a b e. (a -> b -> a | e) -> a -> [b] -> a | e
   | f acc []      = acc
   | f acc (x::xs) = foldl f (f acc x) xs
 
+def foldl : a b e. (a -> b -> a | e) -> a -> [b] -> a | e =
+  \f acc xs ->
+    match xs with
+    | [] -> acc
+    | (x::xs) -> foldl f (f acc x) xs
+
 -- possible uncurried version of sigs
 def foldl : a b. [b] (a b -> a) a -> a
   | [] f acc -> acc
@@ -179,15 +185,17 @@ def foldr f acc xs = match xs with
   | [] -> acc
   | (x::xs) -> f x (foldr f acc xs)
 
-def binary_search (x : Int) (xs : #[Int] -> Int) : Int =
-  let loop l r =
-    if l > r then -1
-    else
-      let m = (l + r) / 2 in
-      if Array.get xs m = n then m
-      else if Array.get xs m < n then loop (m + 1) r
-      else loop l (m - 1)
-  in loop 0 (Array.len xs - 1)
+def binary_search : a. (a -> Ordering) -> [a] -> a -> Option Int
+  | cmp xs x -> 
+    let loop l r =
+      if l > r then None
+      else
+        let m = (l + r) / 2
+        match cmp x (xs !! m) with
+        | EQ -> Some m
+        | LT -> loop l (m - 1)
+        | GT -> loop (m + 1) r
+    in loop 0 (len xs - 1)
 
 -- type alias
 type Point = (Int, Int)
@@ -207,6 +215,9 @@ def p' = { p with age = 31 }
 data Option a = None | Some a
 
 data List a = Empty | Pair a (List a)
+
+-- sum type with effectful constructors
+data Foo a e = Bar a | Baz (a -> a | e)
 
 data NonEmptyList a = NonEmpty a (List a)
 

@@ -3,8 +3,10 @@ use once_cell::sync::Lazy;
 use std::{
     collections::HashMap,
     fmt::{Debug, Display},
-    sync::atomic::AtomicUsize,
+    sync::{atomic::AtomicUsize, Mutex},
 };
+
+static COUNTER: AtomicUsize = AtomicUsize::new(0);
 
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct VarId(usize);
@@ -29,22 +31,23 @@ impl Display for VarId {
 
 impl From<VarId> for TyVar {
     fn from(id: VarId) -> Self {
-        unsafe { CTX.get(&id).expect("unbound meta ref") }
+        CTX.get(&id)
     }
 }
 
-static COUNTER: AtomicUsize = AtomicUsize::new(0);
-pub static mut CTX: Lazy<VarContext> = Lazy::new(|| VarContext::new());
+static CTX: Lazy<VarContext> = Lazy::new(|| VarContext::new());
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug)]
 pub struct VarContext {
-    bindings: HashMap<VarId, TyVar>,
+    counter: AtomicUsize,
+    bindings: Mutex<HashMap<VarId, TyVar>>,
 }
 
 impl VarContext {
     pub fn new() -> Self {
         Self {
-            bindings: HashMap::new(),
+            counter: AtomicUsize::new(0),
+            bindings: Mutex::new(HashMap::new()),
         }
     }
 
@@ -54,8 +57,11 @@ impl VarContext {
         r
     }
 
-    pub fn get(&self, var_id: &VarId) -> Option<TyVar> {
-        self.bindings.get(var_id).cloned()
+    pub fn get(&self, var_id: &VarId) -> TyVar {
+        self.bindings
+            .get(var_id)
+            .cloned()
+            .expect("unbound meta ref")
     }
 
     pub fn insert(&mut self, var_id: VarId, meta: TyVar) {
@@ -65,7 +71,7 @@ impl VarContext {
     pub fn force(&mut self, ty: &Ty) -> Ty {
         match ty {
             Ty::Var(id) => match self.get(id) {
-                Some(TyVar::Bound(ty)) => {
+                TyVar::Bound(ty) => {
                     let ty = self.force(&ty);
                     self.bindings.insert(*id, TyVar::Bound(ty.clone()));
                     ty

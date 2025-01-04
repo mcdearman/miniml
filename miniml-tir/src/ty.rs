@@ -32,22 +32,22 @@ impl Ty {
         // log::debug!("generalize: {:?}", self);
         // log::debug!("free vars: {:?}", self.free_vars(meta_ctx));
         // log::debug!("ctx free vars: {:?}", ctx.free_vars(meta_ctx));
-        Scheme::new(
-            self.free_vars(meta_ctx)
-                .difference(&ctx_free_vars)
-                .cloned()
-                .for_each(|v| );
-                .collect(),
-            self.clone(),
-        )
+        // Scheme::new(
+        //     self.free_vars(meta_ctx)
+        //         .difference(&ctx_free_vars)
+        //         .cloned()
+        //         .for_each(|v| );
+        //         .collect(),
+        //     self.clone(),
+        // )
+        todo!()
     }
 
     pub fn free_vars(&self, var_ctx: &VarContext) -> HashSet<u32> {
         match self {
             Self::Var(n) => match var_ctx.get(n) {
-                Some(TyVar::Bound(ty)) => ty.free_vars(var_ctx),
-                Some(TyVar::Unbound(tv)) => vec![tv].into_iter().collect(),
-                None => HashSet::new(),
+                TyVar::Bound(ty) => ty.free_vars(var_ctx),
+                TyVar::Unbound(tv) => vec![tv].into_iter().collect(),
             },
             Self::Arrow(param, body) => param
                 .free_vars(var_ctx)
@@ -70,9 +70,8 @@ impl Ty {
             Ty::Char => Ty::Char,
             Ty::Unit => Ty::Unit,
             Ty::Var(n) => match meta_ctx.get(&n) {
-                Some(TyVar::Bound(ty)) => ty.zonk(meta_ctx),
-                Some(TyVar::Unbound(tv)) => panic!("unbound type variable: {:?}", tv),
-                None => Ty::Var(n),
+                TyVar::Bound(ty) => ty.zonk(meta_ctx),
+                TyVar::Unbound(tv) => panic!("unbound type variable: {:?}", tv),
             },
             Ty::Arrow(param, body) => Ty::Arrow(
                 Box::new(param.zonk(meta_ctx)),

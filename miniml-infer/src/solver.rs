@@ -272,18 +272,12 @@ impl TypeSolver {
             //     let p = p.instantiate(self);
             //     self.unify(&t1, &p)
             // }
-            _ => Err(TypeError::from(format!(
-                "cannot unify {:?} and {:?}",
-                t1, t2,
-            ))),
+            _ => Err(TypeError::UnificationMismatch(t1, t2)),
         }
     }
 
     pub fn bind(&mut self, var_id: &VarId, ty: &Ty, c: &Constraint) -> InferResult<()> {
-        match self.meta_ctx.get(var_id).ok_or(TypeError::from(format!(
-            "unbound meta variable: {:?}",
-            var_id
-        )))? {
+        match self.meta_ctx.get(var_id) {
             TyVar::Bound(t) => Err(TypeError::from(format!(
                 "cannot bind {:?} to {:?}, already bound to {:?}",
                 var_id, ty, t
@@ -292,10 +286,7 @@ impl TypeSolver {
                 if *ty == Ty::Var(*var_id) {
                     Ok(())
                 } else if ty.free_vars(&self.meta_ctx).contains(&id) {
-                    Err(TypeError::from(format!(
-                        "occurs check failed: {} occurs in {:?} because {:?}",
-                        m, ty, c
-                    )))
+                    Err(TypeError::OccursCheck(ty.clone(), Ty::Var(*var_id)))
                 } else {
                     self.meta_ctx.insert(*var_id, TyVar::Bound(ty.clone()));
                     Ok(())

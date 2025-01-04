@@ -37,12 +37,8 @@ impl Scheme {
         fn substitute(ty: &Ty, subst: &HashMap<u16, VarId>, var_ctx: &mut VarContext) -> Ty {
             match ty {
                 Ty::Var(id) => match var_ctx.get(id) {
-                    Some(TyVar::Bound(ty)) => substitute(&ty, subst, var_ctx),
-                    Some(TyVar::Unbound(tv)) => match subst.get(&tv) {
-                        Some(t) => t.clone(),
-                        None => ty.clone(),
-                    },
-                    None => ty.clone(),
+                    TyVar::Bound(ty) => substitute(&ty, subst, var_ctx),
+                    TyVar::Unbound(tv) => todo!(),
                 },
                 Ty::Arrow(param, body) => Ty::Arrow(
                     Box::new(substitute(param, subst, var_ctx)),
