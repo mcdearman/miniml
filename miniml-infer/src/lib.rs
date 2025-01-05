@@ -1,5 +1,5 @@
-// mod constraint;
-// mod context;
-// pub mod error;
-// pub mod solver;
-// pub mod tests;
+mod constraint;
+mod context;
+pub mod error;
+pub mod solver;
+pub mod tests;

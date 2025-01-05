@@ -3,7 +3,7 @@ use once_cell::sync::Lazy;
 use std::{
     collections::HashMap,
     fmt::{Debug, Display},
-    sync::{atomic::AtomicUsize, Mutex},
+    sync::{atomic::AtomicUsize, Arc, Mutex},
 };
 
 static COUNTER: AtomicUsize = AtomicUsize::new(0);
@@ -12,9 +12,9 @@ static COUNTER: AtomicUsize = AtomicUsize::new(0);
 pub struct VarId(usize);
 
 impl VarId {
-    pub fn gen() -> Self {
-        Self(COUNTER.fetch_add(1, std::sync::atomic::Ordering::SeqCst))
-    }
+    // pub fn gen() -> Self {
+    //     Self(COUNTER.fetch_add(1, std::sync::atomic::Ordering::SeqCst))
+    // }
 }
 
 impl Debug for VarId {
@@ -40,14 +40,14 @@ static CTX: Lazy<VarContext> = Lazy::new(|| VarContext::new());
 #[derive(Debug)]
 pub struct VarContext {
     counter: AtomicUsize,
-    bindings: Mutex<HashMap<VarId, TyVar>>,
+    bindings: Arc<Mutex<HashMap<VarId, TyVar>>>,
 }
 
 impl VarContext {
     pub fn new() -> Self {
         Self {
             counter: AtomicUsize::new(0),
-            bindings: Mutex::new(HashMap::new()),
+            bindings: Arc::new(Mutex::new(HashMap::new())),
         }
     }
 
