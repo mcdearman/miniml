@@ -58,9 +58,9 @@ impl Ty {
         }
     }
 
-    pub fn zonk(&self, meta_ctx: &mut VarContext) -> Ty {
+    pub fn zonk(&self) -> Ty {
         // log::debug!("zonk: {:?}", self);
-        match meta_ctx.force(self) {
+        match self.force() {
             Ty::Byte => Ty::Byte,
             Ty::Int => Ty::Int,
             Ty::Rational => Ty::Rational,
@@ -69,24 +69,35 @@ impl Ty {
             Ty::String => Ty::String,
             Ty::Char => Ty::Char,
             Ty::Unit => Ty::Unit,
-            Ty::Var(n) => match meta_ctx.get(&n) {
-                TyVar::Bound(ty) => ty.zonk(meta_ctx),
+            Ty::Var(v) => match v.get() {
+                TyVar::Bound(ty) => ty.zonk(),
                 TyVar::Unbound(tv) => panic!("unbound type variable: {:?}", tv),
             },
-            Ty::Arrow(param, body) => Ty::Arrow(
-                Box::new(param.zonk(meta_ctx)),
-                Box::new(body.zonk(meta_ctx)),
-            ),
+            Ty::Arrow(param, body) => Ty::Arrow(Box::new(param.zonk()), Box::new(body.zonk())),
             Ty::Gen(id) => Ty::Gen(id),
-            Ty::List(ty) => Ty::List(Box::new(ty.zonk(meta_ctx))),
-            Ty::Array(ty) => Ty::Array(Box::new(ty.zonk(meta_ctx))),
+            Ty::List(ty) => Ty::List(Box::new(ty.zonk())),
+            Ty::Array(ty) => Ty::Array(Box::new(ty.zonk())),
             Ty::Record(id, fields) => Ty::Record(
                 id,
                 fields
                     .iter()
-                    .map(|(name, ty)| (name.clone(), ty.zonk(meta_ctx)))
+                    .map(|(name, ty)| (name.clone(), ty.zonk()))
                     .collect(),
             ),
+        }
+    }
+
+    pub fn force(&self) -> Ty {
+        match self {
+            Ty::Var(id) => match id.get() {
+                TyVar::Bound(ty) => {
+                    let ty = ty.force();
+                    id.insert(TyVar::Bound(ty.clone()));
+                    ty
+                }
+                _ => self.clone(),
+            },
+            _ => self.clone(),
         }
     }
 }

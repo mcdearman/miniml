@@ -21,7 +21,7 @@ impl Scheme {
     }
 
     pub fn zonk(&self, var_ctx: &mut VarContext) -> Scheme {
-        Self::new(self.vars.clone(), self.ty.zonk(var_ctx))
+        Self::new(self.vars.clone(), self.ty.zonk())
     }
 
     pub fn free_vars(&self, var_ctx: &VarContext) -> HashSet<u16> {
@@ -54,7 +54,7 @@ impl Scheme {
             subst.insert(*m, var_ctx.fresh());
         }
 
-        let ty = var_ctx.force(&self.ty);
+        let ty = self.ty.force();
         let inst = substitute(&ty, &subst, var_ctx);
         log::debug!("instantiate: {:?} -- {:?}", self, inst);
         inst
