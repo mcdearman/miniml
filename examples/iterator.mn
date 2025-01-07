@@ -7,28 +7,28 @@ pub class Iterator i where
   def len (iter : i) : Int = 
 
   @inline
-  def map (f : a -> b) (iter : i) : i b = 
+  def map (f : a -> b) (iter : i) : Map b = 
     MapIter { iter = iter, f = f }
 
   @inline
-  def zip (iter1 : i, iter2 : i) : i (Item i, Item i) =
+  def zip (iter1 : i, iter2 : j) : Zip i j =
     ZipIter { iter1 = iter1, iter2 = iter2 }
 
   @inline
   def fold (f : a -> Item i -> a, acc : a) (iter : i) : a =
     FoldIter { iter = iter, f = f, acc = acc }
   
-pub data MapIter i f { iter : i, f : f }
+pub data MapIter i f = { iter : i, f : f }
 
 instance Iterator (MapIter i f) where
   type Item (MapIter i f) = f (Item i)
 
-  def next (iter : MapIter i f) : Option (Item i, MapIter i f) =
-    match next iter.iter with
+  def next (self : MapIter i f) : Option (Item i, MapIter i f) =
+    match next self.iter with
     | None -> None
     | Some (x, xs) -> Some (iter.f x, MapIter { iter = xs, f = iter.f })
 
-pub data ZipIter i j { iter1 : i, iter2 : j }
+pub data ZipIter i j = { iter1 : i, iter2 : j }
 
 instance Iterator (ZipIter i j) where
   type Item (ZipIter i j) = (Item i, Item j)
@@ -38,7 +38,7 @@ instance Iterator (ZipIter i j) where
     | Some (x, xs), Some (y, ys) -> Some ((x, y), ZipIter { iter1 = xs, iter2 = ys })
     | _, _ -> None
 
-pub data FoldIter i a { iter : i, f : a -> Item i -> a, acc : a }
+pub data FoldIter i a = { iter : i, f : a -> Item i -> a, acc : a }
 
 instance Iterator (FoldIter i a) where
   type Item (FoldIter i a) = a
