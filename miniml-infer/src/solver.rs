@@ -232,10 +232,10 @@ impl TypeSolver {
         errors
     }
 
-    pub fn unify(&mut self, t1: &Ty, t2: &Ty, c: &Constraint) -> InferResult<()> {
+    pub fn unify(&mut self, t1: &Ty, t2: &Ty) -> InferResult<()> {
         log::debug!("unify: {:?} and {:?}", t1, t2);
-        let t1 = self.meta_ctx.force(t1);
-        let t2 = self.meta_ctx.force(t2);
+        let t1 = t1.force();
+        let t2 = t2.force();
 
         match (&t1, &t2) {
             (Ty::Byte, Ty::Byte)
@@ -247,12 +247,12 @@ impl TypeSolver {
             | (Ty::Char, Ty::Char)
             | (Ty::Unit, Ty::Unit) => Ok(()),
             (Ty::Arrow(p1, b1), Ty::Arrow(p2, b2)) => {
-                self.unify(p1, p2, c)?;
-                self.unify(b1, b2, c)
+                self.unify(p1, p2)?;
+                self.unify(b1, b2)
             }
-            (Ty::List(l1), Ty::List(l2)) => self.unify(l1, l2, c),
+            (Ty::List(l1), Ty::List(l2)) => self.unify(l1, l2),
             (_, Ty::Var(meta_ref)) => {
-                self.bind(meta_ref, &t1, c)?;
+                self.bind(meta_ref, &t1)?;
                 log::debug!("bind: {:?} to {:?}", meta_ref, t1);
                 // log::debug!("meta_ctx: {:#?}", self);
                 Ok(())
@@ -276,7 +276,7 @@ impl TypeSolver {
         }
     }
 
-    pub fn bind(&mut self, var_id: &VarId, ty: &Ty, c: &Constraint) -> InferResult<()> {
+    pub fn bind(&mut self, var_id: &VarId, ty: &Ty) -> InferResult<()> {
         match self.meta_ctx.get(var_id) {
             TyVar::Bound(t) => Err(TypeError::from(format!(
                 "cannot bind {:?} to {:?}, already bound to {:?}",
