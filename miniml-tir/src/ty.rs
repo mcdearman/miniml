@@ -1,7 +1,6 @@
 use crate::{
     scheme::Scheme,
-    ty_var::TyVar,
-    var_context::{VarContext, VarId},
+    ty_var::{TyVar, VarId},
 };
 use miniml_utils::{intern::InternedString, unique_id::UniqueId};
 use std::{
@@ -28,7 +27,7 @@ pub enum Ty {
 }
 
 impl Ty {
-    pub fn generalize(&self, ctx_free_vars: HashSet<u32>, meta_ctx: &VarContext) -> Scheme {
+    pub fn generalize(&self, ctx_free_vars: HashSet<u32>) -> Scheme {
         // log::debug!("generalize: {:?}", self);
         // log::debug!("free vars: {:?}", self.free_vars(meta_ctx));
         // log::debug!("ctx free vars: {:?}", ctx.free_vars(meta_ctx));
@@ -43,15 +42,15 @@ impl Ty {
         todo!()
     }
 
-    pub fn free_vars(&self, var_ctx: &VarContext) -> HashSet<u32> {
+    pub fn free_vars(&self) -> HashSet<u32> {
         match self {
-            Self::Var(n) => match var_ctx.get(n) {
-                TyVar::Bound(ty) => ty.free_vars(var_ctx),
+            Self::Var(n) => match n.get() {
+                TyVar::Bound(ty) => ty.free_vars(),
                 TyVar::Unbound(tv) => vec![tv].into_iter().collect(),
             },
             Self::Arrow(param, body) => param
-                .free_vars(var_ctx)
-                .union(&body.free_vars(var_ctx))
+                .free_vars()
+                .union(&body.free_vars())
                 .cloned()
                 .collect(),
             _ => HashSet::new(),

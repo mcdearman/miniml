@@ -1,5 +1,5 @@
-use super::{ty::Ty, var_context::VarContext};
-use crate::{ty_var::TyVar, var_context::VarId};
+use super::ty::Ty;
+use crate::ty_var::{TyVar, VarId};
 use itertools::join;
 use std::{
     collections::{HashMap, HashSet},
@@ -20,11 +20,11 @@ impl Scheme {
         }
     }
 
-    pub fn zonk(&self, var_ctx: &mut VarContext) -> Scheme {
+    pub fn zonk(&self) -> Scheme {
         Self::new(self.vars.clone(), self.ty.zonk())
     }
 
-    pub fn free_vars(&self, var_ctx: &VarContext) -> HashSet<u16> {
+    pub fn free_vars(&self) -> HashSet<u16> {
         // self.ty
         //     .free_vars(var_ctx)
         //     .difference(&self.vars.iter().cloned().collect())
@@ -33,29 +33,29 @@ impl Scheme {
         todo!()
     }
 
-    pub fn instantiate(&self, var_ctx: &mut VarContext) -> Ty {
-        fn substitute(ty: &Ty, subst: &HashMap<u16, VarId>, var_ctx: &mut VarContext) -> Ty {
+    pub fn instantiate(&self) -> Ty {
+        fn substitute(ty: &Ty, subst: &HashMap<u16, VarId>) -> Ty {
             match ty {
-                Ty::Var(id) => match var_ctx.get(id) {
-                    TyVar::Bound(ty) => substitute(&ty, subst, var_ctx),
+                Ty::Var(id) => match id.get() {
+                    TyVar::Bound(ty) => substitute(&ty, subst),
                     TyVar::Unbound(tv) => todo!(),
                 },
                 Ty::Arrow(param, body) => Ty::Arrow(
-                    Box::new(substitute(param, subst, var_ctx)),
-                    Box::new(substitute(body, subst, var_ctx)),
+                    Box::new(substitute(param, subst)),
+                    Box::new(substitute(body, subst)),
                 ),
-                Ty::List(ty) => Ty::List(Box::new(substitute(ty, subst, var_ctx))),
+                Ty::List(ty) => Ty::List(Box::new(substitute(ty, subst))),
                 _ => ty.clone(),
             }
         }
 
         let mut subst = HashMap::new();
         for m in self.vars.iter() {
-            subst.insert(*m, var_ctx.fresh());
+            subst.insert(*m, VarId::fresh());
         }
 
         let ty = self.ty.force();
-        let inst = substitute(&ty, &subst, var_ctx);
+        let inst = substitute(&ty, &subst);
         log::debug!("instantiate: {:?} -- {:?}", self, inst);
         inst
     }

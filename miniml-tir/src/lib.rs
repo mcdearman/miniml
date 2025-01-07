@@ -9,7 +9,6 @@ pub mod kind;
 pub mod scheme;
 pub mod ty;
 pub mod ty_var;
-pub mod var_context;
 
 pub type TyNode<T> = Node<T, (Ty, Span)>;
 pub type TyBoxNode<T> = BoxNode<T, (Ty, Span)>;

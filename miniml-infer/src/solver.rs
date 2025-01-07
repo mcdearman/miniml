@@ -1,14 +1,9 @@
 use itertools::Itertools;
 use miniml_ast::SynNode;
 use miniml_nir as nir;
-use miniml_tir::{
-    scheme::Scheme,
-    ty::Ty,
-    ty_var::TyVar,
-    var_context::{VarContext, VarId},
-    *,
-};
-use miniml_utils::{intern::InternedString, node::Node};
+use miniml_tir::{scheme::Scheme, ty::Ty, ty_var::TyVar, *};
+use miniml_utils::intern::InternedString;
+use ty_var::VarId;
 
 use crate::{
     constraint::Constraint,
@@ -20,13 +15,11 @@ use crate::{
 pub struct TypeSolver {
     src: InternedString,
     pub ctx: Context,
-    pub meta_ctx: VarContext,
     constraints: Vec<Constraint>,
 }
 
 impl TypeSolver {
     pub fn new() -> Self {
-        let mut meta_ctx = VarContext::new();
         let mut ctx = Context::new();
 
         ctx.insert(
@@ -179,7 +172,7 @@ impl TypeSolver {
             ),
         );
 
-        let r = meta_ctx.fresh();
+        let r = VarId::fresh();
         ctx.insert(
             "__pair__".into(),
             Ty::Arrow(
@@ -189,13 +182,12 @@ impl TypeSolver {
                     Box::new(Ty::List(Box::new(Ty::Var(r)))),
                 )),
             )
-            .generalize(ctx.free_vars(&meta_ctx), &meta_ctx),
+            .generalize(ctx.free_vars()),
         );
 
         Self {
             src: "".into(),
             ctx,
-            meta_ctx,
             constraints: vec![],
         }
     }
@@ -219,12 +211,12 @@ impl TypeSolver {
         for c in self.constraints.clone() {
             match &c {
                 Constraint::Eq(t1, t2) => {
-                    if let Err(e) = self.unify(t1, t2, &c) {
+                    if let Err(e) = self.unify(t1, t2) {
                         errors.push(e);
                     }
                 }
                 Constraint::Gen(name, t) => {
-                    let p = t.generalize(self.ctx.free_vars(&self.meta_ctx), &self.meta_ctx);
+                    let p = t.generalize(self.ctx.free_vars());
                     self.ctx.insert(name.clone(), p);
                 }
             }
@@ -258,7 +250,7 @@ impl TypeSolver {
                 Ok(())
             }
             (Ty::Var(meta_ref), _) => {
-                self.bind(meta_ref, &t2, c)?;
+                self.bind(meta_ref, &t2)?;
                 log::debug!("bind: {:?} to {:?}", meta_ref, t2);
                 // log::debug!("meta_ctx: {:#?}", self);
                 Ok(())
@@ -277,18 +269,15 @@ impl TypeSolver {
     }
 
     pub fn bind(&mut self, var_id: &VarId, ty: &Ty) -> InferResult<()> {
-        match self.meta_ctx.get(var_id) {
-            TyVar::Bound(t) => Err(TypeError::from(format!(
-                "cannot bind {:?} to {:?}, already bound to {:?}",
-                var_id, ty, t
-            ))),
-            m @ TyVar::Unbound(id) => {
+        match var_id.get() {
+            TyVar::Bound(t) => self.unify(&t, ty),
+            TyVar::Unbound(id) => {
                 if *ty == Ty::Var(*var_id) {
                     Ok(())
-                } else if ty.free_vars(&self.meta_ctx).contains(&id) {
+                } else if ty.free_vars().contains(&id) {
                     Err(TypeError::OccursCheck(ty.clone(), Ty::Var(*var_id)))
                 } else {
-                    self.meta_ctx.insert(*var_id, TyVar::Bound(ty.clone()));
+                    var_id.insert(TyVar::Bound(ty.clone()));
                     Ok(())
                 }
             }
@@ -336,7 +325,7 @@ impl TypeSolver {
                     if let Some(hint) = anno {
                         todo!()
                     } else {
-                        let var = Ty::Var(self.meta_ctx.fresh());
+                        let var = Ty::Var(VarId::fresh());
                         log::debug!("fresh rec def var: {:?}", var);
 
                         self.ctx.push();
@@ -427,22 +416,23 @@ impl TypeSolver {
                 if let Some(scm) = self.ctx.get(&ident.value.name) {
                     Ok(Expr::new(
                         ExprKind::Var(*ident),
-                        (scm.instantiate(&mut self.meta_ctx), expr.meta),
+                        (scm.instantiate(), expr.meta),
                     ))
                 } else {
                     log::debug!("unbound variable: {:?}", expr);
-                    Err(TypeError::from(format!(
-                        "unbound variable: {:?} - \"{}\"",
-                        expr,
-                        self.src[expr.meta].to_string()
-                    )))
+                    // Err(TypeError::from(format!(
+                    //     "unbound variable: {:?} - \"{}\"",
+                    //     expr,
+                    //     self.src[expr.meta].to_string()
+                    // )))
+                    Err(TypeError::UnboundName(ident.value.name.clone()))
                 }
             }
             nir::ExprKind::Apply(fun, arg) => {
                 let solved_fun = self.generate_expr_constraints(src, fun)?;
                 let solved_arg = self.generate_expr_constraints(src, arg)?;
 
-                let ty_ret = Ty::Var(self.meta_ctx.fresh());
+                let ty_ret = Ty::Var(VarId::fresh());
                 let ty_fun = Ty::Arrow(
                     Box::new(solved_arg.meta.0.clone()),
                     Box::new(ty_ret.clone()),
@@ -456,7 +446,7 @@ impl TypeSolver {
                 ))
             }
             nir::ExprKind::Lambda(pattern, body) => {
-                let param_ty = Ty::Var(self.meta_ctx.fresh());
+                let param_ty = Ty::Var(VarId::fresh());
                 log::debug!("fresh lambda var: {:?}", param_ty);
                 self.ctx.push();
                 let solved_pat =
@@ -499,7 +489,7 @@ impl TypeSolver {
                 ))
             }
             nir::ExprKind::Let(pattern, true, expr, body) => {
-                let var = Ty::Var(self.meta_ctx.fresh());
+                let var = Ty::Var(VarId::fresh());
                 log::debug!("fresh let var: {:?}", var);
 
                 self.ctx.push();
@@ -543,7 +533,7 @@ impl TypeSolver {
             }
             nir::ExprKind::Match(e, arms) => {
                 let solved_expr = self.generate_expr_constraints(src, &e)?;
-                let ty = Ty::Var(self.meta_ctx.fresh());
+                let ty = Ty::Var(VarId::fresh());
                 log::debug!("fresh match var: {:?}", ty);
 
                 let mut solved_arms = vec![];
@@ -567,7 +557,7 @@ impl TypeSolver {
                 ))
             }
             nir::ExprKind::List(vec) => {
-                let elem_ty = Ty::Var(self.meta_ctx.fresh());
+                let elem_ty = Ty::Var(VarId::fresh());
                 log::debug!("fresh list var: {:?}", elem_ty);
                 let list_ty = Ty::List(Box::new(elem_ty.clone()));
                 let solved_vec = vec
@@ -623,7 +613,7 @@ impl TypeSolver {
             }),
             nir::PatternKind::Ident(ident, type_hint) => {
                 if generalize {
-                    let scm = ty.generalize(self.ctx.free_vars(&self.meta_ctx), &self.meta_ctx);
+                    let scm = ty.generalize(self.ctx.free_vars());
                     self.ctx.insert(ident.value.name, scm.clone());
                     Ok(Pattern::new(
                         PatternKind::Ident(*ident),
@@ -639,13 +629,9 @@ impl TypeSolver {
                 }
             }
             nir::PatternKind::List(vec) => {
-                let v = self.meta_ctx.fresh();
+                let v = VarId::fresh();
                 let elem_ty = Ty::Var(v);
-                log::debug!(
-                    "fresh list pat var: {:?} is {:?}",
-                    elem_ty,
-                    self.meta_ctx.get(&v)
-                );
+                log::debug!("fresh list pat var: {:?} is {:?}", elem_ty, v.get());
                 let list_ty = Ty::List(Box::new(elem_ty.clone()));
                 let solved_pats = vec
                     .iter()
@@ -659,7 +645,7 @@ impl TypeSolver {
                 ))
             }
             nir::PatternKind::Pair(head, tail) => {
-                let var = Ty::Var(self.meta_ctx.fresh());
+                let var = Ty::Var(VarId::fresh());
                 log::debug!("fresh pair pat var: {:?}", var);
                 let pair_ty = Ty::List(Box::new(var.clone()));
                 let solved_head = self.generate_pattern_constraints(src, head, &var, generalize)?;
@@ -703,14 +689,14 @@ impl TypeSolver {
                     ident: ident.clone(),
                     body: self.zonk_expr(body),
                 },
-                (def.meta.0.zonk(&mut self.meta_ctx), def.meta.1),
+                (def.meta.0.zonk(), def.meta.1),
             ),
             DefKind::NonRec { pat, body } => Def::new(
                 DefKind::NonRec {
                     pat: self.zonk_pattern(pat),
                     body: self.zonk_expr(body),
                 },
-                (def.meta.0.zonk(&mut self.meta_ctx), def.meta.1),
+                (def.meta.0.zonk(), def.meta.1),
             ),
         }
     }
@@ -719,27 +705,27 @@ impl TypeSolver {
         match expr.value.as_ref() {
             ExprKind::Lit(lit) => Expr::new(
                 ExprKind::Lit(lit.clone()),
-                (expr.meta.0.zonk(&mut self.meta_ctx), expr.meta.1),
+                (expr.meta.0.zonk(), expr.meta.1),
             ),
             ExprKind::Var(node) => Expr::new(
                 ExprKind::Var(node.clone()),
-                (expr.meta.0.zonk(&mut self.meta_ctx), expr.meta.1),
+                (expr.meta.0.zonk(), expr.meta.1),
             ),
             ExprKind::Apply(fun, arg) => Expr::new(
                 ExprKind::Apply(self.zonk_expr(fun), self.zonk_expr(arg)),
-                (expr.meta.0.zonk(&mut self.meta_ctx), expr.meta.1),
+                (expr.meta.0.zonk(), expr.meta.1),
             ),
             ExprKind::Lambda(param, expr) => Expr::new(
                 ExprKind::Lambda(self.zonk_pattern(param), self.zonk_expr(expr)),
-                (expr.meta.0.zonk(&mut self.meta_ctx), expr.meta.1),
+                (expr.meta.0.zonk(), expr.meta.1),
             ),
             ExprKind::Or(lhs, rhs) => Expr::new(
                 ExprKind::Or(self.zonk_expr(lhs), self.zonk_expr(rhs)),
-                (expr.meta.0.zonk(&mut self.meta_ctx), expr.meta.1),
+                (expr.meta.0.zonk(), expr.meta.1),
             ),
             ExprKind::And(lhs, rhs) => Expr::new(
                 ExprKind::And(self.zonk_expr(lhs), self.zonk_expr(rhs)),
-                (expr.meta.0.zonk(&mut self.meta_ctx), expr.meta.1),
+                (expr.meta.0.zonk(), expr.meta.1),
             ),
             ExprKind::Let(pat, _, expr, body) => Expr::new(
                 ExprKind::Let(
@@ -748,7 +734,7 @@ impl TypeSolver {
                     self.zonk_expr(expr),
                     self.zonk_expr(body),
                 ),
-                (expr.meta.0.zonk(&mut self.meta_ctx), expr.meta.1),
+                (expr.meta.0.zonk(), expr.meta.1),
             ),
             ExprKind::If(cond, then, else_) => Expr::new(
                 ExprKind::If(
@@ -756,7 +742,7 @@ impl TypeSolver {
                     self.zonk_expr(then),
                     self.zonk_expr(else_),
                 ),
-                (expr.meta.0.zonk(&mut self.meta_ctx), expr.meta.1),
+                (expr.meta.0.zonk(), expr.meta.1),
             ),
             ExprKind::Match(expr, cases) => Expr::new(
                 ExprKind::Match(
@@ -766,11 +752,11 @@ impl TypeSolver {
                         .map(|(pat, body)| (self.zonk_pattern(pat), self.zonk_expr(body)))
                         .collect_vec(),
                 ),
-                (expr.meta.0.zonk(&mut self.meta_ctx), expr.meta.1),
+                (expr.meta.0.zonk(), expr.meta.1),
             ),
             ExprKind::List(xs) => Expr::new(
                 ExprKind::List(xs.iter().map(|x| self.zonk_expr(x)).collect_vec()),
-                (expr.meta.0.zonk(&mut self.meta_ctx), expr.meta.1),
+                (expr.meta.0.zonk(), expr.meta.1),
             ),
             ExprKind::Unit => Expr::new(ExprKind::Unit, (Ty::Unit, expr.meta.1)),
         }
@@ -778,30 +764,26 @@ impl TypeSolver {
 
     fn zonk_pattern(&mut self, pat: &Pattern) -> Pattern {
         match pat.value.as_ref() {
-            PatternKind::Wildcard => Pattern::new(
-                PatternKind::Wildcard,
-                (pat.meta.0.zonk(&mut self.meta_ctx), pat.meta.1),
-            ),
+            PatternKind::Wildcard => {
+                Pattern::new(PatternKind::Wildcard, (pat.meta.0.zonk(), pat.meta.1))
+            }
             PatternKind::Lit(lit) => Pattern::new(
                 PatternKind::Lit(lit.clone()),
-                (pat.meta.0.zonk(&mut self.meta_ctx), pat.meta.1),
+                (pat.meta.0.zonk(), pat.meta.1),
             ),
             PatternKind::Ident(ident) => Pattern::new(
                 PatternKind::Ident(ident.clone()),
-                (pat.meta.0.zonk(&mut self.meta_ctx), pat.meta.1),
+                (pat.meta.0.zonk(), pat.meta.1),
             ),
             PatternKind::List(xs) => Pattern::new(
                 PatternKind::List(xs.iter().map(|x| self.zonk_pattern(x)).collect_vec()),
-                (pat.meta.0.zonk(&mut self.meta_ctx), pat.meta.1),
+                (pat.meta.0.zonk(), pat.meta.1),
             ),
             PatternKind::Pair(head, tail) => Pattern::new(
                 PatternKind::Pair(self.zonk_pattern(head), self.zonk_pattern(tail)),
-                (pat.meta.0.zonk(&mut self.meta_ctx), pat.meta.1),
+                (pat.meta.0.zonk(), pat.meta.1),
             ),
-            PatternKind::Unit => Pattern::new(
-                PatternKind::Unit,
-                (pat.meta.0.zonk(&mut self.meta_ctx), pat.meta.1),
-            ),
+            PatternKind::Unit => Pattern::new(PatternKind::Unit, (pat.meta.0.zonk(), pat.meta.1)),
         }
     }
 }

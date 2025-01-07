@@ -1,4 +1,4 @@
-use miniml_tir::{scheme::Scheme, var_context::VarContext};
+use miniml_tir::scheme::Scheme;
 use miniml_utils::intern::InternedString;
 use std::collections::{HashMap, HashSet};
 
@@ -37,22 +37,18 @@ impl Context {
         }
     }
 
-    pub(super) fn free_vars(&self, meta_ctx: &VarContext) -> HashSet<u32> {
+    pub(super) fn free_vars(&self) -> HashSet<u32> {
         self.frames
             .iter()
-            .map(|frame| frame.free_vars(meta_ctx))
+            .map(|frame| frame.free_vars())
             .fold(HashSet::new(), |acc, set| {
                 acc.union(&set).cloned().collect()
             })
     }
 
-    pub fn zonk(&self, meta_ctx: &mut VarContext) -> Self {
+    pub fn zonk(&self) -> Self {
         Self {
-            frames: self
-                .frames
-                .iter()
-                .map(|frame| frame.zonk(meta_ctx))
-                .collect(),
+            frames: self.frames.iter().map(|frame| frame.zonk()).collect(),
         }
     }
 }
@@ -81,7 +77,7 @@ impl Frame {
         self.bindings.insert(name, scheme);
     }
 
-    pub(super) fn free_vars(&self, meta_ctx: &VarContext) -> HashSet<u32> {
+    pub(super) fn free_vars(&self) -> HashSet<u32> {
         // self.clone()
         //     .bindings
         //     .into_iter()
@@ -92,10 +88,10 @@ impl Frame {
         todo!()
     }
 
-    pub fn zonk(&self, meta_ctx: &mut VarContext) -> Self {
+    pub fn zonk(&self) -> Self {
         let mut frame = Frame::new();
         for (name, scheme) in self.iter() {
-            frame.insert(*name, scheme.zonk(meta_ctx));
+            frame.insert(*name, scheme.zonk());
         }
         frame
     }
