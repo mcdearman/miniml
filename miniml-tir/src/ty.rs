@@ -31,15 +31,11 @@ impl Ty {
         // log::debug!("generalize: {:?}", self);
         // log::debug!("free vars: {:?}", self.free_vars(meta_ctx));
         // log::debug!("ctx free vars: {:?}", ctx.free_vars(meta_ctx));
-        // Scheme::new(
-        //     self.free_vars(meta_ctx)
-        //         .difference(&ctx_free_vars)
-        //         .cloned()
-        //         .for_each(|v| );
-        //         .collect(),
-        //     self.clone(),
-        // )
-        todo!()
+        let scheme_vars = self.free_vars().difference(&ctx_free_vars).cloned()
+        Scheme::new(
+            self.free_vars().difference(&ctx_free_vars).cloned(),
+            self.clone(),
+        )
     }
 
     pub fn free_vars(&self) -> HashSet<u32> {

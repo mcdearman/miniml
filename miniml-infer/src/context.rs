@@ -4,7 +4,6 @@ use std::collections::{HashMap, HashSet};
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Context {
-    // meta_ctx: MetaContext,
     frames: Vec<Frame>,
 }
 
@@ -78,14 +77,13 @@ impl Frame {
     }
 
     pub(super) fn free_vars(&self) -> HashSet<u32> {
-        // self.clone()
-        //     .bindings
-        //     .into_iter()
-        //     .map(|(_, scheme)| scheme.free_vars(meta_ctx))
-        //     .fold(HashSet::new(), |acc, set| {
-        //         acc.union(&set).cloned().collect()
-        //     })
-        todo!()
+        self.clone()
+            .bindings
+            .into_iter()
+            .map(|(_, scheme)| scheme.free_vars())
+            .fold(HashSet::new(), |acc, set| {
+                acc.union(&set).cloned().collect()
+            })
     }
 
     pub fn zonk(&self) -> Self {

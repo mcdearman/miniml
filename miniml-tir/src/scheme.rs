@@ -24,13 +24,8 @@ impl Scheme {
         Self::new(self.vars.clone(), self.ty.zonk())
     }
 
-    pub fn free_vars(&self) -> HashSet<u16> {
-        // self.ty
-        //     .free_vars(var_ctx)
-        //     .difference(&self.vars.iter().cloned().collect())
-        //     .cloned()
-        //     .collect()
-        todo!()
+    pub fn free_vars(&self) -> HashSet<u32> {
+        self.ty.free_vars()
     }
 
     pub fn instantiate(&self) -> Ty {
