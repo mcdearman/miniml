@@ -1,9 +1,9 @@
 use itertools::Itertools;
+use meta::MetaId;
 use miniml_ast::SynNode;
 use miniml_nir as nir;
-use miniml_tir::{scheme::Scheme, ty::Ty, ty_var::TyVar, *};
+use miniml_tir::{meta::Meta, scheme::Scheme, ty::Ty, *};
 use miniml_utils::intern::InternedString;
-use ty_var::VarId;
 
 use crate::{
     constraint::Constraint,
@@ -24,162 +24,126 @@ impl TypeSolver {
 
         ctx.insert(
             "main".into(),
-            Scheme::new(
-                vec![],
-                Ty::Arrow(Box::new(Ty::Array(Box::new(Ty::String))), Box::new(Ty::Int)),
-            ),
+            Scheme::new(Ty::Arrow(
+                Box::new(Ty::Array(Box::new(Ty::String))),
+                Box::new(Ty::Int),
+            )),
         );
 
         ctx.insert(
             "__neg__".into(),
-            Scheme::new(vec![], Ty::Arrow(Box::new(Ty::Int), Box::new(Ty::Int))),
+            Scheme::new(Ty::Arrow(Box::new(Ty::Int), Box::new(Ty::Int))),
         );
 
         ctx.insert(
             "__not__".into(),
-            Scheme::new(vec![], Ty::Arrow(Box::new(Ty::Bool), Box::new(Ty::Bool))),
+            Scheme::new(Ty::Arrow(Box::new(Ty::Bool), Box::new(Ty::Bool))),
         );
 
         ctx.insert(
             "__add__".into(),
-            Scheme::new(
-                vec![],
-                Ty::Arrow(
-                    Box::new(Ty::Int),
-                    Box::new(Ty::Arrow(Box::new(Ty::Int), Box::new(Ty::Int))),
-                ),
-            ),
+            Scheme::new(Ty::Arrow(
+                Box::new(Ty::Int),
+                Box::new(Ty::Arrow(Box::new(Ty::Int), Box::new(Ty::Int))),
+            )),
         );
 
         ctx.insert(
             "__sub__".into(),
-            Scheme::new(
-                vec![],
-                Ty::Arrow(
-                    Box::new(Ty::Int),
-                    Box::new(Ty::Arrow(Box::new(Ty::Int), Box::new(Ty::Int))),
-                ),
-            ),
+            Scheme::new(Ty::Arrow(
+                Box::new(Ty::Int),
+                Box::new(Ty::Arrow(Box::new(Ty::Int), Box::new(Ty::Int))),
+            )),
         );
 
         ctx.insert(
             "__mul__".into(),
-            Scheme::new(
-                vec![],
-                Ty::Arrow(
-                    Box::new(Ty::Int),
-                    Box::new(Ty::Arrow(Box::new(Ty::Int), Box::new(Ty::Int))),
-                ),
-            ),
+            Scheme::new(Ty::Arrow(
+                Box::new(Ty::Int),
+                Box::new(Ty::Arrow(Box::new(Ty::Int), Box::new(Ty::Int))),
+            )),
         );
 
         ctx.insert(
             "__div__".into(),
-            Scheme::new(
-                vec![],
-                Ty::Arrow(
-                    Box::new(Ty::Int),
-                    Box::new(Ty::Arrow(Box::new(Ty::Int), Box::new(Ty::Int))),
-                ),
-            ),
+            Scheme::new(Ty::Arrow(
+                Box::new(Ty::Int),
+                Box::new(Ty::Arrow(Box::new(Ty::Int), Box::new(Ty::Int))),
+            )),
         );
 
         ctx.insert(
             "__rem__".into(),
-            Scheme::new(
-                vec![],
-                Ty::Arrow(
-                    Box::new(Ty::Int),
-                    Box::new(Ty::Arrow(Box::new(Ty::Int), Box::new(Ty::Int))),
-                ),
-            ),
+            Scheme::new(Ty::Arrow(
+                Box::new(Ty::Int),
+                Box::new(Ty::Arrow(Box::new(Ty::Int), Box::new(Ty::Int))),
+            )),
         );
 
         ctx.insert(
             "__pow__".into(),
-            Scheme::new(
-                vec![],
-                Ty::Arrow(
-                    Box::new(Ty::Int),
-                    Box::new(Ty::Arrow(Box::new(Ty::Int), Box::new(Ty::Int))),
-                ),
-            ),
+            Scheme::new(Ty::Arrow(
+                Box::new(Ty::Int),
+                Box::new(Ty::Arrow(Box::new(Ty::Int), Box::new(Ty::Int))),
+            )),
         );
 
         ctx.insert(
             "__eq__".into(),
-            Scheme::new(
-                vec![],
-                Ty::Arrow(
-                    Box::new(Ty::Int),
-                    Box::new(Ty::Arrow(Box::new(Ty::Int), Box::new(Ty::Bool))),
-                ),
-            ),
+            Scheme::new(Ty::Arrow(
+                Box::new(Ty::Int),
+                Box::new(Ty::Arrow(Box::new(Ty::Int), Box::new(Ty::Bool))),
+            )),
         );
 
         ctx.insert(
             "__neq__".into(),
-            Scheme::new(
-                vec![],
-                Ty::Arrow(
-                    Box::new(Ty::Int),
-                    Box::new(Ty::Arrow(Box::new(Ty::Int), Box::new(Ty::Bool))),
-                ),
-            ),
+            Scheme::new(Ty::Arrow(
+                Box::new(Ty::Int),
+                Box::new(Ty::Arrow(Box::new(Ty::Int), Box::new(Ty::Bool))),
+            )),
         );
 
         ctx.insert(
             "__lt__".into(),
-            Scheme::new(
-                vec![],
-                Ty::Arrow(
-                    Box::new(Ty::Int),
-                    Box::new(Ty::Arrow(Box::new(Ty::Int), Box::new(Ty::Bool))),
-                ),
-            ),
+            Scheme::new(Ty::Arrow(
+                Box::new(Ty::Int),
+                Box::new(Ty::Arrow(Box::new(Ty::Int), Box::new(Ty::Bool))),
+            )),
         );
 
         ctx.insert(
             "__lte__".into(),
-            Scheme::new(
-                vec![],
-                Ty::Arrow(
-                    Box::new(Ty::Int),
-                    Box::new(Ty::Arrow(Box::new(Ty::Int), Box::new(Ty::Bool))),
-                ),
-            ),
+            Scheme::new(Ty::Arrow(
+                Box::new(Ty::Int),
+                Box::new(Ty::Arrow(Box::new(Ty::Int), Box::new(Ty::Bool))),
+            )),
         );
 
         ctx.insert(
             "__gt__".into(),
-            Scheme::new(
-                vec![],
-                Ty::Arrow(
-                    Box::new(Ty::Int),
-                    Box::new(Ty::Arrow(Box::new(Ty::Int), Box::new(Ty::Bool))),
-                ),
-            ),
+            Scheme::new(Ty::Arrow(
+                Box::new(Ty::Int),
+                Box::new(Ty::Arrow(Box::new(Ty::Int), Box::new(Ty::Bool))),
+            )),
         );
 
         ctx.insert(
             "__gte__".into(),
-            Scheme::new(
-                vec![],
-                Ty::Arrow(
-                    Box::new(Ty::Int),
-                    Box::new(Ty::Arrow(Box::new(Ty::Int), Box::new(Ty::Bool))),
-                ),
-            ),
+            Scheme::new(Ty::Arrow(
+                Box::new(Ty::Int),
+                Box::new(Ty::Arrow(Box::new(Ty::Int), Box::new(Ty::Bool))),
+            )),
         );
 
-        let r = VarId::fresh();
+        let r = MetaId::fresh();
         ctx.insert(
             "__pair__".into(),
             Ty::Arrow(
-                Box::new(Ty::Var(r)),
+                Box::new(Ty::Meta(r)),
                 Box::new(Ty::Arrow(
-                    Box::new(Ty::List(Box::new(Ty::Var(r)))),
-                    Box::new(Ty::List(Box::new(Ty::Var(r)))),
+                    Box::new(Ty::List(Box::new(Ty::Meta(r)))),
+                    Box::new(Ty::List(Box::new(Ty::Meta(r)))),
                 )),
             )
             .generalize(ctx.free_vars()),
@@ -243,13 +207,13 @@ impl TypeSolver {
                 self.unify(b1, b2)
             }
             (Ty::List(l1), Ty::List(l2)) => self.unify(l1, l2),
-            (_, Ty::Var(meta_ref)) => {
+            (_, Ty::Meta(meta_ref)) => {
                 self.bind(meta_ref, &t1)?;
                 log::debug!("bind: {:?} to {:?}", meta_ref, t1);
                 // log::debug!("meta_ctx: {:#?}", self);
                 Ok(())
             }
-            (Ty::Var(meta_ref), _) => {
+            (Ty::Meta(meta_ref), _) => {
                 self.bind(meta_ref, &t2)?;
                 log::debug!("bind: {:?} to {:?}", meta_ref, t2);
                 // log::debug!("meta_ctx: {:#?}", self);
@@ -268,16 +232,16 @@ impl TypeSolver {
         }
     }
 
-    pub fn bind(&mut self, var_id: &VarId, ty: &Ty) -> InferResult<()> {
+    pub fn bind(&mut self, var_id: &MetaId, ty: &Ty) -> InferResult<()> {
         match var_id.get() {
-            TyVar::Bound(t) => self.unify(&t, ty),
-            TyVar::Unbound(id) => {
-                if *ty == Ty::Var(*var_id) {
+            Meta::Bound(t) => self.unify(&t, ty),
+            Meta::Unbound(id) => {
+                if *ty == Ty::Meta(*var_id) {
                     Ok(())
                 } else if ty.free_vars().contains(&id) {
-                    Err(TypeError::OccursCheck(ty.clone(), Ty::Var(*var_id)))
+                    Err(TypeError::OccursCheck(ty.clone(), Ty::Meta(*var_id)))
                 } else {
-                    var_id.insert(TyVar::Bound(ty.clone()));
+                    var_id.insert(Meta::Bound(ty.clone()));
                     Ok(())
                 }
             }
@@ -325,12 +289,11 @@ impl TypeSolver {
                     if let Some(hint) = anno {
                         todo!()
                     } else {
-                        let var = Ty::Var(VarId::fresh());
+                        let var = Ty::Meta(MetaId::fresh());
                         log::debug!("fresh rec def var: {:?}", var);
 
                         self.ctx.push();
-                        self.ctx
-                            .insert(ident.value.name, Scheme::new(vec![], var.clone()));
+                        self.ctx.insert(ident.value.name, Scheme::new(var.clone()));
                         let solved_body = self.generate_expr_constraints(src, body)?;
                         self.ctx.pop();
 
@@ -432,7 +395,7 @@ impl TypeSolver {
                 let solved_fun = self.generate_expr_constraints(src, fun)?;
                 let solved_arg = self.generate_expr_constraints(src, arg)?;
 
-                let ty_ret = Ty::Var(VarId::fresh());
+                let ty_ret = Ty::Meta(MetaId::fresh());
                 let ty_fun = Ty::Arrow(
                     Box::new(solved_arg.meta.0.clone()),
                     Box::new(ty_ret.clone()),
@@ -446,7 +409,7 @@ impl TypeSolver {
                 ))
             }
             nir::ExprKind::Lambda(pattern, body) => {
-                let param_ty = Ty::Var(VarId::fresh());
+                let param_ty = Ty::Meta(MetaId::fresh());
                 log::debug!("fresh lambda var: {:?}", param_ty);
                 self.ctx.push();
                 let solved_pat =
@@ -489,7 +452,7 @@ impl TypeSolver {
                 ))
             }
             nir::ExprKind::Let(pattern, true, expr, body) => {
-                let var = Ty::Var(VarId::fresh());
+                let var = Ty::Meta(MetaId::fresh());
                 log::debug!("fresh let var: {:?}", var);
 
                 self.ctx.push();
@@ -533,7 +496,7 @@ impl TypeSolver {
             }
             nir::ExprKind::Match(e, arms) => {
                 let solved_expr = self.generate_expr_constraints(src, &e)?;
-                let ty = Ty::Var(VarId::fresh());
+                let ty = Ty::Meta(MetaId::fresh());
                 log::debug!("fresh match var: {:?}", ty);
 
                 let mut solved_arms = vec![];
@@ -557,7 +520,7 @@ impl TypeSolver {
                 ))
             }
             nir::ExprKind::List(vec) => {
-                let elem_ty = Ty::Var(VarId::fresh());
+                let elem_ty = Ty::Meta(MetaId::fresh());
                 log::debug!("fresh list var: {:?}", elem_ty);
                 let list_ty = Ty::List(Box::new(elem_ty.clone()));
                 let solved_vec = vec
@@ -620,8 +583,7 @@ impl TypeSolver {
                         (ty.clone(), pat.meta),
                     ))
                 } else {
-                    self.ctx
-                        .insert(ident.value.name, Scheme::new(vec![], ty.clone()));
+                    self.ctx.insert(ident.value.name, Scheme::new(ty.clone()));
                     Ok(Pattern::new(
                         PatternKind::Ident(*ident),
                         (ty.clone(), pat.meta),
@@ -629,8 +591,8 @@ impl TypeSolver {
                 }
             }
             nir::PatternKind::List(vec) => {
-                let v = VarId::fresh();
-                let elem_ty = Ty::Var(v);
+                let v = MetaId::fresh();
+                let elem_ty = Ty::Meta(v);
                 log::debug!("fresh list pat var: {:?} is {:?}", elem_ty, v.get());
                 let list_ty = Ty::List(Box::new(elem_ty.clone()));
                 let solved_pats = vec
@@ -645,7 +607,7 @@ impl TypeSolver {
                 ))
             }
             nir::PatternKind::Pair(head, tail) => {
-                let var = Ty::Var(VarId::fresh());
+                let var = Ty::Meta(MetaId::fresh());
                 log::debug!("fresh pair pat var: {:?}", var);
                 let pair_ty = Ty::List(Box::new(var.clone()));
                 let solved_head = self.generate_pattern_constraints(src, head, &var, generalize)?;

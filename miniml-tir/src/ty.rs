@@ -1,11 +1,11 @@
 use crate::{
+    meta::{Meta, MetaId},
     scheme::Scheme,
-    ty_var::{TyVar, VarId},
 };
 use itertools::Itertools;
 use miniml_utils::{intern::InternedString, unique_id::UniqueId};
 use std::{
-    collections::{HashMap, HashSet},
+    collections::{BTreeSet, HashMap, HashSet},
     fmt::{Debug, Display},
 };
 
@@ -18,9 +18,9 @@ pub enum Ty {
     Bool,
     String,
     Char,
-    Var(VarId),
+    Meta(MetaId),
     Arrow(Box<Self>, Box<Self>),
-    Gen(u16),
+    Var(u16),
     List(Box<Self>),
     Array(Box<Self>),
     Record(UniqueId, Vec<(InternedString, Self)>),
@@ -28,30 +28,27 @@ pub enum Ty {
 }
 
 impl Ty {
-    pub fn generalize(&self, ctx_free_vars: HashSet<u32>) -> Scheme {
+    pub fn generalize(&self, ctx_free_vars: BTreeSet<u32>) -> Scheme {
         // log::debug!("generalize: {:?}", self);
         // log::debug!("free vars: {:?}", self.free_vars(meta_ctx));
         // log::debug!("ctx free vars: {:?}", ctx.free_vars(meta_ctx));
         let scheme_vars = self.free_vars().difference(&ctx_free_vars).cloned();
-        let ids = (0u16..).map(Ty::Gen).collect_vec();
-        Scheme::new(
-            self.free_vars().difference(&ctx_free_vars).cloned(),
-            self.clone(),
-        )
+        let ids = (0u16..).map(Ty::Meta).collect_vec();
+        Scheme::new(self.clone())
     }
 
-    pub fn free_vars(&self) -> HashSet<u32> {
+    pub fn free_vars(&self) -> BTreeSet<u32> {
         match self {
-            Self::Var(n) => match n.get() {
-                TyVar::Bound(ty) => ty.free_vars(),
-                TyVar::Unbound(tv) => HashSet::from([tv]),
+            Self::Meta(n) => match n.get() {
+                Meta::Bound(ty) => ty.free_vars(),
+                Meta::Unbound(tv) => BTreeSet::from([tv]),
             },
             Self::Arrow(param, body) => param
                 .free_vars()
                 .union(&body.free_vars())
                 .cloned()
                 .collect(),
-            _ => HashSet::new(),
+            _ => BTreeSet::new(),
         }
     }
 
@@ -66,12 +63,12 @@ impl Ty {
             Ty::String => Ty::String,
             Ty::Char => Ty::Char,
             Ty::Unit => Ty::Unit,
-            Ty::Var(v) => match v.get() {
-                TyVar::Bound(ty) => ty.zonk(),
-                TyVar::Unbound(tv) => panic!("unbound type variable: {:?}", tv),
+            Ty::Meta(v) => match v.get() {
+                Meta::Bound(ty) => ty.zonk(),
+                Meta::Unbound(tv) => panic!("unbound type variable: {:?}", tv),
             },
             Ty::Arrow(param, body) => Ty::Arrow(Box::new(param.zonk()), Box::new(body.zonk())),
-            Ty::Gen(id) => Ty::Gen(id),
+            Ty::Var(id) => Ty::Var(id),
             Ty::List(ty) => Ty::List(Box::new(ty.zonk())),
             Ty::Array(ty) => Ty::Array(Box::new(ty.zonk())),
             Ty::Record(id, fields) => Ty::Record(
@@ -86,10 +83,10 @@ impl Ty {
 
     pub fn force(&self) -> Ty {
         match self {
-            Ty::Var(id) => match id.get() {
-                TyVar::Bound(ty) => {
+            Ty::Meta(id) => match id.get() {
+                Meta::Bound(ty) => {
                     let ty = ty.force();
-                    id.insert(TyVar::Bound(ty.clone()));
+                    id.insert(Meta::Bound(ty.clone()));
                     ty
                 }
                 _ => self.clone(),
@@ -109,7 +106,7 @@ impl Debug for Ty {
             Self::Bool => write!(f, "Bool"),
             Self::String => write!(f, "String"),
             Self::Char => write!(f, "Char"),
-            Self::Var(n) => write!(f, "{}", n),
+            Self::Meta(n) => write!(f, "{}", n),
             Self::Arrow(param, body) => {
                 if matches!(**param, Self::Arrow(_, _)) {
                     write!(f, "({:?}) -> {:?}", param, body)
@@ -117,7 +114,7 @@ impl Debug for Ty {
                     write!(f, "{:?} -> {:?}", param, body)
                 }
             }
-            Self::Gen(id) => write!(f, "Gen({})", id),
+            Self::Meta(id) => write!(f, "Gen({})", id),
             Self::List(ty) => write!(f, "[{:?}]", ty),
             Self::Array(ty) => write!(f, "#[{:?}]", ty),
             Self::Record(id, fields) => write!(f, "{:?} = {:?}", id, fields),
@@ -167,7 +164,7 @@ impl Display for Ty {
             Self::Bool => write!(f, "Bool"),
             Self::String => write!(f, "String"),
             Self::Char => write!(f, "Char"),
-            Self::Var(n) => write!(f, "{}", n),
+            Self::Meta(n) => write!(f, "{}", n),
             Self::Arrow(param, body) => {
                 if matches!(*param, Self::Arrow(_, _)) {
                     write!(f, "({:?}) -> {:?}", param, body)
@@ -175,7 +172,7 @@ impl Display for Ty {
                     write!(f, "{:?} -> {:?}", param, body)
                 }
             }
-            Self::Gen(id) => write!(f, "Gen({})", id),
+            Self::Meta(id) => write!(f, "Gen({})", id),
             Self::List(ty) => write!(f, "[{}]", ty),
             Self::Array(ty) => write!(f, "[{}]", ty),
             Self::Record(name, fields) => write!(f, "{:?} = {:?}", name, fields),

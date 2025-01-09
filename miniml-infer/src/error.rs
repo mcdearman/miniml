@@ -1,4 +1,4 @@
-use miniml_tir::{ty::Ty, ty_var::TyVar};
+use miniml_tir::{ty::Ty, meta::Meta};
 use miniml_utils::intern::InternedString;
 use std::fmt::Display;
 
@@ -6,7 +6,7 @@ use std::fmt::Display;
 pub enum TypeError {
     UnificationMismatch(Ty, Ty),
     UnboundName(InternedString),
-    UnboundVariable(TyVar),
+    UnboundVariable(Meta),
     OccursCheck(Ty, Ty),
 }
 

@@ -1,5 +1,5 @@
 use super::ty::Ty;
-use crate::ty_var::{TyVar, VarId};
+use crate::meta::{Meta, MetaId};
 use itertools::join;
 use std::{
     collections::{HashMap, HashSet},
@@ -8,20 +8,16 @@ use std::{
 
 #[derive(Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Scheme {
-    pub vars: Vec<u16>,
     pub ty: Box<Ty>,
 }
 
 impl Scheme {
-    pub fn new(vars: Vec<u16>, ty: Ty) -> Self {
-        Self {
-            vars,
-            ty: Box::new(ty),
-        }
+    pub fn new(ty: Ty) -> Self {
+        Self { ty: Box::new(ty) }
     }
 
     pub fn zonk(&self) -> Scheme {
-        Self::new(self.vars.clone(), self.ty.zonk())
+        Self::new(self.ty.zonk())
     }
 
     pub fn free_vars(&self) -> HashSet<u32> {
@@ -29,11 +25,11 @@ impl Scheme {
     }
 
     pub fn instantiate(&self) -> Ty {
-        fn substitute(ty: &Ty, subst: &HashMap<u16, VarId>) -> Ty {
+        fn substitute(ty: &Ty, subst: &HashMap<u16, MetaId>) -> Ty {
             match ty {
-                Ty::Var(id) => match id.get() {
-                    TyVar::Bound(ty) => substitute(&ty, subst),
-                    TyVar::Unbound(tv) => todo!(),
+                Ty::Meta(id) => match id.get() {
+                    Meta::Bound(ty) => substitute(&ty, subst),
+                    Meta::Unbound(tv) => todo!(),
                 },
                 Ty::Arrow(param, body) => Ty::Arrow(
                     Box::new(substitute(param, subst)),
@@ -46,7 +42,7 @@ impl Scheme {
 
         let mut subst = HashMap::new();
         for m in self.vars.iter() {
-            subst.insert(*m, VarId::fresh());
+            subst.insert(*m, MetaId::fresh());
         }
 
         let ty = self.ty.force();
@@ -58,20 +54,12 @@ impl Scheme {
 
 impl Debug for Scheme {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        if self.vars.is_empty() {
-            write!(f, "{:?}", self.ty)
-        } else {
-            write!(f, "{:?}. {:?}", self.vars, self.ty)
-        }
+        write!(f, "{:?}", self.ty)
     }
 }
 
 impl Display for Scheme {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        if self.vars.is_empty() {
-            write!(f, "{}", self.ty)
-        } else {
-            write!(f, "{}. {}", join(&self.vars, " "), self.ty)
-        }
+        write!(f, "{}", self.ty)
     }
 }

@@ -8,14 +8,14 @@ use std::{
 };
 
 #[derive(Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub enum TyVar {
+pub enum Meta {
     Bound(Ty),
     Unbound(u32),
 }
 
 static COUNTER: AtomicU32 = AtomicU32::new(0);
 
-impl TyVar {
+impl Meta {
     pub fn new(ty: Ty) -> Self {
         Self::Bound(ty)
     }
@@ -32,7 +32,7 @@ impl TyVar {
     }
 }
 
-impl Debug for TyVar {
+impl Debug for Meta {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}", self)
     }
@@ -47,7 +47,7 @@ const ALPHABET: &[char] = &[
     'y', 'z',
 ];
 
-impl Display for TyVar {
+impl Display for Meta {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Self::Bound(ty) => write!(f, "{:?}", ty),
@@ -69,49 +69,49 @@ impl Display for TyVar {
 }
 
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub struct VarId(usize);
+pub struct MetaId(usize);
 
-impl VarId {
+impl MetaId {
     pub fn fresh() -> Self {
         CTX.fresh()
     }
 
-    pub fn get(&self) -> TyVar {
+    pub fn get(&self) -> Meta {
         CTX.get(self)
     }
 
-    pub fn insert(&self, meta: TyVar) {
+    pub fn insert(&self, meta: Meta) {
         CTX.insert(*self, meta);
     }
 }
 
-impl Debug for VarId {
+impl Debug for MetaId {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "m{}", self.0)
     }
 }
 
-impl Display for VarId {
+impl Display for MetaId {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "m{}", self.0)
     }
 }
 
-impl From<VarId> for TyVar {
-    fn from(id: VarId) -> Self {
+impl From<MetaId> for Meta {
+    fn from(id: MetaId) -> Self {
         CTX.get(&id)
     }
 }
 
-static CTX: Lazy<VarContext> = Lazy::new(|| VarContext::new());
+static CTX: Lazy<MetaContext> = Lazy::new(|| MetaContext::new());
 
 #[derive(Debug)]
-struct VarContext {
+struct MetaContext {
     counter: AtomicUsize,
-    bindings: Arc<Mutex<HashMap<VarId, TyVar>>>,
+    bindings: Arc<Mutex<HashMap<MetaId, Meta>>>,
 }
 
-impl VarContext {
+impl MetaContext {
     fn new() -> Self {
         Self {
             counter: AtomicUsize::new(0),
@@ -119,25 +119,25 @@ impl VarContext {
         }
     }
 
-    fn fresh(&self) -> VarId {
-        let r = VarId(
+    fn fresh(&self) -> MetaId {
+        let r = MetaId(
             self.counter
                 .fetch_add(1, std::sync::atomic::Ordering::SeqCst),
         );
-        self.bindings.lock().unwrap().insert(r, TyVar::fresh());
+        self.bindings.lock().unwrap().insert(r, Meta::fresh());
         r
     }
 
-    fn get(&self, var_id: &VarId) -> TyVar {
+    fn get(&self, meta_id: &MetaId) -> Meta {
         self.bindings
             .lock()
             .unwrap()
-            .get(var_id)
+            .get(meta_id)
             .cloned()
             .expect("unbound meta ref")
     }
 
-    fn insert(&self, var_id: VarId, meta: TyVar) {
-        self.bindings.lock().unwrap().insert(var_id, meta);
+    fn insert(&self, meta_id: MetaId, meta: Meta) {
+        self.bindings.lock().unwrap().insert(meta_id, meta);
     }
 }
