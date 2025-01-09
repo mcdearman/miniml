@@ -2,6 +2,7 @@ use crate::{
     scheme::Scheme,
     ty_var::{TyVar, VarId},
 };
+use itertools::Itertools;
 use miniml_utils::{intern::InternedString, unique_id::UniqueId};
 use std::{
     collections::{HashMap, HashSet},
@@ -31,7 +32,8 @@ impl Ty {
         // log::debug!("generalize: {:?}", self);
         // log::debug!("free vars: {:?}", self.free_vars(meta_ctx));
         // log::debug!("ctx free vars: {:?}", ctx.free_vars(meta_ctx));
-        let scheme_vars = self.free_vars().difference(&ctx_free_vars).cloned()
+        let scheme_vars = self.free_vars().difference(&ctx_free_vars).cloned();
+        let ids = (0u16..).map(Ty::Gen).collect_vec();
         Scheme::new(
             self.free_vars().difference(&ctx_free_vars).cloned(),
             self.clone(),
@@ -42,7 +44,7 @@ impl Ty {
         match self {
             Self::Var(n) => match n.get() {
                 TyVar::Bound(ty) => ty.free_vars(),
-                TyVar::Unbound(tv) => vec![tv].into_iter().collect(),
+                TyVar::Unbound(tv) => HashSet::from([tv]),
             },
             Self::Arrow(param, body) => param
                 .free_vars()
