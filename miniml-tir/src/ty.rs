@@ -33,7 +33,7 @@ impl Ty {
         // log::debug!("free vars: {:?}", self.free_vars(meta_ctx));
         // log::debug!("ctx free vars: {:?}", ctx.free_vars(meta_ctx));
         let scheme_vars = self.free_vars().difference(&ctx_free_vars).cloned();
-        let ids = (0u16..).map(Ty::Meta).collect_vec();
+        let ids = (0u16..).map(Ty::Var).collect_vec();
         Scheme::new(self.clone())
     }
 

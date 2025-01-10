@@ -1,8 +1,7 @@
 use super::ty::Ty;
 use crate::meta::{Meta, MetaId};
-use itertools::join;
 use std::{
-    collections::{HashMap, HashSet},
+    collections::{BTreeSet, HashMap},
     fmt::{Debug, Display},
 };
 
@@ -20,7 +19,7 @@ impl Scheme {
         Self::new(self.ty.zonk())
     }
 
-    pub fn free_vars(&self) -> HashSet<u32> {
+    pub fn free_vars(&self) -> BTreeSet<u32> {
         self.ty.free_vars()
     }
 
