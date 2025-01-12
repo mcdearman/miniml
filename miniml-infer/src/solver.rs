@@ -333,10 +333,6 @@ impl TypeSolver {
                         let solved_body = self.generate_expr_constraints(src, body)?;
                         self.ctx.pop();
 
-                        // self.constraints.push(Constraint::Gen(
-                        //     ident.value.name.clone(),
-                        //     solved_body.meta.0.clone(),
-                        // ));
                         let scm = var.generalize(self.ctx.free_vars());
 
                         self.constraints
@@ -348,7 +344,7 @@ impl TypeSolver {
                                     ident: ident.clone(),
                                     body: solved_body.clone(),
                                 },
-                                (solved_body.meta.0.clone(), decl.meta),
+                                (Ty::PolyType(scm), decl.meta),
                             )),
                             decl.meta,
                         ))
