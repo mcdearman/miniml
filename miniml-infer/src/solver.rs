@@ -24,116 +24,152 @@ impl TypeSolver {
 
         ctx.insert(
             "main".into(),
-            Scheme::new(Ty::Arrow(
-                Box::new(Ty::Array(Box::new(Ty::String))),
-                Box::new(Ty::Int),
-            )),
+            Scheme::new(
+                0,
+                Ty::Arrow(Box::new(Ty::Array(Box::new(Ty::String))), Box::new(Ty::Int)),
+            ),
         );
 
         ctx.insert(
             "__neg__".into(),
-            Scheme::new(Ty::Arrow(Box::new(Ty::Int), Box::new(Ty::Int))),
+            Scheme::new(0, Ty::Arrow(Box::new(Ty::Int), Box::new(Ty::Int))),
         );
 
         ctx.insert(
             "__not__".into(),
-            Scheme::new(Ty::Arrow(Box::new(Ty::Bool), Box::new(Ty::Bool))),
+            Scheme::new(0, Ty::Arrow(Box::new(Ty::Bool), Box::new(Ty::Bool))),
         );
 
         ctx.insert(
             "__add__".into(),
-            Scheme::new(Ty::Arrow(
-                Box::new(Ty::Int),
-                Box::new(Ty::Arrow(Box::new(Ty::Int), Box::new(Ty::Int))),
-            )),
+            Scheme::new(
+                0,
+                Ty::Arrow(
+                    Box::new(Ty::Int),
+                    Box::new(Ty::Arrow(Box::new(Ty::Int), Box::new(Ty::Int))),
+                ),
+            ),
         );
 
         ctx.insert(
             "__sub__".into(),
-            Scheme::new(Ty::Arrow(
-                Box::new(Ty::Int),
-                Box::new(Ty::Arrow(Box::new(Ty::Int), Box::new(Ty::Int))),
-            )),
+            Scheme::new(
+                0,
+                Ty::Arrow(
+                    Box::new(Ty::Int),
+                    Box::new(Ty::Arrow(Box::new(Ty::Int), Box::new(Ty::Int))),
+                ),
+            ),
         );
 
         ctx.insert(
             "__mul__".into(),
-            Scheme::new(Ty::Arrow(
-                Box::new(Ty::Int),
-                Box::new(Ty::Arrow(Box::new(Ty::Int), Box::new(Ty::Int))),
-            )),
+            Scheme::new(
+                0,
+                Ty::Arrow(
+                    Box::new(Ty::Int),
+                    Box::new(Ty::Arrow(Box::new(Ty::Int), Box::new(Ty::Int))),
+                ),
+            ),
         );
 
         ctx.insert(
             "__div__".into(),
-            Scheme::new(Ty::Arrow(
-                Box::new(Ty::Int),
-                Box::new(Ty::Arrow(Box::new(Ty::Int), Box::new(Ty::Int))),
-            )),
+            Scheme::new(
+                0,
+                Ty::Arrow(
+                    Box::new(Ty::Int),
+                    Box::new(Ty::Arrow(Box::new(Ty::Int), Box::new(Ty::Int))),
+                ),
+            ),
         );
 
         ctx.insert(
             "__rem__".into(),
-            Scheme::new(Ty::Arrow(
-                Box::new(Ty::Int),
-                Box::new(Ty::Arrow(Box::new(Ty::Int), Box::new(Ty::Int))),
-            )),
+            Scheme::new(
+                0,
+                Ty::Arrow(
+                    Box::new(Ty::Int),
+                    Box::new(Ty::Arrow(Box::new(Ty::Int), Box::new(Ty::Int))),
+                ),
+            ),
         );
 
         ctx.insert(
             "__pow__".into(),
-            Scheme::new(Ty::Arrow(
-                Box::new(Ty::Int),
-                Box::new(Ty::Arrow(Box::new(Ty::Int), Box::new(Ty::Int))),
-            )),
+            Scheme::new(
+                0,
+                Ty::Arrow(
+                    Box::new(Ty::Int),
+                    Box::new(Ty::Arrow(Box::new(Ty::Int), Box::new(Ty::Int))),
+                ),
+            ),
         );
 
         ctx.insert(
             "__eq__".into(),
-            Scheme::new(Ty::Arrow(
-                Box::new(Ty::Int),
-                Box::new(Ty::Arrow(Box::new(Ty::Int), Box::new(Ty::Bool))),
-            )),
+            Scheme::new(
+                0,
+                Ty::Arrow(
+                    Box::new(Ty::Int),
+                    Box::new(Ty::Arrow(Box::new(Ty::Int), Box::new(Ty::Bool))),
+                ),
+            ),
         );
 
         ctx.insert(
             "__neq__".into(),
-            Scheme::new(Ty::Arrow(
-                Box::new(Ty::Int),
-                Box::new(Ty::Arrow(Box::new(Ty::Int), Box::new(Ty::Bool))),
-            )),
+            Scheme::new(
+                0,
+                Ty::Arrow(
+                    Box::new(Ty::Int),
+                    Box::new(Ty::Arrow(Box::new(Ty::Int), Box::new(Ty::Bool))),
+                ),
+            ),
         );
 
         ctx.insert(
             "__lt__".into(),
-            Scheme::new(Ty::Arrow(
-                Box::new(Ty::Int),
-                Box::new(Ty::Arrow(Box::new(Ty::Int), Box::new(Ty::Bool))),
-            )),
+            Scheme::new(
+                0,
+                Ty::Arrow(
+                    Box::new(Ty::Int),
+                    Box::new(Ty::Arrow(Box::new(Ty::Int), Box::new(Ty::Bool))),
+                ),
+            ),
         );
 
         ctx.insert(
             "__lte__".into(),
-            Scheme::new(Ty::Arrow(
-                Box::new(Ty::Int),
-                Box::new(Ty::Arrow(Box::new(Ty::Int), Box::new(Ty::Bool))),
-            )),
+            Scheme::new(
+                0,
+                Ty::Arrow(
+                    Box::new(Ty::Int),
+                    Box::new(Ty::Arrow(Box::new(Ty::Int), Box::new(Ty::Bool))),
+                ),
+            ),
         );
 
         ctx.insert(
             "__gt__".into(),
-            Scheme::new(Ty::Arrow(
-                Box::new(Ty::Int),
-                Box::new(Ty::Arrow(Box::new(Ty::Int), Box::new(Ty::Bool))),
-            )),
+            Scheme::new(
+                0,
+                Ty::Arrow(
+                    Box::new(Ty::Int),
+                    Box::new(Ty::Arrow(Box::new(Ty::Int), Box::new(Ty::Bool))),
+                ),
+            ),
         );
 
         ctx.insert(
             "__gte__".into(),
-            Scheme::new(Ty::Arrow(
-                Box::new(Ty::Int),
-                Box::new(Ty::Arrow(Box::new(Ty::Int), Box::new(Ty::Bool))),
-            )),
+            Scheme::new(
+                0,
+                Ty::Arrow(
+                    Box::new(Ty::Int),
+                    Box::new(Ty::Arrow(Box::new(Ty::Int), Box::new(Ty::Bool))),
+                ),
+            ),
         );
 
         let r = MetaId::fresh();
@@ -178,11 +214,10 @@ impl TypeSolver {
                     if let Err(e) = self.unify(t1, t2) {
                         errors.push(e);
                     }
-                }
-                Constraint::Gen(name, t) => {
-                    let p = t.generalize(self.ctx.free_vars());
-                    self.ctx.insert(name.clone(), p);
-                }
+                } // Constraint::Gen(name, t) => {
+                  //     let p = t.generalize(self.ctx.free_vars());
+                  //     self.ctx.insert(name.clone(), p);
+                  // }
             }
         }
         errors
@@ -293,14 +328,16 @@ impl TypeSolver {
                         log::debug!("fresh rec def var: {:?}", var);
 
                         self.ctx.push();
-                        self.ctx.insert(ident.value.name, Scheme::new(var.clone()));
+                        self.ctx
+                            .insert(ident.value.name, Scheme::new(0, var.clone()));
                         let solved_body = self.generate_expr_constraints(src, body)?;
                         self.ctx.pop();
 
-                        self.constraints.push(Constraint::Gen(
-                            ident.value.name.clone(),
-                            solved_body.meta.0.clone(),
-                        ));
+                        // self.constraints.push(Constraint::Gen(
+                        //     ident.value.name.clone(),
+                        //     solved_body.meta.0.clone(),
+                        // ));
+                        let scm = var.generalize(self.ctx.free_vars());
 
                         self.constraints
                             .push(Constraint::Eq(var.clone(), solved_body.meta.0.clone()));
@@ -583,7 +620,8 @@ impl TypeSolver {
                         (ty.clone(), pat.meta),
                     ))
                 } else {
-                    self.ctx.insert(ident.value.name, Scheme::new(ty.clone()));
+                    self.ctx
+                        .insert(ident.value.name, Scheme::new(0, ty.clone()));
                     Ok(Pattern::new(
                         PatternKind::Ident(*ident),
                         (ty.clone(), pat.meta),

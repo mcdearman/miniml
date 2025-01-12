@@ -1,6 +1,6 @@
 use miniml_tir::scheme::Scheme;
 use miniml_utils::intern::InternedString;
-use std::collections::{HashMap, HashSet};
+use std::collections::{BTreeSet, HashMap, HashSet};
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Context {
@@ -36,11 +36,11 @@ impl Context {
         }
     }
 
-    pub(super) fn free_vars(&self) -> HashSet<u32> {
+    pub(super) fn free_vars(&self) -> BTreeSet<u32> {
         self.frames
             .iter()
             .map(|frame| frame.free_vars())
-            .fold(HashSet::new(), |acc, set| {
+            .fold(BTreeSet::new(), |acc, set| {
                 acc.union(&set).cloned().collect()
             })
     }
@@ -76,12 +76,12 @@ impl Frame {
         self.bindings.insert(name, scheme);
     }
 
-    pub(super) fn free_vars(&self) -> HashSet<u32> {
+    pub(super) fn free_vars(&self) -> BTreeSet<u32> {
         self.clone()
             .bindings
             .into_iter()
             .map(|(_, scheme)| scheme.free_vars())
-            .fold(HashSet::new(), |acc, set| {
+            .fold(BTreeSet::new(), |acc, set| {
                 acc.union(&set).cloned().collect()
             })
     }

@@ -2,10 +2,9 @@ use crate::{
     meta::{Meta, MetaId},
     scheme::Scheme,
 };
-use itertools::Itertools;
 use miniml_utils::{intern::InternedString, unique_id::UniqueId};
 use std::{
-    collections::{BTreeSet, HashMap, HashSet},
+    collections::{BTreeMap, BTreeSet, HashMap, HashSet},
     fmt::{Debug, Display},
 };
 
@@ -19,8 +18,9 @@ pub enum Ty {
     String,
     Char,
     Meta(MetaId),
-    Arrow(Box<Self>, Box<Self>),
+    PolyType(Scheme),
     Var(u16),
+    Arrow(Box<Self>, Box<Self>),
     List(Box<Self>),
     Array(Box<Self>),
     Record(UniqueId, Vec<(InternedString, Self)>),
@@ -32,9 +32,37 @@ impl Ty {
         // log::debug!("generalize: {:?}", self);
         // log::debug!("free vars: {:?}", self.free_vars(meta_ctx));
         // log::debug!("ctx free vars: {:?}", ctx.free_vars(meta_ctx));
-        let scheme_vars = self.free_vars().difference(&ctx_free_vars).cloned();
-        let ids = (0u16..).map(Ty::Var).collect_vec();
-        Scheme::new(self.clone())
+        let subst: BTreeMap<u32, Ty> = self
+            .free_vars()
+            .difference(&ctx_free_vars)
+            .cloned()
+            .zip((0u16..).map(Ty::Var))
+            .collect();
+
+        fn substitute(ty: &Ty, subst: &BTreeMap<u32, Ty>) -> Ty {
+            match ty {
+                Ty::Meta(id) => match id.get() {
+                    Meta::Bound(ty) => substitute(&ty, subst),
+                    Meta::Unbound(tv) => subst.get(&tv).unwrap_or(ty).clone(),
+                },
+                Ty::Arrow(param, body) => Ty::Arrow(
+                    Box::new(substitute(param, subst)),
+                    Box::new(substitute(body, subst)),
+                ),
+                Ty::List(ty) => Ty::List(Box::new(substitute(ty, subst))),
+                Ty::Array(ty) => Ty::Array(Box::new(substitute(ty, subst))),
+                Ty::Record(id, fields) => Ty::Record(
+                    *id,
+                    fields
+                        .iter()
+                        .map(|(name, ty)| (name.clone(), substitute(ty, subst)))
+                        .collect(),
+                ),
+                _ => ty.clone(),
+            }
+        }
+
+        Scheme::new(subst.len() as u16, substitute(self, &subst))
     }
 
     pub fn free_vars(&self) -> BTreeSet<u32> {
@@ -67,8 +95,9 @@ impl Ty {
                 Meta::Bound(ty) => ty.zonk(),
                 Meta::Unbound(tv) => panic!("unbound type variable: {:?}", tv),
             },
-            Ty::Arrow(param, body) => Ty::Arrow(Box::new(param.zonk()), Box::new(body.zonk())),
+            Ty::PolyType(scheme) => Ty::PolyType(scheme.zonk()),
             Ty::Var(id) => Ty::Var(id),
+            Ty::Arrow(param, body) => Ty::Arrow(Box::new(param.zonk()), Box::new(body.zonk())),
             Ty::List(ty) => Ty::List(Box::new(ty.zonk())),
             Ty::Array(ty) => Ty::Array(Box::new(ty.zonk())),
             Ty::Record(id, fields) => Ty::Record(
@@ -107,6 +136,8 @@ impl Debug for Ty {
             Self::String => write!(f, "String"),
             Self::Char => write!(f, "Char"),
             Self::Meta(n) => write!(f, "{}", n),
+            Self::PolyType(scheme) => write!(f, "{:?}", scheme),
+            Self::Var(id) => write!(f, "Var({})", id),
             Self::Arrow(param, body) => {
                 if matches!(**param, Self::Arrow(_, _)) {
                     write!(f, "({:?}) -> {:?}", param, body)
@@ -114,7 +145,6 @@ impl Debug for Ty {
                     write!(f, "{:?} -> {:?}", param, body)
                 }
             }
-            Self::Meta(id) => write!(f, "Gen({})", id),
             Self::List(ty) => write!(f, "[{:?}]", ty),
             Self::Array(ty) => write!(f, "#[{:?}]", ty),
             Self::Record(id, fields) => write!(f, "{:?} = {:?}", id, fields),
@@ -165,6 +195,8 @@ impl Display for Ty {
             Self::String => write!(f, "String"),
             Self::Char => write!(f, "Char"),
             Self::Meta(n) => write!(f, "{}", n),
+            Self::PolyType(scheme) => write!(f, "{:?}", scheme),
+            Self::Var(id) => write!(f, "Var({})", id),
             Self::Arrow(param, body) => {
                 if matches!(*param, Self::Arrow(_, _)) {
                     write!(f, "({:?}) -> {:?}", param, body)
@@ -172,7 +204,6 @@ impl Display for Ty {
                     write!(f, "{:?} -> {:?}", param, body)
                 }
             }
-            Self::Meta(id) => write!(f, "Gen({})", id),
             Self::List(ty) => write!(f, "[{}]", ty),
             Self::Array(ty) => write!(f, "[{}]", ty),
             Self::Record(name, fields) => write!(f, "{:?} = {:?}", name, fields),

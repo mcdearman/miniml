@@ -7,16 +7,20 @@ use std::{
 
 #[derive(Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Scheme {
-    pub ty: Box<Ty>,
+    count: u16,
+    ty: Box<Ty>,
 }
 
 impl Scheme {
-    pub fn new(ty: Ty) -> Self {
-        Self { ty: Box::new(ty) }
+    pub fn new(count: u16, ty: Ty) -> Self {
+        Self {
+            count,
+            ty: Box::new(ty),
+        }
     }
 
     pub fn zonk(&self) -> Scheme {
-        Self::new(self.ty.zonk())
+        Self::new(self.count, self.ty.zonk())
     }
 
     pub fn free_vars(&self) -> BTreeSet<u32> {
@@ -26,9 +30,9 @@ impl Scheme {
     pub fn instantiate(&self) -> Ty {
         fn substitute(ty: &Ty, subst: &HashMap<u16, MetaId>) -> Ty {
             match ty {
-                Ty::Meta(id) => match id.get() {
-                    Meta::Bound(ty) => substitute(&ty, subst),
-                    Meta::Unbound(tv) => todo!(),
+                Ty::Var(n) => match subst.get(n) {
+                    Some(meta) => Ty::Meta(*meta),
+                    None => Ty::Var(*n),
                 },
                 Ty::Arrow(param, body) => Ty::Arrow(
                     Box::new(substitute(param, subst)),
@@ -40,8 +44,8 @@ impl Scheme {
         }
 
         let mut subst = HashMap::new();
-        for m in self.vars.iter() {
-            subst.insert(*m, MetaId::fresh());
+        for v in 0..=self.count {
+            subst.insert(v, MetaId::fresh());
         }
 
         let ty = self.ty.force();

@@ -4,5 +4,4 @@ use miniml_utils::intern::InternedString;
 #[derive(Debug, Clone, PartialEq)]
 pub enum Constraint {
     Eq(Ty, Ty),
-    Gen(InternedString, Ty),
 }
