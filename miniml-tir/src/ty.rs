@@ -27,7 +27,7 @@ pub enum Ty {
 }
 
 impl Ty {
-    pub fn generalize(&self, ctx_free_vars: BTreeSet<u32>) -> Scheme {
+    pub fn generalize(&self, ctx_free_vars: BTreeSet<u32>, bind: bool) -> Scheme {
         // log::debug!("generalize: {:?}", self);
         // log::debug!("free vars: {:?}", self.free_vars(meta_ctx));
         // log::debug!("ctx free vars: {:?}", ctx.free_vars(meta_ctx));
@@ -38,30 +38,37 @@ impl Ty {
             .zip((0u16..).map(Ty::Var))
             .collect();
 
-        fn substitute(ty: &Ty, subst: &BTreeMap<u32, Ty>) -> Ty {
+        fn substitute(ty: &Ty, subst: &BTreeMap<u32, Ty>, bind: bool) -> Ty {
             match ty {
                 Ty::Meta(id) => match id.get() {
-                    Meta::Bound(ty) => substitute(&ty, subst),
-                    Meta::Unbound(tv) => subst.get(&tv).unwrap_or(ty).clone(),
+                    Meta::Bound(ty) => substitute(&ty, subst, bind),
+                    Meta::Unbound(tv) => {
+                        if bind {
+                            id.insert(Meta::Bound(subst.get(&tv).unwrap_or(ty).clone()));
+                            subst.get(&tv).unwrap_or(ty).clone()
+                        } else {
+                            subst.get(&tv).unwrap_or(ty).clone()
+                        }
+                    }
                 },
                 Ty::Arrow(param, body) => Ty::Arrow(
-                    Box::new(substitute(param, subst)),
-                    Box::new(substitute(body, subst)),
+                    Box::new(substitute(param, subst, bind)),
+                    Box::new(substitute(body, subst, bind)),
                 ),
-                Ty::List(ty) => Ty::List(Box::new(substitute(ty, subst))),
-                Ty::Array(ty) => Ty::Array(Box::new(substitute(ty, subst))),
+                Ty::List(ty) => Ty::List(Box::new(substitute(ty, subst, bind))),
+                Ty::Array(ty) => Ty::Array(Box::new(substitute(ty, subst, bind))),
                 Ty::Record(id, fields) => Ty::Record(
                     *id,
                     fields
                         .iter()
-                        .map(|(name, ty)| (name.clone(), substitute(ty, subst)))
+                        .map(|(name, ty)| (name.clone(), substitute(ty, subst, bind)))
                         .collect(),
                 ),
                 _ => ty.clone(),
             }
         }
 
-        Scheme::new(subst.len() as u16, substitute(self, &subst))
+        Scheme::new(subst.len() as u16, substitute(self, &subst, bind))
     }
 
     pub fn free_vars(&self) -> BTreeSet<u32> {

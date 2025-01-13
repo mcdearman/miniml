@@ -1,4 +1,3 @@
-use constraint::Constraint;
 use itertools::Itertools;
 use meta::MetaId;
 use miniml_ast::SynNode;
@@ -15,7 +14,6 @@ use crate::{
 pub struct TypeSolver {
     src: InternedString,
     pub ctx: Context,
-    constraints: Vec<Constraint>,
 }
 
 impl TypeSolver {
@@ -182,13 +180,12 @@ impl TypeSolver {
                     Box::new(Ty::List(Box::new(Ty::Meta(r)))),
                 )),
             )
-            .generalize(ctx.free_vars()),
+            .generalize(ctx.free_vars(), true),
         );
 
         Self {
             src: "".into(),
             ctx,
-            constraints: vec![],
         }
     }
 
@@ -197,28 +194,8 @@ impl TypeSolver {
         src: &'src str,
         nir: &nir::Prog,
     ) -> (Option<Prog>, Vec<TypeError>) {
-        let (prog, gen_errors) = self.generate_prog_constraints(src, nir);
-        // log::debug!("prog: {:#?}", prog);
-        log::debug!("constraints: {:#?}", self.constraints);
-        let unify_errors = self.solve_constraints();
-        let errors = gen_errors.into_iter().chain(unify_errors).collect_vec();
-        self.constraints.clear();
+        let (prog, errors) = self.infer_prog(src, nir);
         (prog.map(|m| self.zonk(m)), errors)
-    }
-
-    fn solve_constraints<'src>(&mut self) -> Vec<TypeError> {
-        let mut errors = vec![];
-        for c in self.constraints.clone() {
-            match &c {
-                Constraint::Eq(t1, t2) => {
-                    if let Err(e) = self.unify(t1, t2) {
-                        errors.push(e);
-                    }
-                }
-                _ => todo!(),
-            }
-        }
-        errors
     }
 
     pub fn unify(&mut self, t1: &Ty, t2: &Ty) -> InferResult<()> {
@@ -271,7 +248,7 @@ impl TypeSolver {
         }
     }
 
-    fn generate_prog_constraints<'src>(
+    fn infer_prog<'src>(
         &mut self,
         src: &'src str,
         nir: &nir::Prog,
@@ -280,7 +257,7 @@ impl TypeSolver {
         let mut errors = vec![];
 
         for decl in &nir.value.decls {
-            match self.generate_def_constraints(src, decl) {
+            match self.infer_def(src, decl) {
                 Ok(decl) => {
                     decls.push(decl);
                 }
@@ -301,11 +278,7 @@ impl TypeSolver {
         )
     }
 
-    fn generate_def_constraints<'src>(
-        &mut self,
-        src: &'src str,
-        decl: &nir::Decl,
-    ) -> InferResult<Decl> {
+    fn infer_def<'src>(&mut self, src: &'src str, decl: &nir::Decl) -> InferResult<Decl> {
         match &decl.value {
             nir::DeclKind::Def(def) => match &def.value {
                 nir::DefKind::Rec { ident, anno, body } => {
@@ -321,11 +294,13 @@ impl TypeSolver {
                         let solved_body = self.generate_expr_constraints(src, body)?;
                         self.ctx.pop();
 
-                        let scm = var.generalize(self.ctx.free_vars());
-                        self.ctx.insert(ident.value.name.clone(), scm.clone());
+                        // let scm = var.generalize(self.ctx.free_vars());
+                        // self.ctx.insert(ident.value.name.clone(), scm.clone());
 
-                        self.constraints
-                            .push(Constraint::Eq(var.clone(), solved_body.meta.0.clone()));
+                        self.unify(&var, &solved_body.meta.0)?;
+
+                        let scm = solved_body.meta.0.generalize(self.ctx.free_vars(), true);
+                        self.ctx.insert(ident.value.name.clone(), scm.clone());
 
                         Ok(Decl::new(
                             DeclKind::Def(Def::new(
@@ -422,8 +397,8 @@ impl TypeSolver {
                     Box::new(solved_arg.meta.0.clone()),
                     Box::new(ty_ret.clone()),
                 );
-                self.constraints
-                    .push(Constraint::Eq(solved_fun.meta.0.clone(), ty_fun));
+
+                self.unify(&solved_fun.meta.0, &ty_fun)?;
 
                 Ok(Expr::new(
                     ExprKind::Apply(solved_fun, solved_arg),
@@ -449,10 +424,8 @@ impl TypeSolver {
                 let solved_lhs = self.generate_expr_constraints(src, lhs)?;
                 let solved_rhs = self.generate_expr_constraints(src, rhs)?;
 
-                self.constraints
-                    .push(Constraint::Eq(solved_lhs.meta.0.clone(), Ty::Bool));
-                self.constraints
-                    .push(Constraint::Eq(solved_rhs.meta.0.clone(), Ty::Bool));
+                self.unify(&solved_lhs.meta.0, &Ty::Bool)?;
+                self.unify(&solved_rhs.meta.0, &Ty::Bool)?;
 
                 Ok(Expr::new(
                     ExprKind::Or(solved_lhs, solved_rhs),
@@ -463,10 +436,8 @@ impl TypeSolver {
                 let solved_lhs = self.generate_expr_constraints(src, lhs)?;
                 let solved_rhs = self.generate_expr_constraints(src, rhs)?;
 
-                self.constraints
-                    .push(Constraint::Eq(solved_lhs.meta.0.clone(), Ty::Bool));
-                self.constraints
-                    .push(Constraint::Eq(solved_rhs.meta.0.clone(), Ty::Bool));
+                self.unify(&solved_lhs.meta.0, &Ty::Bool)?;
+                self.unify(&solved_rhs.meta.0, &Ty::Bool)?;
 
                 Ok(Expr::new(
                     ExprKind::And(solved_lhs, solved_rhs),
@@ -504,12 +475,8 @@ impl TypeSolver {
                 let solved_then = self.generate_expr_constraints(src, then)?;
                 let solved_else = self.generate_expr_constraints(src, else_)?;
 
-                self.constraints
-                    .push(Constraint::Eq(solved_cond.meta.0.clone(), Ty::Bool));
-                self.constraints.push(Constraint::Eq(
-                    solved_then.meta.0.clone(),
-                    solved_else.meta.0.clone(),
-                ));
+                self.unify(&solved_cond.meta.0, &Ty::Bool)?;
+                self.unify(&solved_then.meta.0, &solved_else.meta.0)?;
 
                 Ok(Expr::new(
                     ExprKind::If(solved_cond, solved_then.clone(), solved_else),
@@ -529,8 +496,7 @@ impl TypeSolver {
                         self.generate_pattern_constraints(src, pat, &solved_expr.meta.0, false)?;
                     let solved_body = self.generate_expr_constraints(src, body)?;
 
-                    self.constraints
-                        .push(Constraint::Eq(solved_body.meta.0.clone(), ty.clone()));
+                    self.unify(&solved_body.meta.0, &ty)?;
 
                     solved_arms.push((solved_pat, solved_body));
                     self.ctx.pop();
@@ -550,8 +516,7 @@ impl TypeSolver {
                     .map(|expr| self.generate_expr_constraints(src, expr))
                     .collect::<InferResult<Vec<Expr>>>()?;
                 for expr in &solved_vec {
-                    self.constraints
-                        .push(Constraint::Eq(expr.meta.0.clone(), elem_ty.clone()));
+                    self.unify(&expr.meta.0, &elem_ty)?;
                 }
 
                 Ok(Expr::new(ExprKind::List(solved_vec), (list_ty, expr.meta)))
@@ -598,7 +563,7 @@ impl TypeSolver {
             }),
             nir::PatternKind::Ident(ident, type_hint) => {
                 if generalize {
-                    let scm = ty.generalize(self.ctx.free_vars());
+                    let scm = ty.generalize(self.ctx.free_vars(), false);
                     self.ctx.insert(ident.value.name, scm.clone());
                     Ok(Pattern::new(
                         PatternKind::Ident(*ident),
@@ -617,13 +582,15 @@ impl TypeSolver {
                 let v = MetaId::fresh();
                 let elem_ty = Ty::Meta(v);
                 log::debug!("fresh list pat var: {:?} is {:?}", elem_ty, v.get());
+
                 let list_ty = Ty::List(Box::new(elem_ty.clone()));
                 let solved_pats = vec
                     .iter()
                     .map(|pat| self.generate_pattern_constraints(src, pat, &elem_ty, generalize))
                     .collect::<InferResult<Vec<Pattern>>>()?;
-                self.constraints
-                    .push(Constraint::Eq(ty.clone(), list_ty.clone()));
+
+                self.unify(ty, &list_ty)?;
+
                 Ok(Pattern::new(
                     PatternKind::List(solved_pats),
                     (list_ty, pat.meta),
@@ -632,12 +599,14 @@ impl TypeSolver {
             nir::PatternKind::Pair(head, tail) => {
                 let var = Ty::Meta(MetaId::fresh());
                 log::debug!("fresh pair pat var: {:?}", var);
+
                 let pair_ty = Ty::List(Box::new(var.clone()));
                 let solved_head = self.generate_pattern_constraints(src, head, &var, generalize)?;
                 let solved_tail =
                     self.generate_pattern_constraints(src, tail, &pair_ty, generalize)?;
-                self.constraints
-                    .push(Constraint::Eq(ty.clone(), pair_ty.clone()));
+
+                self.unify(ty, &pair_ty)?;
+
                 Ok(Pattern::new(
                     PatternKind::Pair(solved_head, solved_tail),
                     (pair_ty, pat.meta),
