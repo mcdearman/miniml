@@ -322,6 +322,7 @@ impl TypeSolver {
                         self.ctx.pop();
 
                         let scm = var.generalize(self.ctx.free_vars());
+                        self.ctx.insert(ident.value.name.clone(), scm.clone());
 
                         self.constraints
                             .push(Constraint::Eq(var.clone(), solved_body.meta.0.clone()));
