@@ -5,9 +5,10 @@ use miniml_utils::{
 };
 use ty::Ty;
 
+pub mod class;
+pub mod constraint;
 pub mod kind;
 pub mod meta;
-pub mod class;
 pub mod scheme;
 pub mod ty;
 

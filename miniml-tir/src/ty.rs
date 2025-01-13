@@ -18,7 +18,6 @@ pub enum Ty {
     String,
     Char,
     Meta(MetaId),
-    PolyType(Scheme),
     Var(u16),
     Arrow(Box<Self>, Box<Self>),
     List(Box<Self>),
@@ -95,7 +94,6 @@ impl Ty {
                 Meta::Bound(ty) => ty.zonk(),
                 Meta::Unbound(tv) => panic!("unbound type variable: {:?}", tv),
             },
-            Ty::PolyType(scheme) => Ty::PolyType(scheme.zonk()),
             Ty::Var(id) => Ty::Var(id),
             Ty::Arrow(param, body) => Ty::Arrow(Box::new(param.zonk()), Box::new(body.zonk())),
             Ty::List(ty) => Ty::List(Box::new(ty.zonk())),
@@ -136,7 +134,6 @@ impl Debug for Ty {
             Self::String => write!(f, "String"),
             Self::Char => write!(f, "Char"),
             Self::Meta(n) => write!(f, "{}", n),
-            Self::PolyType(scheme) => write!(f, "{:?}", scheme),
             Self::Var(id) => write!(f, "Var({})", id),
             Self::Arrow(param, body) => {
                 if matches!(**param, Self::Arrow(_, _)) {
@@ -195,7 +192,6 @@ impl Display for Ty {
             Self::String => write!(f, "String"),
             Self::Char => write!(f, "Char"),
             Self::Meta(n) => write!(f, "{}", n),
-            Self::PolyType(scheme) => write!(f, "{:?}", scheme),
             Self::Var(id) => write!(f, "Var({})", id),
             Self::Arrow(param, body) => {
                 if matches!(*param, Self::Arrow(_, _)) {

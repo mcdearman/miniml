@@ -1,4 +1,3 @@
-mod constraint;
 mod context;
 pub mod error;
 pub mod solver;

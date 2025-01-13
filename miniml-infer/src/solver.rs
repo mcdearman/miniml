@@ -1,3 +1,4 @@
+use constraint::Constraint;
 use itertools::Itertools;
 use meta::MetaId;
 use miniml_ast::SynNode;
@@ -6,7 +7,6 @@ use miniml_tir::{meta::Meta, scheme::Scheme, ty::Ty, *};
 use miniml_utils::intern::InternedString;
 
 use crate::{
-    constraint::Constraint,
     context::Context,
     error::{InferResult, TypeError},
 };
@@ -214,10 +214,8 @@ impl TypeSolver {
                     if let Err(e) = self.unify(t1, t2) {
                         errors.push(e);
                     }
-                } // Constraint::Gen(name, t) => {
-                  //     let p = t.generalize(self.ctx.free_vars());
-                  //     self.ctx.insert(name.clone(), p);
-                  // }
+                }
+                _ => todo!(),
             }
         }
         errors
@@ -251,18 +249,8 @@ impl TypeSolver {
             (Ty::Meta(meta_ref), _) => {
                 self.bind(meta_ref, &t2)?;
                 log::debug!("bind: {:?} to {:?}", meta_ref, t2);
-                // log::debug!("meta_ctx: {:#?}", self);
                 Ok(())
             }
-            // (Type::Poly(p1), Type::Poly(p2)) => todo!(),
-            // (Type::Poly(p), _) => {
-            //     let p = p.instantiate(self);
-            //     self.unify(&p, &t2)
-            // }
-            // (_, Type::Poly(p)) => {
-            //     let p = p.instantiate(self);
-            //     self.unify(&t1, &p)
-            // }
             _ => Err(TypeError::UnificationMismatch(t1, t2)),
         }
     }
@@ -344,7 +332,7 @@ impl TypeSolver {
                                     ident: ident.clone(),
                                     body: solved_body.clone(),
                                 },
-                                (Ty::PolyType(scm), decl.meta),
+                                (var, decl.meta),
                             )),
                             decl.meta,
                         ))

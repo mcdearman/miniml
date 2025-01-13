@@ -1,7 +1,7 @@
-use miniml_tir::ty::Ty;
-use miniml_utils::intern::InternedString;
+use crate::{class::Pred, ty::Ty};
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Constraint {
     Eq(Ty, Ty),
+    Pred(Pred),
 }
