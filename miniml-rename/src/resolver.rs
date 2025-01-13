@@ -145,6 +145,7 @@ impl Resolver {
                         names.push(name.value);
                     }
                 }
+                _ => todo!(),
             }
         }
 
@@ -284,6 +285,7 @@ impl Resolver {
                 // ))
                 todo!()
             }
+            _ => todo!(),
         }
     }
 

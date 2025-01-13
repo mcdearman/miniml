@@ -74,27 +74,6 @@ fn repl_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
 
 fn decl_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
 ) -> impl ChumskyParser<'a, I, Decl, extra::Err<Rich<'a, Token, Span>>> {
-    // let record = just(Token::Type)
-    //     .ignore_then(ident_parser())
-    //     .then_ignore(just(Token::Eq))
-    //     .then(
-    //         ident_parser()
-    //             .then_ignore(just(Token::Colon))
-    //             .then(type_hint_parser())
-    //             .separated_by(just(Token::Comma))
-    //             .allow_trailing()
-    //             .at_least(1)
-    //             .collect()
-    //             .delimited_by(just(Token::LBrace), just(Token::RBrace)),
-    //     )
-    //     .map_with(|(name, fields), e| {
-    //         DeclKind::DataType(DataType::new(
-    //             name,
-    //             DataTypeKind::Record { fields },
-    //             e.span(),
-    //         ))
-    //     });
-
     let def = just(Token::Def)
         .ignore_then(pattern_parser())
         .then_ignore(just(Token::Eq))
@@ -120,6 +99,27 @@ fn decl_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
                 .collect(),
         )
         .map(|(name, arms)| DeclKind::FnMatch(name, arms));
+
+    // let record = just(Token::Data)
+    //     .ignore_then(ident_parser())
+    //     .then_ignore(just(Token::Eq))
+    //     .then(
+    //         ident_parser()
+    //             .then_ignore(just(Token::Colon))
+    //             .then(type_hint_parser())
+    //             .separated_by(just(Token::Comma))
+    //             .allow_trailing()
+    //             .at_least(1)
+    //             .collect()
+    //             .delimited_by(just(Token::LBrace), just(Token::RBrace)),
+    //     )
+    //     .map_with(|(name, fields), e| {
+    //         DeclKind::DataType(DataType::new(
+    //             name,
+    //             DataTypeKind::Record { fields },
+    //             e.span(),
+    //         ))
+    //     });
 
     def.or(fn_)
         .or(fn_match)
@@ -401,19 +401,19 @@ fn pattern_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
     })
 }
 
-// fn type_hint_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
-// ) -> impl ChumskyParser<'a, I, TypeHint, extra::Err<Rich<'a, Token, Span>>> {
-//     let simple = just(Token::Colon)
-//         .ignore_then(ident_parser())
-//         .map(|ident| match ident.as_str() {
-//             "Int" => TypeHintKind::Int,
-//             "Bool" => TypeHintKind::Bool,
-//             _ => TypeHintKind::Unit,
-//         })
-//         .map_with(|ty, e| TypeHint::new(ty, e.span()));
+fn type_anno_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
+) -> impl ChumskyParser<'a, I, TypeAnno, extra::Err<Rich<'a, Token, Span>>> {
+    let simple = just(Token::Colon)
+        .ignore_then(ident_parser())
+        .map(|ident| match ident.as_str() {
+            "Int" => TypeHintKind::Int,
+            "Bool" => TypeHintKind::Bool,
+            _ => TypeHintKind::Unit,
+        })
+        .map_with(|ty, e| TypeHint::new(ty, e.span()));
 
-//     todo!()
-// }
+    todo!()
+}
 
 fn ident_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
 ) -> impl ChumskyParser<'a, I, Ident, extra::Err<Rich<'a, Token, Span>>> {

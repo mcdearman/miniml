@@ -106,6 +106,8 @@ pub enum Token {
     Bar,
     #[token("|>")]
     Pipe,
+    #[token("@")]
+    At,
 
     // Keywords
     #[token("pub")]
@@ -193,6 +195,7 @@ impl Display for Token {
             HashLBrack => write!(f, "HashLBrack"),
             Bar => write!(f, "Bar"),
             Pipe => write!(f, "Pipe"),
+            At => write!(f, "At"),
             Pub => write!(f, "Pub"),
             Mod => write!(f, "Mod"),
             End => write!(f, "End"),
