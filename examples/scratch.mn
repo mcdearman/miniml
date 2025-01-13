@@ -132,6 +132,11 @@ pub def map f xs = match xs with
   [] -> []
   (x::xs) -> f x :: map f xs
 
+def map f xs =
+  match xs with
+  | [] -> []
+  | (x::xs) -> f x :: map f xs
+
 -- or
 pub def map : a b. (a -> b) -> [a] -> [b]
   f [] -> []
