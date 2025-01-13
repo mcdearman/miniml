@@ -6,9 +6,10 @@ use miniml_utils::{
 use ty::Ty;
 
 pub mod kind;
+pub mod meta;
+pub mod class;
 pub mod scheme;
 pub mod ty;
-pub mod meta;
 
 pub type TyNode<T> = Node<T, (Ty, Span)>;
 pub type TyBoxNode<T> = BoxNode<T, (Ty, Span)>;
