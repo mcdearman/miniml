@@ -33,6 +33,12 @@ pub enum DeclKind {
     Def(Pattern, Expr),
     Fn(Ident, Vec<Pattern>, Expr),
     FnMatch(Ident, Vec<(Vec<Pattern>, Expr)>),
+    Alias(Ident, TypeAnno),
+    Data(Ident, Vec<Ident>, Vec<(Ident, Vec<TypeAnno>)>),
+    Class(Ident, Vec<Ident>, Vec<(Ident, Vec<TypeAnno>)>),
+    Inst(Ident, Ident, Vec<TypeAnno>, Vec<(Ident, Expr)>),
+    Effect(Ident, Vec<Ident>, Vec<(Ident, Vec<TypeAnno>)>),
+    Handler(Ident, Vec<Ident>, Vec<(Ident, Expr)>),
 }
 
 #[derive(Debug, Clone, PartialEq)]

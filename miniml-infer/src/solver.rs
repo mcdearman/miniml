@@ -291,11 +291,8 @@ impl TypeSolver {
                         self.ctx.push();
                         self.ctx
                             .insert(ident.value.name, Scheme::new(0, var.clone()));
-                        let solved_body = self.generate_expr_constraints(src, body)?;
+                        let solved_body = self.infer_expr(src, body)?;
                         self.ctx.pop();
-
-                        // let scm = var.generalize(self.ctx.free_vars());
-                        // self.ctx.insert(ident.value.name.clone(), scm.clone());
 
                         self.unify(&var, &solved_body.meta.0)?;
 
@@ -315,9 +312,8 @@ impl TypeSolver {
                     }
                 }
                 nir::DefKind::NonRec { pat, body } => {
-                    let solved_expr = self.generate_expr_constraints(src, body)?;
-                    let solved_pat =
-                        self.generate_pattern_constraints(src, pat, &solved_expr.meta.0, true)?;
+                    let solved_expr = self.infer_expr(src, body)?;
+                    let solved_pat = self.infer_pattern(src, pat, &solved_expr.meta.0, true)?;
 
                     Ok(Decl::new(
                         DeclKind::Def(Def::new(
@@ -337,11 +333,7 @@ impl TypeSolver {
         }
     }
 
-    fn generate_expr_constraints<'src>(
-        &mut self,
-        src: &'src str,
-        expr: &nir::Expr,
-    ) -> InferResult<Expr> {
+    fn infer_expr<'src>(&mut self, src: &'src str, expr: &nir::Expr) -> InferResult<Expr> {
         match expr.value.as_ref() {
             nir::ExprKind::Lit(lit) => match lit {
                 nir::Lit::Byte(b) => Ok(Expr::new(
@@ -389,8 +381,8 @@ impl TypeSolver {
                 }
             }
             nir::ExprKind::Apply(fun, arg) => {
-                let solved_fun = self.generate_expr_constraints(src, fun)?;
-                let solved_arg = self.generate_expr_constraints(src, arg)?;
+                let solved_fun = self.infer_expr(src, fun)?;
+                let solved_arg = self.infer_expr(src, arg)?;
 
                 let ty_ret = Ty::Meta(MetaId::fresh());
                 let ty_fun = Ty::Arrow(
@@ -409,9 +401,8 @@ impl TypeSolver {
                 let param_ty = Ty::Meta(MetaId::fresh());
                 log::debug!("fresh lambda var: {:?}", param_ty);
                 self.ctx.push();
-                let solved_pat =
-                    self.generate_pattern_constraints(src, pattern, &param_ty, false)?;
-                let solved_body = self.generate_expr_constraints(src, body)?;
+                let solved_pat = self.infer_pattern(src, pattern, &param_ty, false)?;
+                let solved_body = self.infer_expr(src, body)?;
                 let fun_ty = Ty::Arrow(Box::new(param_ty), Box::new(solved_body.meta.0.clone()));
                 self.ctx.pop();
 
@@ -421,8 +412,8 @@ impl TypeSolver {
                 ))
             }
             nir::ExprKind::Or(lhs, rhs) => {
-                let solved_lhs = self.generate_expr_constraints(src, lhs)?;
-                let solved_rhs = self.generate_expr_constraints(src, rhs)?;
+                let solved_lhs = self.infer_expr(src, lhs)?;
+                let solved_rhs = self.infer_expr(src, rhs)?;
 
                 self.unify(&solved_lhs.meta.0, &Ty::Bool)?;
                 self.unify(&solved_rhs.meta.0, &Ty::Bool)?;
@@ -433,8 +424,8 @@ impl TypeSolver {
                 ))
             }
             nir::ExprKind::And(lhs, rhs) => {
-                let solved_lhs = self.generate_expr_constraints(src, lhs)?;
-                let solved_rhs = self.generate_expr_constraints(src, rhs)?;
+                let solved_lhs = self.infer_expr(src, lhs)?;
+                let solved_rhs = self.infer_expr(src, rhs)?;
 
                 self.unify(&solved_lhs.meta.0, &Ty::Bool)?;
                 self.unify(&solved_rhs.meta.0, &Ty::Bool)?;
@@ -449,9 +440,9 @@ impl TypeSolver {
                 log::debug!("fresh let var: {:?}", var);
 
                 self.ctx.push();
-                let solved_pat = self.generate_pattern_constraints(src, pattern, &var, false)?;
-                let solved_expr = self.generate_expr_constraints(src, expr)?;
-                let solved_body = self.generate_expr_constraints(src, body)?;
+                let solved_pat = self.infer_pattern(src, pattern, &var, false)?;
+                let solved_expr = self.infer_expr(src, expr)?;
+                let solved_body = self.infer_expr(src, body)?;
                 self.ctx.pop();
 
                 Ok(Expr::new(
@@ -460,10 +451,9 @@ impl TypeSolver {
                 ))
             }
             nir::ExprKind::Let(pattern, false, expr, body) => {
-                let solved_expr = self.generate_expr_constraints(src, expr)?;
-                let solved_pat =
-                    self.generate_pattern_constraints(src, pattern, &solved_expr.meta.0, false)?;
-                let solved_body = self.generate_expr_constraints(src, body)?;
+                let solved_expr = self.infer_expr(src, expr)?;
+                let solved_pat = self.infer_pattern(src, pattern, &solved_expr.meta.0, false)?;
+                let solved_body = self.infer_expr(src, body)?;
 
                 Ok(Expr::new(
                     ExprKind::Let(solved_pat, false, solved_expr, solved_body.clone()),
@@ -471,9 +461,9 @@ impl TypeSolver {
                 ))
             }
             nir::ExprKind::If(cond, then, else_) => {
-                let solved_cond = self.generate_expr_constraints(src, cond)?;
-                let solved_then = self.generate_expr_constraints(src, then)?;
-                let solved_else = self.generate_expr_constraints(src, else_)?;
+                let solved_cond = self.infer_expr(src, cond)?;
+                let solved_then = self.infer_expr(src, then)?;
+                let solved_else = self.infer_expr(src, else_)?;
 
                 self.unify(&solved_cond.meta.0, &Ty::Bool)?;
                 self.unify(&solved_then.meta.0, &solved_else.meta.0)?;
@@ -484,7 +474,7 @@ impl TypeSolver {
                 ))
             }
             nir::ExprKind::Match(e, arms) => {
-                let solved_expr = self.generate_expr_constraints(src, &e)?;
+                let solved_expr = self.infer_expr(src, &e)?;
                 let ty = Ty::Meta(MetaId::fresh());
                 log::debug!("fresh match var: {:?}", ty);
 
@@ -492,9 +482,8 @@ impl TypeSolver {
                 for (pat, body) in arms {
                     self.ctx.push();
 
-                    let solved_pat =
-                        self.generate_pattern_constraints(src, pat, &solved_expr.meta.0, false)?;
-                    let solved_body = self.generate_expr_constraints(src, body)?;
+                    let solved_pat = self.infer_pattern(src, pat, &solved_expr.meta.0, false)?;
+                    let solved_body = self.infer_expr(src, body)?;
 
                     self.unify(&solved_body.meta.0, &ty)?;
 
@@ -513,7 +502,7 @@ impl TypeSolver {
                 let list_ty = Ty::List(Box::new(elem_ty.clone()));
                 let solved_vec = vec
                     .iter()
-                    .map(|expr| self.generate_expr_constraints(src, expr))
+                    .map(|expr| self.infer_expr(src, expr))
                     .collect::<InferResult<Vec<Expr>>>()?;
                 for expr in &solved_vec {
                     self.unify(&expr.meta.0, &elem_ty)?;
@@ -525,7 +514,7 @@ impl TypeSolver {
         }
     }
 
-    fn generate_pattern_constraints<'src>(
+    fn infer_pattern<'src>(
         &mut self,
         src: &'src str,
         pat: &nir::Pattern,
@@ -586,7 +575,7 @@ impl TypeSolver {
                 let list_ty = Ty::List(Box::new(elem_ty.clone()));
                 let solved_pats = vec
                     .iter()
-                    .map(|pat| self.generate_pattern_constraints(src, pat, &elem_ty, generalize))
+                    .map(|pat| self.infer_pattern(src, pat, &elem_ty, generalize))
                     .collect::<InferResult<Vec<Pattern>>>()?;
 
                 self.unify(ty, &list_ty)?;
@@ -601,9 +590,8 @@ impl TypeSolver {
                 log::debug!("fresh pair pat var: {:?}", var);
 
                 let pair_ty = Ty::List(Box::new(var.clone()));
-                let solved_head = self.generate_pattern_constraints(src, head, &var, generalize)?;
-                let solved_tail =
-                    self.generate_pattern_constraints(src, tail, &pair_ty, generalize)?;
+                let solved_head = self.infer_pattern(src, head, &var, generalize)?;
+                let solved_tail = self.infer_pattern(src, tail, &pair_ty, generalize)?;
 
                 self.unify(ty, &pair_ty)?;
 
