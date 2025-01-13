@@ -403,16 +403,13 @@ fn pattern_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
 
 fn type_anno_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
 ) -> impl ChumskyParser<'a, I, TypeAnno, extra::Err<Rich<'a, Token, Span>>> {
-    let simple = just(Token::Colon)
-        .ignore_then(ident_parser())
-        .map(|ident| match ident.as_str() {
-            "Int" => TypeHintKind::Int,
-            "Bool" => TypeHintKind::Bool,
-            _ => TypeHintKind::Unit,
+    ident_parser()
+        .map(|ident| match &*ident.value {
+            "Int" => TypeAnnoKind::Int,
+            "Bool" => TypeAnnoKind::Bool,
+            _ => TypeAnnoKind::Unit,
         })
-        .map_with(|ty, e| TypeHint::new(ty, e.span()));
-
-    todo!()
+        .map_with(|ty, e| TypeAnno::new(ty, e.span()));
 }
 
 fn ident_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
