@@ -144,6 +144,10 @@ pub enum Token {
     Instance,
     #[token("as")]
     As,
+    #[token("effect")]
+    Effect,
+    #[token("handler")]
+    Handler,
 }
 
 impl Display for Token {
@@ -213,6 +217,8 @@ impl Display for Token {
             Class => write!(f, "Class"),
             Instance => write!(f, "Instance"),
             As => write!(f, "As"),
+            Effect => write!(f, "Effect"),
+            Handler => write!(f, "Handler"),
         }
     }
 }
