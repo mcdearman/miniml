@@ -409,7 +409,7 @@ fn type_anno_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
             "Bool" => TypeAnnoKind::Bool,
             _ => TypeAnnoKind::Unit,
         })
-        .map_with(|ty, e| TypeAnno::new(ty, e.span()));
+        .map_with(|ty, e| TypeAnno::new(ty, e.span()))
 }
 
 fn ident_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
