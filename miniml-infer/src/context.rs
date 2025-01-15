@@ -1,6 +1,6 @@
 use miniml_tir::scheme::Scheme;
 use miniml_utils::intern::InternedString;
-use std::collections::{BTreeSet, HashMap, HashSet};
+use std::collections::{BTreeSet, HashMap};
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Context {

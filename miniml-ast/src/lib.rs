@@ -30,15 +30,75 @@ pub struct Module {
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum DeclKind {
-    Def(Pattern, Expr),
-    Fn(Ident, Vec<Pattern>, Expr),
-    FnMatch(Ident, Vec<(Vec<Pattern>, Expr)>),
-    Alias(Ident, TypeAnno),
-    Data(Ident, Vec<Ident>, Vec<(Ident, Vec<TypeAnno>)>),
-    Class(Ident, Vec<Ident>, Vec<(Ident, Vec<TypeAnno>)>),
-    Inst(Ident, Ident, Vec<TypeAnno>, Vec<(Ident, Expr)>),
-    Effect(Ident, Vec<Ident>, Vec<(Ident, Vec<TypeAnno>)>),
-    Handler(Ident, Vec<Ident>, Vec<(Ident, Expr)>),
+    Def(Def),
+    Fn(Fn),
+    FnMatch(FnMatch),
+    Alias(Alias),
+    Data(Data),
+    Class(Class),
+    Inst(Inst),
+    Effect(Effect),
+    Handler(Handler),
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct Def {
+    pub pat: Pattern,
+    pub expr: Expr,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct Fn {
+    pub name: Ident,
+    pub params: Vec<Pattern>,
+    pub body: Expr,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct FnMatch {
+    pub name: Ident,
+    pub cases: Vec<(Vec<Pattern>, Expr)>,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct Alias {
+    pub name: Ident,
+    pub ty: TypeAnno,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct Data {
+    pub name: Ident,
+    pub params: Vec<Ident>,
+    pub variants: Vec<(Ident, Vec<TypeAnno>)>,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct Class {
+    pub name: Ident,
+    pub params: Vec<Ident>,
+    pub methods: Vec<(Ident, Vec<TypeAnno>)>,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct Inst {
+    pub class: Ident,
+    pub params: Vec<TypeAnno>,
+    pub methods: Vec<(Ident, Expr)>,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct Effect {
+    pub name: Ident,
+    pub params: Vec<Ident>,
+    pub ops: Vec<(Ident, Vec<TypeAnno>)>,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct Handler {
+    pub name: Ident,
+    pub params: Vec<Ident>,
+    pub ops: Vec<(Ident, Expr)>,
 }
 
 #[derive(Debug, Clone, PartialEq)]
