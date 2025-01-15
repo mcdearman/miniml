@@ -515,7 +515,7 @@ impl Resolver {
                         SynNode::new(ScopedIdent::new(id, ident.value), ident.meta),
                         {
                             if let Some(hint) = hint {
-                                Some(self.resolve_hint(hint)?)
+                                Some(self.resolve_type_anno(hint)?)
                             } else {
                                 None
                             }
@@ -553,10 +553,10 @@ impl Resolver {
         }
     }
 
-    fn resolve_hint(&mut self, hint: &ast::TypeAnno) -> ResResult<TypeAnno> {
+    fn resolve_type_anno(&mut self, anno: &ast::TypeAnno) -> ResResult<TypeAnno> {
         use ast::TypeAnnoKind as Atk;
-        match hint.value.as_ref() {
-            ast::TypeAnnoKind::Ident(ident) => {
+        match anno.value.as_ref() {
+            Atk::Ident(ident) => {
                 todo!()
                 // if let Some(name) = self.env.find(&ident.name) {
                 //     Ok(TypeHint::new(
@@ -570,28 +570,22 @@ impl Resolver {
                 //     ))
                 // }
             }
-            Atk::Byte => Ok(TypeAnno::new(TypeAnnoKind::Byte, hint.meta)),
-            Atk::Int => Ok(TypeAnno::new(TypeAnnoKind::Int, hint.meta)),
-            Atk::Rational => Ok(TypeAnno::new(TypeAnnoKind::Rational, hint.meta)),
-            Atk::Real => Ok(TypeAnno::new(TypeAnnoKind::Real, hint.meta)),
-            Atk::Bool => Ok(TypeAnno::new(TypeAnnoKind::Bool, hint.meta)),
-            Atk::String => Ok(TypeAnno::new(TypeAnnoKind::String, hint.meta)),
-            Atk::Char => Ok(TypeAnno::new(TypeAnnoKind::Char, hint.meta)),
-            Atk::Fn(params, ret) => Ok(TypeAnno::new(
-                TypeAnnoKind::Fn(
-                    params
-                        .iter()
-                        .map(|p| self.resolve_hint(p))
-                        .collect::<ResResult<Vec<TypeAnno>>>()?,
-                    self.resolve_hint(ret)?,
-                ),
-                hint.meta,
+            Atk::Byte => Ok(TypeAnno::new(TypeAnnoKind::Byte, anno.meta)),
+            Atk::Int => Ok(TypeAnno::new(TypeAnnoKind::Int, anno.meta)),
+            Atk::Rational => Ok(TypeAnno::new(TypeAnnoKind::Rational, anno.meta)),
+            Atk::Real => Ok(TypeAnno::new(TypeAnnoKind::Real, anno.meta)),
+            Atk::Bool => Ok(TypeAnno::new(TypeAnnoKind::Bool, anno.meta)),
+            Atk::String => Ok(TypeAnno::new(TypeAnnoKind::String, anno.meta)),
+            Atk::Char => Ok(TypeAnno::new(TypeAnnoKind::Char, anno.meta)),
+            Atk::Fn(param, ret) => Ok(TypeAnno::new(
+                TypeAnnoKind::Fn(self.resolve_type_anno(param)?, self.resolve_type_anno(ret)?),
+                anno.meta,
             )),
             ast::TypeAnnoKind::List(hint) => Ok(TypeAnno::new(
-                TypeAnnoKind::List(self.resolve_hint(hint)?),
+                TypeAnnoKind::List(self.resolve_type_anno(hint)?),
                 hint.meta,
             )),
-            ast::TypeAnnoKind::Unit => Ok(TypeAnno::new(TypeAnnoKind::Unit, hint.meta)),
+            ast::TypeAnnoKind::Unit => Ok(TypeAnno::new(TypeAnnoKind::Unit, anno.meta)),
         }
     }
 }

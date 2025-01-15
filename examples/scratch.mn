@@ -228,12 +228,17 @@ def p' = { p with age = 31 }
 -- sum types
 data Option a = None | Some a
 
-data List a = Empty | Pair a (List a)
-
 -- sum type with effectful constructors
 data Foo a e = Bar a | Baz (a -> a | e)
 
+data List a = Empty | Pair a (List a)
+
+data List a = [] | a :: List a
+
 data NonEmptyList a = NonEmpty a (List a)
+
+-- with infix constructors
+data NomEmptyList a = a :| List a
 
 def (|>) : a b. a -> (a -> b) -> b
   | x |> f = f x
@@ -241,9 +246,6 @@ def (|>) : a b. a -> (a -> b) -> b
 -- possible uncurried version of sigs
 def (|>) : a b c. a (a ..b -> c) -> (..b -> c)
   | x f -> f x _..
-
-def (::) : a. a -> [a] -> [a]
-  | x :: xs = Pair x xs
 
 -- methods with pipe
 [1, 2, 3]

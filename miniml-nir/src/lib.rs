@@ -78,7 +78,7 @@ pub enum TypeAnnoKind {
     String,
     Char,
     Ident(Ident),
-    Fn(Vec<TypeAnno>, TypeAnno),
+    Fn(TypeAnno, TypeAnno),
     List(TypeAnno),
     Unit,
 }
