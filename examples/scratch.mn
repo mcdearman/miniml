@@ -156,35 +156,18 @@ def foldl : a b. (a -> b -> a) -> a -> [b] -> a
   | f acc [] = acc
   | f acc (x::xs) = foldl f (f acc x) xs
 
-def foldl : a b e. (a -> b -> a ! e) -> a -> [b] -> a ! e
+def foldl : a b e. (a -> b -> a) -> a -> [b] -> a
   | f acc []      = acc
   | f acc (x::xs) = foldl f (f acc x) xs
 
-def foldl : (a -> b -> a ! e) -> a -> [b] -> a ! e
+def foldl : (a -> b -> a) -> a -> [b] -> a
   | f acc []      = acc
   | f acc (x::xs) = foldl f (f acc x) xs
 
-def foldl a b e. (f : a -> b -> a ! e) (acc : a) (xs : [b]) : a ! e =
+def foldl a b e. (f : a -> b -> a) (acc : a) (xs : [b]) : a =
   match xs with
   | [] -> acc
   | (x :: xs) -> foldl f (f acc x) xs
-
-def foldl : a b e. (a -> b -> a ! e) -> a -> [b] -> a ! e =
-  \f acc xs ->
-    match xs with
-    | [] -> acc
-    | (x::xs) -> foldl f (f acc x) xs
-
--- possible uncurried version of sigs
-def foldl : a b. [b] (a b -> a) a -> a
-  | [] f acc -> acc
-  | (x::xs) f acc -> foldl f (f acc x) xs
-
--- or
-def foldl a b. (xs : [b], f : (a, b) -> a,  acc : a) -> a =
-  match xs with
-  | [] f acc -> acc
-  | (x::xs) f acc -> foldl(xs, f, f acc x)
 
 def foldl f acc xs = match xs with
   [] -> acc
@@ -233,7 +216,7 @@ def p' = { p with age = 31 }
 data Option a = None | Some a
 
 -- sum type with effectful constructors
-data Foo a e = Bar a | Baz (a -> a | e)
+data Foo a e = Bar a | Baz (a -> a)
 
 data List a = Empty | Pair a (List a)
 
@@ -246,10 +229,6 @@ data NomEmptyList a = a :| List a
 
 def (|>) : a b. a -> (a -> b) -> b
   | x |> f = f x
-
--- possible uncurried version of sigs
-def (|>) : a b c. a (a ..b -> c) -> (..b -> c)
-  | x f -> f x _..
 
 -- methods with pipe
 [1, 2, 3]
