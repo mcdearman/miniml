@@ -12,7 +12,10 @@ true -- Bool
 -- or repl, you can use expressions at the top level. You can think of 
 -- this as a shorthand for `def main args = <expr>`. In files, the main 
 -- function must be defined explicitly:
-def main =
+def main : () ! IO =
+  println "Hello, world!"
+
+main : () ! IO = 
   println "Hello, world!"
 
 -- Bindings are immutable by default.
@@ -164,10 +167,14 @@ def foldl : (a -> b -> a) -> a -> [b] -> a
   | f acc []      = acc
   | f acc (x::xs) = foldl f (f acc x) xs
 
-def foldl a b e. (f : a -> b -> a) (acc : a) (xs : [b]) : a =
+def foldl a b. (f : a -> b -> a) (acc: a) (xs : [b]) : a =
   match xs with
   | [] -> acc
   | (x :: xs) -> foldl f (f acc x) xs
+
+foldl : (a -> b -> a) -> a -> [b] -> a
+foldl f acc [] = acc
+foldl f acc (x::xs) = foldl f (f acc x) xs
 
 def foldl f acc xs = match xs with
   [] -> acc
