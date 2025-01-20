@@ -63,7 +63,7 @@ pub struct FnMatch {
 #[derive(Debug, Clone, PartialEq)]
 pub struct Alias {
     pub name: Ident,
-    pub ty: TypeAnno,
+    pub anno: TypeAnno,
 }
 
 #[derive(Debug, Clone, PartialEq)]
