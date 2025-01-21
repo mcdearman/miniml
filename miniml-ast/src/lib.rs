@@ -1,20 +1,13 @@
 use crate::token::Token;
-use miniml_utils::{intern::InternedString, rational::Rational, span::Span};
+use miniml_utils::{
+    box_node::BoxNode, intern::InternedString, node::Node, rational::Rational, span::Span,
+};
 
 pub mod token;
 pub mod token_stream;
 
-#[derive(Debug, Copy, Clone, PartialEq)]
-pub struct SynNode<T> {
-    pub value: T,
-    pub span: Span,
-}
-
-#[derive(Debug, Clone, PartialEq)]
-pub struct SynBoxNode<T> {
-    pub value: Box<T>,
-    pub span: Span,
-}
+pub type SynNode<T> = Node<T, Span>;
+pub type SynBoxNode<T> = BoxNode<T, Span>;
 
 pub type Prog = SynNode<Module>;
 pub type Imports = Vec<Path>;
@@ -37,126 +30,31 @@ pub struct Module {
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum DeclKind {
-    Def(Def),
-    Fn(Fn),
-    FnMatch(FnMatch),
-    Alias(Alias),
-    Data(Data),
-    Class(Class),
-    Inst(Inst),
-    Effect(Effect),
-    Handler(Handler),
-}
-
-#[derive(Debug, Clone, PartialEq)]
-pub struct Def {
-    pub pat: Pattern,
-    pub expr: Expr,
-}
-
-#[derive(Debug, Clone, PartialEq)]
-pub struct Fn {
-    pub name: Ident,
-    pub params: Vec<Pattern>,
-    pub body: Expr,
-}
-
-#[derive(Debug, Clone, PartialEq)]
-pub struct FnMatch {
-    pub name: Ident,
-    pub cases: Vec<(Vec<Pattern>, Expr)>,
-}
-
-#[derive(Debug, Clone, PartialEq)]
-pub struct Alias {
-    pub name: Ident,
-    pub anno: TypeAnno,
-}
-
-#[derive(Debug, Clone, PartialEq)]
-pub struct Data {
-    pub name: Ident,
-    pub params: Vec<Ident>,
-    pub variants: Vec<(Ident, Vec<TypeAnno>)>,
-}
-
-#[derive(Debug, Clone, PartialEq)]
-pub struct Class {
-    pub name: Ident,
-    pub params: Vec<Ident>,
-    pub methods: Vec<(Ident, Vec<TypeAnno>)>,
-}
-
-#[derive(Debug, Clone, PartialEq)]
-pub struct Inst {
-    pub class: Ident,
-    pub params: Vec<TypeAnno>,
-    pub methods: Vec<(Ident, Expr)>,
-}
-
-#[derive(Debug, Clone, PartialEq)]
-pub struct Effect {
-    pub name: Ident,
-    pub params: Vec<Ident>,
-    pub ops: Vec<(Ident, Vec<TypeAnno>)>,
-}
-
-#[derive(Debug, Clone, PartialEq)]
-pub struct Handler {
-    pub name: Ident,
-    pub params: Vec<Ident>,
-    pub ops: Vec<(Ident, Expr)>,
+    Def(Pattern, Expr),
+    Fn(Ident, Vec<Pattern>, Expr),
+    FnMatch(Ident, Vec<(Vec<Pattern>, Expr)>),
+    Alias(Ident, TypeAnno),
+    Data(Ident, Vec<Ident>, Vec<(Ident, Vec<TypeAnno>)>),
+    Class(Ident, Vec<Ident>, Vec<(Ident, Vec<TypeAnno>)>),
+    Inst(Ident, Ident, Vec<TypeAnno>, Vec<(Ident, Expr)>),
+    Effect(Ident, Vec<Ident>, Vec<(Ident, Vec<TypeAnno>)>),
+    Handler(Ident, Vec<Ident>, Vec<(Ident, Expr)>),
 }
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum ExprKind {
     Lit(Lit),
     Var(Ident),
-    Apply {
-        fun: Expr,
-        args: Vec<Expr>,
-    },
-    Lambda {
-        params: Vec<Pattern>,
-        body: Expr,
-    },
-    UnaryOp {
-        op: UnaryOp,
-        expr: Expr,
-    },
-    BinaryOp {
-        op: BinaryOp,
-        lhs: Expr,
-        rhs: Expr,
-    },
-    Or {
-        lhs: Expr,
-        rhs: Expr,
-    },
-    And {
-        lhs: Expr,
-        rhs: Expr,
-    },
-    Let {
-        pat: Pattern,
-        expr: Expr,
-        body: Expr,
-    },
-    Fn {
-        name: Ident,
-        params: Vec<Pattern>,
-        expr: Expr,
-        body: Expr,
-    },
-    If {
-        cond: Expr,
-        then: Expr,
-        else_: Expr,
-    },
-    Match {
-        expr: Expr,
-        arms: Vec<(Pattern, Expr)>,
-    },
+    Apply(Expr, Vec<Expr>),
+    Lambda(Vec<Pattern>, Expr),
+    UnaryOp(UnaryOp, Expr),
+    BinaryOp(BinaryOp, Expr, Expr),
+    Or(Expr, Expr),
+    And(Expr, Expr),
+    Let(Pattern, Expr, Expr),
+    Fn(Ident, Vec<Pattern>, Expr, Expr),
+    If(Expr, Expr, Expr),
+    Match(Expr, Vec<(Pattern, Expr)>),
     List(Vec<Expr>),
     Unit,
 }

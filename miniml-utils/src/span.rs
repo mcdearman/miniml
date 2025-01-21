@@ -1,4 +1,3 @@
-use super::node::Node;
 use std::{
     fmt::{Debug, Display},
     ops::{Index, Range},
@@ -98,5 +97,3 @@ impl Index<Span> for String {
         &self[Range::from(index)]
     }
 }
-
-pub type Spanned<T> = Node<T, Span>;

@@ -7,7 +7,7 @@ Module @ 0..11
     name : f1 @ 0..1
     args : x1 @ 2..3
     body : Expr @ 6..11
-      kind : Apply @ 6..11
+      value : Apply @ 6..11
         fun  : add @ 6..7
         args : x1 @ 10..11
 
@@ -23,19 +23,19 @@ Module @ 0..92
     name : map @ 0..3
     args : f1 @ 4..11, xs1 @ 13..20
     body : Expr @ 23..92
-      kind : Match @ 23..92
+      value : Match @ 23..92
         expr : xs @ 30..92
         cases : @ 34..92
           Pattern @ 34..39
-            kind : List @ 34..36
+            value : List @ 34..36
           Expr @ 38..39
-            kind : List @ 38..39
+            value : List @ 38..39
           Pattern @ 41..49
-            kind : Pair @ 41..49
+            value : Pair @ 41..49
               x1 @ 42..43
               xs1 @ 46..49
           Expr @ 51..92
-            kind : Apply @ 51..92
+            value : Apply @ 51..92
               fun  : Pair @ 51..53
               args : Apply @ 51..92
                 fun  : f1 @ 51..52

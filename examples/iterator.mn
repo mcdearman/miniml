@@ -8,7 +8,7 @@ pub class Iterator i where
 
   @inline
   def map (f : a -> b) (iter : i) : Map b = 
-    MapIter { iter = iter, f = f }
+    MapIter { iter, f }
 
   @inline
   def zip (iter1 : i, iter2 : j) : Zip i j =
@@ -18,10 +18,10 @@ pub class Iterator i where
   def fold (f : a -> Item i -> a, acc : a) (iter : i) : a =
     FoldIter { iter = iter, f = f, acc = acc }
   
-pub data MapIter i f = { iter : i, f : f }
+pub data MapIter i g = { iter : i, f : g }
 
-instance Iterator (MapIter i f) where
-  type Item (MapIter i f) = f (Item i)
+instance Iterator (MapIter i g) where
+  type Item (MapIter i g) = g (Item i)
 
   def next (m : MapIter i f) : Option (Item i, MapIter i f) =
     match next m.iter with

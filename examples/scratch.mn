@@ -15,9 +15,6 @@ true -- Bool
 def main : () ! IO =
   println "Hello, world!"
 
-main : () ! IO = 
-  println "Hello, world!"
-
 -- Bindings are immutable by default.
 def x = 1
 
