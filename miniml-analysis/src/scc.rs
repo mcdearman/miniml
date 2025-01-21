@@ -23,7 +23,7 @@ impl SCC {
 
     pub fn run(&mut self, prog: &Prog) -> Prog {
         self.top_level_names = prog
-            .value
+            .inner
             .decls
             .clone()
             .into_iter()
@@ -32,9 +32,9 @@ impl SCC {
             .flatten()
             .collect::<Vec<_>>();
 
-        for (i, decl) in prog.value.decls.iter().enumerate() {
-            match &decl.value {
-                DeclKind::Def(def) => match &def.value {
+        for (i, decl) in prog.inner.decls.iter().enumerate() {
+            match &decl.inner {
+                DeclKind::Def(def) => match &def.inner {
                     DefKind::Rec { ident: _, body, .. } => {
                         let scc = self.scc_expr(body);
                         self.graph.add_edges(i, scc);
@@ -52,8 +52,8 @@ impl SCC {
 
         SynNode::new(
             Module {
-                name: prog.value.name.clone(),
-                imports: prog.value.imports.clone(),
+                name: prog.inner.name.clone(),
+                imports: prog.inner.imports.clone(),
                 decls: self
                     .graph
                     .scc()
@@ -62,7 +62,7 @@ impl SCC {
                         let decls = scc
                             .iter()
                             .map(|id| {
-                                prog.value
+                                prog.inner
                                     .decls
                                     .get(*id)
                                     .expect(&*format!("id {} out of bounds", id))
@@ -80,7 +80,7 @@ impl SCC {
                                 DeclKind::DefGroup(
                                     decls
                                         .iter()
-                                        .map(|decl| match &decl.value {
+                                        .map(|decl| match &decl.inner {
                                             DeclKind::Def(def) => vec![def.clone()],
                                             DeclKind::DefGroup(defs) => defs.clone(),
                                         })
@@ -98,11 +98,11 @@ impl SCC {
     }
 
     fn scc_expr(&self, expr: &Expr) -> Vec<usize> {
-        match expr.value.as_ref() {
+        match expr.inner.as_ref() {
             ExprKind::Apply(fun, arg) => {
-                if let ExprKind::Var(ident) = fun.value.as_ref() {
-                    if self.top_level_names.contains(&ident.value) {
-                        let tid = self.decl_map.get(&ident.value).expect("decl not found");
+                if let ExprKind::Var(ident) = fun.inner.as_ref() {
+                    if self.top_level_names.contains(&ident.inner) {
+                        let tid = self.decl_map.get(&ident.inner).expect("decl not found");
                         vec![*tid]
                             .into_iter()
                             .chain(self.scc_expr(arg))
@@ -160,11 +160,11 @@ impl SCC {
     }
 
     fn search_decls(&mut self, decl: &Decl, i: usize) -> Option<Vec<ScopedIdent>> {
-        match &decl.value {
-            DeclKind::Def(def) => match &def.value {
+        match &decl.inner {
+            DeclKind::Def(def) => match &def.inner {
                 DefKind::Rec { ident, .. } => {
-                    self.decl_map.insert(ident.value.clone(), i);
-                    Some(vec![ident.value])
+                    self.decl_map.insert(ident.inner.clone(), i);
+                    Some(vec![ident.inner])
                 }
                 DefKind::NonRec { pat, .. } => self.search_decl_pats(pat),
             },
@@ -173,8 +173,8 @@ impl SCC {
     }
 
     fn search_decl_pats(&mut self, pat: &Pattern) -> Option<Vec<ScopedIdent>> {
-        match pat.value.as_ref() {
-            PatternKind::Ident(ident, _) => Some(vec![ident.value]),
+        match pat.inner.as_ref() {
+            PatternKind::Ident(ident, _) => Some(vec![ident.inner]),
             PatternKind::List(xs) => Some(
                 xs.iter()
                     .map(|x| self.search_decl_pats(x))

@@ -216,7 +216,7 @@ fn expr_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
             .then(atom.clone().repeated().collect::<Vec<_>>())
             .map(|(fun, args)| {
                 if args.is_empty() {
-                    *fun.value
+                    *fun.inner
                 } else {
                     ExprKind::Apply(fun, args)
                 }
@@ -404,7 +404,7 @@ fn pattern_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
 fn type_anno_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
 ) -> impl ChumskyParser<'a, I, TypeAnno, extra::Err<Rich<'a, Token, Span>>> {
     ident_parser()
-        .map(|ident| match &*ident.value {
+        .map(|ident| match &*ident.inner {
             "Int" => TypeAnnoKind::Int,
             "Bool" => TypeAnnoKind::Bool,
             _ => TypeAnnoKind::Unit,

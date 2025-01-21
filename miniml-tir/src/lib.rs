@@ -11,8 +11,20 @@ pub mod meta;
 pub mod scheme;
 pub mod ty;
 
-pub type TyNode<T> = Node<T, (Ty, Span)>;
-pub type TyBoxNode<T> = BoxNode<T, (Ty, Span)>;
+#[derive(Debug, Clone, PartialEq)]
+pub struct Typed<T> {
+    pub value: T,
+    pub ty: Ty,
+}
+
+impl<T> Typed<T> {
+    pub fn new(value: T, ty: Ty) -> Self {
+        Self { value, ty }
+    }
+}
+
+pub type TyNode<T> = Node<Typed<T>, Span>;
+pub type TyBoxNode<T> = BoxNode<Typed<T>, Span>;
 
 pub type Prog = SynNode<Module>;
 pub type Imports = Vec<Path>;
