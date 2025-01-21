@@ -1,13 +1,20 @@
 use crate::token::Token;
-use miniml_utils::{
-    box_node::BoxNode, intern::InternedString, node::Node, rational::Rational, span::Span,
-};
+use miniml_utils::{intern::InternedString, rational::Rational, span::Span};
 
 pub mod token;
 pub mod token_stream;
 
-pub type SynNode<T> = Node<T, Span>;
-pub type SynBoxNode<T> = BoxNode<T, Span>;
+#[derive(Debug, Copy, Clone, PartialEq)]
+pub struct SynNode<T> {
+    pub value: T,
+    pub span: Span,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct SynBoxNode<T> {
+    pub value: Box<T>,
+    pub span: Span,
+}
 
 pub type Prog = SynNode<Module>;
 pub type Imports = Vec<Path>;
@@ -105,16 +112,51 @@ pub struct Handler {
 pub enum ExprKind {
     Lit(Lit),
     Var(Ident),
-    Apply(Expr, Vec<Expr>),
-    Lambda(Vec<Pattern>, Expr),
-    UnaryOp(UnaryOp, Expr),
-    BinaryOp(BinaryOp, Expr, Expr),
-    Or(Expr, Expr),
-    And(Expr, Expr),
-    Let(Pattern, Expr, Expr),
-    Fn(Ident, Vec<Pattern>, Expr, Expr),
-    If(Expr, Expr, Expr),
-    Match(Expr, Vec<(Pattern, Expr)>),
+    Apply {
+        fun: Expr,
+        args: Vec<Expr>,
+    },
+    Lambda {
+        params: Vec<Pattern>,
+        body: Expr,
+    },
+    UnaryOp {
+        op: UnaryOp,
+        expr: Expr,
+    },
+    BinaryOp {
+        op: BinaryOp,
+        lhs: Expr,
+        rhs: Expr,
+    },
+    Or {
+        lhs: Expr,
+        rhs: Expr,
+    },
+    And {
+        lhs: Expr,
+        rhs: Expr,
+    },
+    Let {
+        pat: Pattern,
+        expr: Expr,
+        body: Expr,
+    },
+    Fn {
+        name: Ident,
+        params: Vec<Pattern>,
+        expr: Expr,
+        body: Expr,
+    },
+    If {
+        cond: Expr,
+        then: Expr,
+        else_: Expr,
+    },
+    Match {
+        expr: Expr,
+        arms: Vec<(Pattern, Expr)>,
+    },
     List(Vec<Expr>),
     Unit,
 }
