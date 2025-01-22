@@ -197,9 +197,9 @@ def binary_search : a. (a -> Ordering) -> [a] -> a -> Option Int
       else
         let m = (l + r) / 2
         match cmp x (xs !! m) with
-        | EQ -> Some m
-        | LT -> loop l (m - 1)
-        | GT -> loop (m + 1) r
+        | Ordering.Eq -> Some m
+        | Ordering.Lt -> loop l (m - 1)
+        | Ordering.Gt -> loop (m + 1) r
     in loop 0 (len xs - 1)
 
 -- type alias
