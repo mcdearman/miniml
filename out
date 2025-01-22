@@ -1,0 +1,367 @@
+Welcome to MiniML!
+[?2004h[K> [2C[K> def foldl f acc xs =
+  match xs with
+  | [] -> acc
+  | (x :: xs) -> foldl f (f acc x) xs
+[A[B[?2004l
+TIR: Some(
+    Node {
+        inner: Module {
+            name: Node {
+                inner: ScopedIdent {
+                    id: ResId(
+                        22,
+                    ),
+                    name: InternedString(main),
+                },
+                meta: 0..88,
+            },
+            imports: [
+                [],
+            ],
+            decls: [
+                Node {
+                    inner: Def(
+                        Node {
+                            inner: Typed {
+                                value: Rec {
+                                    ident: Node {
+                                        inner: ScopedIdent {
+                                            id: ResId(
+                                                16,
+                                            ),
+                                            name: InternedString(foldl),
+                                        },
+                                        meta: 4..9,
+                                    },
+                                    body: BoxNode {
+                                        inner: Typed {
+                                            value: Lambda(
+                                                BoxNode {
+                                                    inner: Typed {
+                                                        value: Ident(
+                                                            Node {
+                                                                inner: ScopedIdent {
+                                                                    id: ResId(
+                                                                        17,
+                                                                    ),
+                                                                    name: InternedString(f),
+                                                                },
+                                                                meta: 10..11,
+                                                            },
+                                                        ),
+                                                        ty: Var(1) -> Var(0) -> Var(1),
+                                                    },
+                                                    meta: 10..11,
+                                                },
+                                                BoxNode {
+                                                    inner: Typed {
+                                                        value: Lambda(
+                                                            BoxNode {
+                                                                inner: Typed {
+                                                                    value: Ident(
+                                                                        Node {
+                                                                            inner: ScopedIdent {
+                                                                                id: ResId(
+                                                                                    18,
+                                                                                ),
+                                                                                name: InternedString(acc),
+                                                                            },
+                                                                            meta: 12..15,
+                                                                        },
+                                                                    ),
+                                                                    ty: Var(1),
+                                                                },
+                                                                meta: 12..15,
+                                                            },
+                                                            BoxNode {
+                                                                inner: Typed {
+                                                                    value: Lambda(
+                                                                        BoxNode {
+                                                                            inner: Typed {
+                                                                                value: Ident(
+                                                                                    Node {
+                                                                                        inner: ScopedIdent {
+                                                                                            id: ResId(
+                                                                                                19,
+                                                                                            ),
+                                                                                            name: InternedString(xs),
+                                                                                        },
+                                                                                        meta: 16..18,
+                                                                                    },
+                                                                                ),
+                                                                                ty: [Var(0)],
+                                                                            },
+                                                                            meta: 16..18,
+                                                                        },
+                                                                        BoxNode {
+                                                                            inner: Typed {
+                                                                                value: Match(
+                                                                                    BoxNode {
+                                                                                        inner: Typed {
+                                                                                            value: Var(
+                                                                                                Node {
+                                                                                                    inner: ScopedIdent {
+                                                                                                        id: ResId(
+                                                                                                            19,
+                                                                                                        ),
+                                                                                                        name: InternedString(xs),
+                                                                                                    },
+                                                                                                    meta: 29..31,
+                                                                                                },
+                                                                                            ),
+                                                                                            ty: [Var(0)],
+                                                                                        },
+                                                                                        meta: 29..31,
+                                                                                    },
+                                                                                    [
+                                                                                        (
+                                                                                            BoxNode {
+                                                                                                inner: Typed {
+                                                                                                    value: List(
+                                                                                                        [],
+                                                                                                    ),
+                                                                                                    ty: [Var(0)],
+                                                                                                },
+                                                                                                meta: 41..43,
+                                                                                            },
+                                                                                            BoxNode {
+                                                                                                inner: Typed {
+                                                                                                    value: Var(
+                                                                                                        Node {
+                                                                                                            inner: ScopedIdent {
+                                                                                                                id: ResId(
+                                                                                                                    18,
+                                                                                                                ),
+                                                                                                                name: InternedString(acc),
+                                                                                                            },
+                                                                                                            meta: 47..50,
+                                                                                                        },
+                                                                                                    ),
+                                                                                                    ty: Var(1),
+                                                                                                },
+                                                                                                meta: 47..50,
+                                                                                            },
+                                                                                        ),
+                                                                                        (
+                                                                                            BoxNode {
+                                                                                                inner: Typed {
+                                                                                                    value: Pair(
+                                                                                                        BoxNode {
+                                                                                                            inner: Typed {
+                                                                                                                value: Ident(
+                                                                                                                    Node {
+                                                                                                                        inner: ScopedIdent {
+                                                                                                                            id: ResId(
+                                                                                                                                20,
+                                                                                                                            ),
+                                                                                                                            name: InternedString(x),
+                                                                                                                        },
+                                                                                                                        meta: 56..57,
+                                                                                                                    },
+                                                                                                                ),
+                                                                                                                ty: Var(0),
+                                                                                                            },
+                                                                                                            meta: 56..57,
+                                                                                                        },
+                                                                                                        BoxNode {
+                                                                                                            inner: Typed {
+                                                                                                                value: Ident(
+                                                                                                                    Node {
+                                                                                                                        inner: ScopedIdent {
+                                                                                                                            id: ResId(
+                                                                                                                                21,
+                                                                                                                            ),
+                                                                                                                            name: InternedString(xs),
+                                                                                                                        },
+                                                                                                                        meta: 61..63,
+                                                                                                                    },
+                                                                                                                ),
+                                                                                                                ty: [Var(0)],
+                                                                                                            },
+                                                                                                            meta: 61..63,
+                                                                                                        },
+                                                                                                    ),
+                                                                                                    ty: [Var(0)],
+                                                                                                },
+                                                                                                meta: 55..64,
+                                                                                            },
+                                                                                            BoxNode {
+                                                                                                inner: Typed {
+                                                                                                    value: Apply(
+                                                                                                        BoxNode {
+                                                                                                            inner: Typed {
+                                                                                                                value: Apply(
+                                                                                                                    BoxNode {
+                                                                                                                        inner: Typed {
+                                                                                                                            value: Apply(
+                                                                                                                                BoxNode {
+                                                                                                                                    inner: Typed {
+                                                                                                                                        value: Var(
+                                                                                                                                            Node {
+                                                                                                                                                inner: ScopedIdent {
+                                                                                                                                                    id: ResId(
+                                                                                                                                                        16,
+                                                                                                                                                    ),
+                                                                                                                                                    name: InternedString(foldl),
+                                                                                                                                                },
+                                                                                                                                                meta: 68..73,
+                                                                                                                                            },
+                                                                                                                                        ),
+                                                                                                                                        ty: (Var(1) -> Var(0) -> Var(1)) -> Var(1) -> [Var(0)] -> Var(1),
+                                                                                                                                    },
+                                                                                                                                    meta: 68..73,
+                                                                                                                                },
+                                                                                                                                BoxNode {
+                                                                                                                                    inner: Typed {
+                                                                                                                                        value: Var(
+                                                                                                                                            Node {
+                                                                                                                                                inner: ScopedIdent {
+                                                                                                                                                    id: ResId(
+                                                                                                                                                        17,
+                                                                                                                                                    ),
+                                                                                                                                                    name: InternedString(f),
+                                                                                                                                                },
+                                                                                                                                                meta: 74..75,
+                                                                                                                                            },
+                                                                                                                                        ),
+                                                                                                                                        ty: Var(1) -> Var(0) -> Var(1),
+                                                                                                                                    },
+                                                                                                                                    meta: 74..75,
+                                                                                                                                },
+                                                                                                                            ),
+                                                                                                                            ty: Var(1) -> [Var(0)] -> Var(1),
+                                                                                                                        },
+                                                                                                                        meta: 68..88,
+                                                                                                                    },
+                                                                                                                    BoxNode {
+                                                                                                                        inner: Typed {
+                                                                                                                            value: Apply(
+                                                                                                                                BoxNode {
+                                                                                                                                    inner: Typed {
+                                                                                                                                        value: Apply(
+                                                                                                                                            BoxNode {
+                                                                                                                                                inner: Typed {
+                                                                                                                                                    value: Var(
+                                                                                                                                                        Node {
+                                                                                                                                                            inner: ScopedIdent {
+                                                                                                                                                                id: ResId(
+                                                                                                                                                                    17,
+                                                                                                                                                                ),
+                                                                                                                                                                name: InternedString(f),
+                                                                                                                                                            },
+                                                                                                                                                            meta: 77..78,
+                                                                                                                                                        },
+                                                                                                                                                    ),
+                                                                                                                                                    ty: Var(1) -> Var(0) -> Var(1),
+                                                                                                                                                },
+                                                                                                                                                meta: 77..78,
+                                                                                                                                            },
+                                                                                                                                            BoxNode {
+                                                                                                                                                inner: Typed {
+                                                                                                                                                    value: Var(
+                                                                                                                                                        Node {
+                                                                                                                                                            inner: ScopedIdent {
+                                                                                                                                                                id: ResId(
+                                                                                                                                                                    18,
+                                                                                                                                                                ),
+                                                                                                                                                                name: InternedString(acc),
+                                                                                                                                                            },
+                                                                                                                                                            meta: 79..82,
+                                                                                                                                                        },
+                                                                                                                                                    ),
+                                                                                                                                                    ty: Var(1),
+                                                                                                                                                },
+                                                                                                                                                meta: 79..82,
+                                                                                                                                            },
+                                                                                                                                        ),
+                                                                                                                                        ty: Var(0) -> Var(1),
+                                                                                                                                    },
+                                                                                                                                    meta: 77..84,
+                                                                                                                                },
+                                                                                                                                BoxNode {
+                                                                                                                                    inner: Typed {
+                                                                                                                                        value: Var(
+                                                                                                                                            Node {
+                                                                                                                                                inner: ScopedIdent {
+                                                                                                                                                    id: ResId(
+                                                                                                                                                        20,
+                                                                                                                                                    ),
+                                                                                                                                                    name: InternedString(x),
+                                                                                                                                                },
+                                                                                                                                                meta: 83..84,
+                                                                                                                                            },
+                                                                                                                                        ),
+                                                                                                                                        ty: Var(0),
+                                                                                                                                    },
+                                                                                                                                    meta: 83..84,
+                                                                                                                                },
+                                                                                                                            ),
+                                                                                                                            ty: Var(1),
+                                                                                                                        },
+                                                                                                                        meta: 77..84,
+                                                                                                                    },
+                                                                                                                ),
+                                                                                                                ty: [Var(0)] -> Var(1),
+                                                                                                            },
+                                                                                                            meta: 68..88,
+                                                                                                        },
+                                                                                                        BoxNode {
+                                                                                                            inner: Typed {
+                                                                                                                value: Var(
+                                                                                                                    Node {
+                                                                                                                        inner: ScopedIdent {
+                                                                                                                            id: ResId(
+                                                                                                                                21,
+                                                                                                                            ),
+                                                                                                                            name: InternedString(xs),
+                                                                                                                        },
+                                                                                                                        meta: 86..88,
+                                                                                                                    },
+                                                                                                                ),
+                                                                                                                ty: [Var(0)],
+                                                                                                            },
+                                                                                                            meta: 86..88,
+                                                                                                        },
+                                                                                                    ),
+                                                                                                    ty: Var(1),
+                                                                                                },
+                                                                                                meta: 68..88,
+                                                                                            },
+                                                                                        ),
+                                                                                    ],
+                                                                                ),
+                                                                                ty: [Var(0)],
+                                                                            },
+                                                                            meta: 29..31,
+                                                                        },
+                                                                    ),
+                                                                    ty: Var(1),
+                                                                },
+                                                                meta: 29..31,
+                                                            },
+                                                        ),
+                                                        ty: [Var(0)] -> Var(1),
+                                                    },
+                                                    meta: 23..88,
+                                                },
+                                            ),
+                                            ty: Var(1) -> [Var(0)] -> Var(1),
+                                        },
+                                        meta: 23..88,
+                                    },
+                                },
+                                ty: (Var(1) -> Var(0) -> Var(1)) -> Var(1) -> [Var(0)] -> Var(1),
+                            },
+                            meta: 0..88,
+                        },
+                    ),
+                    meta: 0..88,
+                },
+            ],
+        },
+        meta: 0..88,
+    },
+)
+[?2004h[K> [2C[?2004l
+CTRL-C

@@ -267,16 +267,47 @@ class Ord a <: Eq + PartialOrd where
 
 class Add a b where
   def data Output = a
-  def add : a -> b -> Output
+  def (+) : a -> b -> Output
+
+data Ordering = Lt | Eq | Gt
 
 class Eq a where
-  def eq : a -> a -> Bool
+  def (=) : a -> a -> Bool
+end
 
 class PartialOrd a where
   def partial_compare : a -> a -> Option Ordering
 
+  def (<) (x : a) (y : a) : Bool = 
+    match partial_compare x y with
+    | Some Lt -> true
+    | _ -> false
+
+  def (<=) (x : a) (y : a) : Bool =
+    match partial_compare x y with
+    | Some Lt -> true
+    | Some Eq -> true
+    | _ -> false
+
+  def (>) (x : a) (y : a) : Bool =
+    match partial_compare x y with
+    | Some Gt -> true
+    | _ -> false
+
+  def (>=) (x : a) (y : a) : Bool =
+    match partial_compare x y with
+    | Some Gt -> true
+    | Some Eq -> true
+    | _ -> false
+end
+
 class (Eq a, PartialOrd a) => Ord a where
   def compare : a -> a -> Ordering
+  def (<) : a -> a -> Bool
+  def (<=) : a -> a -> Bool
+  def (>) : a -> a -> Bool
+  def (>=) : a -> a -> Bool
+end
 
 
 

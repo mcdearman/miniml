@@ -282,7 +282,7 @@ impl TypeSolver {
         match &decl.inner {
             nir::DeclKind::Def(def) => match &def.inner {
                 nir::DefKind::Rec { ident, anno, body } => {
-                    if let Some(hint) = anno {
+                    if let Some(anno) = anno {
                         todo!()
                     } else {
                         let var = Ty::Meta(MetaId::fresh());
