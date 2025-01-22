@@ -23,6 +23,7 @@ Module @ 0..92
     name : map @ 0..3
     args : f1 @ 4..11, xs1 @ 13..20
     body : Expr @ 23..92
+    ty   : Ty @ 0..92
       value : Match @ 23..92
         expr : xs @ 30..92
         cases : @ 34..92
@@ -43,5 +44,15 @@ Module @ 0..92
               args : Apply @ 51..92
                 fun  : map @ 51..54
                 args : f1 @ 59..60, xs1 @ 62..63
+
+
+Node
+  inner : Module
+    name : main22
+    imports : []
+    decls : Node
+      inner : Def
+        name : foldl
+        args
 
 
