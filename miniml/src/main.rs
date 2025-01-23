@@ -3,6 +3,10 @@ use miniml_ast::token_stream::TokenStream;
 use miniml_infer::solver::TypeSolver;
 use miniml_parse::parse;
 use miniml_rename::resolver::Resolver;
+use pretty::{
+    termcolor::{Color, ColorChoice, ColorSpec, StandardStream},
+    Arena, DocAllocator,
+};
 use rustyline::{
     error::ReadlineError, validate::Validator, Completer, Editor, Helper, Highlighter, Hinter,
 };
@@ -25,14 +29,22 @@ impl Validator for TermValidator {
 
 fn main() {
     env_logger::init();
+
+    let arena = Arena::new();
+    let red = arena
+        .text("Welcome to MiniML!")
+        .annotate(ColorSpec::new().set_fg(Some(Color::Red)).clone());
+    red.render_colored(80, StandardStream::stdout(ColorChoice::Auto))
+        .expect("Failed to render colored text");
+
     let h = TermValidator;
     let mut rl = Editor::new().expect("Failed to create editor");
     rl.set_helper(Some(h));
     if rl.load_history(".miniml_history").is_err() {
-        println!("No previous history.");
+        eprintln!("No previous history.");
     }
 
-    println!("Welcome to MiniML!");
+    // println!("Welcome to MiniML!");
 
     let mut res = Resolver::new();
     let mut solver = TypeSolver::new();

@@ -34,7 +34,6 @@ pub type Decl = SynNode<DeclKind>;
 pub type Def = TyNode<DefKind>;
 pub type Expr = TyBoxNode<ExprKind>;
 pub type Pattern = TyBoxNode<PatternKind>;
-pub type TypeAnno = SynBoxNode<TypeAnnoKind>;
 pub type Ident = SynNode<ScopedIdent>;
 
 #[derive(Debug, Clone, PartialEq)]
@@ -78,21 +77,6 @@ pub enum PatternKind {
     Ident(Ident),
     List(Vec<Pattern>),
     Pair(Pattern, Pattern),
-    Unit,
-}
-
-#[derive(Debug, Clone, PartialEq)]
-pub enum TypeAnnoKind {
-    Byte,
-    Int,
-    Rational,
-    Real,
-    Bool,
-    String,
-    Char,
-    Ident(Ident),
-    Fn(Vec<TypeAnno>, TypeAnno),
-    List(TypeAnno),
     Unit,
 }
 
