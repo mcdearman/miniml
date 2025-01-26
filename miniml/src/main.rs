@@ -30,13 +30,6 @@ impl Validator for TermValidator {
 fn main() {
     env_logger::init();
 
-    let arena = Arena::new();
-    let red = arena
-        .text("Welcome to MiniML!")
-        .annotate(ColorSpec::new().set_fg(Some(Color::Red)).clone());
-    red.render_colored(80, StandardStream::stdout(ColorChoice::Auto))
-        .expect("Failed to render colored text");
-
     let h = TermValidator;
     let mut rl = Editor::new().expect("Failed to create editor");
     rl.set_helper(Some(h));
@@ -44,7 +37,7 @@ fn main() {
         eprintln!("No previous history.");
     }
 
-    // println!("Welcome to MiniML!");
+    println!("Welcome to MiniML!");
 
     let mut res = Resolver::new();
     let mut solver = TypeSolver::new();
