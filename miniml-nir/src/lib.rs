@@ -1,5 +1,8 @@
 use miniml_ast::{SynBoxNode, SynNode};
-use miniml_utils::{intern::InternedString, rational::Rational};
+use miniml_utils::{
+    intern::InternedString,
+    rational::{Rational, Rational64},
+};
 use scoped_ident::ScopedIdent;
 
 pub mod res_id;
@@ -87,7 +90,7 @@ pub enum TypeAnnoKind {
 pub enum Lit {
     Byte(u8),
     Int(i64),
-    Rational(Rational),
+    Rational(Rational64),
     Real(f64),
     Bool(bool),
     String(InternedString),

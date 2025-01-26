@@ -1,7 +1,7 @@
 use miniml_ast::{SynBoxNode, SynNode};
 use miniml_nir::scoped_ident::ScopedIdent;
 use miniml_utils::{
-    box_node::BoxNode, intern::InternedString, node::Node, rational::Rational, span::Span,
+    box_node::BoxNode, intern::InternedString, node::Node, rational::Rational64, span::Span,
 };
 use ty::Ty;
 
@@ -84,7 +84,7 @@ pub enum PatternKind {
 pub enum Lit {
     Byte(u8),
     Int(i64),
-    Rational(Rational),
+    Rational(Rational64),
     Real(f64),
     Bool(bool),
     String(InternedString),

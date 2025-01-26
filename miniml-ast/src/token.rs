@@ -1,5 +1,5 @@
 use logos::Logos;
-use miniml_utils::{intern::InternedString, rational::Rational};
+use miniml_utils::{intern::InternedString, rational::Rational64};
 use std::fmt::Display;
 
 #[derive(Logos, Debug, Clone, PartialEq)]
@@ -25,7 +25,7 @@ pub enum Token {
     #[regex(
         r"-?((0b[0-1]+)|(0o[0-7]+)|(0x[0-9a-fA-F]+)|([1-9]\d*|0))(/-?((0b[0-1]+)|(0o[0-7]+)|(0x[0-9a-fA-F]+)|([1-9]\d*|0)))",
         |lex| lex.slice().parse().ok())]
-    Rational(Rational),
+    Rational(Rational64),
     #[regex(r"true|false", |lex| lex.slice().parse().ok())]
     Bool(bool),
     #[regex(r#""(\\.|[^"\\])*""#, |lex| InternedString::from(lex.slice()))]
