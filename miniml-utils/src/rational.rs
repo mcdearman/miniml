@@ -27,21 +27,21 @@ impl<N: FromStr, D: FromStr> FromStr for Rational<N, D> {
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let mut parts = s.split('/');
 
-        if parts.clone().count() != 2 {
+        if parts.clone().count() > 2 {
             return Err(ParseRationalError::TooManyParts);
         }
 
         let numerator = parts
             .next()
-            .ok_or(ParseRationalError::ParseNumeratorError(N::Err))?
+            .expect("split count is 2")
             .parse()
             .map_err(|e| ParseRationalError::ParseNumeratorError(e))?;
 
         let denominator = parts
             .next()
-            .ok_or(ParseRationalError)?
+            .expect("split count is 2")
             .parse()
-            .map_err(|_| ParseRationalError)?;
+            .map_err(|e| ParseRationalError::ParseDenominatorError(e))?;
 
         Ok(Self {
             numerator,
