@@ -188,7 +188,7 @@ def foldr a b. (f : a -> b -> b) (acc : b) (xs : [a]) : b =
 
 def foldr : a b. (a -> b -> b) -> b -> [a] -> b 
   | f acc [] = acc
-  | f acc (x::xs) = f x (foldr f acc xs)  
+  | f acc (x::xs) = f x (foldr f acc xs) 
 
 def binary_search : a. (a -> Ordering) -> [a] -> a -> Option Int
   | cmp xs x -> 
