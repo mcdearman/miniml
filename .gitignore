@@ -6,3 +6,4 @@
 *.log
 src-old
 dist-*
+flamegraph.svg
