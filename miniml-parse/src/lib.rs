@@ -120,9 +120,25 @@ fn decl_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
     //             e.span(),
     //         ))
     //     });
+    let data = just(Token::Data)
+        .ignore_then(ident_parser())
+        .then(ident_parser().repeated().collect())
+        .then_ignore(just(Token::Eq))
+        .then(
+            ident_parser()
+                .then_ignore(just(Token::Colon))
+                .then(type_anno_parser())
+                .separated_by(just(Token::Comma))
+                .allow_trailing()
+                .at_least(1)
+                .collect()
+                .delimited_by(just(Token::LBrace), just(Token::RBrace)),
+        )
+        .map(|((name, params), fields)| DeclKind::Data(name, params, fields));
 
     def.or(fn_)
         .or(fn_match)
+        .or(data)
         .map_with(|kind, e| SynNode::new(kind, e.span()))
 }
 
