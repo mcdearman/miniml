@@ -120,6 +120,7 @@ fn decl_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
     //             e.span(),
     //         ))
     //     });
+
     let data = just(Token::Data)
         .ignore_then(ident_parser())
         .then(ident_parser().repeated().collect())
