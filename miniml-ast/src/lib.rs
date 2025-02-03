@@ -6,33 +6,26 @@ use miniml_utils::{
 pub mod token;
 pub mod token_stream;
 
-// pub type SynNode<T> = Node<T, Span>;
-// pub type SynBoxNode<T> = BoxNode<T, Span>;
+pub type SynNode<T> = Node<T, Span>;
+pub type SynBoxNode<T> = BoxNode<T, Span>;
 
-// pub type Prog = SynNode<Module>;
+pub type Prog = SynNode<Module>;
 pub type Imports = Vec<Path>;
 pub type Path = Vec<Ident>;
 pub type Decls = Vec<Decl>;
-// pub type Decl = SynNode<DeclKind>;
-// pub type Expr = SynBoxNode<ExprKind>;
-// pub type UnaryOp = SynNode<UnaryOpKind>;
-// pub type BinaryOp = SynNode<BinaryOpKind>;
-// pub type Pattern = SynBoxNode<PatternKind>;
-// pub type TypeAnno = SynBoxNode<TypeAnnoKind>;
-// pub type Ident = SynNode<InternedString>;
+pub type Decl = SynNode<DeclKind>;
+pub type Expr = SynBoxNode<ExprKind>;
+pub type UnaryOp = SynNode<UnaryOpKind>;
+pub type BinaryOp = SynNode<BinaryOpKind>;
+pub type Pattern = SynBoxNode<PatternKind>;
+pub type TypeAnno = SynBoxNode<TypeAnnoKind>;
+pub type Ident = SynNode<InternedString>;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Module {
     pub name: Ident,
     pub imports: Imports,
     pub decls: Decls,
-    pub span: Span,
-}
-
-#[derive(Debug, Clone, PartialEq)]
-pub struct Decl {
-    pub kind: DeclKind,
-    pub span: Span,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -46,12 +39,6 @@ pub enum DeclKind {
     Inst(Ident, Ident, Vec<TypeAnno>, Vec<(Ident, Expr)>),
     Effect(Ident, Vec<Ident>, Vec<(Ident, Vec<TypeAnno>)>),
     Handler(Ident, Vec<Ident>, Vec<(Ident, Expr)>),
-}
-
-#[derive(Debug, Clone, PartialEq)]
-pub struct Expr {
-    pub kind: Box<ExprKind>,
-    pub span: Span,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -70,12 +57,6 @@ pub enum ExprKind {
     Match(Expr, Vec<(Pattern, Expr)>),
     List(Vec<Expr>),
     Unit,
-}
-
-#[derive(Debug, Copy, Clone, PartialEq)]
-pub struct UnaryOp {
-    pub kind: UnaryOpKind,
-    pub span: Span,
 }
 
 #[derive(Debug, Copy, Clone, PartialEq)]
@@ -107,12 +88,6 @@ impl From<UnaryOpKind> for InternedString {
     fn from(value: UnaryOpKind) -> Self {
         InternedString::from(value.to_string())
     }
-}
-
-#[derive(Debug, Copy, Clone, PartialEq)]
-pub struct BinaryOp {
-    pub kind: BinaryOpKind,
-    pub span: Span,
 }
 
 #[derive(Debug, Copy, Clone, PartialEq)]
@@ -180,21 +155,6 @@ impl From<BinaryOpKind> for InternedString {
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct Pattern {
-    pub kind: Box<PatternKind>,
-    pub span: Span,
-}
-
-impl Pattern {
-    pub fn new(kind: PatternKind, span: Span) -> Self {
-        Self {
-            kind: Box::new(kind),
-            span,
-        }
-    }
-}
-
-#[derive(Debug, Clone, PartialEq)]
 pub enum PatternKind {
     Wildcard,
     Lit(Lit),
@@ -202,21 +162,6 @@ pub enum PatternKind {
     List(Vec<Pattern>),
     Pair(Pattern, Pattern),
     Unit,
-}
-
-#[derive(Debug, Clone, PartialEq)]
-pub struct TypeAnno {
-    pub kind: Box<TypeAnnoKind>,
-    pub span: Span,
-}
-
-impl TypeAnno {
-    pub fn new(kind: TypeAnnoKind, span: Span) -> Self {
-        Self {
-            kind: Box::new(kind),
-            span,
-        }
-    }
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -232,12 +177,6 @@ pub enum TypeAnnoKind {
     Fn(TypeAnno, TypeAnno),
     List(TypeAnno),
     Unit,
-}
-
-#[derive(Debug, Copy, Clone, PartialEq)]
-pub struct Ident {
-    pub name: InternedString,
-    pub span: Span,
 }
 
 #[derive(Debug, Copy, Clone, PartialEq)]
