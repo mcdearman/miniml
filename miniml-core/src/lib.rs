@@ -1,7 +1,7 @@
 /*
  * Core IR for the analysis phase. This IR is used after type inference for all
  * subsequent analysis and transformations. It's an ANF (A-normal form) representation
- * extended with join points, jumps, and returns.
+ * extended with join points and jumps.
  */
 
 use super::infer::ty::Ty;
@@ -96,7 +96,6 @@ pub enum ExprKind {
     Jump(ScopedIdent, Option<Value>),
     Apply(Expr, Vec<Expr>),
     Match(Expr, Vec<(Pattern, Expr)>),
-    Return(Expr),
 }
 
 #[derive(Debug, Clone, PartialEq)]
