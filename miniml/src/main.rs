@@ -85,7 +85,7 @@ fn main() {
                                     eprint!("Inference errors: {:#?}", errors);
                                     continue;
                                 }
-                                println!("TIR: {:#?}", tir);
+                                println!("TIR: {}", tir.pretty());
                             }
                             (None, res_errors) => {
                                 // log::error!("Resolution errors: {:#?}", res_errors);

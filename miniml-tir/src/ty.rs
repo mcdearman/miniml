@@ -2,7 +2,7 @@ use crate::{
     meta::{Meta, MetaId},
     scheme::Scheme,
 };
-use miniml_utils::{intern::InternedString, unique_id::UniqueId};
+use miniml_utils::{intern::InternedString, pretty::Pretty, unique_id::UniqueId};
 use std::{
     collections::{BTreeMap, BTreeSet, HashMap, HashSet},
     fmt::{Debug, Display},
@@ -212,5 +212,11 @@ impl Display for Ty {
             Self::Record(name, fields) => write!(f, "{:?} = {:?}", name, fields),
             Self::Unit => write!(f, "()"),
         }
+    }
+}
+
+impl Pretty for Ty {
+    fn pretty(&self) -> String {
+        self.to_string()
     }
 }

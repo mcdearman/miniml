@@ -1,7 +1,7 @@
 use miniml_ast::{SynBoxNode, SynNode};
 use miniml_nir::scoped_ident::ScopedIdent;
 use miniml_utils::{
-    box_node::BoxNode, intern::InternedString, node::Node, rational::Rational64, span::Span,
+    box_node::BoxNode, intern::InternedString, node::Node, pretty::Pretty, rational::Rational64, span::Span
 };
 use ty::Ty;
 
@@ -20,6 +20,12 @@ pub struct Typed<T> {
 impl<T> Typed<T> {
     pub fn new(value: T, ty: Ty) -> Self {
         Self { value, ty }
+    }
+}
+
+impl<T: Pretty> Pretty for Typed<T> {
+    fn pretty(&self) -> String {
+        format!("{} : {}", self.value.pretty(), self.ty.pretty())
     }
 }
 
