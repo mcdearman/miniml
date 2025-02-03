@@ -1,3 +1,5 @@
+use crate::pretty::Pretty;
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Node<T, M = ()> {
     pub inner: T,
@@ -28,5 +30,11 @@ impl<T, M: Clone> Node<T, M> {
             inner: self.inner,
             meta: f(self.meta.clone()),
         }
+    }
+}
+
+impl<T: Pretty, M: Pretty> Pretty for Node<T, M> {
+    fn pretty(&self) -> String {
+        format!("{} {}", self.inner.pretty(), self.meta.pretty())
     }
 }
