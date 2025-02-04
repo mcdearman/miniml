@@ -91,11 +91,13 @@ impl Expr {
 pub enum ExprKind {
     Value(Value),
     Let(ScopedIdent, Expr, Expr),
-    Fn(ScopedIdent, Vec<ScopedIdent>, Expr, Expr),
+    LetRec(ScopedIdent, Expr, Expr),
+    Lambda(Pattern, Expr),
+    Apply(Expr, Expr),
+    Match(Expr, Vec<(Pattern, Expr)>),
     Join(ScopedIdent, Expr, Expr),
     Jump(ScopedIdent, Option<Value>),
-    Apply(Expr, Vec<Expr>),
-    Match(Expr, Vec<(Pattern, Expr)>),
+    Unit,
 }
 
 #[derive(Debug, Clone, PartialEq)]
