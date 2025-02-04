@@ -281,7 +281,7 @@ impl TypeSolver {
     fn infer_def<'src>(&mut self, src: &'src str, decl: &nir::Decl) -> InferResult<Decl> {
         match &decl.inner {
             nir::DeclKind::Def(def) => match &def.inner {
-                nir::DefKind::Rec { ident, anno, body } => {
+                nir::DefKind::Rec(ident, anno, body) => {
                     if let Some(anno) = anno {
                         todo!()
                     } else {
@@ -301,30 +301,21 @@ impl TypeSolver {
 
                         Ok(Decl::new(
                             DeclKind::Def(Def::new(
-                                Typed::new(
-                                    DefKind::Rec {
-                                        ident: ident.clone(),
-                                        body: solved_body.clone(),
-                                    },
-                                    var,
-                                ),
+                                Typed::new(DefKind::Rec(ident.clone(), solved_body.clone()), var),
                                 decl.meta,
                             )),
                             decl.meta,
                         ))
                     }
                 }
-                nir::DefKind::NonRec { pat, body } => {
+                nir::DefKind::NonRec(pat, body) => {
                     let solved_expr = self.infer_expr(src, body)?;
                     let solved_pat = self.infer_pattern(src, pat, &solved_expr.inner.ty, true)?;
 
                     Ok(Decl::new(
                         DeclKind::Def(Def::new(
                             Typed::new(
-                                DefKind::NonRec {
-                                    pat: solved_pat,
-                                    body: solved_expr.clone(),
-                                },
+                                DefKind::NonRec(solved_pat, solved_expr.clone()),
                                 solved_expr.inner.ty.clone(),
                             ),
                             decl.meta,
@@ -654,22 +645,16 @@ impl TypeSolver {
 
     fn zonk_def(&mut self, def: &Def) -> Def {
         match &def.inner.inner {
-            DefKind::Rec { ident, body } => Def::new(
+            DefKind::Rec(ident, body) => Def::new(
                 Typed::new(
-                    DefKind::Rec {
-                        ident: ident.clone(),
-                        body: self.zonk_expr(body),
-                    },
+                    DefKind::Rec(ident.clone(), self.zonk_expr(body)),
                     def.inner.ty.zonk(),
                 ),
                 def.meta,
             ),
-            DefKind::NonRec { pat, body } => Def::new(
+            DefKind::NonRec(pat, body) => Def::new(
                 Typed::new(
-                    DefKind::NonRec {
-                        pat: self.zonk_pattern(pat),
-                        body: self.zonk_expr(body),
-                    },
+                    DefKind::NonRec(self.zonk_pattern(pat), self.zonk_expr(body)),
                     def.inner.ty.zonk(),
                 ),
                 def.meta,

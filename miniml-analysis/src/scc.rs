@@ -35,11 +35,11 @@ impl SCC {
         for (i, decl) in prog.inner.decls.iter().enumerate() {
             match &decl.inner {
                 DeclKind::Def(def) => match &def.inner {
-                    DefKind::Rec { ident: _, body, .. } => {
+                    DefKind::Rec(_, _, body) => {
                         let scc = self.scc_expr(body);
                         self.graph.add_edges(i, scc);
                     }
-                    DefKind::NonRec { pat, body: _ } => {
+                    DefKind::NonRec(pat, _) => {
                         self.graph.add_edges(i, vec![]);
                         if let Some(names) = self.search_decl_pats(pat) {
                             self.top_level_names.extend(names);
@@ -162,11 +162,11 @@ impl SCC {
     fn search_decls(&mut self, decl: &Decl, i: usize) -> Option<Vec<ScopedIdent>> {
         match &decl.inner {
             DeclKind::Def(def) => match &def.inner {
-                DefKind::Rec { ident, .. } => {
+                DefKind::Rec(ident, _, _) => {
                     self.decl_map.insert(ident.inner.clone(), i);
                     Some(vec![ident.inner])
                 }
-                DefKind::NonRec { pat, .. } => self.search_decl_pats(pat),
+                DefKind::NonRec(pat, _) => self.search_decl_pats(pat),
             },
             _ => None,
         }
