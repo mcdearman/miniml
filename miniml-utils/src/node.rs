@@ -1,3 +1,5 @@
+use std::ops::Deref;
+
 use crate::pretty::Pretty;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
@@ -30,6 +32,14 @@ impl<T, M: Clone> Node<T, M> {
             inner: self.inner,
             meta: f(self.meta.clone()),
         }
+    }
+}
+
+impl<T, M> Deref for Node<T, M> {
+    type Target = T;
+
+    fn deref(&self) -> &Self::Target {
+        &self.inner
     }
 }
 

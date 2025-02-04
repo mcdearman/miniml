@@ -4,115 +4,62 @@
  * extended with join points and jumps.
  */
 
-use super::infer::ty::Ty;
-use crate::{
-    rename::scoped_ident::ScopedIdent,
-    utils::{intern::InternedString, span::Span},
-};
-use num_rational::Rational64;
+use miniml_ast::SynNode;
+use miniml_nir::scoped_ident::ScopedIdent;
+use miniml_tir::{TyBoxNode, TyNode};
+use miniml_utils::{intern::InternedString, rational::Rational64};
+
+pub type Prog = SynNode<Module>;
+pub type Imports = Vec<Path>;
+pub type Path = Vec<SynNode<ScopedIdent>>;
+pub type Decls = Vec<Decl>;
+pub type Decl = SynNode<DeclKind>;
+pub type Def = TyNode<DefKind>;
+pub type Expr = TyBoxNode<ExprKind>;
+pub type Pattern = TyBoxNode<PatternKind>;
+pub type Ident = SynNode<ScopedIdent>;
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct Prog {
-    decls: Vec<Decl>,
-    span: Span,
-}
-
-impl Prog {
-    pub fn new(decls: Vec<Decl>, span: Span) -> Self {
-        Self { decls, span }
-    }
-
-    pub fn decls(&self) -> &[Decl] {
-        &self.decls
-    }
-
-    pub fn span(&self) -> Span {
-        self.span
-    }
-}
-
-#[derive(Debug, Clone, PartialEq)]
-pub struct Decl {
-    kind: DeclKind,
-    ty: Ty,
-    span: Span,
-}
-
-impl Decl {
-    pub fn new(kind: DeclKind, ty: Ty, span: Span) -> Self {
-        Self { kind, ty, span }
-    }
-
-    pub fn kind(&self) -> &DeclKind {
-        &self.kind
-    }
-
-    pub fn ty(&self) -> &Ty {
-        &self.ty
-    }
-
-    pub fn span(&self) -> Span {
-        self.span
-    }
+pub struct Module {
+    pub name: Ident,
+    pub imports: Imports,
+    pub decls: Decls,
 }
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum DeclKind {
-    // DataType(DataType),
-    Let {
-        name: ScopedIdent,
-        expr: Expr,
-    },
-    Fn {
-        name: ScopedIdent,
-        params: Vec<ScopedIdent>,
-        expr: Expr,
-    },
+    Def(Def),
+    DefGroup(Vec<Def>),
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct Expr {
-    pub kind: Box<ExprKind>,
-    pub ty: Ty,
-    pub span: Span,
-}
-
-impl Expr {
-    pub fn new(kind: ExprKind, ty: Ty, span: Span) -> Self {
-        Self {
-            kind: Box::new(kind),
-            ty,
-            span,
-        }
-    }
+pub enum DefKind {
+    Rec { ident: Ident, body: Expr },
+    NonRec { pat: Pattern, body: Expr },
 }
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum ExprKind {
     Value(Value),
-    Let(ScopedIdent, Expr, Expr),
-    LetRec(ScopedIdent, Expr, Expr),
+    Let(Ident, Expr, Expr),
+    LetRec(Ident, Expr, Expr),
     Lambda(Pattern, Expr),
     Apply(Expr, Expr),
     Match(Expr, Vec<(Pattern, Expr)>),
-    Join(ScopedIdent, Expr, Expr),
-    Jump(ScopedIdent, Option<Value>),
+    Join(Ident, Expr, Expr),
+    Jump(Ident, Vec<Value>),
     Unit,
-}
-
-#[derive(Debug, Clone, PartialEq)]
-pub struct Pattern {
-    pub kind: PatternKind,
-    pub ty: Ty,
-    pub span: Span,
 }
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum PatternKind {
     Wildcard,
-    Ident(ScopedIdent),
+    Ident(Ident),
     Literal(Value),
-    Record(Option<ScopedIdent>, Vec<(InternedString, Pattern)>),
+    List(Vec<Pattern>),
+    Pair(Pattern, Pattern),
+    // Record(Option<ScopedIdent>, Vec<(InternedString, Pattern)>),
+    Unit,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -121,5 +68,5 @@ pub enum Value {
     Rational(Rational64),
     Bool(bool),
     String(InternedString),
-    Var(ScopedIdent),
+    Var(Ident),
 }

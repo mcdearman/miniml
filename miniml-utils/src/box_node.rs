@@ -1,3 +1,7 @@
+use std::ops::Deref;
+
+use crate::pretty::Pretty;
+
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub struct BoxNode<T, M = ()> {
     pub inner: Box<T>,
@@ -35,5 +39,19 @@ impl<T, M: Clone> BoxNode<T, M> {
             inner: self.inner,
             meta: f(self.meta.clone()),
         }
+    }
+}
+
+impl<T, M> Deref for BoxNode<T, M> {
+    type Target = T;
+
+    fn deref(&self) -> &Self::Target {
+        &self.inner
+    }
+}
+
+impl<T: Pretty, M: Pretty> Pretty for BoxNode<T, M> {
+    fn pretty(&self) -> String {
+        format!("{} {}", self.inner.pretty(), self.meta.pretty())
     }
 }

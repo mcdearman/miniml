@@ -4,7 +4,7 @@ members = [
     "miniml",
     "miniml-analysis",
     "miniml-ast",
-    # "miniml-core",
+    "miniml-core",
     "miniml-infer",
     "miniml-nir",
     "miniml-parse",

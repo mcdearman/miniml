@@ -653,7 +653,7 @@ impl TypeSolver {
     }
 
     fn zonk_def(&mut self, def: &Def) -> Def {
-        match &def.inner.value {
+        match &def.inner.inner {
             DefKind::Rec { ident, body } => Def::new(
                 Typed::new(
                     DefKind::Rec {
@@ -678,7 +678,7 @@ impl TypeSolver {
     }
 
     fn zonk_expr(&mut self, expr: &Expr) -> Expr {
-        match &expr.inner.value {
+        match &expr.inner.inner {
             ExprKind::Lit(lit) => Expr::new(
                 Typed::new(ExprKind::Lit(lit.clone()), expr.inner.ty.zonk()),
                 expr.meta,
@@ -763,7 +763,7 @@ impl TypeSolver {
     }
 
     fn zonk_pattern(&mut self, pat: &Pattern) -> Pattern {
-        match &pat.inner.value {
+        match &pat.inner.inner {
             PatternKind::Wildcard => Pattern::new(
                 Typed::new(PatternKind::Wildcard, pat.inner.ty.zonk()),
                 pat.meta,
