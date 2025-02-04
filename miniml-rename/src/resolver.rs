@@ -273,7 +273,7 @@ impl Resolver {
     }
 
     fn resolve_expr(&mut self, expr: &ast::Expr) -> ResResult<Expr> {
-        match expr.inner.as_ref() {
+        match &**expr {
             ast::ExprKind::Lit(l) => match l {
                 ast::Lit::Byte(b) => Ok(Expr::new(ExprKind::Lit(Lit::Byte(*b)), expr.meta)),
                 ast::Lit::Int(n) => Ok(Expr::new(ExprKind::Lit(Lit::Int(*n)), expr.meta)),
