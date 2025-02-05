@@ -715,6 +715,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "miniml-query"
+version = "0.1.0"
+dependencies = [
+ "colored",
+ "env_logger",
+ "insta",
+ "log",
+ "miniml-utils",
+ "pretty",
+]
+
+[[package]]
 name = "miniml-rename"
 version = "0.1.0"
 dependencies = [

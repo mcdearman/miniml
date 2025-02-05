@@ -8,6 +8,7 @@ members = [
     "miniml-infer",
     "miniml-nir",
     "miniml-parse",
+    "miniml-query",
     "miniml-rename",
     "miniml-tir",
     # "miniml-tree-walk",
