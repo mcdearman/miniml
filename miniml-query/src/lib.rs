@@ -1,4 +1,3 @@
-#![feature(entry_insert)]
 use std::{
     any::Any,
     borrow::Borrow,
