@@ -18,7 +18,7 @@ pub fn parse<'src>(
         .last()
         .map(|(_, span)| span)
         .unwrap_or_default();
-    let tok_stream = Stream::from_iter(tokens).spanned(eof_span);
+    let tok_stream = Stream::from_iter(tokens);
     if repl {
         repl_parser().parse(tok_stream).into_output_errors()
     } else {
