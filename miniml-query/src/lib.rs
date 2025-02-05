@@ -10,17 +10,17 @@ struct Database {
     values: HashMap<Stored, ()>,
 }
 
-trait Query {
+pub trait Query {
     type Output;
     fn exec(&self, db: &mut Database) -> Self::Output;
 }
 
-struct DbEntry<T: Query> {
+pub struct DbEntry<T: Query> {
     v: T,
     output: <T as Query>::Output,
 }
 
-trait ErasedDbEntry {
+pub trait ErasedDbEntry {
     fn hash_query(&self, hasher: &mut dyn Hasher);
     fn eq_query(&self, other: &dyn ErasedDbEntry) -> bool;
     fn as_any(&self) -> &dyn Any;
@@ -41,7 +41,7 @@ impl<T: Query + Hash + Eq + 'static> ErasedDbEntry for DbEntry<T> {
     }
 }
 
-struct Stored {
+pub struct Stored {
     content: Box<dyn ErasedDbEntry>,
 }
 
