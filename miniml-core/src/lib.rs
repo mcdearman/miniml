@@ -41,7 +41,7 @@ pub enum DefKind {
 #[derive(Debug, Clone, PartialEq)]
 pub enum ExprKind {
     Value(Value),
-    Let(Ident, Expr, Expr),
+    Let(Pattern, Expr, Expr),
     LetRec(Ident, Expr, Expr),
     Lambda(Pattern, Expr),
     Apply(Expr, Expr),
