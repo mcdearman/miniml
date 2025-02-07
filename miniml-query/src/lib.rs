@@ -29,12 +29,14 @@ impl<T: Query + Hash + Eq + 'static> ErasedDbEntry for DbEntry<T> {
     fn hash_query(&self, mut hasher: &mut dyn Hasher) {
         self.v.hash(&mut hasher);
     }
+
     fn eq_query(&self, other: &dyn ErasedDbEntry) -> bool {
         other
             .as_any()
             .downcast_ref::<DbEntry<T>>()
             .map_or(false, |other| self.v == other.v)
     }
+
     fn as_any(&self) -> &dyn Any {
         self
     }
