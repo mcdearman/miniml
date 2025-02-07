@@ -180,10 +180,10 @@ impl Resolver {
                             let res_expr = self.resolve_expr(&expr)?;
 
                             Ok(SynNode::new(
-                                DeclKind::Def(Def::new(
-                                    DefKind::Rec(res_name, None, res_expr),
-                                    expr.meta,
-                                )),
+                                DeclKind::DefGroup(DefGroup::Rec(vec![SynNode::new(
+                                    DefRec::new(res_name, None, res_expr),
+                                    decl.meta,
+                                )])),
                                 decl.meta,
                             ))
                         }

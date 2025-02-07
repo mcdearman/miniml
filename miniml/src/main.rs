@@ -3,10 +3,6 @@ use miniml_ast::token_stream::TokenStream;
 use miniml_infer::solver::TypeSolver;
 use miniml_parse::parse;
 use miniml_rename::resolver::Resolver;
-use pretty::{
-    termcolor::{Color, ColorChoice, ColorSpec, StandardStream},
-    Arena, DocAllocator,
-};
 use rustyline::{
     error::ReadlineError, validate::Validator, Completer, Editor, Helper, Highlighter, Hinter,
 };
