@@ -193,10 +193,10 @@ impl Resolver {
                     let res_expr = self.resolve_expr(&expr)?;
                     let res_pat = self.resolve_pattern(&pattern)?;
 
-                    Ok(SynNode::new(DeclKind::DefGroup(
-                        DefGroup::NonRec(res_pat, res_expr),
+                    Ok(SynNode::new(
+                        DeclKind::DefGroup(DefGroup::NonRec(res_pat, res_expr)),
                         decl.meta,
-                    )))
+                    ))
                 }
             }
             ast::DeclKind::Fn(ident, params, fn_expr) => {
