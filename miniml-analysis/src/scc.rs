@@ -174,7 +174,6 @@ impl SCC {
                 }
                 DefGroup::NonRec(pat, _) => self.search_decl_pats(pat),
             },
-            _ => None,
         }
     }
 
