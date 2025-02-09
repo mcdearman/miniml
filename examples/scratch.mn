@@ -169,10 +169,6 @@ def foldl a b. (f : a -> b -> a) (acc: a) (xs : [b]) : a =
   | [] -> acc
   | (x :: xs) -> foldl f (f acc x) xs
 
-foldl : (a -> b -> a) -> a -> [b] -> a
-foldl f acc [] = acc
-foldl f acc (x::xs) = foldl f (f acc x) xs
-
 def foldl f acc xs = match xs with
   [] -> acc
   (x::xs) -> foldl f (f acc x) xs
@@ -273,7 +269,6 @@ data Ordering = Lt | Eq | Gt
 
 class Eq a where
   def (=) : a -> a -> Bool
-end
 
 class PartialOrd a where
   def partial_compare : a -> a -> Option Ordering
@@ -299,7 +294,6 @@ class PartialOrd a where
     | Some Gt -> true
     | Some Eq -> true
     | _ -> false
-end
 
 class (Eq a, PartialOrd a) => Ord a where
   def compare : a -> a -> Ordering
@@ -307,7 +301,6 @@ class (Eq a, PartialOrd a) => Ord a where
   def (<=) : a -> a -> Bool
   def (>) : a -> a -> Bool
   def (>=) : a -> a -> Bool
-end
 
 
 
