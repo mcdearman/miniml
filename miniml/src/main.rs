@@ -114,3 +114,4 @@ fn main() {
     rl.save_history(".miniml_history")
         .expect("Failed to save history");
 }
+
