@@ -1,5 +1,5 @@
 pub class Iterator i where
-  data Item i : Type
+  type Item i
 
   @inline
   def next (iter : i) : Option (a, i)
