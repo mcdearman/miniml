@@ -28,6 +28,30 @@ pub struct Module {
     pub decls: Decls,
 }
 
+impl Module {
+    pub fn new(name: Ident, imports: Imports, decls: Decls) -> Self {
+        Self {
+            name,
+            imports,
+            decls,
+        }
+    }
+
+    pub fn defs(&self) -> impl Iterator<Item = Decl> + '_ {
+        self.decls
+            .iter()
+            .filter(|decl| matches!(decl.inner, DeclKind::Def(_, _)))
+            .cloned()
+    }
+
+    pub fn fns(&self) -> impl Iterator<Item = Decl> + '_ {
+        self.decls
+            .iter()
+            .filter(|decl| matches!(decl.inner, DeclKind::Fn(_, _, _)))
+            .cloned()
+    }
+}
+
 #[derive(Debug, Clone, PartialEq)]
 pub enum DeclKind {
     Def(Pattern, Expr),

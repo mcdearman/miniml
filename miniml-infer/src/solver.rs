@@ -324,17 +324,14 @@ impl TypeSolver {
                     ))
                 }
             },
-            nir::DeclKind::DefGroup(defs) => {
-                // let mut vars = vec![];
-                // for d in defs {
-                //     let var = Ty::Meta(MetaId::fresh());
-                //     vars.push(var);
-                //     self.ctx.push();
-                //     self.ctx
-                //         .insert(d.inner.name.inner.name.clone(), Scheme::new(0, var.clone()));
-                // }
-                todo!()
-            }
+            nir::DeclKind::DefGroup(dg) => match dg {
+                nir::DefGroup::Rec(defs) => {
+                    todo!()
+                }
+                nir::DefGroup::NonRec(pat, expr) => {
+                    todo!()
+                }
+            },
         }
     }
 
