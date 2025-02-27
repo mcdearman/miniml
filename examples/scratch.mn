@@ -186,7 +186,7 @@ def foldr : a b. (a -> b -> b) -> b -> [a] -> b
   | f acc [] = acc
   | f acc (x::xs) = f x (foldr f acc xs) 
 
-def binary_search : a. (a -> Ordering) -> [a] -> a -> Option Int
+def binarySearch : a. (a -> Ordering) -> [a] -> a -> Option Int
   | cmp xs x -> 
     let loop l r =
       if l > r then None
@@ -201,12 +201,12 @@ def binary_search : a. (a -> Ordering) -> [a] -> a -> Option Int
 -- type alias
 type Point = (Int, Int)
 
--- records
-data Person = { name : String, age : Int }
+-- structs
+struct Person = { name : String, age : Int }
 def p = { name = "Alice", age = 30 }
 
--- records with public fields
-data Person = { pub name : String, pub age : Int }
+-- struct with public fields
+struct Person = { pub name : String, pub age : Int }
 
 -- functional update
 def p = { name = "Alice", age = 30 }

@@ -11,9 +11,8 @@ pub type SynBoxNode<T> = BoxNode<T, Span>;
 
 pub type Prog = SynNode<Module>;
 pub type Imports = Vec<Path>;
+pub type Defs = Vec<Def>;
 pub type Path = Vec<Ident>;
-pub type Decls = Vec<Decl>;
-pub type Decl = SynNode<DeclKind>;
 pub type Expr = SynBoxNode<ExprKind>;
 pub type UnaryOp = SynNode<UnaryOpKind>;
 pub type BinaryOp = SynNode<BinaryOpKind>;
@@ -25,55 +24,55 @@ pub type Ident = SynNode<InternedString>;
 pub struct Module {
     pub name: Ident,
     pub imports: Imports,
-    pub decls: Decls,
-}
-
-impl Module {
-    pub fn new(name: Ident, imports: Imports, decls: Decls) -> Self {
-        Self {
-            name,
-            imports,
-            decls,
-        }
-    }
-
-    pub fn defs(&self) -> impl Iterator<Item = Decl> + '_ {
-        self.decls
-            .iter()
-            .filter(|decl| matches!(decl.inner, DeclKind::Def(_, _)))
-            .cloned()
-    }
-
-    pub fn fns(&self) -> impl Iterator<Item = Decl> + '_ {
-        self.decls
-            .iter()
-            .filter(|decl| matches!(decl.inner, DeclKind::Fn(_, _, _)))
-            .cloned()
-    }
-}
-
-// #[derive(Debug, Clone, PartialEq)]
-// pub enum DeclKind {
-//     Def(Pattern, Expr),
-//     Fn(Ident, Vec<Pattern>, Expr),
-//     FnMatch(Ident, Vec<(Vec<Pattern>, Expr)>),
-//     Alias(Ident, TypeAnno),
-//     Data(Ident, Vec<Ident>, Vec<(Ident, TypeAnno)>),
-//     Class(Ident, Vec<Ident>, Vec<(Ident, Vec<TypeAnno>)>),
-//     Inst(Ident, Ident, Vec<TypeAnno>, Vec<(Ident, Expr)>),
-//     Effect(Ident, Vec<Ident>, Vec<(Ident, Vec<TypeAnno>)>),
-//     Handler(Ident, Vec<Ident>, Vec<(Ident, Expr)>),
-// }
-
-#[derive(Debug, Clone, PartialEq)]
-pub struct Def<T> {
-
+    pub defs: Defs,
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct Binder<T> {
+pub struct ClassDef {
     pub name: Ident,
-    pub ty: Option<T>,
+    pub type_params: Vec<Ident>,
+    pub fields: Vec<(Ident, TypeAnno)>,
+    pub visibility: Visibility,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct InstDef {
+    pub class_name: Ident,
+    pub type_name: Ident,
+    pub type_params: Vec<TypeAnno>,
+    pub defs: Defs,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct StructDef {
+    pub name: Ident,
+    pub type_params: Vec<Ident>,
+    pub fields: Vec<(Ident, TypeAnno, Visibility)>,
+    pub visibility: Visibility,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct DataDef {
+    pub name: Pattern,
+    pub type_params: Vec<Ident>,
+    pub variants: Vec<(Ident, Vec<TypeAnno>)>,
+    pub visibility: Visibility,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct TypeAlias {
+    pub name: Ident,
+    pub type_params: Vec<Ident>,
+    pub ty: TypeAnno,
+    pub visibility: Visibility,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct Def {
+    pub name: Ident,
+    pub ty: Option<TypeAnno>,
+    pub expr: Expr,
+    pub visibility: Visibility,
 }
 
 #[derive(Debug, Clone, PartialEq)]
