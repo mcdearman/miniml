@@ -52,17 +52,34 @@ impl Module {
     }
 }
 
+// #[derive(Debug, Clone, PartialEq)]
+// pub enum DeclKind {
+//     Def(Pattern, Expr),
+//     Fn(Ident, Vec<Pattern>, Expr),
+//     FnMatch(Ident, Vec<(Vec<Pattern>, Expr)>),
+//     Alias(Ident, TypeAnno),
+//     Data(Ident, Vec<Ident>, Vec<(Ident, TypeAnno)>),
+//     Class(Ident, Vec<Ident>, Vec<(Ident, Vec<TypeAnno>)>),
+//     Inst(Ident, Ident, Vec<TypeAnno>, Vec<(Ident, Expr)>),
+//     Effect(Ident, Vec<Ident>, Vec<(Ident, Vec<TypeAnno>)>),
+//     Handler(Ident, Vec<Ident>, Vec<(Ident, Expr)>),
+// }
+
 #[derive(Debug, Clone, PartialEq)]
-pub enum DeclKind {
-    Def(Pattern, Expr),
-    Fn(Ident, Vec<Pattern>, Expr),
-    FnMatch(Ident, Vec<(Vec<Pattern>, Expr)>),
-    Alias(Ident, TypeAnno),
-    Data(Ident, Vec<Ident>, Vec<(Ident, TypeAnno)>),
-    Class(Ident, Vec<Ident>, Vec<(Ident, Vec<TypeAnno>)>),
-    Inst(Ident, Ident, Vec<TypeAnno>, Vec<(Ident, Expr)>),
-    Effect(Ident, Vec<Ident>, Vec<(Ident, Vec<TypeAnno>)>),
-    Handler(Ident, Vec<Ident>, Vec<(Ident, Expr)>),
+pub struct Def<T> {
+
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct Binder<T> {
+    pub name: Ident,
+    pub ty: Option<T>,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum Visibility {
+    Public,
+    Private,
 }
 
 #[derive(Debug, Clone, PartialEq)]
