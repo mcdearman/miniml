@@ -5,7 +5,7 @@ pub class Iterator i where
   def next (iter : i) : Option (a, i)
 
   @inline
-  def len (iter : i) : Int = foldl (\acc _ -> acc + 1) 0 iter
+  def len (iter : i) : Int = foldl (+ 1) 0 iter
 
   @inline
   def map (f : a -> b) (iter : i) : Map b = 
