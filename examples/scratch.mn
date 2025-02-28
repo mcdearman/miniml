@@ -123,11 +123,6 @@ def map a b. (f : a -> b) (xs : [a]) : [b] =
   | [] -> []
   | (x::xs) -> f x :: map f xs
 
--- possible uncurried version of sigs
-def map : a b. [a] (a -> b) -> [b]
-  | [] f -> []
-  | (x::xs) f -> f x :: map f xs
-
 pub def map f xs = match xs with
   [] -> []
   (x::xs) -> f x :: map f xs
