@@ -24,6 +24,11 @@ pub type Ident = SynNode<InternedString>;
 pub struct Module {
     pub name: Ident,
     pub imports: Imports,
+    pub classes: Vec<ClassDef>,
+    pub insts: Vec<InstDef>,
+    pub structs: Vec<StructDef>,
+    pub datas: Vec<DataDef>,
+    pub type_aliases: Vec<TypeAlias>,
     pub defs: Defs,
 }
 
