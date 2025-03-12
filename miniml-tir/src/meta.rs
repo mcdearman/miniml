@@ -52,7 +52,7 @@ impl Display for Meta {
         match self {
             Self::Bound(ty) => write!(f, "{:?}", ty),
             Self::Unbound(id) => {
-                let id = u32::from(*id) as usize;
+                let id = *id as usize;
                 if id < ALPHABET.len() {
                     write!(f, "{}", ALPHABET[id])
                 } else {
