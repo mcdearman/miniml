@@ -1,4 +1,4 @@
-use miniml_analysis::scc::SCC;
+use miniml_analysis::scc;
 use miniml_ast::token_stream::TokenStream;
 use miniml_infer::solver::TypeSolver;
 use miniml_parse::parse;
@@ -71,8 +71,8 @@ fn main() {
                                 }
                                 // log::debug!("NIR: {:#?}", nir);
                                 // println!("NIR: {:#?}", nir);
-                                let mut scc = SCC::new();
-                                let sir = scc.run(&nir);
+                                let mut scc_ctx = scc::Context::new();
+                                let sir = scc_ctx.run(&nir);
                                 // log::debug!("SCC: {:#?}", sir);
                                 // println!("SCC: {:#?}", sir);
                                 let (tir, errors) = solver.infer(&*line, &sir);
@@ -114,4 +114,3 @@ fn main() {
     rl.save_history(".miniml_history")
         .expect("Failed to save history");
 }
-

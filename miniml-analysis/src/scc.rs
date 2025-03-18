@@ -6,13 +6,13 @@ use miniml_utils::graph::Graph;
 use std::collections::HashMap;
 
 #[derive(Debug)]
-pub struct SCC {
+pub struct Context {
     graph: Graph<usize>,
     decl_map: HashMap<ScopedIdent, usize>,
     top_level_names: Vec<ScopedIdent>,
 }
 
-impl SCC {
+impl Context {
     pub fn new() -> Self {
         Self {
             graph: Graph::new(),
