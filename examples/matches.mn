@@ -1,3 +1,3 @@
 -- macro to test if an expression matches a pattern
-macro_rules matches =
+macroRules matches =
   { $e:ident $p:pat => $b:expr } => { if $p $e then $b else 0 }

@@ -104,8 +104,10 @@ pub enum Token {
     HashLBrack,
     #[token("|")]
     Bar,
+    #[token("<|")]
+    LPipe,
     #[token("|>")]
-    Pipe,
+    RPipe,
     #[token("@")]
     At,
 
@@ -144,10 +146,6 @@ pub enum Token {
     Instance,
     #[token("as")]
     As,
-    #[token("effect")]
-    Effect,
-    #[token("handler")]
-    Handler,
 }
 
 impl Display for Token {
@@ -198,7 +196,8 @@ impl Display for Token {
             RBrack => write!(f, "RBrack"),
             HashLBrack => write!(f, "HashLBrack"),
             Bar => write!(f, "Bar"),
-            Pipe => write!(f, "Pipe"),
+            LPipe => write!(f, "LPipe"),
+            RPipe => write!(f, "RPipe"),
             At => write!(f, "At"),
             Pub => write!(f, "Pub"),
             Mod => write!(f, "Mod"),
@@ -217,8 +216,6 @@ impl Display for Token {
             Class => write!(f, "Class"),
             Instance => write!(f, "Instance"),
             As => write!(f, "As"),
-            Effect => write!(f, "Effect"),
-            Handler => write!(f, "Handler"),
         }
     }
 }
