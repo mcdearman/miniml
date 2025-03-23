@@ -1,4 +1,4 @@
-data Trie a = { 
+record Trie a { 
   value : Option a, 
   children : Map Char (Trie a)
 }

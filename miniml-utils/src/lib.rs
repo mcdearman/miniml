@@ -1,7 +1,6 @@
 pub mod box_node;
 pub mod graph;
 pub mod intern;
-pub mod lazy;
 pub mod list;
 pub mod node;
 pub mod pretty;

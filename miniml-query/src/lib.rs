@@ -77,6 +77,7 @@ impl Database {
             values: HashMap::new(),
         }
     }
+
     fn exec<T: Query + Hash + Eq + 'static>(&mut self, query: T) -> &T::Output
     where
         Stored: Borrow<T>,
@@ -93,6 +94,7 @@ impl Database {
                 .output;
             return unsafe { core::mem::transmute(r) };
         }
+
         let output = query.exec(self);
         let inserted = self
             .values
@@ -102,11 +104,33 @@ impl Database {
             .insert_entry(());
         let entry: &Stored = inserted.key();
         let entry: &Stored = unsafe { core::mem::transmute(entry) }; // need OccupiedEntry::into_key
+
         return &entry
             .content
             .as_any()
             .downcast_ref::<DbEntry<T>>()
             .unwrap()
             .output;
+    }
+}
+
+macro_rules! query {
+    {
+        fn $name:ident($($arg:ident : &$argt:ty),* $(,)?) -> $r:ty {
+            $($body:tt)*
+        }
+    } => {
+        mod $name {
+            #[derive(Eq, PartialEq, Debug, Hash)]
+            pub struct GeneratedQuery($(pub $argt),*);
+            impl $crate::Query for GeneratedQuery {
+                type Output = $r;
+                fn exec(&self, db: &mut $crate::Database) -> Self::Output {
+                    let mut $name = |$($arg),*| *db.exec(Self($($arg),*));
+                    let Self($($arg),*) = self;
+                    $($body)*
+                }
+            }
+        }
     }
 }
