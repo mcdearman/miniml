@@ -5,7 +5,7 @@ use std::{
     hash::{Hash, Hasher},
 };
 
-struct Database {
+pub struct Database {
     values: HashMap<Stored, ()>,
 }
 
