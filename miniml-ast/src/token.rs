@@ -32,11 +32,13 @@ pub enum Token {
     String(InternedString),
     #[regex(r"'(\\.|[^'\\])'", |lex| lex.slice().chars().nth(1))]
     Char(char),
-    #[regex(r"[a-z][a-zA-Z0-9'_]*", |lex| InternedString::from(lex.slice()))]
+    #[regex(r"[a-z][a-zA-Z0-9'_]*", |lex| InternedString::from(lex.slice()), priority = 2)]
     LowerIdent(InternedString),
     #[regex(r"[A-Z][a-zA-Z0-9']*", |lex| InternedString::from(lex.slice()))]
     UpperIdent(InternedString),
     #[regex(r":[!#$%&*+./<=>?@\\^|:\-~]+", |lex| InternedString::from(lex.slice()))]
+    ConOpIdent(InternedString),
+    #[regex(r"[!#$%&*+./<=>?@\\^|\\-~:]+", |lex| InternedString::from(lex.slice()))]
     OpIdent(InternedString),
 
     // Punctuation
@@ -168,6 +170,7 @@ impl Display for Token {
             LowerIdent(s) => write!(f, "LowerIdent({})", s),
             UpperIdent(s) => write!(f, "UpperIdent({})", s),
             OpIdent(s) => write!(f, "OpIdent({})", s),
+            ConOpIdent(s) => write!(f, "ConOpIdent({})", s),
 
             Wildcard => write!(f, "Wildcard"),
             Backslash => write!(f, "Backslash"),
