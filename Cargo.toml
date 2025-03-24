@@ -2,15 +2,16 @@
 
 members = [
     "miniml",
-    "miniml-analysis",
+    # "miniml-analysis",
     "miniml-ast",
-    "miniml-core",
-    "miniml-infer",
-    "miniml-nir",
+    # "miniml-core",
+    # "miniml-infer",
+    # "miniml-nir",
     "miniml-parse",
+    "miniml-pipeline",
     "miniml-query",
-    "miniml-rename",
-    "miniml-tir",
+    # "miniml-rename",
+    # "miniml-tir",
     # "miniml-tree-walk",
     "miniml-utils",
 ]

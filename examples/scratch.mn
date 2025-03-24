@@ -199,7 +199,7 @@ type Point = (Int, Int)
 -- structs
 struct Person { 
   name : String, 
-  age : Int 
+  age : Int
 }
 
 -- or with indentation
