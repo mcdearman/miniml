@@ -27,7 +27,7 @@ pub struct Module {
     pub classes: Vec<ClassDef>,
     pub insts: Vec<InstDef>,
     pub structs: Vec<StructDef>,
-    pub datas: Vec<DataDef>,
+    pub data_defs: Vec<DataDef>,
     pub type_aliases: Vec<TypeAlias>,
     pub defs: Defs,
 }
@@ -68,15 +68,24 @@ pub struct DataDef {
 pub struct TypeAlias {
     pub name: Ident,
     pub type_params: Vec<Ident>,
-    pub ty: TypeAnno,
+    pub ty_anno: TypeAnno,
     pub visibility: Visibility,
 }
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Def {
     pub name: Ident,
-    pub ty: Option<TypeAnno>,
+    pub ty_anno: Option<TypeAnno>,
     pub expr: Expr,
+    pub visibility: Visibility,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct FnDef {
+    pub name: Ident,
+    pub ty_anno: TypeAnno,
+    pub params: Vec<Pattern>,
+    pub body: Expr,
     pub visibility: Visibility,
 }
 
@@ -167,7 +176,6 @@ impl From<Token> for BinaryOpKind {
             Token::Leq => Self::Lte,
             Token::Gt => Self::Gt,
             Token::Geq => Self::Gte,
-            Token::DoubleColon => Self::Pair,
             _ => unreachable!(),
         }
     }

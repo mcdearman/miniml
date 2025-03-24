@@ -518,34 +518,9 @@ dependencies = [
  "env_logger",
  "insta",
  "log",
- "miniml-analysis",
- "miniml-ast",
- "miniml-infer",
- "miniml-nir",
- "miniml-parse",
- "miniml-rename",
- "miniml-tir",
- "miniml-utils",
+ "miniml-pipeline",
  "pretty",
  "rustyline",
-]
-
-[[package]]
-name = "miniml-analysis"
-version = "0.1.0"
-dependencies = [
- "colored",
- "env_logger",
- "insta",
- "itertools",
- "log",
- "miniml-ast",
- "miniml-nir",
- "miniml-utils",
- "num-bigint",
- "num-complex",
- "num-rational",
- "pretty",
 ]
 
 [[package]]
@@ -566,62 +541,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "miniml-infer"
-version = "0.1.0"
-dependencies = [
- "colored",
- "env_logger",
- "insta",
- "itertools",
- "log",
- "miniml-ast",
- "miniml-nir",
- "miniml-tir",
- "miniml-utils",
- "num-bigint",
- "num-complex",
- "num-rational",
- "pretty",
-]
-
-[[package]]
-name = "miniml-nir"
-version = "0.1.0"
-dependencies = [
- "colored",
- "either",
- "env_logger",
- "insta",
- "itertools",
- "log",
- "miniml-ast",
- "miniml-utils",
- "num-bigint",
- "num-complex",
- "num-rational",
- "pretty",
-]
-
-[[package]]
-name = "miniml-parse"
-version = "0.1.0"
-dependencies = [
- "chumsky",
- "colored",
- "env_logger",
- "insta",
- "itertools",
- "log",
- "logos",
- "miniml-ast",
- "miniml-utils",
- "num-bigint",
- "num-complex",
- "num-rational",
- "pretty",
-]
-
-[[package]]
 name = "miniml-pipeline"
 version = "0.1.0"
 dependencies = [
@@ -629,7 +548,6 @@ dependencies = [
  "insta",
  "log",
  "miniml-ast",
- "miniml-parse",
  "miniml-utils",
  "pretty",
 ]
@@ -643,43 +561,6 @@ dependencies = [
  "insta",
  "log",
  "miniml-utils",
- "pretty",
-]
-
-[[package]]
-name = "miniml-rename"
-version = "0.1.0"
-dependencies = [
- "colored",
- "env_logger",
- "insta",
- "itertools",
- "log",
- "miniml-ast",
- "miniml-nir",
- "miniml-utils",
- "num-bigint",
- "num-complex",
- "num-rational",
- "pretty",
-]
-
-[[package]]
-name = "miniml-tir"
-version = "0.1.0"
-dependencies = [
- "colored",
- "env_logger",
- "insta",
- "itertools",
- "log",
- "miniml-ast",
- "miniml-nir",
- "miniml-utils",
- "num-bigint",
- "num-complex",
- "num-rational",
- "once_cell",
  "pretty",
 ]
 

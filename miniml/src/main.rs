@@ -1,8 +1,3 @@
-use miniml_analysis::scc;
-use miniml_ast::token_stream::TokenStream;
-use miniml_infer::solver::TypeSolver;
-use miniml_parse::parse;
-use miniml_rename::resolver::Resolver;
 use rustyline::{
     error::ReadlineError, validate::Validator, Completer, Editor, Helper, Highlighter, Hinter,
 };
@@ -35,19 +30,12 @@ fn main() {
 
     println!("Welcome to MiniML!");
 
-    let mut res = Resolver::new();
-    let mut solver = TypeSolver::new();
-
     loop {
         let readline = rl.readline("> ");
         match readline {
             Ok(line) => {
                 match line.trim() {
                     ":q" | ":quit" => break,
-                    "ctx" => {
-                        log::debug!("Context: {:#?}", solver.ctx);
-                        continue;
-                    }
                     "clear" => {
                         rl.clear_history().expect("history failed to clear");
                         continue;
@@ -56,46 +44,9 @@ fn main() {
                 }
                 rl.add_history_entry(line.as_str())
                     .expect("Failed to add history entry");
-                let stream = TokenStream::new(&line);
 
-                match parse(stream, true) {
-                    (Some(ast), _) => {
-                        // log::debug!("AST: {:#?}", ast);
-                        match res.resolve(&ast) {
-                            (Some(nir), errors) => {
-                                if !errors.is_empty() {
-                                    // log::error!("Resolution errors: {:#?}", errors);
-                                    eprint!("Resolution errors: {:#?}", errors);
-                                    res.clear_errors();
-                                    continue;
-                                }
-                                // log::debug!("NIR: {:#?}", nir);
-                                // println!("NIR: {:#?}", nir);
-                                let mut scc_ctx = scc::Context::new();
-                                let sir = scc_ctx.run(&nir);
-                                // log::debug!("SCC: {:#?}", sir);
-                                // println!("SCC: {:#?}", sir);
-                                let (tir, errors) = solver.infer(&*line, &sir);
-                                if !errors.is_empty() {
-                                    // log::error!("Inference errors: {:#?}", errors);
-                                    eprint!("Inference errors: {:#?}", errors);
-                                    continue;
-                                }
-                                println!("TIR: {:#?}", tir);
-                            }
-                            (None, res_errors) => {
-                                // log::error!("Resolution errors: {:#?}", res_errors);
-                                eprint!("Resolution errors: {:#?}", res_errors);
-                                continue;
-                            }
-                        }
-                    }
-                    (None, parse_errors) => {
-                        // log::error!("Parse errors: {:#?}", parse_errors);
-                        eprint!("Parse errors: {:#?}", parse_errors);
-                        continue;
-                    }
-                };
+                let pipeline = miniml_pipeline::Pipeline::new(&line);
+                pipeline.run();
             }
             Err(ReadlineError::Interrupted) => {
                 println!("CTRL-C");

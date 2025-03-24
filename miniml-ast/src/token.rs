@@ -32,8 +32,12 @@ pub enum Token {
     String(InternedString),
     #[regex(r"'(\\.|[^'\\])'", |lex| lex.slice().chars().nth(1))]
     Char(char),
-    #[regex(r"[a-zA-Z_][a-zA-Z0-9_]*", |lex| InternedString::from(lex.slice()))]
-    Ident(InternedString),
+    #[regex(r"[a-z][a-zA-Z0-9'_]*", |lex| InternedString::from(lex.slice()))]
+    LowerIdent(InternedString),
+    #[regex(r"[A-Z][a-zA-Z0-9']*", |lex| InternedString::from(lex.slice()))]
+    UpperIdent(InternedString),
+    #[regex(r":[!#$%&*+./<=>?@\\^|:\-~]+", |lex| InternedString::from(lex.slice()))]
+    OpIdent(InternedString),
 
     // Punctuation
     #[token("_")]
@@ -84,8 +88,6 @@ pub enum Token {
     DoublePeriod,
     #[token(":")]
     Colon,
-    #[token("::")]
-    DoubleColon,
     #[token(";")]
     SemiColon,
     #[token("(")]
@@ -110,6 +112,8 @@ pub enum Token {
     RPipe,
     #[token("@")]
     At,
+    #[token("`")]
+    Backtick,
 
     // Keywords
     #[token("pub")]
@@ -161,7 +165,10 @@ impl Display for Token {
             Bool(b) => write!(f, "Bool({})", b),
             String(s) => write!(f, "String({})", s),
             Char(c) => write!(f, "Char({})", c),
-            Ident(s) => write!(f, "Ident({})", s),
+            LowerIdent(s) => write!(f, "LowerIdent({})", s),
+            UpperIdent(s) => write!(f, "UpperIdent({})", s),
+            OpIdent(s) => write!(f, "OpIdent({})", s),
+
             Wildcard => write!(f, "Wildcard"),
             Backslash => write!(f, "Backslash"),
             LArrow => write!(f, "LArrow"),
@@ -186,7 +193,6 @@ impl Display for Token {
             Period => write!(f, "Period"),
             DoublePeriod => write!(f, "DoublePeriod"),
             Colon => write!(f, "Colon"),
-            DoubleColon => write!(f, "DoubleColon"),
             SemiColon => write!(f, "SemiColon"),
             LParen => write!(f, "LParen"),
             RParen => write!(f, "RParen"),
@@ -199,6 +205,8 @@ impl Display for Token {
             LPipe => write!(f, "LPipe"),
             RPipe => write!(f, "RPipe"),
             At => write!(f, "At"),
+            Backtick => write!(f, "Backtick"),
+
             Pub => write!(f, "Pub"),
             Mod => write!(f, "Mod"),
             End => write!(f, "End"),
