@@ -36,10 +36,10 @@ pub enum Token {
     LowerIdent(InternedString),
     #[regex(r"[A-Z][a-zA-Z0-9']*", |lex| InternedString::from(lex.slice()))]
     UpperIdent(InternedString),
-    #[regex(r":[!#$%&*+./<=>?@\\^|:\-~]+", |lex| InternedString::from(lex.slice()))]
-    ConOpIdent(InternedString),
     #[regex(r"[!#$%&*+./<=>?@\\^|\\-~:]+", |lex| InternedString::from(lex.slice()))]
     OpIdent(InternedString),
+    #[regex(r":[!#$%&*+./<=>?@\\^|:\-~]+", |lex| InternedString::from(lex.slice()))]
+    ConOpIdent(InternedString),
 
     // Punctuation
     #[token("_")]
@@ -88,6 +88,8 @@ pub enum Token {
     Period,
     #[token("..")]
     DoublePeriod,
+    #[token("..=")]
+    DoublePeriodEq,
     #[token(":")]
     Colon,
     #[token(";")]
@@ -195,6 +197,7 @@ impl Display for Token {
             Comma => write!(f, "Comma"),
             Period => write!(f, "Period"),
             DoublePeriod => write!(f, "DoublePeriod"),
+            DoublePeriodEq => write!(f, "DoublePeriodEq"),
             Colon => write!(f, "Colon"),
             SemiColon => write!(f, "SemiColon"),
             LParen => write!(f, "LParen"),

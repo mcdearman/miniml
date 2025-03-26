@@ -1,15 +1,15 @@
-pub class Iterator i where
-  type Item i
+pub class Stream a where
+  type Item a
 
   @inline
-  def next (iter : i) : Option (a, i)
+  def next : a -> Option (a, s)
 
   @inline
-  def len (iter : i) : Int = foldl (+ 1) 0 iter
+  def len : a -> Int = foldl (+ 1) 0
 
   @inline
-  def map (f : a -> b) (iter : i) : Map b = 
-    MapIter { iter, f }
+  def map (f : a -> b) (stream : s) : Map b = 
+    MapIter { stream, f }
 
   @inline
   def zip (iter1 : i, iter2 : j) : Zip i j =
@@ -21,7 +21,7 @@ pub class Iterator i where
   
 pub data MapIter i g = { iter : i, f : g }
 
-instance Iterator (MapIter i g) where
+instance Stream (MapIter i g) where
   type Item (MapIter i g) = g (Item i)
 
   def next (m : MapIter i f) : Option (Item i, MapIter i f) =
@@ -31,7 +31,7 @@ instance Iterator (MapIter i g) where
 
 pub data ZipIter i j = { iter1 : i, iter2 : j }
 
-instance Iterator (ZipIter i j) where
+instance Stream (ZipIter i j) where
   type Item (ZipIter i j) = (Item i, Item j)
 
   def next (iter : ZipIter i j) : Option ((Item i, Item j), ZipIter i j) =
@@ -41,7 +41,7 @@ instance Iterator (ZipIter i j) where
 
 pub data FoldIter i a = { iter : i, f : a -> Item i -> a, acc : a }
 
-instance Iterator (FoldIter i a) where
+instance Stream (FoldIter i a) where
   type Item (FoldIter i a) = a
 
   def next (iter : FoldIter i a) : Option (a, FoldIter i a) =

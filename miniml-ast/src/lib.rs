@@ -11,6 +11,13 @@ pub type SynBoxNode<T> = BoxNode<T, Span>;
 
 pub type Prog = SynNode<Module>;
 pub type Imports = Vec<Path>;
+pub type ClassDef = SynNode<ClassDefInner>;
+pub type InstDef = SynNode<InstDefInner>;
+pub type StructDef = SynNode<StructDefInner>;
+pub type DataDef = SynNode<DataDefInner>;
+pub type TypeAlias = SynNode<TypeAliasInner>;
+pub type Def = SynNode<DefInner>;
+pub type FnDef = SynNode<FnDefInner>;
 pub type Defs = Vec<Def>;
 pub type Path = Vec<Ident>;
 pub type Expr = SynBoxNode<ExprKind>;
@@ -30,10 +37,11 @@ pub struct Module {
     pub data_defs: Vec<DataDef>,
     pub type_aliases: Vec<TypeAlias>,
     pub defs: Defs,
+    pub fn_defs: Vec<FnDef>,
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct ClassDef {
+pub struct ClassDefInner {
     pub name: Ident,
     pub type_params: Vec<Ident>,
     pub fields: Vec<(Ident, TypeAnno)>,
@@ -41,7 +49,7 @@ pub struct ClassDef {
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct InstDef {
+pub struct InstDefInner {
     pub class_name: Ident,
     pub type_name: Ident,
     pub type_params: Vec<TypeAnno>,
@@ -49,7 +57,7 @@ pub struct InstDef {
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct StructDef {
+pub struct StructDefInner {
     pub name: Ident,
     pub type_params: Vec<Ident>,
     pub fields: Vec<(Ident, TypeAnno, Visibility)>,
@@ -57,7 +65,7 @@ pub struct StructDef {
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct DataDef {
+pub struct DataDefInner {
     pub name: Pattern,
     pub type_params: Vec<Ident>,
     pub variants: Vec<(Ident, Vec<TypeAnno>)>,
@@ -65,7 +73,7 @@ pub struct DataDef {
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct TypeAlias {
+pub struct TypeAliasInner {
     pub name: Ident,
     pub type_params: Vec<Ident>,
     pub ty_anno: TypeAnno,
@@ -73,7 +81,7 @@ pub struct TypeAlias {
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct Def {
+pub struct DefInner {
     pub name: Ident,
     pub ty_anno: Option<TypeAnno>,
     pub expr: Expr,
@@ -81,7 +89,7 @@ pub struct Def {
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct FnDef {
+pub struct FnDefInner {
     pub name: Ident,
     pub ty_anno: TypeAnno,
     pub params: Vec<Pattern>,
@@ -158,7 +166,6 @@ pub enum BinaryOpKind {
     Lte,
     Gt,
     Gte,
-    Pair,
 }
 
 impl From<Token> for BinaryOpKind {
@@ -196,7 +203,6 @@ impl ToString for BinaryOpKind {
             Self::Lte => "__lte__".to_string(),
             Self::Gt => "__gt__".to_string(),
             Self::Gte => "__gte__".to_string(),
-            Self::Pair => "__pair__".to_string(),
         }
     }
 }
@@ -213,7 +219,7 @@ pub enum PatternKind {
     Lit(Lit),
     Ident(Ident, Option<TypeAnno>),
     List(Vec<Pattern>),
-    Pair(Pattern, Pattern),
+    Con(Ident, Vec<Pattern>),
     Unit,
 }
 

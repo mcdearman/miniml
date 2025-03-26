@@ -7,7 +7,7 @@ members = [
     # "miniml-core",
     # "miniml-infer",
     # "miniml-nir",
-    # "miniml-parse",
+    "miniml-parse",
     "miniml-pipeline",
     "miniml-query",
     # "miniml-rename",

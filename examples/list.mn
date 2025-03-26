@@ -1,21 +1,11 @@
 -- A pair list is either empty or a pair of an element and a pair list.
 data List a = [] | a :: List a
 
-instance Iterator List where
-  next xs =
+impl Stream List where
+  type Item (List a) = a
+
+  def next xs =
     match xs with
     | [] -> None
     | x :: xs -> Some (x, xs)
 
-[1, 2, 3]
-  |> map (^ 2)
-  |> collect
-
--- next for map:
-instance Iterator (MapIter i g) where
-  type Item (MapIter i g) = g (Item i)
-
-  def next (m : MapIter i f) : Option (Item i, MapIter i f) =
-    match next m.iter with
-    | None -> None
-    | Some (x, xs) -> Some (m.f x, MapIter { iter = xs, f = m.f })

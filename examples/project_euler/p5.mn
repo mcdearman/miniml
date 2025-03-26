@@ -1,1 +1,1 @@
-def e5 : Int = foldl lcm 2520 11..=20
+def e5 : Int = foldl lcm 2520 [11..=20]

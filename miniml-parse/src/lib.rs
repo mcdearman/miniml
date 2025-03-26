@@ -34,7 +34,6 @@ fn file_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
             Module {
                 name: SynNode::new(InternedString::from("main"), e.span()),
                 imports: vec![],
-                decls,
             },
             e.span(),
         )
@@ -401,13 +400,6 @@ fn pattern_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
             .then_ignore(just(Token::RBrack))
             .map(|patterns| PatternKind::List(patterns));
 
-        let pair = pat
-            .clone()
-            .then_ignore(just(Token::DoubleColon))
-            .then(pat.clone())
-            .delimited_by(just(Token::LParen), just(Token::RParen))
-            .map(|(ident, pat)| PatternKind::Pair(ident, pat));
-
         ident_parser()
             .map(|ident| PatternKind::Ident(ident, None))
             .or(just(Token::Wildcard).map(|_| PatternKind::Wildcard))
@@ -430,10 +422,34 @@ fn type_anno_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
         .map_with(|ty, e| TypeAnno::new(ty, e.span()))
 }
 
-fn ident_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
+fn lower_ident_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
 ) -> impl ChumskyParser<'a, I, Ident, extra::Err<Rich<'a, Token, Span>>> {
     select! {
-        Token::Ident(name) => name
+        Token::LowerIdent(name) => name
+    }
+    .map_with(|name, e| Ident::new(name, e.span()))
+}
+
+fn upper_ident_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
+) -> impl ChumskyParser<'a, I, Ident, extra::Err<Rich<'a, Token, Span>>> {
+    select! {
+        Token::UpperIdent(name) => name
+    }
+    .map_with(|name, e| Ident::new(name, e.span()))
+}
+
+fn op_ident_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
+) -> impl ChumskyParser<'a, I, Ident, extra::Err<Rich<'a, Token, Span>>> {
+    select! {
+        Token::OpIdent(name) => name
+    }
+    .map_with(|name, e| Ident::new(name, e.span()))
+}
+
+fn con_op_ident_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
+) -> impl ChumskyParser<'a, I, Ident, extra::Err<Rich<'a, Token, Span>>> {
+    select! {
+        Token::ConOpIdent(name) => name
     }
     .map_with(|name, e| Ident::new(name, e.span()))
 }
