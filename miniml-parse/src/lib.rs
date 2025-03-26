@@ -413,7 +413,7 @@ fn pattern_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
 
 fn type_anno_parser<'a, I: ValueInput<'a, Token = Token, Span = Span>>(
 ) -> impl ChumskyParser<'a, I, TypeAnno, extra::Err<Rich<'a, Token, Span>>> {
-    ident_parser()
+    upper_ident_parser()
         .map(|ident| match &*ident.inner {
             "Int" => TypeAnnoKind::Int,
             "Bool" => TypeAnnoKind::Bool,
