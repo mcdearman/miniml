@@ -2,7 +2,7 @@
 .vscode
 .idea
 .DS_Store
-.miniml_history
+.repl_history
 *.log
 src-old
 dist-*

@@ -25,7 +25,7 @@ fn main() {
     let h = TermValidator;
     let mut rl = Editor::new().expect("Failed to create editor");
     rl.set_helper(Some(h));
-    if rl.load_history(".miniml_history").is_err() {
+    if rl.load_history(".repl_history").is_err() {
         eprintln!("No previous history.");
     }
 
