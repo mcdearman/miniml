@@ -1,0 +1,1 @@
+cloc compiler/mmc*/src runtime --by-file
