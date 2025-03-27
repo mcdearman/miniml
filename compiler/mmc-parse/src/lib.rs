@@ -6,8 +6,8 @@ use chumsky::{
     recursive::recursive,
     select, IterParser, Parser as ChumskyParser,
 };
-use miniml_ast::{token::Token, *};
-use miniml_utils::{intern::InternedString, span::Span};
+use mmc_ast::{token::Token, *};
+use mmc_utils::{intern::InternedString, span::Span};
 
 pub fn parse<'src>(
     tokens: impl Iterator<Item = (Token, Span)> + Clone + 'src,

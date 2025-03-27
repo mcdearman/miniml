@@ -541,6 +541,25 @@ dependencies = [
 ]
 
 [[package]]
+name = "mmc-parse"
+version = "0.1.0"
+dependencies = [
+ "chumsky",
+ "colored",
+ "env_logger",
+ "insta",
+ "itertools",
+ "log",
+ "logos",
+ "mmc-ast",
+ "mmc-utils",
+ "num-bigint",
+ "num-complex",
+ "num-rational",
+ "pretty",
+]
+
+[[package]]
 name = "mmc-pipeline"
 version = "0.1.0"
 dependencies = [
@@ -548,6 +567,7 @@ dependencies = [
  "insta",
  "log",
  "mmc-ast",
+ "mmc-parse",
  "mmc-utils",
  "pretty",
 ]
