@@ -511,20 +511,20 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "78ca9ab1a0babb1e7d5695e3530886289c18cf2f87ec19a575a0abdce112e3a3"
 
 [[package]]
-name = "miniml"
+name = "mmc"
 version = "0.1.0"
 dependencies = [
  "clap",
  "env_logger",
  "insta",
  "log",
- "miniml-pipeline",
+ "mmc-pipeline",
  "pretty",
  "rustyline",
 ]
 
 [[package]]
-name = "miniml-ast"
+name = "mmc-ast"
 version = "0.1.0"
 dependencies = [
  "colored",
@@ -533,7 +533,7 @@ dependencies = [
  "itertools",
  "log",
  "logos",
- "miniml-utils",
+ "mmc-utils",
  "num-bigint",
  "num-complex",
  "num-rational",
@@ -541,50 +541,19 @@ dependencies = [
 ]
 
 [[package]]
-name = "miniml-parse"
-version = "0.1.0"
-dependencies = [
- "chumsky",
- "colored",
- "env_logger",
- "insta",
- "itertools",
- "log",
- "logos",
- "miniml-ast",
- "miniml-utils",
- "num-bigint",
- "num-complex",
- "num-rational",
- "pretty",
-]
-
-[[package]]
-name = "miniml-pipeline"
+name = "mmc-pipeline"
 version = "0.1.0"
 dependencies = [
  "env_logger",
  "insta",
  "log",
- "miniml-ast",
- "miniml-utils",
+ "mmc-ast",
+ "mmc-utils",
  "pretty",
 ]
 
 [[package]]
-name = "miniml-query"
-version = "0.1.0"
-dependencies = [
- "colored",
- "env_logger",
- "insta",
- "log",
- "miniml-utils",
- "pretty",
-]
-
-[[package]]
-name = "miniml-utils"
+name = "mmc-utils"
 version = "0.1.0"
 dependencies = [
  "chumsky",
