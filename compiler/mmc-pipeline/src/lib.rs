@@ -1,4 +1,4 @@
-use mmc_ast::token_stream::TokenStream;
+use mmc_tokenize::tokenize;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Pipeline<'src> {
@@ -11,8 +11,8 @@ impl<'src> Pipeline<'src> {
     }
 
     pub fn run(&self) {
-        let stream = TokenStream::new(self.src);
-        println!("{:#?}", stream.collect::<Vec<_>>());
+        let token_stream = tokenize(self.src);
+        println!("{:#?}", token_stream.collect::<Vec<_>>());
         // let (ast, errors) = parse(stream, true);
     }
 }

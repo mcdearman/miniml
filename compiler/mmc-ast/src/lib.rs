@@ -1,10 +1,7 @@
-use crate::token::Token;
+use mmc_token::Token;
 use mmc_utils::{
     box_node::BoxNode, intern::InternedString, node::Node, rational::Rational64, span::Span,
 };
-
-pub mod token;
-pub mod token_stream;
 
 pub type SynNode<T> = Node<T, Span>;
 pub type SynBoxNode<T> = BoxNode<T, Span>;

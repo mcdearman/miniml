@@ -57,43 +57,19 @@ impl From<Range<usize>> for Span {
     }
 }
 
-impl chumsky::span::Span for Span {
-    type Context = ();
-
-    type Offset = u32;
-
-    fn new(context: Self::Context, range: Range<Self::Offset>) -> Self {
-        Self {
-            start: range.start,
-            end: range.end,
-        }
-    }
-
-    fn context(&self) -> Self::Context {
-        ()
-    }
-
-    fn start(&self) -> Self::Offset {
-        self.start
-    }
-
-    fn end(&self) -> Self::Offset {
-        self.end
-    }
-}
-
 impl Index<Span> for str {
     type Output = str;
 
     fn index(&self, index: Span) -> &Self::Output {
-        &self[Range::from(index)]
-    }
-}
+        // Convert the Span to a Range<usize>
+        let range: Range<usize> = index.into();
 
-impl Index<Span> for String {
-    type Output = str;
+        // Ensure the range is within the bounds of the string
+        if range.start > self.len() || range.end > self.len() {
+            panic!("Index out of bounds");
+        }
 
-    fn index(&self, index: Span) -> &Self::Output {
-        &self[Range::from(index)]
+        // Return the slice of the string for the given range
+        &self[range]
     }
 }
