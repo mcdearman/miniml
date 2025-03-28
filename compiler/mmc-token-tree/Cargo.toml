@@ -1,5 +1,5 @@
 [package]
-name = "mmc-pipeline"
+name = "mmc-token-tree"
 version = "0.1.0"
 edition = "2021"
 
@@ -8,12 +8,13 @@ edition = "2021"
 [dependencies]
 mmc-utils = { path = "../mmc-utils" }
 mmc-token = { path = "../mmc-token" }
-mmc-tokenize = { path = "../mmc-tokenize" }
-mmc-token-tree = { path = "../mmc-token-tree" }
-mmc-read = { path = "../mmc-read" }
-mmc-ast = { path = "../mmc-ast" }
-# mmc-parse = { path = "../mmc-parse" }
 log = "0.4.18"
 env_logger = "0.10.0"
 insta = { version = "1.28.0", features = ["yaml"] }
+logos = "0.13.0"
+itertools = "0.10.5"
+num-bigint = "0.4.3"
+num-complex = "0.4.3"
+num-rational = "0.4.1"
 pretty = "0.12.3"
+colored = "2.1.0"

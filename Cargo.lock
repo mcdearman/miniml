@@ -499,6 +499,7 @@ dependencies = [
  "mmc-ast",
  "mmc-read",
  "mmc-token",
+ "mmc-token-tree",
  "mmc-tokenize",
  "mmc-utils",
  "pretty",
@@ -524,6 +525,24 @@ dependencies = [
  "itertools",
  "log",
  "logos",
+ "mmc-utils",
+ "num-bigint",
+ "num-complex",
+ "num-rational",
+ "pretty",
+]
+
+[[package]]
+name = "mmc-token-tree"
+version = "0.1.0"
+dependencies = [
+ "colored",
+ "env_logger",
+ "insta",
+ "itertools",
+ "log",
+ "logos",
+ "mmc-token",
  "mmc-utils",
  "num-bigint",
  "num-complex",
