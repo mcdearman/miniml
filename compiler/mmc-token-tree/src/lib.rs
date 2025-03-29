@@ -1,10 +1,19 @@
 use mmc_utils::{intern::InternedString, rational::Rational64};
 
 #[derive(Debug, Clone, PartialEq)]
+pub enum TokenTree {
+    Paren(Vec<Token>),
+    Brace(Vec<Token>),
+    Brack(Vec<Token>),
+    HashBrack(Vec<Token>),
+}
+
+#[derive(Debug, Clone, PartialEq)]
 pub enum Token {
     Error,
     Comment,
     Whitespace,
+
     // Literals and identifiers
     Int(i64),
     Real(f64),
@@ -44,13 +53,6 @@ pub enum Token {
     DoublePeriodEq,
     Colon,
     SemiColon,
-    LParen,
-    RParen,
-    LBrace,
-    RBrace,
-    LBrack,
-    RBrack,
-    HashLBrack,
     Bar,
     LPipe,
     RPipe,

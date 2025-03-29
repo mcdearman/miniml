@@ -116,6 +116,7 @@ pub enum ExprKind {
     Match(Expr, Vec<(Pattern, Expr)>),
     List(Vec<Expr>),
     Unit,
+    Error,
 }
 
 #[derive(Debug, Copy, Clone, PartialEq)]
