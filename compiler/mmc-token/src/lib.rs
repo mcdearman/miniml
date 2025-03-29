@@ -36,9 +36,9 @@ pub enum Token {
     LowerIdent(InternedString),
     #[regex(r"[A-Z][a-zA-Z0-9']*", |lex| InternedString::from(lex.slice()))]
     UpperIdent(InternedString),
-    #[regex(r"[!#$%&*+./<=>?@\\^|\\-~:]+", |lex| InternedString::from(lex.slice()))]
+    #[regex(r"[!$%&*+./<=>?@\|\\\^-z~:]+", |lex| InternedString::from(lex.slice()))]
     OpIdent(InternedString),
-    #[regex(r":[!#$%&*+./<=>?@\\^|:\-~]+", |lex| InternedString::from(lex.slice()))]
+    #[regex(r":[!$%&*+./<=>?@\|\\\^-z~:]+", |lex| InternedString::from(lex.slice()))]
     ConOpIdent(InternedString),
 
     // Punctuation
@@ -106,8 +106,8 @@ pub enum Token {
     LBrack,
     #[token("]")]
     RBrack,
-    #[token("#[")]
-    HashLBrack,
+    #[token("#")]
+    Hash,
     #[token("|")]
     Bar,
     #[token("<|")]
@@ -206,7 +206,7 @@ impl Display for Token {
             RBrace => write!(f, "RBrace"),
             LBrack => write!(f, "LBrack"),
             RBrack => write!(f, "RBrack"),
-            HashLBrack => write!(f, "HashLBrack"),
+            Hash => write!(f, "HashLBrack"),
             Bar => write!(f, "Bar"),
             LPipe => write!(f, "LPipe"),
             RPipe => write!(f, "RPipe"),

@@ -5,7 +5,6 @@ pub enum TokenTree {
     Paren(Vec<Token>),
     Brace(Vec<Token>),
     Brack(Vec<Token>),
-    HashBrack(Vec<Token>),
 }
 
 #[derive(Debug, Clone, PartialEq)]
