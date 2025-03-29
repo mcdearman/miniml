@@ -497,10 +497,23 @@ dependencies = [
  "insta",
  "log",
  "mmc-ast",
+ "mmc-query",
  "mmc-read",
  "mmc-token",
  "mmc-token-tree",
  "mmc-tokenize",
+ "mmc-utils",
+ "pretty",
+]
+
+[[package]]
+name = "mmc-query"
+version = "0.1.0"
+dependencies = [
+ "colored",
+ "env_logger",
+ "insta",
+ "log",
  "mmc-utils",
  "pretty",
 ]

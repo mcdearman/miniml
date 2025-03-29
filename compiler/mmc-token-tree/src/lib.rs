@@ -1,17 +1,18 @@
 use mmc_utils::{intern::InternedString, rational::Rational64};
 
 #[derive(Debug, Clone, PartialEq)]
-pub enum TokenTree {
-    Paren(Vec<Token>),
-    Brace(Vec<Token>),
-    Brack(Vec<Token>),
+pub enum Delim {
+    Paren(Vec<TokenTree>),
+    Brace(Vec<TokenTree>),
+    Brack(Vec<TokenTree>),
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub enum Token {
+pub enum TokenTree {
     Error,
     Comment,
     Whitespace,
+    Delim(Delim),
 
     // Literals and identifiers
     Int(i64),
