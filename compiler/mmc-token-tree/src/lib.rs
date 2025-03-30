@@ -5,6 +5,7 @@ pub enum Delim {
     Paren(Vec<TokenTree>),
     Brace(Vec<TokenTree>),
     Brack(Vec<TokenTree>),
+    Error,
 }
 
 #[derive(Debug, Clone, PartialEq)]
