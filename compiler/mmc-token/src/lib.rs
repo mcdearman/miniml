@@ -1,9 +1,16 @@
 use logos::Logos;
-use mmc_utils::{intern::InternedString, rational::Rational64};
+use mmc_utils::{intern::InternedString, rational::Rational64, span::Span};
 use std::fmt::Display;
 
+#[derive(Debug, Clone, PartialEq)]
+pub struct Token {
+    pub kind: TokenKind,
+    pub span: Span,
+}
+
 #[derive(Logos, Debug, Clone, PartialEq)]
-pub enum Token {
+pub enum TokenKind {
+    Eof,
     Error,
     #[regex(r"--.*", logos::skip)]
     Comment,
@@ -156,10 +163,11 @@ pub enum Token {
     As,
 }
 
-impl Display for Token {
+impl Display for TokenKind {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        use Token::*;
+        use TokenKind::*;
         match self {
+            Eof => write!(f, "Eof"),
             Error => write!(f, "Error"),
             Comment => write!(f, "Comment"),
             Whitespace => write!(f, "Whitespace"),
