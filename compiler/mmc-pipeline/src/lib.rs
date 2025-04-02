@@ -11,8 +11,8 @@ impl<'src> Pipeline<'src> {
     }
 
     pub fn run(&self) {
-        let token_stream = tokenize(self.src);
-        println!("{:#?}", token_stream.collect::<Vec<_>>());
+        let mut token_stream = tokenize(self.src);
+        println!("{:#?}", token_stream.collect());
         // let (ast, errors) = parse(stream, true);
     }
 }

@@ -1,4 +1,4 @@
-use mmc_token::Token;
+use mmc_token::TokenKind;
 use mmc_utils::{
     box_node::BoxNode, intern::InternedString, node::Node, rational::Rational64, span::Span,
 };
@@ -125,11 +125,11 @@ pub enum UnaryOpKind {
     Not,
 }
 
-impl From<Token> for UnaryOpKind {
-    fn from(t: Token) -> Self {
+impl From<TokenKind> for UnaryOpKind {
+    fn from(t: TokenKind) -> Self {
         match t {
-            Token::Minus => Self::Neg,
-            Token::Not => Self::Not,
+            TokenKind::Minus => Self::Neg,
+            TokenKind::Not => Self::Not,
             _ => unreachable!(),
         }
     }
@@ -167,21 +167,21 @@ pub enum BinaryOpKind {
     Gte,
 }
 
-impl From<Token> for BinaryOpKind {
-    fn from(t: Token) -> Self {
+impl From<TokenKind> for BinaryOpKind {
+    fn from(t: TokenKind) -> Self {
         match t {
-            Token::Plus => Self::Add,
-            Token::Minus => Self::Sub,
-            Token::Star => Self::Mul,
-            Token::Slash => Self::Div,
-            Token::Percent => Self::Rem,
-            Token::Caret => Self::Pow,
-            Token::Eq => Self::Eq,
-            Token::Neq => Self::Neq,
-            Token::Lt => Self::Lt,
-            Token::Leq => Self::Lte,
-            Token::Gt => Self::Gt,
-            Token::Geq => Self::Gte,
+            TokenKind::Plus => Self::Add,
+            TokenKind::Minus => Self::Sub,
+            TokenKind::Star => Self::Mul,
+            TokenKind::Slash => Self::Div,
+            TokenKind::Percent => Self::Rem,
+            TokenKind::Caret => Self::Pow,
+            TokenKind::Eq => Self::Eq,
+            TokenKind::Neq => Self::Neq,
+            TokenKind::Lt => Self::Lt,
+            TokenKind::Leq => Self::Lte,
+            TokenKind::Gt => Self::Gt,
+            TokenKind::Geq => Self::Gte,
             _ => unreachable!(),
         }
     }
