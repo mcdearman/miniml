@@ -12,7 +12,7 @@ impl<'src> Pipeline<'src> {
 
     pub fn run(&self) {
         let mut token_stream = tokenize(self.src);
-        println!("{:#?}", token_stream.collect());
+        println!("{:#?}", token_stream.collect_tokens());
         // let (ast, errors) = parse(stream, true);
     }
 }

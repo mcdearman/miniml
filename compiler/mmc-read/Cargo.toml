@@ -7,6 +7,9 @@ edition = "2021"
 
 [dependencies]
 mmc-utils = { path = "../mmc-utils" }
+mmc-token = { path = "../mmc-token" }
+mmc-tokenize = { path = "../mmc-tokenize" }
+mmc-token-tree = { path = "../mmc-token-tree" }
 log = "0.4.18"
 env_logger = "0.10.0"
 insta = { version = "1.28.0", features = ["yaml"] }

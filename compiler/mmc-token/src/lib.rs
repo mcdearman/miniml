@@ -14,7 +14,7 @@ pub enum TokenKind {
     Error,
     #[regex(r"--.*", logos::skip)]
     Comment,
-    #[regex(r"[ \t\n\r]+", logos::skip)]
+    #[regex(r"[ \t\n\r]+")]
     Whitespace,
     // Literals and identifiers
     #[regex(

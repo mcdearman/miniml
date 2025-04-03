@@ -1,15 +1,13 @@
-use mmc_utils::{intern::InternedString, rational::Rational64};
+use mmc_utils::{intern::InternedString, rational::Rational64, span::Span};
 
 #[derive(Debug, Clone, PartialEq)]
-pub enum Delim {
-    Paren(Vec<TokenTree>),
-    Brace(Vec<TokenTree>),
-    Brack(Vec<TokenTree>),
-    Error,
+pub struct TokenTree {
+    pub kind: TokenTreeKind,
+    pub span: Span,
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub enum TokenTree {
+pub enum TokenTreeKind {
     Error,
     Comment,
     Whitespace,
@@ -63,7 +61,6 @@ pub enum TokenTree {
     // Keywords
     Pub,
     Mod,
-    End,
     Use,
     Def,
     Let,
@@ -78,4 +75,18 @@ pub enum TokenTree {
     Class,
     Instance,
     As,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct Delim {
+    pub kind: DelimKind,
+    pub span: Span,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum DelimKind {
+    Paren(Vec<TokenTree>),
+    Brace(Vec<TokenTree>),
+    Brack(Vec<TokenTree>),
+    Error,
 }

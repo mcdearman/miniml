@@ -525,6 +525,9 @@ dependencies = [
  "env_logger",
  "insta",
  "log",
+ "mmc-token",
+ "mmc-token-tree",
+ "mmc-tokenize",
  "mmc-utils",
 ]
 

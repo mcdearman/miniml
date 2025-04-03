@@ -45,7 +45,7 @@ impl<'src> TokenStream<'src> {
         }
     }
 
-    pub fn collect(&mut self) -> Vec<Token> {
+    pub fn collect_tokens(&mut self) -> Vec<Token> {
         let mut tokens = Vec::new();
         loop {
             let token = self.peek();
