@@ -4,8 +4,30 @@ use std::fmt::Display;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Token {
-    pub kind: TokenKind,
-    pub span: Span,
+    kind: TokenKind,
+    span: Span,
+}
+
+impl Token {
+    #[inline(always)]
+    pub fn new(kind: TokenKind, span: Span) -> Self {
+        Self { kind, span }
+    }
+
+    #[inline(always)]
+    pub fn kind(&self) -> &TokenKind {
+        &self.kind
+    }
+
+    #[inline(always)]
+    pub fn span(&self) -> Span {
+        self.span
+    }
+
+    #[inline(always)]
+    pub fn text<'src>(&self, src: &'src str) -> &'src str {
+        &src[self.span]
+    }
 }
 
 #[derive(Logos, Debug, Clone, PartialEq)]

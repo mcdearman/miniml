@@ -23,14 +23,8 @@ impl<'src> TokenStream<'src> {
             Ok(t) => (t, Span::from(self.logos.span())),
             Err(_) => (TokenKind::Error, Span::from(self.logos.span())),
         }) {
-            Some((token, s)) => Token {
-                kind: token,
-                span: s,
-            },
-            None => Token {
-                kind: TokenKind::Eof,
-                span: Span::from(self.logos.span()),
-            },
+            Some((token, s)) => Token::new(token, s),
+            None => Token::new(TokenKind::Eof, Span::from(self.logos.span())),
         }
     }
 
@@ -49,7 +43,7 @@ impl<'src> TokenStream<'src> {
         let mut tokens = Vec::new();
         loop {
             let token = self.peek();
-            if token.kind == TokenKind::Eof {
+            if *token.kind() == TokenKind::Eof {
                 tokens.push(token);
                 break;
             }

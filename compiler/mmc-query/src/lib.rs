@@ -82,7 +82,7 @@ impl Database {
     where
         Stored: Borrow<T>,
     {
-        let mut out = self.values.get_key_value(&query);
+        let out = self.values.get_key_value(&query);
         if out.is_some() {
             let r: &T::Output = &out
                 .unwrap()
