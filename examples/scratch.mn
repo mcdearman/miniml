@@ -199,7 +199,7 @@ type Point = (Int, Int)
 -- structs
 struct Person { 
   name : String, 
-  age : Int
+  age : Int,
 }
 
 -- or with indentation
@@ -293,8 +293,8 @@ class Ord a <: Eq + PartialOrd where
   def compare : a -> a -> Ordering
 
 class Add a b where
-  def data Output = a
-  def (+) : a -> b -> Output
+  type Output = a
+  fn (+) : a -> b -> Output
 
 data Ordering = Lt | Eq | Gt
 
