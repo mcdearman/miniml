@@ -13,28 +13,40 @@ pub struct Reader<'src> {
 }
 
 impl<'src> Reader<'src> {
+    #[inline(always)]
     pub fn new(src: &'src str, token_stream: TokenStream<'src>) -> Self {
         Self { src, token_stream }
     }
 
-    #[inline]
+    #[inline(always)]
     fn peek(&mut self) -> Token {
         self.token_stream.peek()
     }
 
-    #[inline]
+    #[inline(always)]
+    fn next(&mut self) -> Token {
+        self.token_stream.next()
+    }
+
+    #[inline(always)]
     fn at(&mut self, kind: TokenKind) -> bool {
         *self.peek().kind() == kind
     }
 
+    #[inline(always)]
     fn eat(&mut self, kind: TokenKind) -> bool {
         if self.at(kind) {
-            self.bump();
+            self.next();
             true
         } else {
-            self.bump();
+            self.next();
             false
         }
+    }
+
+    #[inline(always)]
+    fn text(&self, token: Token) -> &'src str {
+        token.text(self.src)
     }
 
     pub fn read(&mut self) -> (TokenTree, Vec<ReaderError>) {

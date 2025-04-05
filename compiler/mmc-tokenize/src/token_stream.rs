@@ -18,7 +18,7 @@ impl<'src> TokenStream<'src> {
     }
 
     #[inline]
-    pub fn next(&mut self) -> Token {
+    pub fn fetch_token(&mut self) -> Token {
         match self.logos.next().map(|res| match res {
             Ok(t) => (t, Span::from(self.logos.span())),
             Err(_) => (TokenKind::Error, Span::from(self.logos.span())),
@@ -33,22 +33,30 @@ impl<'src> TokenStream<'src> {
         if let Some(token) = self.peek.clone() {
             token
         } else {
-            let token = self.next();
+            let token = self.fetch_token();
             self.peek = Some(token.clone());
             token
+        }
+    }
+
+    #[inline]
+    pub fn next(&mut self) -> Token {
+        if let Some(token) = self.peek.take() {
+            self.peek = None;
+            token
+        } else {
+            self.fetch_token()
         }
     }
 
     pub fn collect_tokens(&mut self) -> Vec<Token> {
         let mut tokens = Vec::new();
         loop {
-            let token = self.peek();
-            if *token.kind() == TokenKind::Eof {
-                tokens.push(token);
+            let token = self.next();
+            if token.kind() == &TokenKind::Eof {
                 break;
             }
             tokens.push(token);
-            self.peek = None;
         }
         tokens
     }

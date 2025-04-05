@@ -8,7 +8,6 @@ pub struct TokenTree {
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum TokenTreeKind {
-    Error,
     Comment,
     Whitespace,
     Delim(Delim),
@@ -75,6 +74,7 @@ pub enum TokenTreeKind {
     Class,
     Instance,
     As,
+    Error,
 }
 
 #[derive(Debug, Clone, PartialEq)]

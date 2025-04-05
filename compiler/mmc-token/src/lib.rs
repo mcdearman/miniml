@@ -33,7 +33,6 @@ impl Token {
 #[derive(Logos, Debug, Clone, PartialEq)]
 pub enum TokenKind {
     Eof,
-    Error,
     #[regex(r"--.*", logos::skip)]
     Comment,
     #[regex(r"[ \t\n\r]+")]
@@ -183,6 +182,7 @@ pub enum TokenKind {
     Instance,
     #[token("as")]
     As,
+    Error,
 }
 
 impl Display for TokenKind {
@@ -190,7 +190,6 @@ impl Display for TokenKind {
         use TokenKind::*;
         match self {
             Eof => write!(f, "Eof"),
-            Error => write!(f, "Error"),
             Comment => write!(f, "Comment"),
             Whitespace => write!(f, "Whitespace"),
             Int(i) => write!(f, "Int({})", i),
@@ -260,6 +259,7 @@ impl Display for TokenKind {
             Class => write!(f, "Class"),
             Instance => write!(f, "Instance"),
             As => write!(f, "As"),
+            Error => write!(f, "Error"),
         }
     }
 }
