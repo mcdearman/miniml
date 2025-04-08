@@ -2,12 +2,63 @@ use mmc_utils::{intern::InternedString, rational::Rational64, span::Span};
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct TokenTree {
-    pub kind: TokenTreeKind,
-    pub span: Span,
+    kind: TokenTreeKind,
+    span: Span,
+}
+
+impl TokenTree {
+    #[inline(always)]
+    pub fn new(kind: TokenTreeKind, span: Span) -> Self {
+        Self { kind, span }
+    }
+
+    #[inline(always)]
+    pub fn kind(&self) -> &TokenTreeKind {
+        &self.kind
+    }
+
+    #[inline(always)]
+    pub fn span(&self) -> Span {
+        self.span
+    }
 }
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum TokenTreeKind {
+    Token(Token),
+    Delim(Delim),
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct Token {
+    kind: TokenKind,
+    span: Span,
+}
+
+impl Token {
+    #[inline(always)]
+    pub fn new(kind: TokenKind, span: Span) -> Self {
+        Self { kind, span }
+    }
+
+    #[inline(always)]
+    pub fn kind(&self) -> &TokenKind {
+        &self.kind
+    }
+
+    #[inline(always)]
+    pub fn span(&self) -> Span {
+        self.span
+    }
+
+    #[inline(always)]
+    pub fn text<'src>(&self, src: &'src str) -> &'src str {
+        &src[self.span]
+    }
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum TokenKind {
     Comment,
     Whitespace,
     Delim(Delim),

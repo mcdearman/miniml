@@ -1,20 +1,22 @@
-use mmc_token::Token;
-use mmc_utils::{intern::InternedString, span::Span};
+use mmc_token_tree::Delim;
+use mmc_utils::span::Span;
 
 #[derive(Debug, Clone)]
 pub struct ReaderError {
-    pub kind: ReaderErrorKind,
-    pub span: Span,
+    delim: Delim,
+    span: Span,
 }
 
-#[derive(Debug, Clone)]
-pub enum ReaderErrorKind {
-    UnexpectedEof,
-    UnexpectedToken(Token),
-    InvalidCharacter(char),
-    InvalidString(InternedString),
-    InvalidNumber(InternedString),
-    InvalidIdentifier(InternedString),
-    InvalidComment(InternedString),
-    InvalidDelimiter(InternedString),
+impl ReaderError {
+    pub fn new(delim: Delim, span: Span) -> Self {
+        Self { delim, span }
+    }
+
+    pub fn delim(&self) -> &Delim {
+        &self.delim
+    }
+
+    pub fn span(&self) -> &Span {
+        &self.span
+    }
 }

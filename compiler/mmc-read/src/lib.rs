@@ -10,12 +10,17 @@ pub mod reader_error;
 pub struct Reader<'src> {
     src: &'src str,
     token_stream: TokenStream<'src>,
+    keep_trivia: bool,
 }
 
 impl<'src> Reader<'src> {
     #[inline(always)]
-    pub fn new(src: &'src str, token_stream: TokenStream<'src>) -> Self {
-        Self { src, token_stream }
+    pub fn new(src: &'src str, token_stream: TokenStream<'src>, keep_trivia: bool) -> Self {
+        Self {
+            src,
+            token_stream,
+            keep_trivia,
+        }
     }
 
     #[inline(always)]
@@ -50,6 +55,9 @@ impl<'src> Reader<'src> {
     }
 
     pub fn read(&mut self) -> (TokenTree, Vec<ReaderError>) {
+        // let mut errors = Vec::new();
+        // let mut tokens = Vec::new();
+
         todo!()
     }
 }
