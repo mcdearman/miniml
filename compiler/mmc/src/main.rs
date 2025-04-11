@@ -63,6 +63,6 @@ fn main() {
             }
         }
     }
-    rl.save_history(".miniml_history")
+    rl.save_history(".repl_history")
         .expect("Failed to save history");
 }

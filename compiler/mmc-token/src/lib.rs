@@ -33,7 +33,7 @@ impl Token {
 #[derive(Logos, Debug, Clone, PartialEq)]
 pub enum TokenKind {
     Eof,
-    #[regex(r"--.*", logos::skip)]
+    #[regex(r"--.*")]
     Comment,
     #[regex(r"[ \t\n\r]+")]
     Whitespace,

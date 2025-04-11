@@ -1,4 +1,4 @@
-record Trie a { 
+struct Trie a { 
   value : Option a, 
   children : Map Char (Trie a)
 }
