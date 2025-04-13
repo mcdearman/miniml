@@ -168,7 +168,8 @@ def foldl f acc xs = match xs with
   [] -> acc
   (x::xs) -> foldl f (f acc x) xs
 
-def foldr f acc xs = match xs with
+def foldr f acc xs = 
+  match xs with
   | [] -> acc
   | (x::xs) -> f x (foldr f acc xs)
 
