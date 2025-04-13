@@ -181,17 +181,16 @@ def foldr : a b. (a -> b -> b) -> b -> [a] -> b
   | f acc [] = acc
   | f acc (x::xs) = f x (foldr f acc xs) 
 
-def binarySearch : a. (a -> Ordering) -> [a] -> a -> Option Int
-  | cmp xs x -> 
-    let loop l r =
-      if l > r then None
-      else
-        let m = (l + r) / 2
-        match cmp x (xs !! m) with
-        | Ordering.Eq -> Some m
-        | Ordering.Lt -> loop l (m - 1)
-        | Ordering.Gt -> loop (m + 1) r
-    in loop 0 (len xs - 1)
+def binarySearch (cmp : a -> Ordering) (xs : [a]) (x : a) : Option Int -> 
+  let loop l r =
+    if l > r then None
+    else
+      let m = (l + r) / 2
+      match cmp x (xs !! m) with
+      | Ordering.Eq -> Some m
+      | Ordering.Lt -> loop l (m - 1)
+      | Ordering.Gt -> loop (m + 1) r
+  in loop 0 (len xs - 1)
 
 -- type alias
 type Point = (Int, Int)

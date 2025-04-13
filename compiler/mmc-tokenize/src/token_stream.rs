@@ -54,6 +54,7 @@ impl<'src> TokenStream<'src> {
         loop {
             let token = self.next();
             if token.kind() == &TokenKind::Eof {
+                tokens.push(token);
                 break;
             }
             tokens.push(token);
