@@ -221,7 +221,7 @@ def bob = Person { name = "Bob", age = 25 }
 pub struct Person
   pub name : String
   pub age : Int
-
+  
 -- Structs can also be initialized like functions with positional arguments.
 -- Even though this looks like a function call, it is actually a struct
 -- initialization under the hood. Note that this is only possible if the
