@@ -1,0 +1,58 @@
+cabal-version:      3.0
+name:               miniML
+version:            0.1.0.0
+synopsis:           The MiniML programming language
+license:            BSD-3-Clause
+license-file:       LICENSE
+author:             Chris McDearman
+maintainer:         mcdearmanchris@gmail.com
+category:           Language
+build-type:         Simple
+extra-doc-files:    CHANGELOG.md
+
+common warnings
+    ghc-options: -Wall -Werror=missing-signatures -Werror=incomplete-patterns -Werror=incomplete-uni-patterns -Wno-unused-do-bind
+
+
+executable miniML
+    import:           warnings
+    main-is:          Main.hs
+    other-modules: 
+        -- MMC.AST
+        MMC.Common
+        -- Core
+        -- Eval
+        -- Infer
+        -- MMC.Lexer
+        -- NIR
+        -- TMC.Parser
+        MMC.Parsec
+        -- TMC.Pipeline
+        -- TMC.Rename
+        -- Scheme
+        -- TIR
+        MMC.Token
+        -- Ty
+    default-extensions: 
+        OverloadedStrings
+        ScopedTypeVariables
+        LambdaCase
+        TupleSections
+        RecordWildCards
+        BangPatterns
+    build-depends:    
+        base,
+        megaparsec,
+        parser-combinators,
+        text,
+        pretty-simple,
+        array,
+        haskeline,
+        intern,
+        containers,
+        mtl,
+        placeholder,
+        effectful,
+        transformers,
+    hs-source-dirs:   compiler
+    default-language: Haskell2010

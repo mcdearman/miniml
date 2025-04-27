@@ -1,9 +1,6 @@
-/target
+dist-*
 .vscode
 .idea
 .DS_Store
-.repl_history
-*.log
-src-old
-dist-*
-flamegraph.svg
+.tinyml_history
+runtime/target

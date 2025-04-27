@@ -1,3 +1,0 @@
--- macro to test if an expression matches a pattern
-macroRules matches! =
-  { $e:ident $p:pat => $b:expr } => { if $p $e then $b else 0 }

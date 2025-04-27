@@ -1,1 +1,4 @@
-def e5 : Int = foldl lcm 2520 [11..=20]
+def e5 : Int = foldl' lcm 2520 [11..20]
+  where def lcm a b = a * b / gcd a b
+        def gcd a 0 = a
+          | gcd a b = gcd b (a % b)

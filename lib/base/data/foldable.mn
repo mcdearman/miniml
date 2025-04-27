@@ -1,0 +1,6 @@
+pub class Foldable (t : Type -> Type) where
+  fold : (a -> b -> a) -> a -> t b -> a
+  foldl : (a -> b -> a) -> a -> t b -> a
+  foldl' : (a -> b -> a) -> a -> t b -> a
+  foldr : (a -> b -> b) -> b -> t a -> b
+  foldr' : (a -> b -> b) -> b -> t a -> b
