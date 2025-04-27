@@ -26,10 +26,11 @@ jobs:
 
       - name: Install GHC and Cabal
         run: |
-          ghcup install ghc 9.6.7
-          ghcup set    ghc 9.6.7
-          ghcup install cabal 3.2.0.0
-          ghcup set    cabal 3.2.0.0
+          ghcup upgrade
+          ghcup install ghc
+          ghcup set    ghc
+          ghcup install cabal
+          ghcup set    cabal
 
       - name: Ensure ghcup binaries are on PATH
         shell: bash
@@ -38,10 +39,10 @@ jobs:
       - name: Cache ~/.cabal and ~/.ghcup
         uses: actions/cache@v3
         with:
-          path:       |
+          path: |
             ~/.cabal
             ~/.ghcup
-          key:        ${{ runner.os }}-ghcup-${{ hashFiles('**/*.cabal','**/cabal.project') }}
+          key: ${{ runner.os }}-ghcup-${{ hashFiles('**/*.cabal','**/cabal.project') }}
           restore-keys: |
             ${{ runner.os }}-ghcup-
 
