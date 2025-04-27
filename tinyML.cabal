@@ -47,11 +47,7 @@ executable miniML
         pretty-simple,
         array,
         haskeline,
-        intern,
         containers,
-        mtl,
-        placeholder,
         effectful,
-        transformers,
     hs-source-dirs:   compiler
     default-language: Haskell2010
