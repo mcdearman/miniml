@@ -9,7 +9,7 @@ import Text.Megaparsec (errorBundlePretty)
 import Text.Pretty.Simple (pShow)
 
 settings :: Settings IO
-settings = defaultSettings {historyFile = Just ".tinyml_history"}
+settings = defaultSettings {historyFile = Just ".repl_history"}
 
 -- repl :: Compiler -> InputT IO ()
 -- repl c = do

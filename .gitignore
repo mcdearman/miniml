@@ -2,5 +2,5 @@ dist-*
 .vscode
 .idea
 .DS_Store
-.tinyml_history
+.repl_history
 runtime/target

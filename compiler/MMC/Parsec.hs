@@ -4,10 +4,8 @@
 module MMC.Parsec where
 
 import Control.Applicative
-import Control.Monad
 import Control.Monad.Identity
 import Control.Monad.Trans.Class
-import Data.Semigroup (Semigroup ((<>)))
 
 -- | Parse result: recoverable errors or hard failure for backtracking
 data Result e a
@@ -99,6 +97,7 @@ satisfy test extr errF hole = ParsecT $ \case
   [] ->
     let e = errF (error "no token")
      in pure (Result [e] hole, [])
+
 -- | Get current offset
 getOffset :: (Monad m) => ParsecT t e m Int
 getOffset = ParsecT $ \xs -> do
