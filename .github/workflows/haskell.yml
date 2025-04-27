@@ -12,31 +12,45 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
-
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-haskell@v1
-        with:
-          ghc-version: "9.6.7"
-          cabal-version: "3.2"
 
-      - name: Cache
+      - name: Bootstrap ghcup (non-interactive)
+        run: |
+          curl https://get-ghcup.haskell.org -sSf \
+            | BOOTSTRAP_HASKELL_NONINTERACTIVE=1 sh
+
+      - name: Activate ghcup in current shell
+        run: |
+          source "$HOME/.ghcup/env"
+
+      - name: Install GHC and Cabal
+        run: |
+          ghcup install ghc 9.6.7
+          ghcup set    ghc 9.6.7
+          ghcup install cabal 3.2.0.0
+          ghcup set    cabal 3.2.0.0
+
+      - name: Ensure ghcup binaries are on PATH
+        shell: bash
+        run: echo "$HOME/.ghcup/bin" >> $GITHUB_PATH
+
+      - name: Cache ~/.cabal and ~/.ghcup
         uses: actions/cache@v3
-        env:
-          cache-name: cache-cabal
         with:
-          path: ~/.cabal
-          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/*.cabal') }}-${{ hashFiles('**/cabal.project') }}
+          path:       |
+            ~/.cabal
+            ~/.ghcup
+          key:        ${{ runner.os }}-ghcup-${{ hashFiles('**/*.cabal','**/cabal.project') }}
           restore-keys: |
-            ${{ runner.os }}-build-${{ env.cache-name }}-
-            ${{ runner.os }}-build-
-            ${{ runner.os }}-
+            ${{ runner.os }}-ghcup-
 
       - name: Install dependencies
         run: |
           cabal update
           cabal build --only-dependencies --enable-tests --enable-benchmarks
-      - name: Build
-        run: cabal build --enable-tests --enable-benchmarks all
-      - name: Run tests
-        run: cabal test all
+
+      - name: Build & Test
+        run: |
+          cabal build --enable-tests --enable-benchmarks all
+          cabal test all
