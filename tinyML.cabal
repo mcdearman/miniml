@@ -42,7 +42,6 @@ executable miniML
         BangPatterns
     build-depends:    
         base,
-        megaparsec,
         parser-combinators,
         text,
         pretty-simple,

@@ -27,10 +27,10 @@ jobs:
       - name: Install GHC and Cabal
         run: |
           ghcup upgrade
-          ghcup install ghc
-          ghcup set    ghc
-          ghcup install cabal
-          ghcup set    cabal
+          ghcup install ghc 9.6.7
+          ghcup set    ghc 9.6.7
+          ghcup install cabal 3.2.0
+          ghcup set    cabal 3.2.0
 
       - name: Ensure ghcup binaries are on PATH
         shell: bash
