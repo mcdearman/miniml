@@ -1,11 +1,7 @@
 module Main where
 
-import Control.Monad.State.Strict (evalState, runState)
-import Data.Text (pack, unpack)
-import Data.Text.Lazy (toStrict)
 import MMC.Common
 import System.Console.Haskeline
-import Text.Megaparsec (errorBundlePretty)
 import Text.Pretty.Simple (pShow)
 
 settings :: Settings IO

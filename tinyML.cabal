@@ -49,5 +49,7 @@ executable miniML
         haskeline,
         containers,
         effectful,
+        transformers,
+        mtl,
     hs-source-dirs:   compiler
     default-language: Haskell2010
