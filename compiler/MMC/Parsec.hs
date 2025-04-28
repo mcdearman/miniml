@@ -74,6 +74,48 @@ instance MonadTrans (ParsecT t e) where
     v <- m
     pure (Result [] v, xs)
 
+-- | Get current offset
+getOffset :: (Monad m) => ParsecT t e m Int
+getOffset = ParsecT $ \xs -> do
+  let offset = length xs
+  pure (Result [] offset, xs)
+
+-- | `single` t matches the single token t.
+single ::
+  (Monad m) =>
+  -- | extract on success
+  (t -> a) ->
+  -- | error on failure
+  (t -> e) ->
+  -- | hole on failure
+  a ->
+  ParsecT t e m a
+single extr errF hole = ParsecT $ \case
+  (x : xs') ->
+    let v = extr x
+     in pure (Result [] v, xs')
+  [] ->
+    let e = errF (error "no token")
+     in pure (Result [e] hole, [])
+
+-- | A generic `any` combinator that records errors but does not Fail
+any ::
+  (Monad m) =>
+  -- | extract on success
+  (t -> a) ->
+  -- | error on failure
+  (t -> e) ->
+  -- | hole on failure
+  a ->
+  ParsecT t e m a
+any extr errF hole = ParsecT $ \case
+  (x : xs') ->
+    let v = extr x
+     in pure (Result [] v, xs')
+  [] ->
+    let e = errF (error "no token")
+     in pure (Result [e] hole, [])
+
 -- | A generic `satisfy` combinator that records errors but does not Fail
 satisfy ::
   (Monad m) =>
@@ -98,15 +140,10 @@ satisfy test extr errF hole = ParsecT $ \case
     let e = errF (error "no token")
      in pure (Result [e] hole, [])
 
--- | Get current offset
-getOffset :: (Monad m) => ParsecT t e m Int
-getOffset = ParsecT $ \xs -> do
-  let offset = length xs
-  pure (Result [] offset, xs)
-
--- | A generic `any` combinator that records errors but does not Fail
-any ::
-  (Monad m) =>
+oneOf ::
+  (Monad m, Eq t) =>
+  -- | list of tokens
+  [t] ->
   -- | extract on success
   (t -> a) ->
   -- | error on failure
@@ -114,10 +151,39 @@ any ::
   -- | hole on failure
   a ->
   ParsecT t e m a
-any extr errF hole = ParsecT $ \case
+oneOf ts extr errF hole = ParsecT $ \case
+  (x : xs')
+    | x `elem` ts ->
+        let v = extr x
+         in pure (Result [] v, xs')
   (x : xs') ->
-    let v = extr x
-     in pure (Result [] v, xs')
+    let e = errF x
+     in pure (Result [e] hole, xs')
+  [] ->
+    let e = errF (error "no token")
+     in pure (Result [e] hole, [])
+
+between ::
+  (Monad m, Eq t) =>
+  -- | opening token
+  t ->
+  -- | closing token
+  t ->
+  -- | extract on success
+  (t -> a) ->
+  -- | error on failure
+  (t -> e) ->
+  -- | hole on failure
+  a ->
+  ParsecT t e m a
+between open close extr errF hole = ParsecT $ \case
+  (x : xs)
+    | x == open ->
+        let v = extr x
+         in pure (Result [] v, xs)
+  (x : xs) ->
+    let e = errF x
+     in pure (Result [e] hole, xs)
   [] ->
     let e = errF (error "no token")
      in pure (Result [e] hole, [])
