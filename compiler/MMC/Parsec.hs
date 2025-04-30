@@ -7,6 +7,10 @@ import Control.Applicative
 import Control.Monad.Identity
 import Control.Monad.Trans.Class
 
+class Stream t where
+  -- | Extract a token from the stream
+  uncons :: [t] -> Maybe (t, [t])
+
 -- | Parse result: recoverable errors or hard failure for backtracking
 data Result e a
   = Fail
