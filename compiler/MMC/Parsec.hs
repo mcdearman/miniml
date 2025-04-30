@@ -1,15 +1,28 @@
 {-# LANGUAGE DeriveFunctor #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE TypeFamilies #-}
 
 module MMC.Parsec where
 
 import Control.Applicative
 import Control.Monad.Identity
 import Control.Monad.Trans.Class
+import Data.Kind (Type)
 
-class Stream t where
-  -- | Extract a token from the stream
-  uncons :: [t] -> Maybe (t, [t])
+class Stream s where
+  data Token s :: Type
+
+  take1' :: s -> Maybe (Token s, s)
+
+  takeWhile' :: (Token s -> Bool) -> s -> (s, s)
+  takeWhile' p xs = go xs
+    where
+      go xs' =
+        case take1' xs' of
+          Just (x, xs'') | p x -> let (ys, zs) = go xs'' in (x : ys, zs)
+          _ -> ([], xs')
+
+
 
 -- | Parse result: recoverable errors or hard failure for backtracking
 data Result e a
