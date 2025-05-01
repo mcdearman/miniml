@@ -22,8 +22,6 @@ class Stream s where
           Just (x, xs'') | p x -> let (ys, zs) = go xs'' in (x : ys, zs)
           _ -> ([], xs')
 
-
-
 -- | Parse result: recoverable errors or hard failure for backtracking
 data Result e a
   = Fail
