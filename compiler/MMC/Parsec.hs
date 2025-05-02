@@ -1,6 +1,8 @@
 {-# LANGUAGE DeriveFunctor #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE RequiredTypeArguments #-}
+{-# LANGUAGE TypeOperators #-}
 
 module MMC.Parsec where
 
@@ -11,16 +13,18 @@ import Data.Kind (Type)
 
 class Stream s where
   data Token s :: Type
+  data Tokens s :: Type
 
-  take1' :: s -> Maybe (Token s, s)
+  tokenToChunk :: forall c -> s ~ c => Token s -> Tokens s
+  tokenToChunk pxy = tokensToChunk pxy . pure
 
-  takeWhile' :: (Token s -> Bool) -> s -> (s, s)
-  takeWhile' p xs = go xs
-    where
-      go xs' =
-        case take1' xs' of
-          Just (x, xs'') | p x -> let (ys, zs) = go xs'' in (x : ys, zs)
-          _ -> ([], xs')
+  tokensToChunk :: forall c -> s ~ c => Tokens s -> Tokens s
+
+  take1 :: s -> Maybe (Token s, s)
+
+  takeN :: Int -> s -> (Tokens s, s)
+
+  takeWhile :: (Token s -> Bool) -> s -> (s, s)
 
 -- | Parse result: recoverable errors or hard failure for backtracking
 data Result e a
