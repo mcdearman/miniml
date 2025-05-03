@@ -27,6 +27,7 @@ executable miniML
         -- NIR
         -- TMC.Parser
         MMC.Parsec
+        MMC.Parsec.State
         MMC.Parsec.Stream
         -- TMC.Pipeline
         -- TMC.Rename

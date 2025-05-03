@@ -22,3 +22,6 @@ The official implementation of the miniML programming language
 - IDE with multiple views of the code
 - Platform-independent distributable low-level IR
 - Visual programming
+- Aspect-oriented programming with decorators/attributes
+- Runtime monitoring and reflection
+
