@@ -1,7 +1,7 @@
 {-# LANGUAGE DeriveFunctor #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
-{-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE RequiredTypeArguments #-}
+{-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TypeOperators #-}
 
 module MMC.Parsec where
@@ -9,22 +9,6 @@ module MMC.Parsec where
 import Control.Applicative
 import Control.Monad.Identity
 import Control.Monad.Trans.Class
-import Data.Kind (Type)
-
-class Stream s where
-  data Token s :: Type
-  data Tokens s :: Type
-
-  tokenToChunk :: forall c -> s ~ c => Token s -> Tokens s
-  tokenToChunk pxy = tokensToChunk pxy . pure
-
-  tokensToChunk :: forall c -> s ~ c => Tokens s -> Tokens s
-
-  take1 :: s -> Maybe (Token s, s)
-
-  takeN :: Int -> s -> (Tokens s, s)
-
-  takeWhile :: (Token s -> Bool) -> s -> (s, s)
 
 -- | Parse result: recoverable errors or hard failure for backtracking
 data Result e a
