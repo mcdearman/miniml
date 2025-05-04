@@ -38,6 +38,7 @@ executable miniML
         -- Ty
     default-extensions: 
         OverloadedStrings
+        MagicHash
         ScopedTypeVariables
         LambdaCase
         TupleSections
