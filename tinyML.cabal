@@ -43,6 +43,7 @@ executable miniML
         TupleSections
         RecordWildCards
         BangPatterns
+        TypeFamilies
     build-depends:    
         base,
         parser-combinators,
