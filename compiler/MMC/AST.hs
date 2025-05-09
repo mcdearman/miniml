@@ -44,6 +44,7 @@ data FnDefSort = FnDef
     fnBody :: Expr
   }
   deriving (Show, Eq)
+
 type Expr = Spanned ExprSort
 
 data ExprSort

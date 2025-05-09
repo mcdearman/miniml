@@ -17,7 +17,7 @@ executable miniML
     import:           warnings
     main-is:          Main.hs
     other-modules: 
-        -- MMC.AST
+        MMC.AST
         MMC.Common
         -- Core
         -- Eval
