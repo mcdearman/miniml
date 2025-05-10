@@ -143,14 +143,14 @@ pub def foldl : (a -> b -> a) -> a -> [b] -> a
   | f acc []      = acc
   | f acc (x::xs) = foldl f (f acc x) xs
 
-def foldl : a b e. (a -> b -> a ! e) -> a -> [b] -> a ! e =
+def foldl (f : a -> b -> a) (acc : a) (xs : [b]) : a =
   match xs with
-    f acc []      = acc
-    f acc (x::xs) = foldl f (f acc x) xs
+    [] -> acc
+    (x::xs) -> foldl f (f acc x) xs
 
 def foldl : (a -> b -> a) -> a -> [b] -> a
-  | foldl f acc [] = acc
-  | foldl f acc (x::xs) = foldl f (f acc x) xs
+  | f acc [] = acc
+  | f acc (x::xs) = foldl f (f acc x) xs
 
 def foldl a b. (f : a -> b -> a) (acc: a) (xs : [b]) : a =
   match xs with

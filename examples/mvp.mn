@@ -32,7 +32,7 @@ let x = 1 in x + 1
 let f x = x + 1 in f 1
 
 -- record definition
-record Point { x : Int, y : Int }
+data Point { x : Int, y : Int }
 
 -- record instantiation and field access
 let p = Point { x = 1, y = 2 } in p.x + p.y

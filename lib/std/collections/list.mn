@@ -1,20 +1,22 @@
 -- A pair list is either empty or a pair of an element and a pair list.
-pub data List a = [] | a :: List a
+data List a = [] | a :: List a
 
 -- | `length` returns the length of a finite list as a `Nat`.
-pub def length : List a -> Nat =
-  | [] = 0
-  | xs = loop xs 0
-  where
-    def rec loop =
-      | [] n = n
-      | (x::xs) n = loop xs (n + 1)
+length : List a -> Nat
+length = foldl' (\c _ -> c + 1) 0
 
-pub def rec map : (a -> b) -> List a -> List b
-  | f [] = []
-  | f (x::xs) = f x :: map f xs
+-- | `map` takes a function `f` and a list `xs` and returns the list of
+-- the results of applying `f` to each element of `xs`.
+map : (a -> b) -> List a -> List b
+map f [] = []
+map f (x::xs) = f x :: map f xs
 
-pub def rec foldl : (a -> b -> a) -> a -> List b -> a =
+pub def map (f : a -> b) (xs : List a) : List b =
+  match xs with
+    [] -> []
+    (x::xs) -> f x :: map f xs
+
+pub def foldl : (a -> b -> a) -> a -> List b -> a =
   | f acc [] = acc
   | f acc (x::xs) = foldl f (f acc x) xs
 
