@@ -1,4 +1,6 @@
-pub class Monad (m : Type -> Type) where
+module Base.Control.Monad ( Monad )
+
+class Monad (m : Type -> Type) where
   (>>=) : m a -> (a -> m b) -> m b
   (>>) : m a -> m b -> m b
   join : m (m a) -> m a

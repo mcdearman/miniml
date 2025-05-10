@@ -1,4 +1,4 @@
-module std.collections.list 
+module Std.Collections.List 
   ( List(..),
     length,
     map,

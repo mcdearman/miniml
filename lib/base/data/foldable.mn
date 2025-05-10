@@ -1,4 +1,6 @@
-pub class Foldable (t : Type -> Type) where
+module Base.Data.Foldable ( Foldable )
+
+class Foldable (t : Type -> Type) where
   fold : (a -> b -> a) -> a -> t b -> a
   foldl : (a -> b -> a) -> a -> t b -> a
   foldl' : (a -> b -> a) -> a -> t b -> a
