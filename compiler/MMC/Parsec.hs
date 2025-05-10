@@ -4,6 +4,12 @@
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TypeOperators #-}
 
+module MMC.Parsec
+  ( Parsec,
+  -- runParsec,
+  )
+where
+
 import Control.Monad.Identity (Identity, runIdentity)
 import Data.Void (Void)
 import MMC.Parsec.Internal (ParsecT, Result, runParsecT)

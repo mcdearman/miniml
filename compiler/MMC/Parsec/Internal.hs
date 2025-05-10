@@ -6,7 +6,14 @@
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TypeOperators #-}
 
-module MMC.Parsec.Internal where
+module MMC.Parsec.Internal
+  ( ParsecT (..),
+    Result (..),
+    -- runParsecT,
+    -- Parsec,
+    -- runParsec,
+  )
+where
 
 import Control.Applicative
 import Control.Monad.Identity
