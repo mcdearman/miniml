@@ -1,6 +1,6 @@
-{-# LANGUAGE TypeFamilies #-}
+-- {-# LANGUAGE TypeFamilies #-}
 
-module MMC.Lexer where
+-- module MMC.Lexer where
 
 -- import TMC.Common (Span (..), defaultSpan)
 -- import Control.Applicative (empty, (<|>))
