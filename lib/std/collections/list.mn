@@ -1,171 +1,174 @@
 module Std.Collections.List 
-  ( List(..),
-    length,
-    map,
-    foldl,
-    foldl',
-    foldr,
-    filter,
-    concat,
-    concatMap,
-    (++),
-    reverse,
-    zip,
-    zipWith,
-    unzip,
-    foldl1,
-    foldr1,
-    all?,
-    any?,
-    elem?,
-    sum,
-    product,
-    take,
-    drop,
-    takeWhile,
-    dropWhile,
-    splitAt,
-    span,
-    intersperse,
-    intercalate 
-  )
 
 -- A pair list is either empty or a pair of an element and a pair list.
+@pub
 data List a = [] | a :: List a
 
 -- | `length` returns the length of a finite list as a `Nat`.
-length : List a -> USize
+@pub
+length : [a] -> Nat
 length = foldl' (\c _ -> c + 1) 0
 
 -- | `map` takes a function `f` and a list `xs` and returns the list of
 -- the results of applying `f` to each element of `xs`.
-map : (a -> b) -> List a -> List b
+@pub
+map : (a -> b) -> [a] -> [b]
 map f [] = []
 map f (x::xs) = f x :: map f xs
 
-foldl : (a -> b -> a) -> a -> List b -> a
+pub def map : (a -> b) -> [a] -> [b] = fun
+  | f [] = []
+  | f (x::xs) = f x :: map f xs
+
+pub def map (f : a -> b) (xs : [a]) : [b] = 
+  match xs with
+    [] -> []
+    (x::xs) -> f x :: map f xs
+
+@pub
+foldl : (a -> b -> a) -> a -> [b] -> a
 foldl f acc [] = acc
 foldl f acc (x::xs) = foldl f (f acc x) xs
 
-foldl' : (a -> b -> a) -> a -> List b -> a
+@pub
+foldl' : (a -> b -> a) -> a -> [b] -> a
 foldl' f !acc [] = acc
 foldl' f !acc (x::xs) = foldl' f (f acc x) xs
 
-foldr : (a -> b -> b) -> b -> List a -> b
+foldr : (a -> b -> b) -> b -> [a] -> b
 foldr f acc [] = acc
 foldr f acc (x::xs) = f x (foldr f acc xs)
 
-filter : (a -> Bool) -> List a -> List a
+filter : (a -> Bool) -> [a] -> [a]
 filter f [] = []
 filter f (x::xs) if f x = x :: filter f xs 
 filter f (_::xs) = filter f xs
 
-concat : List (List a) -> List a
+concat : List ([a]) -> [a]
 concat [] = []
 concat (x::xs) = x ++ concat xs
 
-concatMap : (a -> List b) -> List a -> List b 
+concatMap : (a -> [b]) -> [a] -> [b] 
 concatMap = concat . map
 
-(++) : List a -> List a -> List a
+(++) : [a] -> [a] -> [a]
 [] ++ ys = ys
 (x::xs) ++ ys = x :: (xs ++ ys)
 
 reverse : [a] -> [a]
 reverse = foldl' (flip (::)) []
 
-zip : List a -> List b -> List (a, b)
+zip : [a] -> [b] -> [(a, b)]
 zip [] _ = []
 zip _ [] = []
 zip (x::xs) (y::ys) = (x, y) :: zip xs ys
 
-zipWith : (a -> b -> c) -> List a -> List b -> List c
+zipWith : (a -> b -> c) -> [a] -> [b] -> [c]
 zipWith f [] _ = []
 zipWith _ [] = []
 zipWith (x::xs) (y::ys) = f x y :: zipWith f xs ys
 
-unzip : List (a, b) -> (List a, List b)
+unzip : [(a, b)] -> ([a], [b])
 unzip [] = ([], [])
 unzip (x, y) :: xs = let (xs1, ys1) = unzip xs in (x :: xs1, y :: ys1)
 
-foldl1 : (a -> a -> a) -> List a -> a
+foldl1 : (a -> a -> a) -> [a] -> a
 foldl1 f (x::xs) = foldl f x xs
 
-foldr1 : (a -> a -> a) -> List a -> a
+foldr1 : (a -> a -> a) -> [a] -> a
 foldr1 f (x::xs) = foldr f x xs
 
-all? : (a -> Bool) -> List a -> Bool
+all? : (a -> Bool) -> [a] -> Bool
 all? f [] = true
 all? f (x::xs) = f x && all? f xs
 
-any? : (a -> Bool) -> List a -> Bool
+any? : (a -> Bool) -> [a] -> Bool
 any? f [] = false
 any? f (x::xs) = f x || any? f xs
 
-elem? : a -> List a -> Bool
+elem? : a -> [a] -> Bool
 elem? x [] = false
 elem? x (y::ys) = if x = y then true else elem? x ys
 
-sum : Num a => List a -> a 
+sum : Num a => [a] -> a 
 sum = foldl' (+) 0
 
-product : Num a => List a -> a
+product : Num a => [a] -> a
 product = foldl' (*) 1
 
-take : USize -> List a -> List a
-take n [] = []
-take n (x::xs) = if n > 0 then x :: take (n - 1) xs else []
-take n (x::xs)
-  | n <= 0 = []
-  | _ (x::xs) = x :: take (n - 1) xs
+take : Nat -> [a] -> [a]
+take n ls
+  | 0 < n = unsafeTake n ls
+  | otherwise = []
+  where
+    -- A version of take that takes the whole list if given an argument
+    -- less than 1
+    unsafeTake :: Nat -> [a] -> [a]
+    unsafeTake !_ [] = []
+    unsafeTake 1 (x:_) = [x]
+    unsafeTake m (x:xs) = x :: unsafeTake (m - 1) xs
 
-drop : USize -> List a -> List a
-drop n [] = []
-drop n (x::xs) if n > 0 = drop (n - 1) xs 
-drop _ (x::xs) = x :: xs
+drop : Nat -> [a] -> [a]
+drop n ls
+  | n <= 0 = ls
+  | otherwise = unsafeDrop n ls
+  where
+    -- A version of drop that drops the whole list if given an argument
+    -- less than 1
+    unsafeDrop :: Nat -> [a] -> [a]
+    unsafeDrop !_ [] = []
+    unsafeDrop 1 (_:xs) = xs
+    unsafeDrop m (_:xs) = unsafeDrop (m - 1) xs
 
-takeWhile : (a -> Bool) -> List a -> List a 
+takeWhile : (a -> Bool) -> [a] -> [a] 
 takeWhile f [] = []
 takeWhile f (x::xs) if f x = x :: takeWhile f xs
 takeWhile _ _ = []
 
-dropWhile : (a -> Bool) -> List a -> List a
+dropWhile : (a -> Bool) -> [a] -> [a]
 dropWhile f [] = []
 dropWhile f (x::xs) if f x = dropWhile f xs
 dropWhile _ (x::xs) = x :: xs
 
-splitAt : USize -> List a -> (List a, List a)
-splitAt n [] = ([], [])
-splitAt n (x::xs)
-  | n > = let (ys, zs) = splitAt (n - 1) xs in (x :: ys, zs) 
-  | otherwise ([], x :: xs)
+splitAt : Nat -> [a] -> ([a], [a])
+splitAt n ls
+  | n <= 0 = ([], ls)
+  | otherwise = splitAt' n ls
+  where
+    splitAt' :: Int -> [a] -> ([a], [a])
+    splitAt' _ [] = ([], [])
+    splitAt' 1 (x:xs) = ([x], xs)
+    splitAt' m (x:xs) = (x:xs', xs'')
+      where
+        (xs', xs'') = splitAt' (m - 1) xs
 
-span : (a -> Bool) -> List a -> (List a, List a)
-span p [] = ([], [])
-span p (x::xs) if p x = let (ys, zs) = span p xs in (x :: ys, zs)
-span _ xs = ([], xs)
+span : (a -> Bool) -> [a] -> ([a], [a])
+span _ xs@[] = (xs, xs)
+span p xs@(x:xs')
+         | p x = let (ys,zs) = span p xs' in (x:ys,zs)
+         | otherwise = ([],xs)
 
-intersperse : a -> List a -> List a
+intersperse : a -> [a] -> [a]
 intersperse x [] = []
 intersperse x (y::ys) = y :: x :: intersperse x ys
 
-intercalate : List a -> List (List a) -> List a
+intercalate : [a] -> [[a]] -> [a]
 intercalate xs xss = concat (intersperse xs xss)
 
-instance Functor List where
+instance Functor [a] where
   map f xs = foldr (fun x acc -> f x :: acc) [] xs
   (<$) x xs = map (fun _ -> x) xs
   (<$>) f xs = map f xs
   (<*>) fs xs = foldr (fun f acc -> map f xs ++ acc) [] fs
 
-instance Applicative List where
+instance Applicative [a] where
   pure x = [x]
   (<*>) fs xs = foldr (fun f acc -> map f xs ++ acc) [] fs
   (<$) x xs = map (fun _ -> x) xs
   (<*>) fs xs = foldr (fun f acc -> map f xs ++ acc) [] fs
   liftA2 f xs ys = foldr (fun x acc -> map (f x) ys ++ acc) [] xs
 
-instance Monad List where
+instance Monad [a] where
   (>>=) xs f = foldr (fun x acc -> map f x ++ acc) [] xs
   (>>) xs ys = foldr (fun _ acc -> ys ++ acc) [] xs
   join xs = foldr (fun x acc -> x ++ acc) [] xs

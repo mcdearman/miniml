@@ -5,10 +5,10 @@
 1 / 2
 
 -- value definition
-def x = 1
+x = 1
 
 -- function definition
-def f x = x + 1
+f x = x + 1
 
 -- lambda
 \a b -> a + b
