@@ -1,8 +1,40 @@
+module std.collections.list 
+  ( List(..),
+    length,
+    map,
+    foldl,
+    foldl',
+    foldr,
+    filter,
+    concat,
+    concatMap,
+    (++),
+    reverse,
+    zip,
+    zipWith,
+    unzip,
+    foldl1,
+    foldr1,
+    all?,
+    any?,
+    elem?,
+    sum,
+    product,
+    take,
+    drop,
+    takeWhile,
+    dropWhile,
+    splitAt,
+    span,
+    intersperse,
+    intercalate 
+  )
+
 -- A pair list is either empty or a pair of an element and a pair list.
 data List a = [] | a :: List a
 
 -- | `length` returns the length of a finite list as a `Nat`.
-length : List a -> Nat
+length : List a -> USize
 length = foldl' (\c _ -> c + 1) 0
 
 -- | `map` takes a function `f` and a list `xs` and returns the list of
@@ -11,133 +43,132 @@ map : (a -> b) -> List a -> List b
 map f [] = []
 map f (x::xs) = f x :: map f xs
 
-pub def map (f : a -> b) (xs : List a) : List b =
-  match xs with
-    [] -> []
-    (x::xs) -> f x :: map f xs
+foldl : (a -> b -> a) -> a -> List b -> a
+foldl f acc [] = acc
+foldl f acc (x::xs) = foldl f (f acc x) xs
 
-pub def foldl : (a -> b -> a) -> a -> List b -> a =
-  | f acc [] = acc
-  | f acc (x::xs) = foldl f (f acc x) xs
+foldl' : (a -> b -> a) -> a -> List b -> a
+foldl' f !acc [] = acc
+foldl' f !acc (x::xs) = foldl' f (f acc x) xs
 
-pub def rec foldl' : (a -> b -> a) -> a -> List b -> a =
-  | f !acc [] = acc
-  | f !acc (x::xs) = foldl' f (f acc x) xs
+foldr : (a -> b -> b) -> b -> List a -> b
+foldr f acc [] = acc
+foldr f acc (x::xs) = f x (foldr f acc xs)
 
-pub def rec foldr : (a -> b -> b) -> b -> List a -> b
-  | f acc [] = acc
-  | f acc (x::xs) = f x (foldr f acc xs)
+filter : (a -> Bool) -> List a -> List a
+filter f [] = []
+filter f (x::xs) if f x = x :: filter f xs 
+filter f (_::xs) = filter f xs
 
-pub def rec filter : (a -> Bool) -> List a -> List a
-  | f [] = []
-  | f (x::xs) if f x = x :: filter f xs 
-  | f (_::xs) = filter f xs
+concat : List (List a) -> List a
+concat [] = []
+concat (x::xs) = x ++ concat xs
 
-pub def concat : List (List a) -> List a
-  | [] = []
-  | (x::xs) = x ++ concat xs
+concatMap : (a -> List b) -> List a -> List b 
+concatMap = concat . map
 
-pub def concatMap : (a -> List b) -> List a -> List b = 
-  concat . map
+(++) : List a -> List a -> List a
+[] ++ ys = ys
+(x::xs) ++ ys = x :: (xs ++ ys)
 
-pub def (++) : List a -> List a -> List a
-  | [] ++ ys = ys
-  | (x::xs) ++ ys = x :: (xs ++ ys)
+reverse : [a] -> [a]
+reverse = foldl' (flip (::)) []
 
-pub def reverse : [a] -> [a] = 
-  foldl' (flip (::)) []
+zip : List a -> List b -> List (a, b)
+zip [] _ = []
+zip _ [] = []
+zip (x::xs) (y::ys) = (x, y) :: zip xs ys
 
-pub def zip : List a -> List b -> List (a, b) =
-  | [] _ = []
-  | _ [] = []
-  | (x::xs) (y::ys) = (x, y) :: zip xs ys
+zipWith : (a -> b -> c) -> List a -> List b -> List c
+zipWith f [] _ = []
+zipWith _ [] = []
+zipWith (x::xs) (y::ys) = f x y :: zipWith f xs ys
 
-pub def zipWith : (a -> b -> c) -> List a -> List b -> List c =
-  | f [] _ = []
-  | _ [] = []
-  | (x::xs) (y::ys) = f x y :: zipWith f xs ys
+unzip : List (a, b) -> (List a, List b)
+unzip [] = ([], [])
+unzip (x, y) :: xs = let (xs1, ys1) = unzip xs in (x :: xs1, y :: ys1)
 
-pub def unzip : List (a, b) -> (List a, List b) =
-  | [] = ([], [])
-  | (x, y) :: xs = let (xs1, ys1) = unzip xs in (x :: xs1, y :: ys1)
+foldl1 : (a -> a -> a) -> List a -> a
+foldl1 f (x::xs) = foldl f x xs
 
-pub def foldl1 : (a -> a -> a) -> List a -> a =
-  | f (x::xs) = foldl f x xs
+foldr1 : (a -> a -> a) -> List a -> a
+foldr1 f (x::xs) = foldr f x xs
 
-pub def foldr1 : (a -> a -> a) -> List a -> a =
-  | f (x::xs) = foldr f x xs
+all? : (a -> Bool) -> List a -> Bool
+all? f [] = true
+all? f (x::xs) = f x && all? f xs
 
-pub def all : (a -> Bool) -> List a -> Bool =
-  | f [] = true
-  | f (x::xs) = f x && all f xs
+any? : (a -> Bool) -> List a -> Bool
+any? f [] = false
+any? f (x::xs) = f x || any? f xs
 
-pub def any : (a -> Bool) -> List a -> Bool =
-  | f [] = false
-  | f (x::xs) = f x || any f xs
+elem? : a -> List a -> Bool
+elem? x [] = false
+elem? x (y::ys) = if x = y then true else elem? x ys
 
-pub def isElem : a -> List a -> Bool =
-  | x [] = false
-  | x (y::ys) = if x = y then true else isElem x ys
+sum : Num a => List a -> a 
+sum = foldl' (+) 0
 
-pub def sum : Num a => List a -> a = foldl' (+) 0
+product : Num a => List a -> a
+product = foldl' (*) 1
 
-pub def product : Num a => List a -> a = foldl' (*) 1
+take : USize -> List a -> List a
+take n [] = []
+take n (x::xs) = if n > 0 then x :: take (n - 1) xs else []
+take n (x::xs)
+  | n <= 0 = []
+  | _ (x::xs) = x :: take (n - 1) xs
 
-pub def take : Int -> List a -> List a =
-  | n [] = []
-  | n (x::xs) = if n > 0 then x :: take (n - 1) xs else []
+drop : USize -> List a -> List a
+drop n [] = []
+drop n (x::xs) if n > 0 = drop (n - 1) xs 
+drop _ (x::xs) = x :: xs
 
-pub def drop : Int -> List a -> List a =
-  | n [] = []
-  | n (x::xs) if n > 0 = drop (n - 1) xs 
-  | _ (x::xs) = x :: xs
+takeWhile : (a -> Bool) -> List a -> List a 
+takeWhile f [] = []
+takeWhile f (x::xs) if f x = x :: takeWhile f xs
+takeWhile _ _ = []
 
-pub def takeWhile : (a -> Bool) -> List a -> List a =
-  | f [] = []
-  | f (x::xs) if f x = x :: takeWhile f xs
-  | _ _ = []
+dropWhile : (a -> Bool) -> List a -> List a
+dropWhile f [] = []
+dropWhile f (x::xs) if f x = dropWhile f xs
+dropWhile _ (x::xs) = x :: xs
 
-pub def dropWhile : (a -> Bool) -> List a -> List a =
-  | f [] = []
-  | f (x::xs) if f x = dropWhile f xs
-  | _ (x::xs) = x :: xs
+splitAt : USize -> List a -> (List a, List a)
+splitAt n [] = ([], [])
+splitAt n (x::xs)
+  | n > = let (ys, zs) = splitAt (n - 1) xs in (x :: ys, zs) 
+  | otherwise ([], x :: xs)
 
-pub def splitAt : Int -> List a -> (List a, List a) =
-  | n [] = ([], [])
-  | n (x::xs) = 
-    if n > 0 then 
-      let (ys, zs) = splitAt (n - 1) xs in (x :: ys, zs) 
-    else ([], x :: xs)
+span : (a -> Bool) -> List a -> (List a, List a)
+span p [] = ([], [])
+span p (x::xs) if p x = let (ys, zs) = span p xs in (x :: ys, zs)
+span _ xs = ([], xs)
 
-pub def span : (a -> Bool) -> List a -> (List a, List a) =
-  | p [] = ([], [])
-  | p (x::xs) if p x = let (ys, zs) = span p xs in (x :: ys, zs)
-  | _ xs = ([], xs)
+intersperse : a -> List a -> List a
+intersperse x [] = []
+intersperse x (y::ys) = y :: x :: intersperse x ys
 
-pub def intersperse : a -> List a -> List a =
-  | x [] = []
-  | x (y::ys) = y :: x :: intersperse x ys
+intercalate : List a -> List (List a) -> List a
+intercalate xs xss = concat (intersperse xs xss)
 
-pub def intercalate : List a -> List (List a) -> List a =
-  | xs xss = concat (intersperse xs xss)
+instance Functor List where
+  map f xs = foldr (fun x acc -> f x :: acc) [] xs
+  (<$) x xs = map (fun _ -> x) xs
+  (<$>) f xs = map f xs
+  (<*>) fs xs = foldr (fun f acc -> map f xs ++ acc) [] fs
 
-impl Functor List where
-  def map f xs = foldr (fun x acc -> f x :: acc) [] xs
-  def (<$) x xs = map (fun _ -> x) xs
-  def (<$>) f xs = map f xs
-  def (<*>) fs xs = foldr (fun f acc -> map f xs ++ acc) [] fs
+instance Applicative List where
+  pure x = [x]
+  (<*>) fs xs = foldr (fun f acc -> map f xs ++ acc) [] fs
+  (<$) x xs = map (fun _ -> x) xs
+  (<*>) fs xs = foldr (fun f acc -> map f xs ++ acc) [] fs
+  liftA2 f xs ys = foldr (fun x acc -> map (f x) ys ++ acc) [] xs
 
-impl Applicative List where
-  def pure x = [x]
-  def (<*>) fs xs = foldr (fun f acc -> map f xs ++ acc) [] fs
-  def (<$) x xs = map (fun _ -> x) xs
-  def (<*>) fs xs = foldr (fun f acc -> map f xs ++ acc) [] fs
-  def liftA2 f xs ys = foldr (fun x acc -> map (f x) ys ++ acc) [] xs
-
-impl Monad List where
-  def (>>=) xs f = foldr (fun x acc -> map f x ++ acc) [] xs
-  def (>>) xs ys = foldr (fun _ acc -> ys ++ acc) [] xs
-  def join xs = foldr (fun x acc -> x ++ acc) [] xs
-  def fail msg = []
-  def zero = []
-  def plus xs ys = foldr (fun x acc -> x ++ acc) ys xs
+instance Monad List where
+  (>>=) xs f = foldr (fun x acc -> map f x ++ acc) [] xs
+  (>>) xs ys = foldr (fun _ acc -> ys ++ acc) [] xs
+  join xs = foldr (fun x acc -> x ++ acc) [] xs
+  fail msg = []
+  zero = []
+  plus xs ys = foldr (fun x acc -> x ++ acc) ys xs

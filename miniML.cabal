@@ -1,7 +1,7 @@
 cabal-version:      3.0
 name:               miniML
 version:            0.1.0.0
-synopsis:           The MiniML programming language
+synopsis:           The miniML programming language
 license:            BSD-3-Clause
 license-file:       LICENSE
 author:             Chris McDearman
