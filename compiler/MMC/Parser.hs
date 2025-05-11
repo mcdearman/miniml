@@ -1,5 +1,3 @@
--- module TMC.Parser where
-
 import AST
 import Common
 import Control.Applicative (empty, optional, (<|>))
