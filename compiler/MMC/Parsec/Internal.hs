@@ -36,7 +36,15 @@ instance (Monoid a) => Monoid (Result e a) where
 
 -- | Parser transformer: token stream `s`, errors `e`, in monad `m`
 newtype ParsecT e s d m a = ParsecT
-  {runParsecT :: forall b. State s d e -> m b}
+  { runParsecT ::
+      forall b.
+      State s d e ->
+      (a -> State s d e -> m b) -> -- consumed OK
+      (e -> State s d e -> m b) -> -- consumed error
+      (a -> State s d e -> m b) -> -- empty OK
+      (e -> State s d e -> m b) -> -- empty error
+      m b
+  }
   deriving (Functor)
 
 -- -- | Applicative: sequential composition, short-circuit on Fail

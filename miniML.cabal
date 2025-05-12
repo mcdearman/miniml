@@ -30,6 +30,7 @@ executable miniML
         -- NIR
         -- TMC.Parser
         MMC.Parsec
+        MMC.Parsec.Error
         MMC.Parsec.Internal
         MMC.Parsec.State
         MMC.Parsec.Stream
