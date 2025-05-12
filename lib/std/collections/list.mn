@@ -22,8 +22,8 @@ pub def map : (a -> b) -> [a] -> [b] = fun
 
 pub def map (f : a -> b) (xs : [a]) : [b] = 
   match xs with
-    [] -> []
-    (x::xs) -> f x :: map f xs
+  | [] -> []
+  | (x::xs) -> f x :: map f xs
 
 @pub
 foldl : (a -> b -> a) -> a -> [b] -> a
