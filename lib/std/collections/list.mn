@@ -16,15 +16,6 @@ map : (a -> b) -> [a] -> [b]
 map f [] = []
 map f (x::xs) = f x :: map f xs
 
-pub def map : (a -> b) -> [a] -> [b] = fun
-  | f [] = []
-  | f (x::xs) = f x :: map f xs
-
-pub def map (f : a -> b) (xs : [a]) : [b] = 
-  match xs with
-  | [] -> []
-  | (x::xs) -> f x :: map f xs
-
 @pub
 foldl : (a -> b -> a) -> a -> [b] -> a
 foldl f acc [] = acc
@@ -35,67 +26,84 @@ foldl' : (a -> b -> a) -> a -> [b] -> a
 foldl' f !acc [] = acc
 foldl' f !acc (x::xs) = foldl' f (f acc x) xs
 
+@pub
 foldr : (a -> b -> b) -> b -> [a] -> b
 foldr f acc [] = acc
 foldr f acc (x::xs) = f x (foldr f acc xs)
 
+@pub
 filter : (a -> Bool) -> [a] -> [a]
 filter f [] = []
 filter f (x::xs) if f x = x :: filter f xs 
 filter f (_::xs) = filter f xs
 
+@pub
 concat : [[a]] -> [a]
 concat [] = []
 concat (x::xs) = x ++ concat xs
 
+@pub
 concatMap : (a -> [b]) -> [a] -> [b] 
 concatMap = concat . map
 
+@pub
 (++) : [a] -> [a] -> [a]
 [] ++ ys = ys
 (x::xs) ++ ys = x :: (xs ++ ys)
 
+@pub
 reverse : [a] -> [a]
 reverse = foldl' (flip (::)) []
 
+@pub
 zip : [a] -> [b] -> [(a, b)]
 zip [] _ = []
 zip _ [] = []
 zip (x::xs) (y::ys) = (x, y) :: zip xs ys
 
+@pub
 zipWith : (a -> b -> c) -> [a] -> [b] -> [c]
 zipWith f [] _ = []
 zipWith _ [] = []
 zipWith (x::xs) (y::ys) = f x y :: zipWith f xs ys
 
+@pub
 unzip : [(a, b)] -> ([a], [b])
 unzip [] = ([], [])
 unzip (x, y) :: xs = let (xs1, ys1) = unzip xs in (x :: xs1, y :: ys1)
 
+@pub
 foldl1 : (a -> a -> a) -> [a] -> a
 foldl1 f (x::xs) = foldl f x xs
 
+@pub
 foldr1 : (a -> a -> a) -> [a] -> a
 foldr1 f (x::xs) = foldr f x xs
 
+@pub
 all? : (a -> Bool) -> [a] -> Bool
 all? f [] = true
 all? f (x::xs) = f x && all? f xs
 
+@pub
 any? : (a -> Bool) -> [a] -> Bool
 any? f [] = false
 any? f (x::xs) = f x || any? f xs
 
+@pub
 elem? : a -> [a] -> Bool
 elem? x [] = false
 elem? x (y::ys) = if x = y then true else elem? x ys
 
+@pub
 sum : Num a => [a] -> a 
 sum = foldl' (+) 0
 
+@pub
 product : Num a => [a] -> a
 product = foldl' (*) 1
 
+@pub
 take : Nat -> [a] -> [a]
 take n ls
   | 0 < n = unsafeTake n ls
@@ -108,6 +116,7 @@ take n ls
     unsafeTake 1 (x:_) = [x]
     unsafeTake m (x:xs) = x :: unsafeTake (m - 1) xs
 
+@pub
 drop : Nat -> [a] -> [a]
 drop n ls
   | n <= 0 = ls
@@ -120,16 +129,19 @@ drop n ls
     unsafeDrop 1 (_:xs) = xs
     unsafeDrop m (_:xs) = unsafeDrop (m - 1) xs
 
+@pub
 takeWhile : (a -> Bool) -> [a] -> [a] 
 takeWhile f [] = []
 takeWhile f (x::xs) if f x = x :: takeWhile f xs
 takeWhile _ _ = []
 
+@pub
 dropWhile : (a -> Bool) -> [a] -> [a]
 dropWhile f [] = []
 dropWhile f (x::xs) if f x = dropWhile f xs
 dropWhile _ (x::xs) = x :: xs
 
+@pub
 splitAt : Nat -> [a] -> ([a], [a])
 splitAt n ls
   | n <= 0 = ([], ls)
@@ -142,16 +154,19 @@ splitAt n ls
       where
         (xs', xs'') = splitAt' (m - 1) xs
 
+@pub
 span : (a -> Bool) -> [a] -> ([a], [a])
 span _ xs@[] = (xs, xs)
 span p xs@(x:xs')
          | p x = let (ys,zs) = span p xs' in (x:ys,zs)
          | otherwise = ([],xs)
 
+@pub
 intersperse : a -> [a] -> [a]
 intersperse x [] = []
 intersperse x (y::ys) = y :: x :: intersperse x ys
 
+@pub
 intercalate : [a] -> [[a]] -> [a]
 intercalate xs xss = concat (intersperse xs xss)
 
