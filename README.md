@@ -7,7 +7,8 @@ The official implementation of the miniML programming language
 - Pure functional programming
 - Static types
 - Row polymorphism
-- Algebraic effects and monads (with the ability to convert between the two)
+- Higher kinded types (HKTs)
+- Monadic effect handling
 - Lisp-like macros on token trees
 - Optional indentation sensitivity
 - Lazy evaluation by default
@@ -23,4 +24,3 @@ The official implementation of the miniML programming language
 - Platform-independent distributable low-level IR
 - Visual programming
 - Runtime monitoring and reflection
-
