@@ -9,12 +9,19 @@ data List a = [] | a :: List a
 length : [a] -> Nat
 length = foldl' (\c _ -> c + 1) 0
 
+pub def length' : [a] -> Nat = 
+  foldl' (\c _ -> c + 1) 0
+
 -- | `map` takes a function `f` and a list `xs` and returns the list of
 -- the results of applying `f` to each element of `xs`.
 @pub
 map : (a -> b) -> [a] -> [b]
 map f [] = []
 map f (x::xs) = f x :: map f xs
+
+pub def map : (a -> b) -> [a] -> [b] = 
+  | f [] = []
+  | f (x::xs) = f x :: map f xs
 
 @pub
 foldl : (a -> b -> a) -> a -> [b] -> a
@@ -115,6 +122,14 @@ take n ls
     unsafeTake !_ [] = []
     unsafeTake 1 (x:_) = [x]
     unsafeTake m (x:xs) = x :: unsafeTake (m - 1) xs
+
+pub def take (n : Nat) (ls : [a]) : [a] = 
+  if n <= 0 then [] else unsafeTake n ls
+  where
+    def unsafeTake :: Nat -> [a] -> [a] =
+      | !_ [] = []
+      | 1 (x:_) = [x]
+      | m (x:xs) = x :: unsafeTake (m - 1) xs
 
 @pub
 drop : Nat -> [a] -> [a]

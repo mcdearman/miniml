@@ -57,3 +57,13 @@ main = do
   putStrLn "Welcome to the MiniML REPL!"
 
 -- runInputT settings (repl Compiler.defaultCompiler)
+
+take :: Int -> [a] -> [a]
+take n ls = if 0 < n then unsafeTake n ls else []
+  where
+    -- A version of take that takes the whole list if given an argument
+    -- less than 1
+    unsafeTake :: Int -> [a] -> [a]
+    unsafeTake !_ [] = []
+    unsafeTake 1 (x : _) = [x]
+    unsafeTake m (x : xs) = x : unsafeTake (m - 1) xs
