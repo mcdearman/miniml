@@ -9,19 +9,12 @@ data List a = [] | a :: List a
 length : [a] -> Nat
 length = foldl' (\c _ -> c + 1) 0
 
-pub def length' : [a] -> Nat = 
-  foldl' (\c _ -> c + 1) 0
-
 -- | `map` takes a function `f` and a list `xs` and returns the list of
 -- the results of applying `f` to each element of `xs`.
 @pub
 map : (a -> b) -> [a] -> [b]
 map f [] = []
 map f (x::xs) = f x :: map f xs
-
-pub def map : (a -> b) -> [a] -> [b] = 
-  | f [] = []
-  | f (x::xs) = f x :: map f xs
 
 @pub
 foldl : (a -> b -> a) -> a -> [b] -> a
@@ -45,10 +38,6 @@ filter pred (x:xs)
   | pred x = x :: filter pred xs
   | otherwise = filter pred xs
 
-pub def filter : (a -> Bool) -> [a] -> [a] =
-  | _pred [] = []
-  | pred (x:xs) = if pred x then x :: filter pred xs else filter pred xs
-
 @pub
 concat : [[a]] -> [a]
 concat [] = []
@@ -56,7 +45,7 @@ concat (x::xs) = x ++ concat xs
 
 @pub
 concatMap : (a -> [b]) -> [a] -> [b] 
-concatMap = concat . map
+concatMap = concat >>> map
 
 @pub
 (++) : [a] -> [a] -> [a]
@@ -73,89 +62,49 @@ zip [] _ = []
 zip _ [] = []
 zip (x::xs) (y::ys) = (x, y) :: zip xs ys
 
-pub def zip : [a] -> [b] -> [(a, b)] = 
-  | [] _ = []
-  | _ [] = []
-  | (x::xs) (y::ys) = (x, y) :: zip xs ys
-
 @pub
 zipWith : (a -> b -> c) -> [a] -> [b] -> [c]
 zipWith f [] _ = []
 zipWith f _ [] = []
 zipWith f (x::xs) (y::ys) = f x y :: zipWith f xs ys
 
-pub def zipWith : (a -> b -> c) -> [a] -> [b] -> [c]
-  | f [] _ = []
-  | f _ [] = []
-  | f (x::xs) (y::ys) = f x y :: zipWith f xs ys
-
 @pub
 unzip : [(a, b)] -> ([a], [b])
 unzip [] = ([], [])
 unzip (x, y) :: xs = let (xs1, ys1) = unzip xs in (x :: xs1, y :: ys1)
-
-pub def unzip : [(a, b)] -> ([a], [b]) = 
-  | [] = ([], [])
-  | (x, y) :: xs = let (xs1, ys1) = unzip xs in (x :: xs1, y :: ys1)
 
 @pub
 foldl1 : (a -> a -> a) -> [a] -> a
 foldl1 f (x::xs) = foldl f x xs
 foldl1 f [] = error "foldl1: empty list"
 
-pub def foldl1 : (a -> a -> a) -> [a] -> a = 
-  | f (x::xs) = foldl f x xs
-  | f [] = error "foldl1: empty list"
-
 @pub
 foldr1 : (a -> a -> a) -> [a] -> a
 foldr1 f (x::xs) = foldr f x xs
 foldr1 f [] = error "foldr1: empty list"
-
-pub def foldr1 : (a -> a -> a) -> [a] -> a = 
-  | f (x::xs) = foldr f x xs
-  | f [] = error "foldr1: empty list"
 
 @pub
 all? : (a -> Bool) -> [a] -> Bool
 all? f [] = true
 all? f (x::xs) = f x && all? f xs
 
-pub def all? : (a -> Bool) -> [a] -> Bool = 
-  | f [] = true
-  | f (x::xs) = f x && all? f xs
-
 @pub
 any? : (a -> Bool) -> [a] -> Bool
 any? f [] = false
 any? f (x::xs) = f x || any? f xs
-
-pub def any? : (a -> Bool) -> [a] -> Bool = 
-  | f [] = false
-  | f (x::xs) = f x || any? f xs
 
 @pub
 elem? : a -> [a] -> Bool
 elem? x [] = false
 elem? x (y::ys) = if x == y then true else elem? x ys
 
-pub def elem? : a -> [a] -> Bool = 
-  | x [] = false
-  | x (y::ys) = if x == y then true else elem? x ys
-
 @pub
 sum : Num a => [a] -> a 
 sum = foldl' (+) 0
 
-pub fun sum : Num a => [a] -> a = 
-  foldl' (+) 0
-
 @pub
 product : Num a => [a] -> a
 product = foldl' (*) 1
-
-pub fun product : Num a => [a] -> a = 
-  foldl' (*) 1
 
 @pub
 take : Nat -> [a] -> [a]
@@ -169,14 +118,6 @@ take n ls
     unsafeTake !_ [] = []
     unsafeTake 1 (x:_) = [x]
     unsafeTake m (x:xs) = x :: unsafeTake (m - 1) xs
-
-pub def take (n : Nat) (ls : [a]) : [a] = 
-  if n <= 0 then [] else unsafeTake n ls
-  where
-    def unsafeTake :: Nat -> [a] -> [a] =
-      | !_ [] = []
-      | 1 (x:_) = [x]
-      | m (x:xs) = x :: unsafeTake (m - 1) xs
 
 @pub
 drop : Nat -> [a] -> [a]

@@ -9,6 +9,7 @@ The official implementation of the miniML programming language
 - Row polymorphism
 - Higher kinded types (HKTs)
 - Monadic effect handling
+- Linear types
 - Lisp-like macros on token trees
 - Optional indentation sensitivity
 - Lazy evaluation by default
