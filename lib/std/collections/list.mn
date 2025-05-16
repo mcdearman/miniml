@@ -2,6 +2,7 @@ module Std.Collections.List
 
 -- A pair list is either empty or a pair of an element and a pair list.
 @pub
+@derive(Eq, Ord, Show)
 data List a = [] | a :: List a
 
 -- | `length` returns the length of a finite list as a `Nat`.

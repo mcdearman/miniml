@@ -41,19 +41,19 @@ getMultilineInput :: String -> InputT IO (Maybe String)
 getMultilineInput acc = do
   firstLine <- getInputLine "> "
   case firstLine of
-    Nothing -> return Nothing
+    Nothing -> pure Nothing
     Just fl -> collectLines (acc ++ fl ++ "\n")
 
 collectLines :: String -> InputT IO (Maybe String)
 collectLines acc = do
   minput <- getInputLine ""
   case minput of
-    Nothing -> return Nothing
-    Just "" -> return $ Just (init acc)
+    Nothing -> pure Nothing
+    Just "" -> pure $ Just (init acc)
     Just input -> collectLines (acc ++ input ++ "\n")
 
 main :: IO ()
 main = do
-  putStrLn "Welcome to the MiniML REPL!"
+  putStrLn "Welcome to the miniML REPL!"
 
 -- runInputT settings (repl Compiler.defaultCompiler)
