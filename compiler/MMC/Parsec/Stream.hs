@@ -24,7 +24,7 @@ class Stream s where
   chunkLength :: forall c -> (s ~ c) => Tokens s -> Int
 
   chunkEmpty :: forall c -> (s ~ c) => Tokens s -> Bool
-  chunkEmpty pxy ts = chunkLength pxy ts <= 0
+  chunkEmpty t ts = chunkLength t ts <= 0
 
   take1' :: s -> Maybe (Token s, s)
 
