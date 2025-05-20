@@ -45,7 +45,10 @@ newtype ParsecT e s d m a = ParsecT
       (e -> State s d e -> m b) -> -- empty error
       m b
   }
-  deriving (Functor)
+
+instance Functor (ParsecT e s d m) where
+  fmap f p = ParsecT $ \st cok cerr eok eerr -> do
+    runParsecT p st (cok . f) cerr (eok . f) eerr
 
 -- -- | Applicative: sequential composition, short-circuit on Fail
 -- instance (Monad m) => Applicative (ParsecT t e m) where
