@@ -1,39 +1,39 @@
-import AST
-import Common
-import Control.Applicative (empty, optional, (<|>))
-import Control.Monad.Combinators.Expr
-import Data.Array (Array, listArray)
-import Data.Functor (($>))
-import Data.Int (Int64)
-import Data.Set as Set
-import Data.Text (Text, pack, unpack)
-import Data.Void
-import Data.Word (Word8)
-import GHC.IO.Handle (Handle)
-import Lexer (TokenStream (..), WithPos (..))
-import Text.Megaparsec
-  ( MonadParsec (eof, getParserState, lookAhead, notFollowedBy, takeWhile1P, token, try),
-    ParseErrorBundle,
-    Parsec,
-    State (stateInput),
-    Stream (take1_),
-    between,
-    choice,
-    getInput,
-    getOffset,
-    many,
-    manyTill,
-    option,
-    parse,
-    satisfy,
-    sepBy1,
-    sepEndBy,
-    sepEndBy1,
-    some,
-  )
-import Text.Megaparsec.Debug (MonadParsecDbg (dbg))
-import Token
-import Prelude hiding (span)
+-- import AST
+-- import Common
+-- import Control.Applicative (empty, optional, (<|>))
+-- import Control.Monad.Combinators.Expr
+-- import Data.Array (Array, listArray)
+-- import Data.Functor (($>))
+-- import Data.Int (Int64)
+-- import Data.Set as Set
+-- import Data.Text (Text, pack, unpack)
+-- import Data.Void
+-- import Data.Word (Word8)
+-- import GHC.IO.Handle (Handle)
+-- import Lexer (TokenStream (..), WithPos (..))
+-- import Text.Megaparsec
+--   ( MonadParsec (eof, getParserState, lookAhead, notFollowedBy, takeWhile1P, token, try),
+--     ParseErrorBundle,
+--     Parsec,
+--     State (stateInput),
+--     Stream (take1_),
+--     between,
+--     choice,
+--     getInput,
+--     getOffset,
+--     many,
+--     manyTill,
+--     option,
+--     parse,
+--     satisfy,
+--     sepBy1,
+--     sepEndBy,
+--     sepEndBy1,
+--     some,
+--   )
+-- import Text.Megaparsec.Debug (MonadParsecDbg (dbg))
+-- import Token
+-- import Prelude hiding (span)
 
 type Parser = Parsec Void TokenStream
 
@@ -158,7 +158,8 @@ type' = dbg "type" $ try kindType <|> try arrowType <|> baseType
             listType,
             arrayType,
             recordType,
-            try unit $> TypeAnnoUnit
+            try unit
+              $> TypeAnnoUnit
               <|> try tupleType
               <|> parens (value <$> type')
           ]
