@@ -3,7 +3,7 @@
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TypeOperators #-}
 
-module MMC.Parsec.Stream where
+module MMC.Miniparsec.Stream where
 
 import Data.Kind (Type)
 import Data.Text (Text, pack, unpack)

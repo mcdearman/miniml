@@ -1,4 +1,4 @@
-module MMC.Parsec.Error where
+module MMC.Miniparsec.Error where
 
 import Data.Text (Text)
 

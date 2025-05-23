@@ -115,7 +115,7 @@ take n ls
   where
     -- A version of take that takes the whole list if given an argument
     -- less than 1
-    unsafeTake :: Nat -> [a] -> [a]
+    unsafeTake : Nat -> [a] -> [a]
     unsafeTake !_ [] = []
     unsafeTake 1 (x:_) = [x]
     unsafeTake m (x:xs) = x :: unsafeTake (m - 1) xs
@@ -128,7 +128,7 @@ drop n ls
   where
     -- A version of drop that drops the whole list if given an argument
     -- less than 1
-    unsafeDrop :: Nat -> [a] -> [a]
+    unsafeDrop : Nat -> [a] -> [a]
     unsafeDrop !_ [] = []
     unsafeDrop 1 (_:xs) = xs
     unsafeDrop m (_:xs) = unsafeDrop (m - 1) xs
@@ -151,18 +151,18 @@ splitAt n ls
   | n <= 0 = ([], ls)
   | otherwise = splitAt' n ls
   where
-    splitAt' :: Int -> [a] -> ([a], [a])
+    splitAt' : Int -> [a] -> ([a], [a])
     splitAt' _ [] = ([], [])
-    splitAt' 1 (x:xs) = ([x], xs)
-    splitAt' m (x:xs) = (x:xs', xs'')
+    splitAt' 1 (x::xs) = ([x], xs)
+    splitAt' m (x::xs) = (x::xs', xs'')
       where
         (xs', xs'') = splitAt' (m - 1) xs
 
 @pub
 span : (a -> Bool) -> [a] -> ([a], [a])
 span _ xs@[] = (xs, xs)
-span p xs@(x:xs')
-         | p x = let (ys,zs) = span p xs' in (x:ys,zs)
+span p xs@(x::xs')
+         | p x = let (ys,zs) = span p xs' in (x::ys,zs)
          | otherwise = ([],xs)
 
 @pub
@@ -172,7 +172,7 @@ intersperse x (y::ys) = y :: x :: intersperse x ys
 
 @pub
 intercalate : [a] -> [[a]] -> [a]
-intercalate xs xss = concat (intersperse xs xss)
+intercalate = concat >>> intersperse
 
 instance Functor [a] where
   map f xs = foldr (fun x acc -> f x :: acc) [] xs

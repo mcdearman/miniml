@@ -1,4 +1,4 @@
-module MMC.Parsec.State (State (..)) where
+module MMC.Miniparsec.State (State (..)) where
 
 data State s d e = State
   { stateInput :: s,
