@@ -38,18 +38,18 @@ instance (Monad m) => Applicative (ParsecT e s d m) where
       (es', (a, st'')) -> (es <> es', (f <*> a, st''))
   {-# INLINE (<*>) #-}
 
-instance (Ord e, Stream s) => Alternative (ParsecT e s d m) where
-  empty = mzero
-  (<|>) = mplus
+-- instance (Ord e, Stream s) => Alternative (ParsecT e s d m) where
+--   empty = mzero
+--   (<|>) = mplus
 
-instance (Monad m) => MonadPlus (ParsecT e s d m) where
-  mzero = ParsecT $ \st -> ([], (pure Nothing, st))
-  {-# INLINE mzero #-}
+-- instance (Monad m) => MonadPlus (ParsecT e s d m) where
+--   mzero = ParsecT $ \st -> ([], (pure Nothing, st))
+--   {-# INLINE mzero #-}
 
-instance (Monad m) => Monad (ParsecT e s d m) where
-  return = pure
-  {-# INLINE return #-}
+-- instance (Monad m) => Monad (ParsecT e s d m) where
+--   return = pure
+--   {-# INLINE return #-}
 
-  ParsecT p >>= f = ParsecT $ \st -> case p st of
-    _ -> _
-  {-# INLINE (>>=) #-}
+--   ParsecT p >>= f = ParsecT $ \st -> case p st of
+--     _ -> _
+--   {-# INLINE (>>=) #-}
