@@ -1,64 +1,64 @@
--- {-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE TypeFamilies #-}
 
--- module MMC.Lexer where
+module MMC.Lexer where
 
--- import TMC.Common (Span (..), defaultSpan)
--- import Control.Applicative (empty, (<|>))
--- import Control.Monad.Combinators (manyTill_)
--- import Data.Data (Proxy (Proxy))
--- import Data.Functor (($>))
--- import Data.Int (Int64)
--- import qualified Data.List.NonEmpty as NE
--- import Data.Text (Text, pack, unpack)
--- import Data.Void (Void)
--- import Text.Megaparsec
---   ( MonadParsec (eof, notFollowedBy, try),
---     ParseError,
---     ParseErrorBundle,
---     Parsec,
---     PosState (..),
---     SourcePos (sourceLine),
---     between,
---     choice,
---     getOffset,
---     getSourcePos,
---     many,
---     manyTill,
---     parse,
---     sepEndBy,
---     sepEndBy1,
---     some,
---   )
--- import Text.Megaparsec.Char
---   ( alphaNumChar,
---     char,
---     char',
---     lowerChar,
---     space1,
---     string,
---     upperChar,
---   )
--- import qualified Text.Megaparsec.Char.Lexer as L
--- import Text.Megaparsec.Stream hiding (Token)
--- import qualified Text.Megaparsec.Stream as S
--- import Token
--- import Prelude hiding (span)
+import Control.Applicative (empty, (<|>))
+import Control.Monad.Combinators (manyTill_)
+import Data.Data (Proxy (Proxy))
+import Data.Functor (($>))
+import Data.Int (Int64)
+import qualified Data.List.NonEmpty as NE
+import Data.Text (Text, pack, unpack)
+import Data.Void (Void)
+import MMC.Common (Span (..), defaultSpan)
+import MMC.Token
+import Text.Megaparsec
+  ( MonadParsec (eof, notFollowedBy, try),
+    ParseError,
+    ParseErrorBundle,
+    Parsec,
+    PosState (..),
+    SourcePos (sourceLine),
+    between,
+    choice,
+    getOffset,
+    getSourcePos,
+    many,
+    manyTill,
+    parse,
+    sepEndBy,
+    sepEndBy1,
+    some,
+  )
+import Text.Megaparsec.Char
+  ( alphaNumChar,
+    char,
+    char',
+    lowerChar,
+    space1,
+    string,
+    upperChar,
+  )
+import qualified Text.Megaparsec.Char.Lexer as L
+import Text.Megaparsec.Stream hiding (Token)
+import qualified Text.Megaparsec.Stream as S
+import Prelude hiding (span)
 
--- data TokenStream = TokenStream
---   { streamSrc :: Text,
---     streamTokens :: [WithPos Token],
---     streamLastSpan :: Span
---   }
---   deriving (Show, Eq, Ord)
+data TokenStream = TokenStream
+  { streamSrc :: Text,
+    streamTokens :: [WithPos Token],
+    streamLastSpan :: Span
+  }
+  deriving (Show, Eq, Ord)
 
--- data WithPos a = WithPos
---   { wpStart :: SourcePos,
---     wpEnd :: SourcePos,
---     wpSpan :: Span,
---     wpLen :: Int,
---     wpVal :: a
---   }
---   deriving (Show, Eq, Ord)
+data WithPos a = WithPos
+  { wpStart :: SourcePos,
+    wpEnd :: SourcePos,
+    wpSpan :: Span,
+    wpLen :: Int,
+    wpVal :: a
+  }
+  deriving (Show, Eq, Ord)
 
 -- instance Stream TokenStream where
 --   type Token TokenStream = WithPos Token
@@ -133,110 +133,110 @@
 -- pxy :: Proxy TokenStream
 -- pxy = Proxy
 
--- type Lexer = Parsec Void Text
+type Lexer = Parsec Void Text
 
--- type LexerError = ParseError TokenStream Void
+type LexerError = ParseError TokenStream Void
 
--- withPos :: Lexer a -> Lexer (WithPos a)
--- withPos p = do
---   startPos <- getSourcePos
---   startOffset <- getOffset
---   result <- p
---   endPos <- getSourcePos
---   endOffset <- getOffset
---   return $ WithPos startPos endPos (SrcLoc startOffset endOffset) (endOffset - startOffset) result
+withPos :: Lexer a -> Lexer (WithPos a)
+withPos p = do
+  startPos <- getSourcePos
+  startOffset <- getOffset
+  result <- p
+  endPos <- getSourcePos
+  endOffset <- getOffset
+  return $ WithPos startPos endPos (Span startOffset endOffset) (endOffset - startOffset) result
 
--- lexemeWithPos :: Lexer a -> Lexer (WithPos a)
--- lexemeWithPos p = withPos p <* sc
+lexemeWithPos :: Lexer a -> Lexer (WithPos a)
+lexemeWithPos p = withPos p <* sc
 
--- sc :: Lexer ()
--- sc = L.space space1 (L.skipLineComment "--") empty
+sc :: Lexer ()
+sc = L.space space1 (L.skipLineComment "--") empty
 
--- octal :: Lexer Int64
--- octal = char '0' >> char' 'o' >> L.octal
+octal :: Lexer Integer
+octal = char '0' >> char' 'o' >> L.octal
 
--- hexadecimal :: Lexer Int64
--- hexadecimal = char '0' >> char' 'x' >> L.hexadecimal
+hexadecimal :: Lexer Integer
+hexadecimal = char '0' >> char' 'x' >> L.hexadecimal
 
--- int :: Lexer Token
--- int = TokInt <$> (try octal <|> try hexadecimal <|> L.decimal)
+int :: Lexer Token
+int = TokInt <$> (try octal <|> try hexadecimal <|> L.decimal)
 
--- bool :: Lexer Token
--- bool = TokBool <$> choice [True <$ string "true", False <$ string "false"]
+bool :: Lexer Token
+bool = TokBool <$> choice [True <$ string "true", False <$ string "false"]
 
--- str :: Lexer Token
--- str = TokString <$> (char '\"' *> (pack <$> manyTill L.charLiteral (char '\"')))
+str :: Lexer Token
+str = TokString <$> (char '\"' *> (pack <$> manyTill L.charLiteral (char '\"')))
 
--- ident :: Lexer Token
--- ident = try $ do
---   name <- pack <$> ((:) <$> identStartChar <*> many identChar)
---   if name `elem` keywords
---     then fail $ "keyword " ++ unpack name ++ " cannot be an identifier"
---     else return $ TokLowerCaseIdent name
---   where
---     identStartChar = lowerChar <|> char '_'
---     identChar = alphaNumChar <|> char '_' <|> char '\''
+ident :: Lexer Token
+ident = try $ do
+  name <- pack <$> ((:) <$> identStartChar <*> many identChar)
+  if name `elem` keywords
+    then fail $ "keyword " ++ unpack name ++ " cannot be an identifier"
+    else return $ TokLowerCaseIdent name
+  where
+    identStartChar = lowerChar <|> char '_'
+    identChar = alphaNumChar <|> char '_' <|> char '\''
 
---     keywords :: [Text]
---     keywords =
---       [ "module",
---         "import",
---         "as",
---         "pub",
---         "def",
---         "let",
---         "in",
---         "where",
---         "if",
---         "then",
---         "else",
---         "match",
---         "with",
---         "data",
---         "type",
---         "class",
---         "impl",
---         "do"
---       ]
+    keywords :: [Text]
+    keywords =
+      [ "module",
+        "import",
+        "as",
+        "pub",
+        "def",
+        "let",
+        "in",
+        "where",
+        "if",
+        "then",
+        "else",
+        "match",
+        "with",
+        "data",
+        "type",
+        "class",
+        "impl",
+        "do"
+      ]
 
--- upperCaseIdent :: Lexer Token
--- upperCaseIdent = TokUpperCaseIdent . pack <$> ((:) <$> upperChar <*> many alphaNumChar)
+upperCaseIdent :: Lexer Token
+upperCaseIdent = TokUpperCaseIdent . pack <$> ((:) <$> upperChar <*> many alphaNumChar)
 
--- token :: Lexer (WithPos Token)
--- token =
---   lexemeWithPos $
---     choice
---       [ TokComment <$ string "--" <* manyTill_ L.charLiteral (char '\n'),
---         int,
---         bool,
---         str,
---         upperCaseIdent,
---         ident,
---         TokLParen <$ char '(',
---         TokRParen <$ char ')',
---         TokLBrace <$ char '{',
---         TokRBrace <$ char '}',
---         TokLBracket <$ char '[',
---         TokRBracket <$ char ']',
---         TokPlus <$ char '+',
---         TokMinus <$ char '-' <* notFollowedBy (char '>'),
---         TokArrow <$ string "->",
---         TokStar <$ char '*',
---         TokSlash <$ char '/',
---         TokBackSlash <$ char '\\',
---         TokPercent <$ char '%',
---         TokEq <$ char "=",
---         TokBar <$ char '|',
---         TokUnderscore <$ char '_',
---         TokDef <$ string "def",
---         TokLet <$ string "let",
---         TokIn <$ string "in",
---         TokIf <$ string "if",
---         TokThen <$ string "then",
---         TokElse <$ string "else",
---         TokMatch <$ string "match",
---         TokWith <$ string "with"
---       ]
+token :: Lexer (WithPos Token)
+token =
+  lexemeWithPos $
+    choice
+      [ TokComment <$ string "--" <* manyTill_ L.charLiteral (char '\n'),
+        int,
+        bool,
+        str,
+        upperCaseIdent,
+        ident,
+        TokLParen <$ char '(',
+        TokRParen <$ char ')',
+        TokLBrace <$ char '{',
+        TokRBrace <$ char '}',
+        TokLBracket <$ char '[',
+        TokRBracket <$ char ']',
+        TokPlus <$ char '+',
+        TokMinus <$ char '-' <* notFollowedBy (char '>'),
+        TokArrow <$ string "->",
+        TokStar <$ char '*',
+        TokSlash <$ char '/',
+        TokBackSlash <$ char '\\',
+        TokPercent <$ char '%',
+        TokEq <$ char "=",
+        TokBar <$ char '|',
+        TokUnderscore <$ char '_',
+        TokDef <$ string "def",
+        TokLet <$ string "let",
+        TokIn <$ string "in",
+        TokIf <$ string "if",
+        TokThen <$ string "then",
+        TokElse <$ string "else",
+        TokMatch <$ string "match",
+        TokWith <$ string "with"
+      ]
 
--- tokenize :: Text -> (TokenStream, [LexerError])
--- tokenize src = TokenStream src <$> (parse (many token) "" src)
+tokenize :: Text -> (TokenStream, [LexerError])
+tokenize src = TokenStream src <$> (parse (many token) "" src)
