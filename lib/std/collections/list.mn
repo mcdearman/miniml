@@ -48,6 +48,9 @@ concat (x::xs) = x ++ concat xs
 concatMap : (a -> [b]) -> [a] -> [b] 
 concatMap = concat >>> map
 
+pub def concatMap : (a -> [b]) -> [a] -> [b] = 
+  concat >>> map
+
 @pub
 (++) : [a] -> [a] -> [a]
 [] ++ ys = ys

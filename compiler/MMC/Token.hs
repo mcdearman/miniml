@@ -31,7 +31,7 @@ data Token
   | TokArrow
   | TokBar
   | TokUnderscore
-  | TokDef
+  | TokData
   | TokLet
   | TokIn
   | TokIf
@@ -70,7 +70,7 @@ pShowToken TokEq = "Assign"
 pShowToken TokArrow = "Arrow"
 pShowToken TokBar = "Bar"
 pShowToken TokUnderscore = "Underscore"
-pShowToken TokDef = "Def"
+pShowToken TokData = "Data"
 pShowToken TokLet = "Let"
 pShowToken TokIn = "In"
 pShowToken TokIf = "If"

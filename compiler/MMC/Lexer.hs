@@ -13,7 +13,7 @@ import Data.Void (Void)
 import MMC.Common (Span (..), defaultSpan)
 import MMC.Token
 import Text.Megaparsec
-  ( MonadParsec (eof, notFollowedBy, try),
+  ( MonadParsec (eof, notFollowedBy, try, withRecovery),
     ParseError,
     ParseErrorBundle,
     Parsec,
@@ -60,78 +60,78 @@ data WithPos a = WithPos
   }
   deriving (Show, Eq, Ord)
 
--- instance Stream TokenStream where
---   type Token TokenStream = WithPos Token
---   type Tokens TokenStream = [WithPos Token]
+instance Stream TokenStream where
+  type Token TokenStream = WithPos Token
+  type Tokens TokenStream = [WithPos Token]
 
---   tokenToChunk _ = pure
---   tokensToChunk _ = id
---   chunkToTokens _ = id
---   chunkLength _ = length
---   chunkEmpty _ = null
---   take1_ (TokenStream _ [] _) = Nothing
---   take1_ (TokenStream src (t : ts) _) = case wpVal t of
---     TokComment -> take1_ (TokenStream src ts (wpSpan t))
---     _ -> Just (t, TokenStream src ts (wpSpan t))
+  tokenToChunk _ = pure
+  tokensToChunk _ = id
+  chunkToTokens _ = id
+  chunkLength _ = length
+  chunkEmpty _ = null
+  take1_ (TokenStream _ [] _) = Nothing
+  take1_ (TokenStream src (t : ts) _) = case wpVal t of
+    TokComment -> take1_ (TokenStream src ts (wpSpan t))
+    _ -> Just (t, TokenStream src ts (wpSpan t))
 
---   takeN_ n ts@(TokenStream src s ls)
---     | n <= 0 = Just ([], ts)
---     | null s = Nothing
---     | otherwise =
---         let (x, s') = splitAt n s
---          in case NE.nonEmpty x of
---               Nothing -> Just (x, TokenStream src s' ls)
---               Just nex ->
---                 Just
---                   (x, TokenStream (pack (drop (tokensLength pxy nex) (unpack src))) s' (wpSpan (last x)))
+  takeN_ n ts@(TokenStream src s ls)
+    | n <= 0 = Just ([], ts)
+    | null s = Nothing
+    | otherwise =
+        let (x, s') = splitAt n s
+         in case NE.nonEmpty x of
+              Nothing -> Just (x, TokenStream src s' ls)
+              Just nex ->
+                Just
+                  (x, TokenStream (pack (drop (tokensLength pxy nex) (unpack src))) s' (wpSpan (last x)))
 
---   takeWhile_ f (TokenStream src ts _) =
---     let ts' = takeWhile f ts
---      in (ts', TokenStream src (dropWhile f ts) (wpSpan (last ts')))
+  takeWhile_ f (TokenStream src ts _) =
+    let ts' = takeWhile f ts
+     in (ts', TokenStream src (dropWhile f ts) (wpSpan (last ts')))
 
--- instance VisualStream TokenStream where
---   showTokens _ = unwords . map (show . wpVal) . NE.toList
---   tokensLength _ ts = sum (NE.map wpLen ts)
+instance VisualStream TokenStream where
+  showTokens _ = unwords . map (show . wpVal) . NE.toList
+  tokensLength _ ts = sum (NE.map wpLen ts)
 
--- instance TraversableStream TokenStream where
---   reachOffset o PosState {..} =
---     ( Just (prefix ++ restOfLine),
---       PosState
---         { pstateInput =
---             TokenStream
---               { streamSrc = pack postStr,
---                 streamTokens = post,
---                 streamLastSpan = wpSpan (last post)
---               },
---           pstateOffset = max pstateOffset o,
---           pstateSourcePos = newSourcePos,
---           pstateTabWidth = pstateTabWidth,
---           pstateLinePrefix = prefix
---         }
---     )
---     where
---       prefix =
---         if sameLine
---           then pstateLinePrefix ++ preLine
---           else preLine
---       sameLine = sourceLine newSourcePos == sourceLine pstateSourcePos
---       newSourcePos =
---         case post of
---           [] -> case streamTokens pstateInput of
---             [] -> pstateSourcePos
---             xs -> wpEnd (last xs)
---           (x : _) -> wpStart x
---       (pre, post) = splitAt (o - pstateOffset) (streamTokens pstateInput)
---       (preStr, postStr) = splitAt tokensConsumed (unpack $ streamSrc pstateInput)
---       preLine = reverse . takeWhile (/= '\n') . reverse $ preStr
---       tokensConsumed =
---         case NE.nonEmpty pre of
---           Nothing -> 0
---           Just nePre -> tokensLength pxy nePre
---       restOfLine = takeWhile (/= '\n') postStr
+instance TraversableStream TokenStream where
+  reachOffset o PosState {..} =
+    ( Just (prefix ++ restOfLine),
+      PosState
+        { pstateInput =
+            TokenStream
+              { streamSrc = pack postStr,
+                streamTokens = post,
+                streamLastSpan = wpSpan (last post)
+              },
+          pstateOffset = max pstateOffset o,
+          pstateSourcePos = newSourcePos,
+          pstateTabWidth = pstateTabWidth,
+          pstateLinePrefix = prefix
+        }
+    )
+    where
+      prefix =
+        if sameLine
+          then pstateLinePrefix ++ preLine
+          else preLine
+      sameLine = sourceLine newSourcePos == sourceLine pstateSourcePos
+      newSourcePos =
+        case post of
+          [] -> case streamTokens pstateInput of
+            [] -> pstateSourcePos
+            xs -> wpEnd (last xs)
+          (x : _) -> wpStart x
+      (pre, post) = splitAt (o - pstateOffset) (streamTokens pstateInput)
+      (preStr, postStr) = splitAt tokensConsumed (unpack $ streamSrc pstateInput)
+      preLine = reverse . takeWhile (/= '\n') . reverse $ preStr
+      tokensConsumed =
+        case NE.nonEmpty pre of
+          Nothing -> 0
+          Just nePre -> tokensLength pxy nePre
+      restOfLine = takeWhile (/= '\n') postStr
 
--- pxy :: Proxy TokenStream
--- pxy = Proxy
+pxy :: Proxy TokenStream
+pxy = Proxy
 
 type Lexer = Parsec Void Text
 
@@ -228,7 +228,6 @@ token =
         TokEq <$ char "=",
         TokBar <$ char '|',
         TokUnderscore <$ char '_',
-        TokDef <$ string "def",
         TokLet <$ string "let",
         TokIn <$ string "in",
         TokIf <$ string "if",
@@ -238,5 +237,5 @@ token =
         TokWith <$ string "with"
       ]
 
-tokenize :: Text -> (TokenStream, [LexerError])
+tokenize :: Text -> Either (ParseErrorBundle Text Void) TokenStream
 tokenize src = TokenStream src <$> (parse (many token) "" src)
