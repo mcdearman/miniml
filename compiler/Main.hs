@@ -1,41 +1,42 @@
 module Main where
 
-import MMC.Common
+import Control.Monad.State (runState)
+import Data.Text (pack, unpack)
+import MMC.Pipeline
 import System.Console.Haskeline
-import Text.Pretty.Simple (pShow)
 
 settings :: Settings IO
 settings = defaultSettings {historyFile = Just ".repl_history"}
 
--- repl :: Compiler -> InputT IO ()
--- repl c = do
---   input <- getMultilineInput ""
---   let r = Compiler.resolver c
---   let s = Compiler.solver c
---   let ctx = Solver.ctx s
---   let cs = Solver.constraints s
---   let sub = Solver.subst s
---   case input of
---     Just "env" -> do
---       outputStrLn $ unpack $ (toStrict . pShow) r
---       repl c
---     Just "res" -> do
---       outputStrLn $ unpack $ (toStrict . pShow) ()
---       repl c
---     Just "ctx" -> do
---       outputStrLn $ unpack $ (toStrict . pShow) ctx
---       repl c
---     Just "constraints" -> do
---       outputStrLn $ unpack $ pretty cs
---       repl c
---     Just "sub" -> do
---       outputStrLn $ unpack $ (toStrict . pShow) sub
---       repl c
---     Just src -> do
---       let (out, c') = runState (Compiler.run (pack src)) c
---       outputStrLn $ unpack out
---       repl c'
---     Nothing -> return ()
+repl :: PipelineEnv -> InputT IO ()
+repl env = do
+  input <- getMultilineInput ""
+  -- let r = Compiler.resolver c
+  -- let s = Compiler.solver c
+  -- let ctx = Solver.ctx s
+  -- let cs = Solver.constraints s
+  -- let sub = Solver.subst s
+  case input of
+    -- Just "env" -> do
+    --   outputStrLn $ unpack $ (toStrict . pShow) r
+    --   repl c
+    -- Just "res" -> do
+    --   outputStrLn $ unpack $ (toStrict . pShow) ()
+    --   repl c
+    -- Just "ctx" -> do
+    --   outputStrLn $ unpack $ (toStrict . pShow) ctx
+    --   repl c
+    -- Just "constraints" -> do
+    --   outputStrLn $ unpack $ pretty cs
+    --   repl c
+    -- Just "sub" -> do
+    --   outputStrLn $ unpack $ (toStrict . pShow) sub
+    --   repl c
+    Just src -> do
+      let (out, env') = runState (runPipeline (pack src)) env
+      outputStrLn $ unpack out
+      repl env'
+    Nothing -> return ()
 
 getMultilineInput :: String -> InputT IO (Maybe String)
 getMultilineInput acc = do
@@ -55,5 +56,4 @@ collectLines acc = do
 main :: IO ()
 main = do
   putStrLn "Welcome to the miniML REPL!"
-
--- runInputT settings (repl Compiler.defaultCompiler)
+  runInputT settings (repl defaultPipelineEnv)

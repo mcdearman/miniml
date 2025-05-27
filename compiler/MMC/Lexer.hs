@@ -1,16 +1,14 @@
 {-# LANGUAGE TypeFamilies #-}
 
-module MMC.Lexer where
+module MMC.Lexer (tokenize, WithPos (..)) where
 
 import Control.Applicative (empty, (<|>))
 import Control.Monad.Combinators (manyTill_)
 import Data.Data (Proxy (Proxy))
-import Data.Functor (($>))
-import Data.Int (Int64)
 import qualified Data.List.NonEmpty as NE
 import Data.Text (Text, pack, unpack)
 import Data.Void (Void)
-import MMC.Common (Span (..), defaultSpan)
+import MMC.Common (Span (..))
 import MMC.Token
 import Text.Megaparsec
   ( MonadParsec (eof, notFollowedBy, try, withRecovery),
@@ -19,16 +17,12 @@ import Text.Megaparsec
     Parsec,
     PosState (..),
     SourcePos (sourceLine),
-    between,
     choice,
     getOffset,
     getSourcePos,
     many,
     manyTill,
     parse,
-    sepEndBy,
-    sepEndBy1,
-    some,
   )
 import Text.Megaparsec.Char
   ( alphaNumChar,
@@ -135,8 +129,6 @@ pxy = Proxy
 
 type Lexer = Parsec Void Text
 
-type LexerError = ParseError TokenStream Void
-
 withPos :: Lexer a -> Lexer (WithPos a)
 withPos p = do
   startPos <- getSourcePos
@@ -192,6 +184,7 @@ ident = try $ do
         "else",
         "match",
         "with",
+        "record",
         "data",
         "type",
         "class",
@@ -219,13 +212,16 @@ token =
         TokLBracket <$ char '[',
         TokRBracket <$ char ']',
         TokPlus <$ char '+',
-        TokMinus <$ char '-' <* notFollowedBy (char '>'),
         TokArrow <$ string "->",
+        TokMinus <$ char '-',
         TokStar <$ char '*',
         TokSlash <$ char '/',
         TokBackSlash <$ char '\\',
         TokPercent <$ char '%',
-        TokEq <$ char "=",
+        TokColon <$ char ':',
+        TokSemi <$ char ';',
+        TokComma <$ char ',',
+        TokEq <$ char '=',
         TokBar <$ char '|',
         TokUnderscore <$ char '_',
         TokLet <$ string "let",
@@ -237,5 +233,6 @@ token =
         TokWith <$ string "with"
       ]
 
-tokenize :: Text -> Either (ParseErrorBundle Text Void) TokenStream
-tokenize src = TokenStream src <$> (parse (many token) "" src)
+tokenize :: Text -> Either (ParseErrorBundle Text Void) [WithPos Token]
+-- tokenize src = TokenStream src <$> (parse (many token) "" src)
+tokenize src = parse (many token) "" src

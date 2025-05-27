@@ -27,10 +27,15 @@ data Token
   | TokSlash
   | TokBackSlash
   | TokPercent
+  | TokColon
+  | TokSemi
+  | TokComma
   | TokEq
   | TokArrow
+  | TokFatArrow
   | TokBar
   | TokUnderscore
+  | TokRecord
   | TokData
   | TokLet
   | TokIn
@@ -66,10 +71,15 @@ pShowToken TokStar = "Star"
 pShowToken TokSlash = "Slash"
 pShowToken TokBackSlash = "BackSlash"
 pShowToken TokPercent = "Percent"
+pShowToken TokColon = "Colon"
+pShowToken TokSemi = "Semi"
+pShowToken TokComma = "Comma"
 pShowToken TokEq = "Assign"
 pShowToken TokArrow = "Arrow"
+pShowToken TokFatArrow = "FatArrow"
 pShowToken TokBar = "Bar"
 pShowToken TokUnderscore = "Underscore"
+pShowToken TokRecord = "Record"
 pShowToken TokData = "Data"
 pShowToken TokLet = "Let"
 pShowToken TokIn = "In"

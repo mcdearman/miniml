@@ -1,41 +1,42 @@
--- import AST
--- import Common
--- import Control.Applicative (empty, optional, (<|>))
--- import Control.Monad.Combinators.Expr
--- import Data.Array (Array, listArray)
--- import Data.Functor (($>))
--- import Data.Int (Int64)
--- import Data.Set as Set
--- import Data.Text (Text, pack, unpack)
--- import Data.Void
--- import Data.Word (Word8)
--- import GHC.IO.Handle (Handle)
--- import Lexer (TokenStream (..), WithPos (..))
--- import Text.Megaparsec
---   ( MonadParsec (eof, getParserState, lookAhead, notFollowedBy, takeWhile1P, token, try),
---     ParseErrorBundle,
---     Parsec,
---     State (stateInput),
---     Stream (take1_),
---     between,
---     choice,
---     getInput,
---     getOffset,
---     many,
---     manyTill,
---     option,
---     parse,
---     satisfy,
---     sepBy1,
---     sepEndBy,
---     sepEndBy1,
---     some,
---   )
--- import Text.Megaparsec.Debug (MonadParsecDbg (dbg))
--- import Token
--- import Prelude hiding (span)
+module MMC.Parser where
 
-type Parser = Parsec Void TokenStream
+import Control.Applicative (empty, optional, (<|>))
+import Control.Monad.Combinators.Expr
+import Data.Array (Array, listArray)
+import Data.Functor (($>))
+import Data.Int (Int64)
+import Data.Set as Set
+import Data.Text (Text, pack, unpack)
+import Data.Void
+import Data.Word (Word8)
+import MMC.AST
+import MMC.Common
+import MMC.Lexer (WithPos (..))
+import MMC.Token
+import Text.Megaparsec
+  ( MonadParsec (eof, getParserState, lookAhead, notFollowedBy, takeWhile1P, token, try),
+    ParseErrorBundle,
+    Parsec,
+    State (stateInput),
+    Stream (take1_),
+    between,
+    choice,
+    getInput,
+    getOffset,
+    many,
+    manyTill,
+    option,
+    parse,
+    satisfy,
+    sepBy1,
+    sepEndBy,
+    sepEndBy1,
+    some,
+  )
+import Text.Megaparsec.Debug (MonadParsecDbg (dbg))
+import Prelude hiding (span)
+
+type Parser = Parsec Void [WithPos Token]
 
 withSpan :: Parser a -> Parser (Spanned a)
 withSpan p = do
@@ -74,10 +75,10 @@ lit =
       fmap String <$> string
     ]
 
-ident :: Parser Name
+ident :: Parser Ident
 ident = token (\case (WithPos _ _ s _ (TokLowerCaseIdent i)) -> Just (Spanned i s); _ -> Nothing) Set.empty
 
-typeIdent :: Parser Name
+typeIdent :: Parser Ident
 typeIdent = token (\case (WithPos _ _ s _ (TokUpperCaseIdent i)) -> Just (Spanned i s); _ -> Nothing) Set.empty
 
 parens :: Parser a -> Parser a
@@ -349,9 +350,6 @@ expr = makeExprParser apply operatorTable
 --       p <- ((,) <$> typeIdent <*> many type') `sepEndBy1` tokenWithSpan TokBar
 --       pure $ Spanned (DeclData name vars p) (span name <> span (last (snd (last p))))
 
-visibility :: Parser Visibility
-visibility = option Private (tokenWithSpan TokPub $> Public)
-
 dataDef :: Parser DataDef
 dataDef = do
   v <- visibility
@@ -378,5 +376,5 @@ repl = do
           (span e)
       )
 
-parseStream :: TokenStream -> Either (ParseErrorBundle TokenStream Void) Prog
+parseStream :: [WithPos Token] -> Either (ParseErrorBundle [WithPos Token] Void) Prog
 parseStream = Text.Megaparsec.parse repl ""

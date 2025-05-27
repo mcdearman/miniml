@@ -3,8 +3,8 @@ module MMC.AST
     Module (..),
     Def,
     DefSort (..),
-    FnDef,
-    FnDefSort (..),
+    FunDef,
+    FunDefSort (..),
     Expr,
     ExprSort (..),
     UnaryOp,
@@ -13,6 +13,8 @@ module MMC.AST
     BinaryOp,
     BinOpSort (..),
     binOpName,
+    TypeAnno,
+    TypeAnnoSort (..),
     Pattern,
     PatternSort (..),
     Ident,
@@ -20,7 +22,6 @@ module MMC.AST
   )
 where
 
-import Data.Int (Int64)
 import Data.Text (Text)
 import MMC.Common (Spanned)
 
@@ -29,17 +30,18 @@ type Prog = Spanned Module
 data Module = Module
   { moduleName :: !Ident,
     moduleDefs :: [Def],
-    moduleFns :: [FnDef]
+    moduleFunDefs :: [FunDef]
   }
 
 type Def = Spanned DefSort
 
 data DefSort = Def {defPat :: !Pattern, defBody :: Expr} deriving (Show, Eq)
 
-type FnDef = Spanned FnDefSort
+type FunDef = Spanned FunDefSort
 
-data FnDefSort = FnDef
+data FunDefSort = FnDef
   { fnName :: !Ident,
+    fnTypeAnno :: Maybe TypeAnno,
     fnArgs :: [Pattern],
     fnBody :: Expr
   }
@@ -91,6 +93,15 @@ binOpName BinOpDiv = "div"
 binOpName BinOpMod = "mod"
 binOpName BinOpEq = "eq"
 
+type TypeAnno = Spanned TypeAnnoSort
+
+data TypeAnnoSort
+  = TypeAnnoIdent !Ident
+  | TypeAnnoFun !TypeAnno !TypeAnno
+  | TypeAnnoList !TypeAnno
+  | TypeAnnoUnit
+  deriving (Show, Eq)
+
 type Pattern = Spanned PatternSort
 
 data PatternSort
@@ -103,7 +114,7 @@ data PatternSort
 type Ident = Spanned Text
 
 data Lit
-  = Int !Int64
+  = Int Integer
   | Bool !Bool
   | String !Text
   deriving (Show, Eq)

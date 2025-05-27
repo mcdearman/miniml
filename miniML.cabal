@@ -13,8 +13,8 @@ extra-doc-files:    CHANGELOG.md
 common warnings
     ghc-options: 
       -Wall -Werror=missing-signatures -Werror=incomplete-patterns -Werror=incomplete-uni-patterns -Wno-unused-do-bind
-      -fllvm  
-      -haddock
+    --   -fllvm  
+    --   -haddock
     --   -ddump-simpl -ddump-cmm -ddump-stg-final -ddump-to-file -dsuppress-all
 
 executable miniML
@@ -28,8 +28,8 @@ executable miniML
         -- Infer
         MMC.Lexer
         -- NIR
-        -- TMC.Parser
-        -- TMC.Pipeline
+        MMC.Parser
+        MMC.Pipeline
         -- TMC.Rename
         -- Scheme
         -- TIR

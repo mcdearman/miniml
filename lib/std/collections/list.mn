@@ -13,6 +13,7 @@ length = foldl' (\c _ -> c + 1) 0
 -- | `map` takes a function `f` and a list `xs` and returns the list of
 -- the results of applying `f` to each element of `xs`.
 @pub
+@inline(never)
 map : (a -> b) -> [a] -> [b]
 map f [] = []
 map f (x::xs) = f x :: map f xs
