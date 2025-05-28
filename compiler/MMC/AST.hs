@@ -61,8 +61,8 @@ data ExprSort
   | If Expr Expr Expr
   | Match Expr [(Pattern, Expr)]
   | List [Expr]
+  | Cast !TypeAnno Expr
   | Unit
-  | Error
   deriving (Show, Eq)
 
 type UnaryOp = Spanned UnOpSort
@@ -98,9 +98,11 @@ binOpName BinOpNeq = "neq"
 type TypeAnno = Spanned TypeAnnoSort
 
 data TypeAnnoSort
-  = TypeAnnoIdent !Ident
+  = TypeAnnoVar !Ident
+  | TypeAnnoIdent !Ident
   | TypeAnnoFun !TypeAnno !TypeAnno
   | TypeAnnoList !TypeAnno
+  | TypeAnnoTuple [TypeAnno]
   | TypeAnnoUnit
   deriving (Show, Eq)
 
@@ -109,7 +111,10 @@ type Pattern = Spanned PatternSort
 data PatternSort
   = PatternWildcard
   | PatternLit !Lit
-  | PatternVar !Ident
+  | PatternIdent !Ident
+  | PatternAs !Ident Pattern
+  | PatternList [Pattern]
+  | PatternTuple [Pattern]
   | PatternUnit
   deriving (Show, Eq)
 

@@ -4,7 +4,6 @@ import Control.Applicative (empty, optional, (<|>))
 import Control.Monad.Combinators.Expr
 import Data.Array (Array, listArray)
 import Data.Functor (($>))
-import Data.Int (Int64)
 import Data.Set as Set
 import Data.Text (Text, pack, unpack)
 import Data.Void
@@ -114,173 +113,151 @@ operatorTable =
   ]
 
 pattern' :: Parser Pattern
-pattern' = withSpan $ choice [wildcard, litP, varP, unitP]
+pattern' = withSpan $ choice [wildcard, litP, varP, listP, unitP]
   where
     wildcard = token' TokUnderscore $> PatternWildcard
     litP = PatternLit . spannedVal <$> lit
-    varP = PatternVar <$> ident
+    varP = PatternIdent <$> ident
     -- pairP = parens $ PatternPair <$> pattern' <*> (token' TokDoubleColon *> pattern')
-    -- listP = PatternList <$> brackets (pattern' `sepEndBy` token' TokComma)
+    listP = PatternList <$> brackets (pattern' `sepEndBy` token' TokComma)
     unitP = unit $> PatternUnit
 
--- type' :: Parser TypeAnno
--- type' = dbg "type" $ try kindType <|> try arrowType <|> baseType
---   where
---     arrowType :: Parser TypeAnno
---     arrowType = do
---       t1 <- baseType
---       tokenWithSpan TokArrow
---       t2 <- type'
---       pure $ Spanned (TypeAnnoArrow t1 t2) (span t1 <> span t2)
---     kindType = do
---       name <- typeIdent
---       ts <- some baseType
---       pure $ Spanned (TypeAnnoKind name ts) (span name <> span (last ts))
+type' :: Parser TypeAnno
+type' = try arrowType <|> baseType
+  where
+    arrowType :: Parser TypeAnno
+    arrowType = withSpan $ TypeAnnoFun <$> baseType <* token' TokArrow <*> type'
 
---     baseType :: Parser TypeAnno
---     baseType =
---       withSpan $
---         choice
---           [ varType,
---             identType,
---             listType,
---             arrayType,
---             recordType,
---             try unit
---               $> TypeAnnoUnit
---               <|> try tupleType
---               <|> parens (value <$> type')
---           ]
---     varType = do
---       v <- ident
---       pure $ Spanned (TypeAnnoVar v) (span v)
---     identType = do
---       i <- typeIdent
---       pure $ Spanned (TypeAnnoIdent i) (span i)
---     listType = do
---       ts <- brackets type'
---       pure $ Spanned (TypeAnnoList (value ts)) (span ts)
---     arrayType = do
---       ts <- arrBrackets type'
---       pure $ Spanned (TypeAnnoArray (value ts)) (span ts)
---     tupleType =
---       fmap TypeAnnoTuple
---         <$> parens
---           ( (:)
---               <$> (type' <* tokenWithSpan TokComma)
---               <*> type' `sepEndBy1` tokenWithSpan TokComma
---           )
---     recordType = do
---       name <- optional typeIdent
---       r <- braces (((,) <$> ident <*> (tokenWithSpan TokColon *> type')) `sepEndBy1` tokenWithSpan TokComma)
---       case name of
---         Nothing -> pure $ Spanned (TypeAnnoRecord Nothing (value r)) (span r)
---         Just n -> pure $ Spanned (TypeAnnoRecord name (value r)) (span n <> span r)
+    baseType :: Parser TypeAnno
+    baseType =
+      withSpan $
+        choice
+          [ varType,
+            identType,
+            listType,
+            -- recordType,
+            try unit $> TypeAnnoUnit
+              <|> try tupleType
+              <|> parens (spannedVal <$> type')
+          ]
+    varType = TypeAnnoVar <$> ident
+    identType = TypeAnnoIdent <$> typeIdent
+    listType = TypeAnnoList <$> brackets type'
+    tupleType =
+      TypeAnnoTuple
+        <$> parens
+          ( (:)
+              <$> (type' <* token' TokComma)
+              <*> type' `sepEndBy1` token' TokComma
+          )
 
--- expr :: Parser Expr
--- expr = makeExprParser apply operatorTable
---   where
---     unit' = Spanned Unit . span <$> unit
---     litExpr = (\l -> Spanned (Lit (value l)) (span l)) <$> lit
---     varExpr = (\i -> Spanned (Var i) (span i)) <$> ident
+-- recordType = do
+--   name <- optional typeIdent
+--   r <- braces (((,) <$> ident <*> (tokenWithSpan TokColon *> type')) `sepEndBy1` tokenWithSpan TokComma)
+--   case name of
+--     Nothing -> pure $ Spanned (TypeAnnoRecord Nothing (value r)) (span r)
+--     Just n -> pure $ Spanned (TypeAnnoRecord name (value r)) (span n <> span r)
 
---     simple :: Parser Expr
---     simple = choice [litExpr, varExpr, try unit' <|> parens (spannedVal <$> expr)]
+expr :: Parser Expr
+expr = makeExprParser apply operatorTable
+  where
+    unit' = Spanned Unit . span <$> unit
+    litExpr = (\l -> Spanned (Lit (spannedVal l)) (span l)) <$> lit
+    varExpr = (\i -> Spanned (Var i) (span i)) <$> ident
 
---     lambda :: Parser Expr
---     lambda = do
---       start <- tokenWithSpan TokBackSlash
---       ps <- some pattern'
---       tokenWithSpan TokArrow
---       e <- expr
---       pure $ Spanned (Lam ps e) (span start <> span e)
+    simple :: Parser Expr
+    simple = withSpan $ choice [litExpr, varExpr, try unit' <|> parens (spannedVal <$> expr)]
 
---     let' :: Parser Expr
---     let' = do
---       start <- tokenWithSpan TokLet
---       p <- pattern'
---       tokenWithSpan TokEq
---       e1 <- expr
---       tokenWithSpan TokIn
---       e2 <- expr
---       pure $ Spanned (Let p e1 e2) (span start <> span e2)
+    lambda :: Parser ExprSort
+    lambda = Lam <$> (token' TokBackSlash *> some pattern' <* token' TokArrow <*> expr)
+    -- start <- tokenWithSpan TokBackSlash
+    -- ps <- some pattern'
+    -- tokenWithSpan TokArrow
+    -- e <- expr
+    -- pure $ Spanned (Lam ps e) (span start <> span e)
 
---     letRec :: Parser Expr
---     letRec = do
---       start <- tokenWithSpan TokLet
---       i <- ident
---       ps <- some pattern'
---       tokenWithSpan TokEq
---       e1 <- expr
---       tokenWithSpan TokIn
---       e2 <- expr
---       pure $ Spanned (Fn i ps e1 e2) (span start <> span e2)
+    let' :: Parser Expr
+    let' = do
+      start <- tokenWithSpan TokLet
+      p <- pattern'
+      tokenWithSpan TokEq
+      e1 <- expr
+      tokenWithSpan TokIn
+      e2 <- expr
+      pure $ Spanned (Let p e1 e2) (span start <> span e2)
 
---     if' :: Parser Expr
---     if' = do
---       start <- tokenWithSpan TokIf
---       cond <- expr
---       tokenWithSpan TokThen
---       then' <- expr
---       tokenWithSpan TokElse
---       else' <- expr
---       pure $ Spanned (If cond then' else') (span start <> span else')
+    letRec :: Parser Expr
+    letRec = do
+      start <- tokenWithSpan TokLet
+      i <- ident
+      ps <- some pattern'
+      tokenWithSpan TokEq
+      e1 <- expr
+      tokenWithSpan TokIn
+      e2 <- expr
+      pure $ Spanned (Fn i ps e1 e2) (span start <> span e2)
 
---     match :: Parser Expr
---     match = do
---       start <- tokenWithSpan TokMatch
---       e <- expr <* tokenWithSpan TokWith <* tokenWithSpan TokBar
---       cases <-
---         ( ( (,)
---               <$> pattern'
---               <*> (tokenWithSpan TokArrow *> expr)
---           )
---         )
---           `sepBy1` tokenWithSpan TokBar
---       pure $ Spanned (Match e cases) (span start <> span (snd (last cases)))
+    if' :: Parser Expr
+    if' = do
+      start <- tokenWithSpan TokIf
+      cond <- expr
+      tokenWithSpan TokThen
+      then' <- expr
+      tokenWithSpan TokElse
+      else' <- expr
+      pure $ Spanned (If cond then' else') (span start <> span else')
 
---     list :: Parser Expr
---     list = fmap List <$> brackets (expr `sepEndBy` tokenWithSpan TokComma)
+    match :: Parser Expr
+    match = do
+      start <- tokenWithSpan TokMatch
+      e <- expr <* tokenWithSpan TokWith <* tokenWithSpan TokBar
+      cases <-
+        ( ( (,)
+              <$> pattern'
+              <*> (tokenWithSpan TokArrow *> expr)
+          )
+        )
+          `sepBy1` tokenWithSpan TokBar
+      pure $ Spanned (Match e cases) (span start <> span (snd (last cases)))
 
---     array :: Parser Expr
---     array = do
---       a <- arrBrackets (expr `sepEndBy` tokenWithSpan TokComma)
---       pure $ Spanned (Array $ listArray (0, fromIntegral length (value a) - 1) (value a)) (span a)
+    list :: Parser Expr
+    list = fmap List <$> brackets (expr `sepEndBy` tokenWithSpan TokComma)
 
---     tuple :: Parser Expr
---     tuple =
---       fmap Tuple
---         <$> parens
---           ( (:)
---               <$> (expr <* tokenWithSpan TokComma)
---               <*> expr `sepEndBy1` tokenWithSpan TokComma
---           )
+    tuple :: Parser Expr
+    tuple =
+      fmap Tuple
+        <$> parens
+          ( (:)
+              <$> (expr <* tokenWithSpan TokComma)
+              <*> expr `sepEndBy1` tokenWithSpan TokComma
+          )
 
---     record :: Parser Expr
---     record = do
---       name <- optional typeIdent
---       r <- braces (((,) <$> ident <*> (tokenWithSpan TokEq *> expr)) `sepEndBy1` tokenWithSpan TokComma)
---       case name of
---         Nothing -> pure $ Spanned (Record Nothing (value r)) (span r)
---         Just n -> pure $ Spanned (Record name (value r)) (span n <> span r)
+    record :: Parser Expr
+    record = do
+      name <- optional typeIdent
+      r <- braces (((,) <$> ident <*> (tokenWithSpan TokEq *> expr)) `sepEndBy1` tokenWithSpan TokComma)
+      case name of
+        Nothing -> pure $ Spanned (Record Nothing (value r)) (span r)
+        Just n -> pure $ Spanned (Record name (value r)) (span n <> span r)
 
---     atom :: Parser Expr
---     atom =
---       choice
---         [ try letRec <|> let',
---           lambda,
---           if',
---           match,
---           list,
---           array,
---           try tuple <|> simple,
---           record
---         ]
+    atom :: Parser Expr
+    atom =
+      withSpan $
+        choice
+          [ try letRec <|> let',
+            lambda,
+            if',
+            match,
+            list,
+            array,
+            try tuple <|> simple,
+            record
+          ]
 
---     apply :: Parser Expr
---     apply = do
---       fargs <- some atom
---       pure $ foldl1 (\f a -> Spanned (App f a) (span f <> span a)) fargs
+    apply :: Parser Expr
+    apply = do
+      fargs <- some atom
+      pure $ foldl1 (\f a -> Spanned (App f a) (span f <> span a)) fargs
 
 -- -- decl :: Parser Decl
 -- -- decl = try fnMatch <|> try fn <|> def <|> try record <|> dataDef
