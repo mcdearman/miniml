@@ -64,8 +64,8 @@ bool = token (\case (WithPos _ _ s _ (TokBool b)) -> Just (Spanned b s); _ -> No
 string :: Parser (Spanned Text)
 string = token (\case (WithPos _ _ s _ (TokString str)) -> Just (Spanned str s); _ -> Nothing) Set.empty
 
-unit :: Parser Expr
-unit = withSpan $ token' TokLParen *> token' TokRParen $> Unit
+unit :: Parser ()
+unit = token' TokLParen *> token' TokRParen $> ()
 
 lit :: Parser (Spanned Lit)
 lit =
@@ -161,41 +161,26 @@ type' = try arrowType <|> baseType
 expr :: Parser Expr
 expr = makeExprParser apply operatorTable
   where
-    unit' = Spanned Unit . span <$> unit
-    litExpr = (\l -> Spanned (Lit (spannedVal l)) (span l)) <$> lit
-    varExpr = (\i -> Spanned (Var i) (span i)) <$> ident
+    unit' = try unit $> Unit
+    litExpr = Lit . spannedVal <$> lit
+    varExpr = Var <$> ident
 
     simple :: Parser Expr
-    simple = withSpan $ choice [litExpr, varExpr, try unit' <|> parens (spannedVal <$> expr)]
+    simple = withSpan $ choice [litExpr, varExpr, unit', parens (spannedVal <$> expr)]
 
     lambda :: Parser ExprSort
-    lambda = Lam <$> (token' TokBackSlash *> some pattern' <* token' TokArrow <*> expr)
-    -- start <- tokenWithSpan TokBackSlash
-    -- ps <- some pattern'
-    -- tokenWithSpan TokArrow
-    -- e <- expr
-    -- pure $ Spanned (Lam ps e) (span start <> span e)
+    lambda = Lam <$> (token' TokBackSlash *> some pattern') <* token' TokArrow <*> expr
 
-    let' :: Parser Expr
-    let' = do
-      start <- tokenWithSpan TokLet
-      p <- pattern'
-      tokenWithSpan TokEq
-      e1 <- expr
-      tokenWithSpan TokIn
-      e2 <- expr
-      pure $ Spanned (Let p e1 e2) (span start <> span e2)
+    let' :: Parser ExprSort
+    let' = Let <$> (token' TokLet *> pattern') <* token' TokEq <*> expr <* token' TokIn <*> expr
 
-    letRec :: Parser Expr
-    letRec = do
-      start <- tokenWithSpan TokLet
-      i <- ident
-      ps <- some pattern'
-      tokenWithSpan TokEq
-      e1 <- expr
-      tokenWithSpan TokIn
-      e2 <- expr
-      pure $ Spanned (Fn i ps e1 e2) (span start <> span e2)
+    fun :: Parser ExprSort
+    fun =
+      try (Fun <$> (token' TokLet *> ident) <*> some pattern')
+        <* token' TokArrow
+        <*> expr
+        <* token' TokIn
+        <*> expr
 
     if' :: Parser Expr
     if' = do
@@ -223,35 +208,36 @@ expr = makeExprParser apply operatorTable
     list :: Parser Expr
     list = fmap List <$> brackets (expr `sepEndBy` tokenWithSpan TokComma)
 
-    tuple :: Parser Expr
+    tuple :: Parser ExprSort
     tuple =
-      fmap Tuple
+      Tuple
         <$> parens
           ( (:)
-              <$> (expr <* tokenWithSpan TokComma)
-              <*> expr `sepEndBy1` tokenWithSpan TokComma
+              <$> (expr <* token' TokComma)
+              <*> expr `sepEndBy1` token' TokComma
           )
 
-    record :: Parser Expr
-    record = do
-      name <- optional typeIdent
-      r <- braces (((,) <$> ident <*> (tokenWithSpan TokEq *> expr)) `sepEndBy1` tokenWithSpan TokComma)
-      case name of
-        Nothing -> pure $ Spanned (Record Nothing (value r)) (span r)
-        Just n -> pure $ Spanned (Record name (value r)) (span n <> span r)
+    -- record :: Parser Expr
+    -- record = do
+    --   name <- optional typeIdent
+    --   r <- braces (((,) <$> ident <*> (tokenWithSpan TokEq *> expr)) `sepEndBy1` tokenWithSpan TokComma)
+    --   case name of
+    --     Nothing -> pure $ Spanned (Record Nothing (value r)) (span r)
+    --     Just n -> pure $ Spanned (Record name (value r)) (span n <> span r)
 
     atom :: Parser Expr
     atom =
       withSpan $
         choice
-          [ try letRec <|> let',
+          [ fun,
+            let',
             lambda,
             if',
             match,
             list,
             array,
-            try tuple <|> simple,
-            record
+            try tuple <|> simple
+            -- record
           ]
 
     apply :: Parser Expr

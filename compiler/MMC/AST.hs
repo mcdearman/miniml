@@ -55,12 +55,13 @@ data ExprSort
   | App Expr Expr
   | Lam [Pattern] Expr
   | Let Pattern Expr Expr
-  | Fn !Ident [Pattern] Expr Expr
+  | Fun !Ident [Pattern] Expr Expr
   | Unary !UnaryOp Expr
   | Binary !BinaryOp Expr Expr
   | If Expr Expr Expr
   | Match Expr [(Pattern, Expr)]
   | List [Expr]
+  | Tuple [Expr]
   | Cast !TypeAnno Expr
   | Unit
   deriving (Show, Eq)
