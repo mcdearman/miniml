@@ -165,8 +165,8 @@ expr = makeExprParser apply operatorTable
     litExpr = Lit . spannedVal <$> lit
     varExpr = Var <$> ident
 
-    simple :: Parser Expr
-    simple = withSpan $ choice [litExpr, varExpr, unit', parens (spannedVal <$> expr)]
+    simple :: Parser ExprSort
+    simple = choice [litExpr, varExpr, unit', parens (spannedVal <$> expr)]
 
     lambda :: Parser ExprSort
     lambda = Lam <$> (token' TokBackSlash *> some pattern') <* token' TokArrow <*> expr
@@ -182,31 +182,22 @@ expr = makeExprParser apply operatorTable
         <* token' TokIn
         <*> expr
 
-    if' :: Parser Expr
-    if' = do
-      start <- tokenWithSpan TokIf
-      cond <- expr
-      tokenWithSpan TokThen
-      then' <- expr
-      tokenWithSpan TokElse
-      else' <- expr
-      pure $ Spanned (If cond then' else') (span start <> span else')
+    if' :: Parser ExprSort
+    if' = If <$> (token' TokIf *> expr) <* token' TokThen <*> expr <* token' TokElse <*> expr
 
-    match :: Parser Expr
-    match = do
-      start <- tokenWithSpan TokMatch
-      e <- expr <* tokenWithSpan TokWith <* tokenWithSpan TokBar
-      cases <-
-        ( ( (,)
+    match :: Parser ExprSort
+    match = Match <$> (token' TokMatch *> expr) <*> cases
+      where
+        cases :: Parser [(Pattern, Expr)]
+        cases =
+          ( (,)
               <$> pattern'
-              <*> (tokenWithSpan TokArrow *> expr)
+              <*> (token' TokArrow *> expr)
           )
-        )
-          `sepBy1` tokenWithSpan TokBar
-      pure $ Spanned (Match e cases) (span start <> span (snd (last cases)))
+            `sepEndBy1` token' TokBar
 
-    list :: Parser Expr
-    list = fmap List <$> brackets (expr `sepEndBy` tokenWithSpan TokComma)
+    list :: Parser ExprSort
+    list = List <$> brackets (expr `sepEndBy` token' TokComma)
 
     tuple :: Parser ExprSort
     tuple =
@@ -235,7 +226,6 @@ expr = makeExprParser apply operatorTable
             if',
             match,
             list,
-            array,
             try tuple <|> simple
             -- record
           ]
