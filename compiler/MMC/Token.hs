@@ -15,6 +15,7 @@ data Token
   | TokBool Bool
   | TokString Text
   | TokChar Char
+  | TokBang
   | TokLParen
   | TokRParen
   | TokLBrace
@@ -59,6 +60,7 @@ pShowToken (TokInt x) = "Int" ++ show x
 pShowToken (TokBool x) = "Bool" ++ show x
 pShowToken (TokString x) = "String" ++ show x
 pShowToken (TokChar x) = "Char" ++ show x
+pShowToken TokBang = "Bang"
 pShowToken TokLParen = "LParen"
 pShowToken TokRParen = "RParen"
 pShowToken TokLBrace = "LBrace"

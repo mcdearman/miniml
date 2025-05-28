@@ -83,6 +83,7 @@ data BinOpSort
   | BinOpDiv
   | BinOpMod
   | BinOpEq
+  | BinOpNeq
   deriving (Show, Eq)
 
 binOpName :: BinOpSort -> Text
@@ -92,6 +93,7 @@ binOpName BinOpMul = "mul"
 binOpName BinOpDiv = "div"
 binOpName BinOpMod = "mod"
 binOpName BinOpEq = "eq"
+binOpName BinOpNeq = "neq"
 
 type TypeAnno = Spanned TypeAnnoSort
 

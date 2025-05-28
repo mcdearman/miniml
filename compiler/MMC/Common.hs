@@ -30,7 +30,7 @@ instance Monad (Result e) where
   Err e >>= _ = Err e
   Ok v >>= f = f v
 
-data Span = Span {start :: Int, end :: Int}
+data Span = Span {spanStart :: Int, spanEnd :: Int}
   deriving (Show, Eq, Ord)
 
 defaultSpan :: Span
