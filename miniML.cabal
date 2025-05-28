@@ -26,7 +26,7 @@ executable miniML
         -- Core
         -- Eval
         -- Infer
-        MMC.Lexer
+        -- MMC.Lexer
         -- NIR
         MMC.Parser
         MMC.Pipeline

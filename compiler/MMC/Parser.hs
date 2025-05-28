@@ -35,22 +35,14 @@ import Text.Megaparsec
 import Text.Megaparsec.Debug (MonadParsecDbg (dbg))
 import Prelude hiding (span)
 
-type Parser = Parsec Void [WithPos Token]
+type Parser = Parsec Void Text
 
 withSpan :: Parser a -> Parser (Spanned a)
 withSpan p = do
-  start <- getInput
+  start <- getOffset
   x <- p
-  end <- getInput
-  pure $
-    Spanned
-      x
-      ( case (start, end) of
-          ([], _) -> error "Parser started with no input"
-          (WithPos _ _ s _ _ : _, WithPos _ _ s' _ _ : _) -> s <> s'
-          (WithPos _ _ s _ _ : [], []) -> s
-          (WithPos _ _ s _ _ : ts, []) -> Span (spanStart s) (spanEnd (wpSpan (last ts)))
-      )
+  end <- getOffset
+  pure $ Spanned x (Span start end)
 
 token' :: Token -> Parser Token
 token' t = token (\(WithPos _ _ _ _ t') -> if t == t' then Just t else Nothing) Set.empty
