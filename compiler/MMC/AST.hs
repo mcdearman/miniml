@@ -62,6 +62,7 @@ data ExprSort
   | Match Expr [(Pattern, Expr)]
   | List [Expr]
   | Tuple [Expr]
+  | Record (Maybe Ident) [(Ident, Expr)]
   | Cast !TypeAnno Expr
   | Unit
   deriving (Show, Eq)
@@ -113,6 +114,7 @@ data PatternSort
   = PatternWildcard
   | PatternLit !Lit
   | PatternIdent !Ident
+  | PatternCons !Ident [Pattern]
   | PatternAs !Ident Pattern
   | PatternList [Pattern]
   | PatternTuple [Pattern]

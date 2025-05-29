@@ -33,6 +33,7 @@ import Text.Megaparsec
     (<?>),
   )
 import Text.Megaparsec.Char (alphaNumChar, char, char', lowerChar, space1, string, upperChar)
+import Text.Megaparsec.Char.Lexer (indentBlock)
 import qualified Text.Megaparsec.Char.Lexer as L
 import Text.Megaparsec.Debug (MonadParsecDbg (dbg))
 import Prelude hiding (span)
@@ -111,8 +112,8 @@ kwElse = symbol "else" $> () <?> "else"
 kwMatch :: Parser ()
 kwMatch = symbol "match" $> () <?> "match"
 
-kwMith :: Parser ()
-kwMith = string "with" $> () <?> "with"
+kwWith :: Parser ()
+kwWith = string "with" $> () <?> "with"
 
 kwRecord :: Parser ()
 kwRecord = symbol "record" $> () <?> "record"
@@ -196,12 +197,12 @@ operatorTable =
   ]
 
 pattern' :: Parser Pattern
-pattern' = withSpan $ choice [wildcard, litP, identP, listP, unitP]
+pattern' = withSpan $ choice [wildcard, litP, identP, consP, listP, unitP]
   where
     wildcard = char '_' $> PatternWildcard
     litP = PatternLit <$> lit
     identP = PatternIdent <$> lowerCaseIdent
-    -- pairP = parens $ PatternPair <$> pattern' <*> (token' TokDoubleColon *> pattern')
+    consP = PatternCons <$> (upperCaseIdent <* char '@') <*> some pattern'
     listP = PatternList <$> brackets (pattern' `sepEndBy` char ',')
     unitP = unit $> PatternUnit
 
@@ -219,8 +220,8 @@ typeAnno = try arrowType <|> baseType
             identType,
             listType,
             -- recordType,
-            try unit $> TypeAnnoUnit
-              <|> try tupleType
+            unit $> TypeAnnoUnit
+              <|> tupleType
               <|> parens (spannedVal <$> typeAnno)
           ]
     varType = TypeAnnoVar <$> lowerCaseIdent
@@ -228,11 +229,11 @@ typeAnno = try arrowType <|> baseType
     listType = TypeAnnoList <$> brackets typeAnno
     tupleType =
       TypeAnnoTuple
-        <$> parens ((:) <$> (typeAnno <* char ',') <*> typeAnno `sepEndBy1` char ',')
+        <$> try (parens ((:) <$> (typeAnno <* char ',')) <*> typeAnno `sepEndBy1` char ',')
 
 -- recordType = do
---   name <- optional typeIdent
---   r <- braces (((,) <$> ident <*> (tokenWithSpan TokColon *> type')) `sepEndBy1` tokenWithSpan TokComma)
+--   name <- optional upperCaseIdent
+--   r <- braces (((,) <$> lowerCaseIdent <*> (char ':' *> typeAnno)) `sepEndBy1` char ',')
 --   case name of
 --     Nothing -> pure $ Spanned (TypeAnnoRecord Nothing (value r)) (span r)
 --     Just n -> pure $ Spanned (TypeAnnoRecord name (value r)) (span n <> span r)
@@ -265,35 +266,22 @@ expr = makeExprParser apply operatorTable
     if' = If <$> (kwIf *> expr) <* kwThen <*> expr <* kwElse <*> expr
 
     match :: Parser ExprSort
-    match = Match <$> (kwMatch *> expr) <*> cases
+    match = Match <$> (kwMatch *> expr) <*> indentBlock sc kwWith *> cases
       where
         cases :: Parser [(Pattern, Expr)]
-        cases =
-          ( (,)
-              <$> pattern'
-              <*> (symbol "->" *> expr)
-          )
-            `sepEndBy1` char ';'
+        cases = ((,) <$> pattern' <*> (symbol "->" *> expr)) `sepEndBy1` char ';'
 
     list :: Parser ExprSort
     list = List <$> brackets (expr `sepEndBy` char ',')
 
     tuple :: Parser ExprSort
-    tuple =
-      Tuple
-        <$> parens
-          ( (:)
-              <$> (expr <* char ',')
-              <*> expr `sepEndBy1` char ','
-          )
+    tuple = Tuple <$> try (parens ((:) <$> (expr <* char ',')) <*> expr `sepEndBy1` char ',')
 
-    -- record :: Parser Expr
-    -- record = do
-    --   name <- optional typeIdent
-    --   r <- braces (((,) <$> ident <*> (tokenWithSpan TokEq *> expr)) `sepEndBy1` tokenWithSpan TokComma)
-    --   case name of
-    --     Nothing -> pure $ Spanned (Record Nothing (value r)) (span r)
-    --     Just n -> pure $ Spanned (Record name (value r)) (span n <> span r)
+    record :: Parser ExprSort
+    record =
+      Record
+        <$> optional upperCaseIdent
+        <*> braces (((,) <$> lowerCaseIdent <*> (char '=' *> expr)) `sepEndBy1` char ',')
 
     atom :: Parser Expr
     atom =
@@ -305,8 +293,8 @@ expr = makeExprParser apply operatorTable
             if',
             match,
             list,
-            try tuple <|> simple
-            -- record
+            tuple <|> simple,
+            record
           ]
 
     apply :: Parser Expr

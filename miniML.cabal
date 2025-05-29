@@ -23,18 +23,9 @@ executable miniML
     other-modules: 
         MMC.AST
         MMC.Common
-        -- Core
-        -- Eval
-        -- Infer
-        -- MMC.Lexer
-        -- NIR
         MMC.Parser
         MMC.Pipeline
-        -- TMC.Rename
-        -- Scheme
-        -- TIR
         MMC.Token
-        -- Ty
     default-extensions: 
         OverloadedStrings
         MagicHash
