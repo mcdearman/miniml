@@ -17,7 +17,7 @@ module MMC.AST
     TypeAnnoSort (..),
     Pattern,
     PatternSort (..),
-    Ident,
+    Ident (..),
     Lit (..),
   )
 where
@@ -119,7 +119,7 @@ data PatternSort
   | PatternUnit
   deriving (Show, Eq)
 
-type Ident = Spanned Text
+newtype Ident = Ident (Spanned Text) deriving (Show, Eq, Ord)
 
 data Lit
   = Int Integer
