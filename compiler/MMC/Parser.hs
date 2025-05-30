@@ -83,13 +83,13 @@ lit =
     ]
 
 kwModule :: Parser ()
-kwModule = symbol "mod" $> ()
+kwModule = symbol "module" $> () <?> "module"
 
 kwImport :: Parser ()
-kwImport = symbol "import" $> ()
+kwImport = symbol "import" $> () <?> "import"
 
 kwAs :: Parser ()
-kwAs = symbol "as" $> ()
+kwAs = symbol "as" $> () <?> "as"
 
 kwLet :: Parser ()
 kwLet = symbol "let" $> () <?> "let"

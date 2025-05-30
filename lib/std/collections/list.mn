@@ -7,6 +7,7 @@ data List a = [] | a :: List a
 
 -- | `length` returns the length of a finite list as a `Nat`.
 @pub
+@inline(always)
 length : [a] -> Nat
 length = foldl' (\c _ -> c + 1) 0
 
@@ -58,6 +59,7 @@ pub def concatMap : (a -> [b]) -> [a] -> [b] =
 (x::xs) ++ ys = x :: (xs ++ ys)
 
 @pub
+@inline(always)
 reverse : [a] -> [a]
 reverse = foldl' (flip (::)) []
 
