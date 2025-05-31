@@ -37,7 +37,7 @@ foldr f acc (x::xs) = f x (foldr f acc xs)
 @pub
 filter : (a -> Bool) -> [a] -> [a]
 filter _ [] = []
-filter pred (x:xs)
+filter pred (x::xs)
   | pred x = x :: filter pred xs
   | otherwise = filter pred xs
 
