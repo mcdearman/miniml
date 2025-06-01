@@ -254,6 +254,7 @@ typeAnno = arrowType <|> baseType
               <|> tupleType
               <|> parens (spannedVal <$> typeAnno)
           ]
+          
     varType = TypeAnnoVar <$> lowerCaseIdent
     identType = TypeAnnoIdent <$> upperCaseIdent
     listType = TypeAnnoList <$> brackets typeAnno
