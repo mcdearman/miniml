@@ -38,6 +38,7 @@ executable miniML
     build-depends:    
         base,
         megaparsec,
+        diagnose,
         parser-combinators,
         text,
         pretty-simple,

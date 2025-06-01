@@ -40,6 +40,7 @@ import Prelude hiding (span)
 
 type Parser = Parsec Void Text
 
+{-# INLINE withSpan #-}
 withSpan :: Parser a -> Parser (Spanned a)
 withSpan p = do
   start <- getOffset
@@ -47,33 +48,43 @@ withSpan p = do
   end <- getOffset
   pure $ Spanned x (Span start end)
 
+{-# INLINE sc #-}
 sc :: Parser ()
 sc = L.space space1 (L.skipLineComment "--") empty
 
+{-# INLINE lexeme #-}
 lexeme :: Parser a -> Parser a
 lexeme = L.lexeme sc
 
+{-# INLINE symbol #-}
 symbol :: Text -> Parser Text
 symbol = L.symbol sc
 
+{-# INLINE octal #-}
 octal :: Parser Integer
 octal = try (char '0' *> char' 'o') *> L.octal
 
+{-# INLINE hexadecimal #-}
 hexadecimal :: Parser Integer
 hexadecimal = try (char '0' >> char' 'x') >> L.hexadecimal
 
+{-# INLINE int #-}
 int :: Parser Integer
 int = lexeme $ choice [octal, hexadecimal, L.decimal]
 
+{-# INLINE bool #-}
 bool :: Parser Bool
 bool = lexeme $ choice [True <$ string "true", False <$ string "false"]
 
+{-# INLINE str #-}
 str :: Parser Text
 str = lexeme $ char '\"' *> (pack <$> manyTill L.charLiteral (char '\"'))
 
+{-# INLINE unit #-}
 unit :: Parser ()
 unit = symbol "()" $> ()
 
+{-# INLINE lit #-}
 lit :: Parser Lit
 lit =
   choice
@@ -82,57 +93,75 @@ lit =
       String <$> str
     ]
 
+{-# INLINE kwModule #-}
 kwModule :: Parser ()
 kwModule = symbol "module" $> () <?> "module"
 
+{-# INLINE kwImport #-}
 kwImport :: Parser ()
 kwImport = symbol "import" $> () <?> "import"
 
+{-# INLINE kwAs #-}
 kwAs :: Parser ()
 kwAs = symbol "as" $> () <?> "as"
 
+{-# INLINE kwLet #-}
 kwLet :: Parser ()
 kwLet = symbol "let" $> () <?> "let"
 
+{-# INLINE kwIn #-}
 kwIn :: Parser ()
 kwIn = symbol "in" $> () <?> "in"
 
+{-# INLINE kwWhere #-}
 kwWhere :: Parser ()
 kwWhere = string "where" $> () <?> "where"
 
+{-# INLINE kwIf #-}
 kwIf :: Parser ()
 kwIf = symbol "if" $> () <?> "if"
 
+{-# INLINE kwThen #-}
 kwThen :: Parser ()
 kwThen = symbol "then" $> () <?> "then"
 
+{-# INLINE kwElse #-}
 kwElse :: Parser ()
 kwElse = symbol "else" $> () <?> "else"
 
+{-# INLINE kwMatch #-}
 kwMatch :: Parser ()
 kwMatch = symbol "match" $> () <?> "match"
 
+{-# INLINE kwWith #-}
 kwWith :: Parser ()
 kwWith = string "with" $> () <?> "with"
 
+{-# INLINE kwRecord #-}
 kwRecord :: Parser ()
 kwRecord = symbol "record" $> () <?> "record"
 
+{-# INLINE kwData #-}
 kwData :: Parser ()
 kwData = symbol "data" $> () <?> "data"
 
+{-# INLINE kwType #-}
 kwType :: Parser ()
 kwType = symbol "type" $> () <?> "type"
 
+{-# INLINE kwClass #-}
 kwClass :: Parser ()
 kwClass = symbol "class" $> () <?> "class"
 
+{-# INLINE kwInstance #-}
 kwInstance :: Parser ()
 kwInstance = symbol "impl" $> () <?> "impl"
 
+{-# INLINE kwDo #-}
 kwDo :: Parser ()
 kwDo = string "do" $> () <?> "do"
 
+{-# INLINEABLE lowerCaseIdent #-}
 lowerCaseIdent :: Parser Ident
 lowerCaseIdent = try $ do
   name <- withSpan $ pack <$> ((:) <$> identStartChar <*> many identChar)
@@ -165,6 +194,7 @@ lowerCaseIdent = try $ do
         "do"
       ]
 
+{-# INLINEABLE upperCaseIdent #-}
 upperCaseIdent :: Parser Ident
 upperCaseIdent = Ident <$> (withSpan $ pack <$> ((:) <$> upperChar <*> many alphaNumChar))
 
@@ -207,10 +237,10 @@ pattern' = withSpan $ choice [wildcard, litP, identP, consP, listP, unitP]
     unitP = unit $> PatternUnit
 
 typeAnno :: Parser TypeAnno
-typeAnno = try arrowType <|> baseType
+typeAnno = arrowType <|> baseType
   where
     arrowType :: Parser TypeAnno
-    arrowType = withSpan $ TypeAnnoFun <$> baseType <* symbol "->" <*> typeAnno
+    arrowType = withSpan $ try (TypeAnnoFun <$> baseType <* symbol "->") <*> typeAnno
 
     baseType :: Parser TypeAnno
     baseType =
@@ -231,12 +261,12 @@ typeAnno = try arrowType <|> baseType
       TypeAnnoTuple
         <$> try (parens ((:) <$> (typeAnno <* char ',')) <*> typeAnno `sepEndBy1` char ',')
 
--- recordType = do
---   name <- optional upperCaseIdent
---   r <- braces (((,) <$> lowerCaseIdent <*> (char ':' *> typeAnno)) `sepEndBy1` char ',')
---   case name of
---     Nothing -> pure $ Spanned (TypeAnnoRecord Nothing (value r)) (span r)
---     Just n -> pure $ Spanned (TypeAnnoRecord name (value r)) (span n <> span r)
+    recordType = do
+      name <- optional upperCaseIdent
+      r <- braces (((,) <$> lowerCaseIdent <*> (char ':' *> typeAnno)) `sepEndBy1` char ',')
+      case name of
+        Nothing -> pure $ Spanned (TypeAnnoRecord Nothing (value r)) (span r)
+        Just n -> pure $ Spanned (TypeAnnoRecord name (value r)) (span n <> span r)
 
 expr :: Parser Expr
 expr = makeExprParser apply operatorTable

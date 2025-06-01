@@ -50,9 +50,6 @@ concat (x::xs) = x ++ concat xs
 concatMap : (a -> [b]) -> [a] -> [b] 
 concatMap = concat >>> map
 
-pub def concatMap : (a -> [b]) -> [a] -> [b] = 
-  concat >>> map
-
 @pub
 (++) : [a] -> [a] -> [a]
 [] ++ ys = ys
@@ -114,6 +111,7 @@ product : Num a => [a] -> a
 product = foldl' (*) 1
 
 @pub
+@inline(always)
 take : Nat -> [a] -> [a]
 take n ls
   | 0 < n = unsafeTake n ls
@@ -121,12 +119,25 @@ take n ls
   where
     -- A version of take that takes the whole list if given an argument
     -- less than 1
+    @inline(never)
     unsafeTake : Nat -> [a] -> [a]
     unsafeTake !_ [] = []
-    unsafeTake 1 (x:_) = [x]
-    unsafeTake m (x:xs) = x :: unsafeTake (m - 1) xs
+    unsafeTake 1 (x::_) = [x]
+    unsafeTake m (x::xs) = x :: unsafeTake (m - 1) xs
+
+@inline(always)
+pub fun take (n : Nat) (ls : [a]) : [a] =
+  if n <= 0 then [] else unsafeTake n ls
+  where
+    @inline(never)
+    fun unsafeTake : Nat -> [a] -> [a]
+      | !_ [] = []
+      | 1 (x::_) = [x]
+      | m (x::xs) = x :: unsafeTake (m - 1) xs
+  end
 
 @pub
+@inline(always)
 drop : Nat -> [a] -> [a]
 drop n ls
   | n <= 0 = ls
@@ -136,8 +147,8 @@ drop n ls
     -- less than 1
     unsafeDrop : Nat -> [a] -> [a]
     unsafeDrop !_ [] = []
-    unsafeDrop 1 (_:xs) = xs
-    unsafeDrop m (_:xs) = unsafeDrop (m - 1) xs
+    unsafeDrop 1 (_::xs) = xs
+    unsafeDrop m (_::xs) = unsafeDrop (m - 1) xs
 
 @pub
 takeWhile : (a -> Bool) -> [a] -> [a] 
