@@ -1,7 +1,22 @@
-module MMC.Common (Pretty, Result (..), Span (..), defaultSpan, Spanned (..), Unique (..)) where
+module MMC.Common
+  ( InputMode (..),
+    Pretty,
+    Result (..),
+    Loc (..),
+    defaultLoc,
+    Located (..),
+    unLoc,
+    getLoc,
+    Unique (..),
+  )
+where
 
 import Data.Text (Text, pack)
-import Data.Word (Word32)
+
+data InputMode
+  = InputModeFile
+  | InputModeInteractive
+  deriving (Show, Eq)
 
 class Pretty a where
   pretty :: a -> Text
@@ -30,28 +45,31 @@ instance Monad (Result e) where
   Err e >>= _ = Err e
   Ok v >>= f = f v
 
-data Span = Span {spanStart :: Int, spanEnd :: Int}
+data Loc = Loc {locStart :: Int, locEnd :: Int}
   deriving (Show, Eq, Ord)
 
-defaultSpan :: Span
-defaultSpan = Span 0 0
+defaultLoc :: Loc
+defaultLoc = Loc 0 0
 
-instance Pretty Span where
-  pretty (Span s e) = pack $ show s <> ".." <> show e
+instance Pretty Loc where
+  pretty (Loc s e) = pack $ show s <> ".." <> show e
 
-instance Semigroup Span where
-  Span s1 e1 <> Span s2 e2 = Span (min s1 s2) (max e1 e2)
+instance Semigroup Loc where
+  Loc s1 e1 <> Loc s2 e2 = Loc (min s1 s2) (max e1 e2)
 
-data Spanned a = Spanned
-  { spannedVal :: a,
-    span :: Span
-  }
+data Located a = Located a Loc
   deriving (Show, Eq, Ord)
 
-instance (Pretty a) => Pretty (Spanned a) where
-  pretty (Spanned v s) = pretty v <> " @ " <> pretty s
+unLoc :: Located a -> a
+unLoc (Located v _) = v
 
-instance Functor Spanned where
-  fmap f (Spanned v s) = Spanned (f v) s
+getLoc :: Located a -> Loc
+getLoc (Located _ loc) = loc
+
+instance (Pretty a) => Pretty (Located a) where
+  pretty (Located v s) = pretty v <> " @ " <> pretty s
+
+instance Functor Located where
+  fmap f (Located v s) = Located (f v) s
 
 newtype Unique = Id Int deriving (Show, Eq, Ord)

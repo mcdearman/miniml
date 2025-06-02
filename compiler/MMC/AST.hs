@@ -1,74 +1,74 @@
 module MMC.AST
   ( Prog,
     Module (..),
-    Def,
-    DefSort (..),
-    Expr,
-    ExprSort (..),
+    LDef,
+    Def (..),
+    LExpr,
+    Expr (..),
     UnaryOp,
     UnOpSort (..),
     unOpName,
     BinaryOp,
     BinOpSort (..),
     binOpName,
-    TypeAnno,
-    TypeAnnoSort (..),
-    Pattern,
-    PatternSort (..),
+    LTypeAnno,
+    TypeAnno (..),
+    LPattern,
+    Pattern (..),
     Ident (..),
     Lit (..),
   )
 where
 
 import Data.Text (Text)
-import MMC.Common (Spanned)
+import MMC.Common (Located)
 
-type Prog = Spanned Module
+type Prog = Located Module
 
 data Module = Module
   { moduleName :: !Ident,
-    moduleDefs :: [Def]
+    moduleDefs :: [LDef]
   }
 
-type Def = Spanned DefSort
+type LDef = Located Def
 
-data DefSort
+data Def
   = Def
-      { defPat :: !Pattern,
-        defBody :: Expr,
-        defWhereBinds :: [Def]
+      { defPat :: !LPattern,
+        defBody :: LExpr,
+        defWhereBinds :: [LDef]
       }
   | FunDef
       { funName :: !Ident,
-        funTypeAnno :: Maybe TypeAnno,
-        funArgs :: [Pattern],
-        funBody :: Expr,
-        funWhereBinds :: [Def]
+        funTypeAnno :: Maybe LTypeAnno,
+        funArgs :: [LPattern],
+        funBody :: LExpr,
+        funWhereBinds :: [LDef]
       }
   deriving (Show, Eq)
 
-type Expr = Spanned ExprSort
+type LExpr = Located Expr
 
-data ExprSort
+data Expr
   = Lit !Lit
   | Var !Ident
-  | App Expr Expr
-  | Lam [Pattern] Expr
-  | Let Pattern Expr Expr
-  | Fun !Ident [Pattern] Expr Expr
-  | Unary !UnaryOp Expr
-  | Binary !BinaryOp Expr Expr
-  | If Expr Expr Expr
-  | Match Expr [(Pattern, Expr)]
-  | List [Expr]
-  | Tuple [Expr]
-  | Record (Maybe Ident) [(Ident, Expr)]
-  | RecordAccess Expr Ident
-  | RecordUpdate Expr [(Ident, Expr)]
+  | App LExpr LExpr
+  | Lam [LPattern] LExpr
+  | Let LPattern LExpr LExpr
+  | Fun !Ident [LPattern] LExpr LExpr
+  | Unary !UnaryOp LExpr
+  | Binary !BinaryOp LExpr LExpr
+  | If LExpr LExpr LExpr
+  | Match LExpr [(LPattern, LExpr)]
+  | List [LExpr]
+  | Tuple [LExpr]
+  | Record (Maybe Ident) [(Ident, LExpr)]
+  | RecordAccess LExpr Ident
+  | RecordUpdate LExpr [(Ident, LExpr)]
   | Unit
   deriving (Show, Eq)
 
-type UnaryOp = Spanned UnOpSort
+type UnaryOp = Located UnOpSort
 
 data UnOpSort
   = UnOpNeg
@@ -77,7 +77,7 @@ data UnOpSort
 unOpName :: UnOpSort -> Text
 unOpName UnOpNeg = "neg"
 
-type BinaryOp = Spanned BinOpSort
+type BinaryOp = Located BinOpSort
 
 data BinOpSort
   = BinOpAdd
@@ -98,31 +98,31 @@ binOpName BinOpMod = "mod"
 binOpName BinOpEq = "eq"
 binOpName BinOpNeq = "neq"
 
-type TypeAnno = Spanned TypeAnnoSort
+type LTypeAnno = Located TypeAnno
 
-data TypeAnnoSort
+data TypeAnno
   = TypeAnnoVar !Ident
   | TypeAnnoIdent !Ident
-  | TypeAnnoFun !TypeAnno !TypeAnno
-  | TypeAnnoList !TypeAnno
-  | TypeAnnoTuple [TypeAnno]
+  | TypeAnnoFun !LTypeAnno !LTypeAnno
+  | TypeAnnoList !LTypeAnno
+  | TypeAnnoTuple [LTypeAnno]
   | TypeAnnoUnit
   deriving (Show, Eq)
 
-type Pattern = Spanned PatternSort
+type LPattern = Located Pattern
 
-data PatternSort
+data Pattern
   = PatternWildcard
   | PatternLit !Lit
   | PatternIdent !Ident
-  | PatternCons !Ident [Pattern]
-  | PatternAs !Ident Pattern
-  | PatternList [Pattern]
-  | PatternTuple [Pattern]
+  | PatternCons !Ident [LPattern]
+  | PatternAs !Ident LPattern
+  | PatternList [LPattern]
+  | PatternTuple [LPattern]
   | PatternUnit
   deriving (Show, Eq)
 
-newtype Ident = Ident (Spanned Text) deriving (Show, Eq, Ord)
+newtype Ident = Ident (Located Text) deriving (Show, Eq, Ord)
 
 data Lit
   = Int Integer

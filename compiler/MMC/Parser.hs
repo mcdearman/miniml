@@ -1,8 +1,6 @@
-module MMC.Parser where
+module MMC.Parser (parse') where
 
 import Control.Applicative (empty, optional, (<|>))
--- import MMC.Token (Token (..))
-
 import Control.Monad (void)
 import Control.Monad.Combinators.Expr
 import Data.Array (Array, listArray)
@@ -38,12 +36,16 @@ import Text.Megaparsec.Char (alphaNumChar, char, char', lowerChar, space1, strin
 import Text.Megaparsec.Char.Lexer (indentBlock)
 import qualified Text.Megaparsec.Char.Lexer as L
 import Text.Megaparsec.Debug (MonadParsecDbg (dbg))
-import Prelude hiding (span)
+import Prelude hiding (getLoc)
 
 type Parser = Parsec Void Text
 
-parseStream :: Text -> Either (ParseErrorBundle Text Void) Prog
-parseStream = Text.Megaparsec.parse repl ""
+parse' :: InputMode -> Text -> Either (ParseErrorBundle Text Void) Prog
+parse' InputModeFile = Text.Megaparsec.parse module' ""
+parse' InputModeInteractive = Text.Megaparsec.parse repl ""
+
+module' :: Parser Prog
+module' = undefined
 
 repl :: Parser Prog
 repl = undefined
@@ -51,23 +53,23 @@ repl = undefined
 def :: Parser Def
 def = undefined
 
-expr :: Parser Expr
+expr :: Parser LExpr
 expr = makeExprParser apply operatorTable
   where
     unit' = unit $> Unit
     litExpr = Lit <$> lit
     varExpr = Var <$> lowerCaseIdent
 
-    simple :: Parser ExprSort
-    simple = choice [litExpr, varExpr, unit', parens (spannedVal <$> expr)]
+    simple :: Parser Expr
+    simple = choice [litExpr, varExpr, unit', parens (unLoc <$> expr)]
 
-    lambda :: Parser ExprSort
+    lambda :: Parser Expr
     lambda = Lam <$> (char '\\' *> some pattern') <* symbol "->" <*> expr
 
-    let' :: Parser ExprSort
+    let' :: Parser Expr
     let' = Let <$> (kwLet *> pattern') <* char '=' <*> expr <* symbol "in" <*> expr
 
-    fun :: Parser ExprSort
+    fun :: Parser Expr
     fun =
       try (Fun <$> (let' *> lowerCaseIdent) <*> some pattern')
         <* symbol "->"
@@ -75,10 +77,10 @@ expr = makeExprParser apply operatorTable
         <* kwIn
         <*> expr
 
-    if' :: Parser ExprSort
+    if' :: Parser Expr
     if' = If <$> (kwIf *> expr) <* kwThen <*> expr <* kwElse <*> expr
 
-    match :: Parser ExprSort
+    match :: Parser Expr
     match =
       indentBlock scn $ do
         kwMatch
@@ -86,27 +88,27 @@ expr = makeExprParser apply operatorTable
         kwWith
         pure $ L.IndentSome Nothing (cont scrut) alt
       where
-        alt :: Parser (Pattern, Expr)
+        alt :: Parser (LPattern, LExpr)
         alt = ((,) <$> pattern' <*> (symbol "->" *> expr))
 
-        cont :: Expr -> [(Pattern, Expr)] -> Parser ExprSort
+        cont :: LExpr -> [(LPattern, LExpr)] -> Parser Expr
         cont scr alts = pure $ Match scr alts
 
-    list :: Parser ExprSort
+    list :: Parser Expr
     list = List <$> brackets (expr `sepEndBy` char ',')
 
-    tuple :: Parser ExprSort
+    tuple :: Parser Expr
     tuple = Tuple <$> try (parens ((:) <$> (expr <* char ',')) <*> expr `sepEndBy1` char ',')
 
-    record :: Parser ExprSort
+    record :: Parser Expr
     record =
       Record
         <$> optional upperCaseIdent
         <*> braces (((,) <$> lowerCaseIdent <*> (char '=' *> expr)) `sepEndBy1` char ',')
 
-    atom :: Parser Expr
+    atom :: Parser LExpr
     atom =
-      withSpan $
+      withLoc $
         choice
           [ fun,
             let',
@@ -118,43 +120,46 @@ expr = makeExprParser apply operatorTable
             record
           ]
 
-    apply :: Parser Expr
+    apply :: Parser LExpr
     apply = do
       fargs <- some atom
-      pure $ foldl1 (\f a -> Spanned (App f a) (span f <> span a)) fargs
+      pure $ foldl1 (\f a -> Located (App f a) (getLoc f <> getLoc a)) fargs
 
-operatorTable :: [[Operator Parser Expr]]
+operatorTable :: [[Operator Parser LExpr]]
 operatorTable =
-  [ [prefix "-" (\s e -> Spanned (Unary (Spanned UnOpNeg s) e) (s <> span e))],
-    [ binary "*" (\s l r -> Spanned (Binary (Spanned BinOpMul s) l r) (span l <> span r)),
-      binary "/" (\s l r -> Spanned (Binary (Spanned BinOpDiv s) l r) (span l <> span r)),
-      binary "%" (\s l r -> Spanned (Binary (Spanned BinOpMod s) l r) (span l <> span r))
+  [ [prefix "-" (\s e -> Located (Unary (Located UnOpNeg s) e) (s <> getLoc e))],
+    [ binary "*" (\s l r -> Located (Binary (Located BinOpMul s) l r) (getLoc l <> getLoc r)),
+      binary "/" (\s l r -> Located (Binary (Located BinOpDiv s) l r) (getLoc l <> getLoc r)),
+      binary "%" (\s l r -> Located (Binary (Located BinOpMod s) l r) (getLoc l <> getLoc r))
     ],
-    [ binary "+" (\s l r -> Spanned (Binary (Spanned BinOpAdd s) l r) (span l <> span r)),
-      binary "-" (\s l r -> Spanned (Binary (Spanned BinOpSub s) l r) (span l <> span r))
+    [ binary "+" (\s l r -> Located (Binary (Located BinOpAdd s) l r) (getLoc l <> getLoc r)),
+      binary "-" (\s l r -> Located (Binary (Located BinOpSub s) l r) (getLoc l <> getLoc r))
     ]
   ]
 
-prefix, postfix :: Text -> (Span -> Expr -> Expr) -> Operator Parser Expr
-prefix name f = Prefix (f . span <$> withSpan (string name))
-postfix name f = Postfix (f . span <$> withSpan (string name))
+binary :: Text -> (Loc -> LExpr -> LExpr -> LExpr) -> Operator Parser LExpr
+binary name f = InfixL (f . getLoc <$> withLoc (symbol name))
 
-typeAnno :: Parser TypeAnno
+prefix, postfix :: Text -> (Loc -> LExpr -> LExpr) -> Operator Parser LExpr
+prefix name f = Prefix (f . getLoc <$> withLoc (string name))
+postfix name f = Postfix (f . getLoc <$> withLoc (string name))
+
+typeAnno :: Parser LTypeAnno
 typeAnno = arrowType <|> baseType
   where
-    arrowType :: Parser TypeAnno
-    arrowType = withSpan $ try (TypeAnnoFun <$> baseType <* symbol "->") <*> typeAnno
+    arrowType :: Parser LTypeAnno
+    arrowType = withLoc $ try (TypeAnnoFun <$> baseType <* symbol "->") <*> typeAnno
 
-    baseType :: Parser TypeAnno
+    baseType :: Parser LTypeAnno
     baseType =
-      withSpan $
+      withLoc $
         choice
           [ varType,
             identType,
             listType,
             unit $> TypeAnnoUnit
               <|> tupleType
-              <|> parens (spannedVal <$> typeAnno)
+              <|> parens (unLoc <$> typeAnno)
           ]
 
     varType = TypeAnnoVar <$> lowerCaseIdent
@@ -164,8 +169,8 @@ typeAnno = arrowType <|> baseType
       TypeAnnoTuple
         <$> try (parens ((:) <$> (typeAnno <* char ',')) <*> typeAnno `sepEndBy1` char ',')
 
-pattern' :: Parser Pattern
-pattern' = withSpan $ choice [wildcard, litP, identP, consP, listP, unitP]
+pattern' :: Parser LPattern
+pattern' = withLoc $ choice [wildcard, litP, identP, consP, listP, unitP]
   where
     wildcard = char '_' $> PatternWildcard
     litP = PatternLit <$> lit
@@ -183,14 +188,11 @@ brackets = between (lexeme $ char '[') (lexeme $ char ']')
 braces :: Parser a -> Parser a
 braces = between (lexeme $ char '{') (lexeme $ char '}')
 
-binary :: Text -> (Span -> Expr -> Expr -> Expr) -> Operator Parser Expr
-binary name f = InfixL (f . span <$> withSpan (symbol name))
-
 {-# INLINEABLE lowerCaseIdent #-}
 lowerCaseIdent :: Parser Ident
 lowerCaseIdent = try $ do
-  name <- withSpan $ pack <$> ((:) <$> identStartChar <*> many identChar)
-  let !sv = spannedVal name
+  name <- withLoc $ pack <$> ((:) <$> identStartChar <*> many identChar)
+  let !sv = unLoc name
   if sv `elem` keywords
     then fail $ "keyword " ++ unpack sv ++ " cannot be an identifier"
     else pure $ Ident name
@@ -221,7 +223,7 @@ lowerCaseIdent = try $ do
 
 {-# INLINEABLE upperCaseIdent #-}
 upperCaseIdent :: Parser Ident
-upperCaseIdent = Ident <$> (withSpan $ pack <$> ((:) <$> upperChar <*> many alphaNumChar))
+upperCaseIdent = Ident <$> (withLoc $ pack <$> ((:) <$> upperChar <*> many alphaNumChar))
 
 scn :: Parser ()
 scn = L.space space1 lineComment empty
@@ -342,10 +344,10 @@ kwInstance = symbol "impl" $> () <?> "impl"
 kwDo :: Parser ()
 kwDo = string "do" $> () <?> "do"
 
-{-# INLINE withSpan #-}
-withSpan :: Parser a -> Parser (Spanned a)
-withSpan p = do
+{-# INLINE withLoc #-}
+withLoc :: Parser a -> Parser (Located a)
+withLoc p = do
   start <- getOffset
   x <- p
   end <- getOffset
-  pure $ Spanned x (Span start end)
+  pure $ Located x (Loc start end)
