@@ -1,15 +1,17 @@
 module MMC.AST
   ( Prog,
     Module (..),
+    LDecl,
+    Decl (..),
     LDef,
     Def (..),
     LExpr,
     Expr (..),
-    UnaryOp,
-    UnOpSort (..),
+    LUnaryOp,
+    UnaryOp (..),
     unOpName,
-    BinaryOp,
-    BinOpSort (..),
+    LBinaryOp,
+    BinaryOp (..),
     binOpName,
     LTypeAnno,
     TypeAnno (..),
@@ -27,8 +29,14 @@ type Prog = Located Module
 
 data Module = Module
   { moduleName :: !Ident,
-    moduleDefs :: [LDef]
+    moduleDecls :: [LDecl]
   }
+
+type LDecl = Located Decl
+
+data Decl
+  = DeclSig !Ident LTypeAnno
+  | DeclDef LDef
 
 type LDef = Located Def
 
@@ -40,8 +48,7 @@ data Def
       }
   | FunDef
       { funName :: !Ident,
-        funTypeAnno :: Maybe LTypeAnno,
-        funArgs :: [LPattern],
+        funParams :: [LPattern],
         funBody :: LExpr,
         funWhereBinds :: [LDef]
       }
@@ -56,8 +63,8 @@ data Expr
   | Lam [LPattern] LExpr
   | Let LPattern LExpr LExpr
   | Fun !Ident [LPattern] LExpr LExpr
-  | Unary !UnaryOp LExpr
-  | Binary !BinaryOp LExpr LExpr
+  | Unary !LUnaryOp LExpr
+  | Binary !LBinaryOp LExpr LExpr
   | If LExpr LExpr LExpr
   | Match LExpr [(LPattern, LExpr)]
   | List [LExpr]
@@ -68,18 +75,18 @@ data Expr
   | Unit
   deriving (Show, Eq)
 
-type UnaryOp = Located UnOpSort
+type LUnaryOp = Located UnaryOp
 
-data UnOpSort
+data UnaryOp
   = UnOpNeg
   deriving (Show, Eq)
 
-unOpName :: UnOpSort -> Text
+unOpName :: UnaryOp -> Text
 unOpName UnOpNeg = "neg"
 
-type BinaryOp = Located BinOpSort
+type LBinaryOp = Located BinaryOp
 
-data BinOpSort
+data BinaryOp
   = BinOpAdd
   | BinOpSub
   | BinOpMul
@@ -89,7 +96,7 @@ data BinOpSort
   | BinOpNeq
   deriving (Show, Eq)
 
-binOpName :: BinOpSort -> Text
+binOpName :: BinaryOp -> Text
 binOpName BinOpAdd = "add"
 binOpName BinOpSub = "sub"
 binOpName BinOpMul = "mul"
