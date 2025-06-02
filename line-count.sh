@@ -1,1 +1,1 @@
-cloc compiler runtime --by-file
+cloc compiler runtime/src --by-file
