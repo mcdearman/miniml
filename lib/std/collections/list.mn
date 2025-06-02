@@ -125,17 +125,6 @@ take n ls
     unsafeTake 1 (x::_) = [x]
     unsafeTake m (x::xs) = x :: unsafeTake (m - 1) xs
 
-@inline(always)
-pub fun take (n : Nat) (ls : [a]) : [a] =
-  if n <= 0 then [] else unsafeTake n ls
-  where
-    @inline(never)
-    fun unsafeTake : Nat -> [a] -> [a]
-      | !_ [] = []
-      | 1 (x::_) = [x]
-      | m (x::xs) = x :: unsafeTake (m - 1) xs
-  end
-
 @pub
 @inline(always)
 drop : Nat -> [a] -> [a]

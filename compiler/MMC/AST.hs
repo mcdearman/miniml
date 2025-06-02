@@ -3,8 +3,6 @@ module MMC.AST
     Module (..),
     Def,
     DefSort (..),
-    FunDef,
-    FunDefSort (..),
     Expr,
     ExprSort (..),
     UnaryOp,
@@ -29,22 +27,24 @@ type Prog = Spanned Module
 
 data Module = Module
   { moduleName :: !Ident,
-    moduleDefs :: [Def],
-    moduleFunDefs :: [FunDef]
+    moduleDefs :: [Def]
   }
 
 type Def = Spanned DefSort
 
-data DefSort = Def {defPat :: !Pattern, defBody :: Expr} deriving (Show, Eq)
-
-type FunDef = Spanned FunDefSort
-
-data FunDefSort = FnDef
-  { fnName :: !Ident,
-    fnTypeAnno :: Maybe TypeAnno,
-    fnArgs :: [Pattern],
-    fnBody :: Expr
-  }
+data DefSort
+  = Def
+      { defPat :: !Pattern,
+        defBody :: Expr,
+        defWhereBinds :: [Def]
+      }
+  | FunDef
+      { funName :: !Ident,
+        funTypeAnno :: Maybe TypeAnno,
+        funArgs :: [Pattern],
+        funBody :: Expr,
+        funWhereBinds :: [Def]
+      }
   deriving (Show, Eq)
 
 type Expr = Spanned ExprSort
@@ -63,7 +63,8 @@ data ExprSort
   | List [Expr]
   | Tuple [Expr]
   | Record (Maybe Ident) [(Ident, Expr)]
-  | Cast !TypeAnno Expr
+  | RecordAccess Expr Ident
+  | RecordUpdate Expr [(Ident, Expr)]
   | Unit
   deriving (Show, Eq)
 

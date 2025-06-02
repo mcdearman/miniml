@@ -34,11 +34,13 @@ executable miniML
         TupleSections
         RecordWildCards
         BangPatterns
+        PatternSynonyms
         TypeFamilies
     build-depends:    
         base,
         megaparsec,
         diagnose,
+        optics,
         parser-combinators,
         text,
         pretty-simple,

@@ -3,41 +3,46 @@
 -- for both random access and sequential access. It is also a good choice for
 -- functional programming, as it is immutable and can be easily transformed.
 
+import Std.Collections.Array (Array)
+import qualified Std.Collections.Array as Array
+
+@pub
 @derive(Debug, PartialEq, Eq)
-pub struct Vector a = { 
+record Vector a = { 
   size : Int, 
   tree : Tree a 
 }
 
-pub enum Tree a
-  = Leaf (List a)
-  | Node (List (Tree a)) Int
+@pub
+@derive(Debug, PartialEq, Eq)
+data Tree a
+  = Leaf (Array a)
+  | Node (Array (Tree a)) Int
   | Empty
 
 @inline
-def empty : Vector a = Vector { size = 0, tree = Empty }
+empty : Vector a = Vector { size = 0, tree = Empty }
   
 @inline
-def isEmpty (v : Vector a) : Bool = v.size == 0
+isEmpty (v : Vector a) : Bool = v.size == 0
   
 @inline
-def size (v : Vector a) : Int = v.size
+size (v : Vector a) : Int = v.size
   
-@inline
-def push (v : Vector a) (x : a) : Vector a =
-  match v.tree with
-  Empty -> Vector { size = 1, tree = Leaf [x] }
-  Leaf xs -> 
-    if List.length xs < 32 then
-      Vector { size = v.size + 1, tree = Leaf (xs ++ [x]) }
-    else
-      let newTree = Node [Leaf xs] (List.length xs) in
-        Vector { size = v.size + 1, tree = newTree }
-  Node ts n -> if n < 32 then
-    let newTree = Node (ts ++ [Leaf [x]]) n in 
-      Vector { size = v.size + 1, tree = newTree }
-    else let newTree = Node [Leaf [x]] (List.length ts) in
-      Vector { size = v.size + 1, tree = newTree }
+@inline(always)
+push : Vector a -> a -> Vector a
+push v x = go v.tree
+  where 
+    go (Empty) = Vector { size = 1, tree = Leaf [x] }
+    go (Leaf xs) =
+      | Array.length xs < 32 = Vector { size = v.size + 1, tree = Leaf (xs ++ [x]) }
+      | otherwise = let newTree = Node [Leaf xs] (Array.length xs) in
+          Vector { size = v.size + 1, tree = newTree }
+    go (Node ts n)
+      | n < 32 = let newTree = Node (ts ++ [Leaf [x]]) n in 
+          Vector { size = v.size + 1, tree = newTree }
+      | otherwise = let newTree = Node [Leaf [x]] (Array.length ts) in
+          Vector { size = v.size + 1, tree = newTree }
   
 @inline
 def pop (v : Vector a) : Option (a, Vector a) =
@@ -45,7 +50,7 @@ def pop (v : Vector a) : Option (a, Vector a) =
     Empty -> None
     Leaf [] -> None
     Leaf (x::xs) -> 
-      Some (x, Vector { size = v.size - 1, tree = Leaf (List.tail xs) })
+      Some (x, Vector { size = v.size - 1, tree = Leaf (Array.tail xs) })
     Node ts 0 -> None
-    Node ts n -> let newTree = Node (List.tail ts) (n - 1) in
-      Some (List.head ts, Vector { size = v.size - 1, tree = newTree })
+    Node ts n -> let newTree = Node (Array.tail ts) (n - 1) in
+      Some (Array.head ts, Vector { size = v.size - 1, tree = newTree })
