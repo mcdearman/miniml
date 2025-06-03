@@ -1,3 +1,5 @@
+pub mod info_table;
+
 #[derive(Debug)]
 pub struct VM {
     stack: Vec<u32>,

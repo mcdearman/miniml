@@ -53,6 +53,15 @@ repl = undefined
 def :: Parser Def
 def = undefined
 
+bind :: Parser Bind
+bind = patternBind <|> funBind
+  where
+    patternBind :: Parser Bind
+    patternBind = PatternBind <$> pattern' <* symbol "=" <*> expr
+
+    funBind :: Parser Bind
+    funBind = FunBind <$> try (lowerCaseIdent <*> many pattern' <* symbol "->" <*> expr)
+
 expr :: Parser LExpr
 expr = makeExprParser apply operatorTable
   where
@@ -71,7 +80,7 @@ expr = makeExprParser apply operatorTable
 
     fun :: Parser Expr
     fun =
-      try (Fun <$> (let' *> lowerCaseIdent) <*> some pattern')
+      try (Let <$> (let' *> lowerCaseIdent) <*> some pattern')
         <* symbol "->"
         <*> expr
         <* kwIn

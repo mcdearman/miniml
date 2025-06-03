@@ -5,6 +5,7 @@ module MMC.AST
     Decl (..),
     LDef,
     Def (..),
+    Bind (..),
     LExpr,
     Expr (..),
     LUnaryOp,
@@ -35,23 +36,26 @@ data Module = Module
 type LDecl = Located Decl
 
 data Decl
+  = DeclImport !Ident
+  | DeclExport !Ident
+  | DeclCDecl !CDecl
+  deriving (Show, Eq)
+
+type LCDecl = Located CDecl
+
+data CDecl
   = DeclSig !Ident LTypeAnno
   | DeclDef LDef
+  deriving (Show, Eq)
 
 type LDef = Located Def
 
 data Def
   = Def
-      { defPat :: !LPattern,
-        defBody :: LExpr,
-        defWhereBinds :: [LDef]
-      }
-  | FunDef
-      { funName :: !Ident,
-        funParams :: [LPattern],
-        funBody :: LExpr,
-        funWhereBinds :: [LDef]
-      }
+  { defBind :: Bind,
+    defBody :: LExpr,
+    defWhereBinds :: [LCDecl]
+  }
   deriving (Show, Eq)
 
 type LExpr = Located Expr
@@ -61,8 +65,7 @@ data Expr
   | Var !Ident
   | App LExpr LExpr
   | Lam [LPattern] LExpr
-  | Let LPattern LExpr LExpr
-  | Fun !Ident [LPattern] LExpr LExpr
+  | Let Bind LExpr LExpr
   | Unary !LUnaryOp LExpr
   | Binary !LBinaryOp LExpr LExpr
   | If LExpr LExpr LExpr
@@ -73,6 +76,23 @@ data Expr
   | RecordAccess LExpr Ident
   | RecordUpdate LExpr [(Ident, LExpr)]
   | Unit
+  deriving (Show, Eq)
+
+data Bind
+  = PatternBind !LPattern
+  | FunBind !Ident [LPattern]
+  deriving (Show, Eq)
+
+data MatchGroup = MatchGroup
+  { matchGroupScrutinee :: LExpr,
+    matchGroupAlts :: [(LPattern, LExpr)]
+  }
+  deriving (Show, Eq)
+
+data Guard = Guard
+  { guardPattern :: LPattern,
+    guardExpr :: LExpr
+  }
   deriving (Show, Eq)
 
 type LUnaryOp = Located UnaryOp
