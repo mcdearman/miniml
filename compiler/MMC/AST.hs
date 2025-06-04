@@ -41,11 +41,20 @@ data Decl
   | DeclCDecl !CDecl
   deriving (Show, Eq)
 
+data ClassDef
+  = ClassDef
+  { className :: Ident,
+    classSuperclasses :: [Ident],
+    classTypeParams :: [Ident],
+    classMethods :: [LCDecl]
+  }
+  deriving (Show, Eq)
+
 type LCDecl = Located CDecl
 
 data CDecl
-  = DeclSig !Ident LTypeAnno
-  | DeclDef LDef
+  = SigCD !Ident LTypeAnno
+  | DefCD LDef
   deriving (Show, Eq)
 
 type LDef = Located Def
@@ -79,8 +88,8 @@ data Expr
   deriving (Show, Eq)
 
 data Bind
-  = PatternBind !LPattern
-  | FunBind !Ident [LPattern]
+  = PatternB !LPattern
+  | FunB !Ident [LPattern]
   deriving (Show, Eq)
 
 data MatchGroup = MatchGroup
