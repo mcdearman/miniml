@@ -53,15 +53,6 @@ repl = undefined
 def :: Parser Def
 def = undefined
 
-bind :: Parser Bind
-bind = patternBind <|> funBind
-  where
-    patternBind :: Parser Bind
-    patternBind = PatternBind <$> pattern' <* symbol "=" <*> expr
-
-    funBind :: Parser Bind
-    funBind = FunBind <$> try (lowerCaseIdent <*> many pattern' <* symbol "->" <*> expr)
-
 expr :: Parser LExpr
 expr = makeExprParser apply operatorTable
   where
@@ -134,6 +125,15 @@ expr = makeExprParser apply operatorTable
       fargs <- some atom
       pure $ foldl1 (\f a -> Located (App f a) (getLoc f <> getLoc a)) fargs
 
+bind :: Parser Bind
+bind = patternBind <|> funBind
+  where
+    patternBind :: Parser Bind
+    patternBind = PatternB <$> pattern' <* symbol "=" <*> expr
+
+    funBind :: Parser Bind
+    funBind = FunB <$> try (lowerCaseIdent <*> many pattern' <* symbol "->" <*> expr)
+
 operatorTable :: [[Operator Parser LExpr]]
 operatorTable =
   [ [prefix "-" (\s e -> Located (Unary (Located UnOpNeg s) e) (s <> getLoc e))],
@@ -203,7 +203,7 @@ lowerCaseIdent = try $ do
   name <- withLoc $ pack <$> ((:) <$> identStartChar <*> many identChar)
   let !sv = unLoc name
   if sv `elem` keywords
-    then fail $ "keyword " ++ unpack sv ++ " cannot be an identifier"
+    then fail $ "keyword " ++ unpack sv ++ " cannot be used in place of identifier"
     else pure $ Ident name
   where
     identStartChar = lowerChar <|> char '_'
