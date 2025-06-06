@@ -57,4 +57,3 @@ main :: IO ()
 main = do
   putStrLn "Welcome to the miniML REPL!"
   runInputT settings (repl defaultPipelineEnv)
-

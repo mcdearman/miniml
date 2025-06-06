@@ -36,9 +36,9 @@ data Module = Module
 type LDecl = Located Decl
 
 data Decl
-  = DeclImport !Ident
-  | DeclExport !Ident
-  | DeclCDecl !CDecl
+  = ImportD !Ident
+  | ExportD !Ident
+  | CDeclD !CDecl
   deriving (Show, Eq)
 
 data ClassDef
@@ -70,21 +70,21 @@ data Def
 type LExpr = Located Expr
 
 data Expr
-  = Lit !Lit
-  | Var !Ident
-  | App LExpr LExpr
-  | Lam [LPattern] LExpr
-  | Let Bind LExpr LExpr
-  | Unary !LUnaryOp LExpr
-  | Binary !LBinaryOp LExpr LExpr
-  | If LExpr LExpr LExpr
-  | Match LExpr [(LPattern, LExpr)]
-  | List [LExpr]
-  | Tuple [LExpr]
-  | Record (Maybe Ident) [(Ident, LExpr)]
-  | RecordAccess LExpr Ident
-  | RecordUpdate LExpr [(Ident, LExpr)]
-  | Unit
+  = LitE !Lit
+  | VarE !Ident
+  | AppE LExpr LExpr
+  | LamE [LPattern] LExpr
+  | LetE Bind LExpr LExpr
+  | UnaryE !LUnaryOp LExpr
+  | BinaryE !LBinaryOp LExpr LExpr
+  | IfE LExpr LExpr LExpr
+  | MatchE LExpr [(LPattern, LExpr)]
+  | ListE [LExpr]
+  | TupleE [LExpr]
+  | RecordE (Maybe Ident) [(Ident, LExpr)]
+  | RecordAccessE LExpr Ident
+  | RecordUpdateE LExpr [(Ident, LExpr)]
+  | UnitE
   deriving (Show, Eq)
 
 data Bind
@@ -107,61 +107,61 @@ data Guard = Guard
 type LUnaryOp = Located UnaryOp
 
 data UnaryOp
-  = UnOpNeg
+  = NegUO
   deriving (Show, Eq)
 
 unOpName :: UnaryOp -> Text
-unOpName UnOpNeg = "neg"
+unOpName NegUO = "neg"
 
 type LBinaryOp = Located BinaryOp
 
 data BinaryOp
-  = BinOpAdd
-  | BinOpSub
-  | BinOpMul
-  | BinOpDiv
-  | BinOpMod
-  | BinOpEq
-  | BinOpNeq
+  = AddBO
+  | SubBO
+  | MulBO
+  | DivBO
+  | ModBO
+  | EqBO
+  | NeqBO
   deriving (Show, Eq)
 
 binOpName :: BinaryOp -> Text
-binOpName BinOpAdd = "add"
-binOpName BinOpSub = "sub"
-binOpName BinOpMul = "mul"
-binOpName BinOpDiv = "div"
-binOpName BinOpMod = "mod"
-binOpName BinOpEq = "eq"
-binOpName BinOpNeq = "neq"
+binOpName AddBO = "add"
+binOpName SubBO = "sub"
+binOpName MulBO = "mul"
+binOpName DivBO = "div"
+binOpName ModBO = "mod"
+binOpName EqBO = "eq"
+binOpName NeqBO = "neq"
 
 type LTypeAnno = Located TypeAnno
 
 data TypeAnno
-  = TypeAnnoVar !Ident
-  | TypeAnnoIdent !Ident
-  | TypeAnnoFun !LTypeAnno !LTypeAnno
-  | TypeAnnoList !LTypeAnno
-  | TypeAnnoTuple [LTypeAnno]
-  | TypeAnnoUnit
+  = VarTA !Ident
+  | IdentTA !Ident
+  | FunTA !LTypeAnno !LTypeAnno
+  | ListTA !LTypeAnno
+  | TupleTA [LTypeAnno]
+  | UnitTA
   deriving (Show, Eq)
 
 type LPattern = Located Pattern
 
 data Pattern
-  = PatternWildcard
-  | PatternLit !Lit
-  | PatternIdent !Ident
-  | PatternCons !Ident [LPattern]
-  | PatternAs !Ident LPattern
-  | PatternList [LPattern]
-  | PatternTuple [LPattern]
-  | PatternUnit
+  = WildcardP
+  | LitP !Lit
+  | IdentP !Ident
+  | ConsP !Ident [LPattern]
+  | AsP !Ident LPattern
+  | ListP [LPattern]
+  | TupleP [LPattern]
+  | UnitP
   deriving (Show, Eq)
 
 newtype Ident = Ident (Located Text) deriving (Show, Eq, Ord)
 
 data Lit
-  = Int Integer
-  | Bool !Bool
-  | String !Text
+  = IntL Integer
+  | BoolL !Bool
+  | StringL !Text
   deriving (Show, Eq)
