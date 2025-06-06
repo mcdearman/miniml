@@ -15,7 +15,7 @@ import Data.Text (Text, pack)
 import GHC.Exts (Int#)
 
 data InputMode
-  = InputModeFile
+  = InputModeFile Text
   | InputModeInteractive
   deriving (Show, Eq)
 

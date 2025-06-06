@@ -7,13 +7,10 @@ import qualified Data.Map as Map
 import Data.Text (Text, pack, unpack)
 import Data.Text.Lazy (toStrict)
 import Debug.Trace (trace)
--- import Infer (Solver (..), defaultSolver, infer)
--- import qualified Infer as Solver
--- import Parser (parseStream)
--- import Rename
--- import qualified Rename as Resolver
 import Text.Megaparsec (errorBundlePretty)
 import Text.Pretty.Simple (pShow)
+import MMC.Parser (parseMML)
+import MMC.Common (InputMode(InputModeFile))
 
 data PipelineEnv = PipelineEnv
   { src :: Text,
@@ -30,14 +27,18 @@ defaultPipelineEnv =
 
 type Pipeline = State PipelineEnv
 
-runPipeline :: Text -> Pipeline Text
-runPipeline src = do
+runPipeline :: InputMode -> Text -> Pipeline Text
+runPipeline mode src = do
   PipelineEnv {src = _, flags = f} <- get
   put $ PipelineEnv {src = src, flags = f}
-  undefined
-  -- case tokenize src of
-  --   Left err -> pure $ pack $ "Lexer error: " ++ errorBundlePretty err
-  --   Right ts -> pure $ toStrict $ pShow ts
+  case parseMML mode src of
+    Left err -> pure $ pack $ "Parser error: " ++ errorBundlePretty err
+    Right p -> do
+      pure $ toStrict $ pShow p
+
+-- case tokenize src of
+--   Left err -> pure $ pack $ "Lexer error: " ++ errorBundlePretty err
+--   Right ts -> pure $ toStrict $ pShow ts
 
 -- Right ts -> trace (unpack . toStrict $ (pShow ts)) $ case parseStream ts of
 --   Left err -> pure $ pack $ "Parser error: " ++ errorBundlePretty err

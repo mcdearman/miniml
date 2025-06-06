@@ -2,6 +2,7 @@ module Main where
 
 import Control.Monad.State (runState)
 import Data.Text (pack, unpack)
+import MMC.Common (InputMode (InputModeFile, InputModeInteractive))
 import MMC.Pipeline
 import System.Console.Haskeline
 
@@ -33,7 +34,7 @@ repl env = do
     --   outputStrLn $ unpack $ (toStrict . pShow) sub
     --   repl c
     Just src -> do
-      let (out, env') = runState (runPipeline (pack src)) env
+      let (out, env') = runState (runPipeline InputModeInteractive (pack src)) env
       outputStrLn $ unpack out
       repl env'
     Nothing -> return ()
@@ -55,5 +56,8 @@ collectLines acc = do
 
 main :: IO ()
 main = do
-  putStrLn "Welcome to the miniML REPL!"
-  runInputT settings (repl defaultPipelineEnv)
+  -- putStrLn "Welcome to the miniML REPL!"
+  -- runInputT settings (repl defaultPipelineEnv)
+  let src = "x = 1"
+  let (out, _) = runState (runPipeline (InputModeFile "test.mml") (pack src)) defaultPipelineEnv
+  putStrLn $ unpack out

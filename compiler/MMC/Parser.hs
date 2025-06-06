@@ -1,4 +1,4 @@
-module MMC.Parser (parse') where
+module MMC.Parser (parseMML) where
 
 import Control.Applicative (empty, optional, (<|>))
 import Control.Monad (void)
@@ -40,20 +40,35 @@ import Prelude hiding (getLoc)
 
 type Parser = Parsec Void Text
 
-parse' :: InputMode -> Text -> Either (ParseErrorBundle Text Void) Prog
-parse' InputModeFile = Text.Megaparsec.parse module' ""
-parse' InputModeInteractive = Text.Megaparsec.parse interactive ""
+parseMML :: InputMode -> Text -> Either (ParseErrorBundle Text Void) Prog
+parseMML (InputModeFile fileName) = Text.Megaparsec.parse (module' fileName) ""
+parseMML InputModeInteractive = Text.Megaparsec.parse interactive ""
 
-module' :: Parser Prog
-module' = undefined
+module' :: Text -> Parser Prog
+module' fileName = do
+  ds <- withLoc $ many decl
+  pure $ Located (Module fileName (unLoc ds)) (getLoc ds)
 
-interactive :: Parser Prog
-interactive = withLoc $ ds <|> e
-  where
-    ds = Module "main" <$> many decl
-    e = do
-      e' <- expr
-      pure $ Module "main" [DeclClassDecl (ClassDeclBind (RhsExpr e'))]
+interactive = undefined
+
+-- interactive :: Parser Prog
+-- interactive = withLoc $ ds <|> e
+--   where
+--     ds = Module "main" <$> many decl
+--     e = makeModFromExpr <$> expr
+
+--     -- Convert an expression to a module declaration
+--     makeModFromExpr :: LExpr -> Module
+--     makeModFromExpr expr' =
+--       let !l = getLoc expr'
+--           !mainLetBody =
+--             Located
+--               (App (Located (Var (Ident "printLn")) l) (Located (App (Located (Var (Ident "show")) l) expr') l))
+--               l
+--           !alt = Located (Alt [PatternWildcard] (RhsExpr expr')) l
+--        in Module
+--             "main"
+--             [Located (DeclClassDecl (Located (ClassDeclBind (Located (BindFun "main" [alt]) l)) l)) l]
 
 -- (Module "main") <$> DeclClassDecl <$> ClassDeclBind <$> (RhsExpr <$> expr)
 
@@ -143,8 +158,8 @@ bind = withLoc $ funBind <|> patternBind
     funBind :: Parser Bind
     funBind = try $ BindFun <$> lowerCaseIdent <*> some alt <*> where'
 
-    alt :: Parser Alt
-    alt = Alt <$> (some pattern') <* symbol "=" <*> rhs
+    alt :: Parser LAlt
+    alt = withLoc $ Alt <$> (some pattern') <* symbol "=" <*> rhs
 
     where' :: Parser [LClassDecl]
     where' = option [] (kwWhere *> some classDecl)

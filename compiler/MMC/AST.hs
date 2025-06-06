@@ -16,6 +16,7 @@ module MMC.AST
     Expr (..),
     LBind,
     Bind (..),
+    LAlt,
     Alt (..),
     LGuard,
     Guard (..),
@@ -43,6 +44,7 @@ data Module = Module
   { moduleName :: !Text,
     moduleDecls :: [LDecl]
   }
+  deriving (Show, Eq)
 
 type LDecl = Located Decl
 
@@ -101,6 +103,7 @@ data Expr
   | App LExpr LExpr
   | Lam [LPattern] LExpr
   | Let [LBind] LExpr
+  | Do [LExpr]
   | Unary !LUnaryOp LExpr
   | Binary !LBinaryOp LExpr LExpr
   | If LExpr LExpr LExpr
@@ -117,8 +120,10 @@ type LBind = Located Bind
 
 data Bind
   = BindPattern !LPattern Rhs [LClassDecl]
-  | BindFun !Ident [Alt] [LClassDecl]
+  | BindFun !Ident [LAlt] [LClassDecl]
   deriving (Show, Eq)
+
+type LAlt = Located Alt
 
 data Alt = Alt
   { altPatterns :: [LPattern],

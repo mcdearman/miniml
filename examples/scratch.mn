@@ -12,8 +12,8 @@ true -- Bool
 -- or repl, you can use expressions at the top level. You can think of 
 -- this as a shorthand for `def main args = <expr>`. In files, the main 
 -- function must be defined explicitly:
-def main : Console = do
-  println "Hello, world!"
+main : Console () = do
+  printLn "Hello, world!"
 
 -- Bindings are immutable.
 def x = 1

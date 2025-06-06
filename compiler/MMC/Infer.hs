@@ -1,4 +1,4 @@
--- module TMC.Infer where
+-- module MMC.Infer where
 
 import Common
 import Control.Monad
