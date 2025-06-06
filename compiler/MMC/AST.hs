@@ -5,11 +5,12 @@ module MMC.AST
     Decl (..),
     LClassDecl,
     ClassDecl (..),
-    LDef,
-    Def (..),
+    LSig,
+    Sig (..),
     Rhs (..),
     LExpr,
     Expr (..),
+    LBind,
     Bind (..),
     Alt (..),
     LGuard,
@@ -44,14 +45,14 @@ type LDecl = Located Decl
 data Decl
   = DeclImport !Ident
   | DeclExport !Ident
-  | DeclClassDecl !ClassDecl
+  | DeclClassDecl ClassDecl
   deriving (Show, Eq)
 
 data ClassDef
   = ClassDef
-  { className :: Ident,
-    classSuperclasses :: [Ident],
-    classTypeParams :: [Ident],
+  { className :: !Ident,
+    classSuperclasses :: ![Ident],
+    classTypeParams :: ![Ident],
     classMethods :: [LClassDecl]
   }
   deriving (Show, Eq)
@@ -59,30 +60,30 @@ data ClassDef
 type LClassDecl = Located ClassDecl
 
 data ClassDecl
-  = ClassDeclSig ![Ident] LTypeAnno
-  | ClassDeclDef LDef
+  = ClassDeclSig LSig
+  | ClassDeclBind LBind
   deriving (Show, Eq)
 
-type LDef = Located Def
+type LSig = Located Sig
 
-data Def
-  = Def
-  { defBind :: Bind,
-    defWhereBinds :: [LClassDecl]
+data Sig = Sig
+  { sigNames :: ![Ident],
+    sigTypeParams :: ![Ident],
+    sigTypeAnno :: LTypeAnno
   }
   deriving (Show, Eq)
 
-type LExpr = Located Expr
-
 data Rhs = RhsExpr LExpr | RhsGuard [LGuard]
   deriving (Show, Eq)
+
+type LExpr = Located Expr
 
 data Expr
   = Lit !Lit
   | Var !Ident
   | App LExpr LExpr
   | Lam [LPattern] LExpr
-  | Let [Bind] LExpr
+  | Let [LBind] LExpr
   | Unary !LUnaryOp LExpr
   | Binary !LBinaryOp LExpr LExpr
   | If LExpr LExpr LExpr
@@ -95,9 +96,11 @@ data Expr
   | Unit
   deriving (Show, Eq)
 
+type LBind = Located Bind
+
 data Bind
-  = BindPattern !LPattern Rhs
-  | BindFun !Ident [Alt]
+  = BindPattern !LPattern Rhs [LClassDecl]
+  | BindFun !Ident [Alt] [LClassDecl]
   deriving (Show, Eq)
 
 data Alt = Alt

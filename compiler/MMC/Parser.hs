@@ -50,8 +50,13 @@ module' = undefined
 repl :: Parser Prog
 repl = undefined
 
-def :: Parser Def
-def = undefined
+classDecl :: Parser LClassDecl
+classDecl = withLoc $ ClassDeclSig <$> sig <|> ClassDeclBind <$> bind
+
+sig :: Parser LSig
+sig =
+  withLoc . try $
+    Sig <$> (lowerCaseIdent `sepBy1` char ',') <* symbol ":" <*> many lowerCaseIdent <*> typeAnno
 
 rhs :: Parser Rhs
 rhs = choice [RhsExpr <$> expr, RhsGuard <$> some guard]
@@ -119,17 +124,20 @@ expr = makeExprParser apply operatorTable
       fargs <- some atom
       pure $ foldl1 (\f a -> Located (App f a) (getLoc f <> getLoc a)) fargs
 
-bind :: Parser Bind
-bind = funBind <|> patternBind
+bind :: Parser LBind
+bind = withLoc $ funBind <|> patternBind
   where
     patternBind :: Parser Bind
-    patternBind = BindPattern <$> pattern' <* symbol "=" <*> rhs
+    patternBind = BindPattern <$> pattern' <* symbol "=" <*> rhs <*> where'
 
     funBind :: Parser Bind
-    funBind = try $ BindFun <$> lowerCaseIdent <*> some alt
+    funBind = try $ BindFun <$> lowerCaseIdent <*> some alt <*> where'
 
     alt :: Parser Alt
     alt = Alt <$> (some pattern') <* symbol "=" <*> rhs
+
+    where' :: Parser [LClassDecl]
+    where' = option [] (kwWhere *> some classDecl)
 
 guard :: Parser LGuard
 guard = withLoc $ Guard <$> pattern' <* symbol "|" <*> expr
