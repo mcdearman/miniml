@@ -42,13 +42,23 @@ type Parser = Parsec Void Text
 
 parse' :: InputMode -> Text -> Either (ParseErrorBundle Text Void) Prog
 parse' InputModeFile = Text.Megaparsec.parse module' ""
-parse' InputModeInteractive = Text.Megaparsec.parse repl ""
+parse' InputModeInteractive = Text.Megaparsec.parse interactive ""
 
 module' :: Parser Prog
 module' = undefined
 
-repl :: Parser Prog
-repl = undefined
+interactive :: Parser Prog
+interactive = withLoc $ ds <|> e
+  where
+    ds = Module "main" <$> many decl
+    e = do
+      e' <- expr
+      pure $ Module "main" [DeclClassDecl (ClassDeclBind (RhsExpr e'))]
+
+-- (Module "main") <$> DeclClassDecl <$> ClassDeclBind <$> (RhsExpr <$> expr)
+
+decl :: Parser LDecl
+decl = withLoc $ choice [DeclClassDecl <$> classDecl]
 
 classDecl :: Parser LClassDecl
 classDecl = withLoc $ ClassDeclSig <$> sig <|> ClassDeclBind <$> bind

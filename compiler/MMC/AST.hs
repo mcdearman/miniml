@@ -3,6 +3,10 @@ module MMC.AST
     Module (..),
     LDecl,
     Decl (..),
+    LRecordDef,
+    RecordDef (..),
+    LClassDef,
+    ClassDef (..),
     LClassDecl,
     ClassDecl (..),
     LSig,
@@ -36,24 +40,37 @@ import MMC.Common (Located)
 type Prog = Located Module
 
 data Module = Module
-  { moduleName :: !Ident,
+  { moduleName :: !Text,
     moduleDecls :: [LDecl]
   }
 
 type LDecl = Located Decl
 
 data Decl
-  = DeclImport !Ident
+  = DeclImport ![Ident]
   | DeclExport !Ident
-  | DeclClassDecl ClassDecl
+  | DeclClassDecl LClassDecl
+  | DeclClassDef LClassDef
+  | DeclRecordDef LRecordDef
   deriving (Show, Eq)
+
+type LRecordDef = Located RecordDef
+
+data RecordDef = RecordDef
+  { recordName :: !Ident,
+    recordTypeParams :: ![Ident],
+    recordFields :: [(Ident, LTypeAnno)]
+  }
+  deriving (Show, Eq)
+
+type LClassDef = Located ClassDef
 
 data ClassDef
   = ClassDef
   { className :: !Ident,
     classSuperclasses :: ![Ident],
     classTypeParams :: ![Ident],
-    classMethods :: [LClassDecl]
+    classDecls :: [LClassDecl]
   }
   deriving (Show, Eq)
 
