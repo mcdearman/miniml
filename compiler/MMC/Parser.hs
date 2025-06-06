@@ -53,6 +53,9 @@ repl = undefined
 def :: Parser Def
 def = undefined
 
+rhs :: Parser Rhs
+rhs = choice [RhsExpr <$> expr, RhsGuard <$> some guard]
+
 expr :: Parser LExpr
 expr = makeExprParser apply operatorTable
   where
@@ -67,15 +70,7 @@ expr = makeExprParser apply operatorTable
     lambda = Lam <$> (char '\\' *> some pattern') <* symbol "->" <*> expr
 
     let' :: Parser Expr
-    let' = Let <$> (kwLet *> pattern') <* char '=' <*> expr <* symbol "in" <*> expr
-
-    fun :: Parser Expr
-    fun =
-      try (Let <$> (let' *> lowerCaseIdent) <*> some pattern')
-        <* symbol "->"
-        <*> expr
-        <* kwIn
-        <*> expr
+    let' = Let <$> some bind <* "in" <*> expr
 
     if' :: Parser Expr
     if' = If <$> (kwIf *> expr) <* kwThen <*> expr <* kwElse <*> expr
@@ -110,8 +105,7 @@ expr = makeExprParser apply operatorTable
     atom =
       withLoc $
         choice
-          [ fun,
-            let',
+          [ let',
             lambda,
             if',
             match,
@@ -126,13 +120,19 @@ expr = makeExprParser apply operatorTable
       pure $ foldl1 (\f a -> Located (App f a) (getLoc f <> getLoc a)) fargs
 
 bind :: Parser Bind
-bind = patternBind <|> funBind
+bind = funBind <|> patternBind
   where
     patternBind :: Parser Bind
-    patternBind = BindPattern <$> pattern' <* symbol "=" <*> expr
+    patternBind = BindPattern <$> pattern' <* symbol "=" <*> rhs
 
     funBind :: Parser Bind
-    funBind = BindFun <$> try (lowerCaseIdent <*> many pattern' <* symbol "->" <*> expr)
+    funBind = try $ BindFun <$> lowerCaseIdent <*> some alt
+
+    alt :: Parser Alt
+    alt = Alt <$> (some pattern') <* symbol "=" <*> rhs
+
+guard :: Parser LGuard
+guard = withLoc $ Guard <$> pattern' <* symbol "|" <*> expr
 
 operatorTable :: [[Operator Parser LExpr]]
 operatorTable =

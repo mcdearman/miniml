@@ -3,11 +3,17 @@ module MMC.AST
     Module (..),
     LDecl,
     Decl (..),
+    LClassDecl,
+    ClassDecl (..),
     LDef,
     Def (..),
-    Bind (..),
+    Rhs (..),
     LExpr,
     Expr (..),
+    Bind (..),
+    Alt (..),
+    LGuard,
+    Guard (..),
     LUnaryOp,
     UnaryOp (..),
     unaryOpName,
@@ -62,14 +68,13 @@ type LDef = Located Def
 data Def
   = Def
   { defBind :: Bind,
-    defBody :: Rhs,
     defWhereBinds :: [LClassDecl]
   }
   deriving (Show, Eq)
 
 type LExpr = Located Expr
 
-data Rhs = Expr LExpr | Guarded [LGuard]
+data Rhs = RhsExpr LExpr | RhsGuard [LGuard]
   deriving (Show, Eq)
 
 data Expr
@@ -77,7 +82,7 @@ data Expr
   | Var !Ident
   | App LExpr LExpr
   | Lam [LPattern] LExpr
-  | Let Bind LExpr LExpr
+  | Let [Bind] LExpr
   | Unary !LUnaryOp LExpr
   | Binary !LBinaryOp LExpr LExpr
   | If LExpr LExpr LExpr
@@ -91,13 +96,13 @@ data Expr
   deriving (Show, Eq)
 
 data Bind
-  = BindPattern !LPattern
-  | BindFun !Ident [LPattern]
+  = BindPattern !LPattern Rhs
+  | BindFun !Ident [Alt]
   deriving (Show, Eq)
 
-data MatchGroup = MatchGroup
-  { matchGroupScrutinee :: LExpr,
-    matchGroupAlts :: [(LPattern, LExpr)]
+data Alt = Alt
+  { altPatterns :: [LPattern],
+    altExpr :: Rhs
   }
   deriving (Show, Eq)
 
