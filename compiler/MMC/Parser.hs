@@ -56,29 +56,29 @@ def = undefined
 expr :: Parser LExpr
 expr = makeExprParser apply operatorTable
   where
-    unit' = unit $> UnitE
-    litExpr = LitE <$> lit
-    varExpr = VarE <$> lowerCaseIdent
+    unit' = unit $> Unit
+    litExpr = Lit <$> lit
+    varExpr = Var <$> lowerCaseIdent
 
     simple :: Parser Expr
     simple = choice [litExpr, varExpr, unit', parens (unLoc <$> expr)]
 
     lambda :: Parser Expr
-    lambda = LamE <$> (char '\\' *> some pattern') <* symbol "->" <*> expr
+    lambda = Lam <$> (char '\\' *> some pattern') <* symbol "->" <*> expr
 
     let' :: Parser Expr
-    let' = LetE <$> (kwLet *> pattern') <* char '=' <*> expr <* symbol "in" <*> expr
+    let' = Let <$> (kwLet *> pattern') <* char '=' <*> expr <* symbol "in" <*> expr
 
     fun :: Parser Expr
     fun =
-      try (LetE <$> (let' *> lowerCaseIdent) <*> some pattern')
+      try (Let <$> (let' *> lowerCaseIdent) <*> some pattern')
         <* symbol "->"
         <*> expr
         <* kwIn
         <*> expr
 
     if' :: Parser Expr
-    if' = IfE <$> (kwIf *> expr) <* kwThen <*> expr <* kwElse <*> expr
+    if' = If <$> (kwIf *> expr) <* kwThen <*> expr <* kwElse <*> expr
 
     match :: Parser Expr
     match =
@@ -92,17 +92,17 @@ expr = makeExprParser apply operatorTable
         alt = ((,) <$> pattern' <*> (symbol "->" *> expr))
 
         cont :: LExpr -> [(LPattern, LExpr)] -> Parser Expr
-        cont scr alts = pure $ MatchE scr alts
+        cont scr alts = pure $ Match scr alts
 
     list :: Parser Expr
-    list = ListE <$> brackets (expr `sepEndBy` char ',')
+    list = List <$> brackets (expr `sepEndBy` char ',')
 
     tuple :: Parser Expr
-    tuple = TupleE <$> try (parens ((:) <$> (expr <* char ',')) <*> expr `sepEndBy1` char ',')
+    tuple = Tuple <$> try (parens ((:) <$> (expr <* char ',')) <*> expr `sepEndBy1` char ',')
 
     record :: Parser Expr
     record =
-      RecordE
+      Record
         <$> optional upperCaseIdent
         <*> braces (((,) <$> lowerCaseIdent <*> (char '=' *> expr)) `sepEndBy1` char ',')
 
@@ -123,26 +123,26 @@ expr = makeExprParser apply operatorTable
     apply :: Parser LExpr
     apply = do
       fargs <- some atom
-      pure $ foldl1 (\f a -> Located (AppE f a) (getLoc f <> getLoc a)) fargs
+      pure $ foldl1 (\f a -> Located (App f a) (getLoc f <> getLoc a)) fargs
 
 bind :: Parser Bind
 bind = patternBind <|> funBind
   where
     patternBind :: Parser Bind
-    patternBind = PatternB <$> pattern' <* symbol "=" <*> expr
+    patternBind = BindPattern <$> pattern' <* symbol "=" <*> expr
 
     funBind :: Parser Bind
-    funBind = FunB <$> try (lowerCaseIdent <*> many pattern' <* symbol "->" <*> expr)
+    funBind = BindFun <$> try (lowerCaseIdent <*> many pattern' <* symbol "->" <*> expr)
 
 operatorTable :: [[Operator Parser LExpr]]
 operatorTable =
-  [ [prefix "-" (\s e -> Located (UnaryE (Located NegUO s) e) (s <> getLoc e))],
-    [ binary "*" (\s l r -> Located (BinaryE (Located MulBO s) l r) (getLoc l <> getLoc r)),
-      binary "/" (\s l r -> Located (BinaryE (Located DivBO s) l r) (getLoc l <> getLoc r)),
-      binary "%" (\s l r -> Located (BinaryE (Located ModBO s) l r) (getLoc l <> getLoc r))
+  [ [prefix "-" (\s e -> Located (Unary (Located UnaryOpNeg s) e) (s <> getLoc e))],
+    [ binary "*" (\s l r -> Located (Binary (Located BinaryOpMul s) l r) (getLoc l <> getLoc r)),
+      binary "/" (\s l r -> Located (Binary (Located BinaryOpDiv s) l r) (getLoc l <> getLoc r)),
+      binary "%" (\s l r -> Located (Binary (Located BinaryOpMod s) l r) (getLoc l <> getLoc r))
     ],
-    [ binary "+" (\s l r -> Located (BinaryE (Located AddBO s) l r) (getLoc l <> getLoc r)),
-      binary "-" (\s l r -> Located (BinaryE (Located SubBO s) l r) (getLoc l <> getLoc r))
+    [ binary "+" (\s l r -> Located (Binary (Located BinaryOpAdd s) l r) (getLoc l <> getLoc r)),
+      binary "-" (\s l r -> Located (Binary (Located BinaryOpSub s) l r) (getLoc l <> getLoc r))
     ]
   ]
 
@@ -157,7 +157,7 @@ typeAnno :: Parser LTypeAnno
 typeAnno = arrowType <|> baseType
   where
     arrowType :: Parser LTypeAnno
-    arrowType = withLoc $ try (FunTA <$> baseType <* symbol "->") <*> typeAnno
+    arrowType = withLoc $ try (TypeAnnoFun <$> baseType <* symbol "->") <*> typeAnno
 
     baseType :: Parser LTypeAnno
     baseType =
@@ -166,27 +166,27 @@ typeAnno = arrowType <|> baseType
           [ varType,
             identType,
             listType,
-            unit $> UnitTA
+            unit $> TypeAnnoUnit
               <|> tupleType
               <|> parens (unLoc <$> typeAnno)
           ]
 
-    varType = VarTA <$> lowerCaseIdent
-    identType = IdentTA <$> upperCaseIdent
-    listType = ListTA <$> brackets typeAnno
+    varType = TypeAnnoVar <$> lowerCaseIdent
+    identType = TypeAnnoIdent <$> upperCaseIdent
+    listType = TypeAnnoList <$> brackets typeAnno
     tupleType =
-      TupleTA
+      TypeAnnoTuple
         <$> try (parens ((:) <$> (typeAnno <* char ',')) <*> typeAnno `sepEndBy1` char ',')
 
 pattern' :: Parser LPattern
 pattern' = withLoc $ choice [wildcard, litP, identP, consP, listP, unitP]
   where
-    wildcard = char '_' $> WildcardP
-    litP = LitP <$> lit
-    identP = IdentP <$> lowerCaseIdent
-    consP = ConsP <$> (upperCaseIdent <* char '@') <*> some pattern'
-    listP = ListP <$> brackets (pattern' `sepEndBy` char ',')
-    unitP = unit $> UnitP
+    wildcard = char '_' $> PatternWildcard
+    litP = PatternLit <$> lit
+    identP = PatternIdent <$> lowerCaseIdent
+    consP = PatternCons <$> (upperCaseIdent <* char '@') <*> some pattern'
+    listP = PatternList <$> brackets (pattern' `sepEndBy` char ',')
+    unitP = unit $> PatternUnit
 
 parens :: Parser a -> Parser a
 parens = between (lexeme $ char '(') (lexeme $ char ')')
@@ -280,9 +280,9 @@ unit = symbol "()" $> ()
 lit :: Parser Lit
 lit =
   choice
-    [ IntL <$> int,
-      BoolL <$> bool,
-      StringL <$> str
+    [ Int <$> int,
+      Bool <$> bool,
+      String <$> str
     ]
 
 {-# INLINE kwModule #-}

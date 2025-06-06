@@ -10,10 +10,10 @@ module MMC.AST
     Expr (..),
     LUnaryOp,
     UnaryOp (..),
-    unOpName,
+    unaryOpName,
     LBinaryOp,
     BinaryOp (..),
-    binOpName,
+    binaryOpName,
     LTypeAnno,
     TypeAnno (..),
     LPattern,
@@ -36,9 +36,9 @@ data Module = Module
 type LDecl = Located Decl
 
 data Decl
-  = ImportD !Ident
-  | ExportD !Ident
-  | CDeclD !CDecl
+  = DeclImport !Ident
+  | DeclExport !Ident
+  | DeclClassDecl !ClassDecl
   deriving (Show, Eq)
 
 data ClassDef
@@ -46,15 +46,15 @@ data ClassDef
   { className :: Ident,
     classSuperclasses :: [Ident],
     classTypeParams :: [Ident],
-    classMethods :: [LCDecl]
+    classMethods :: [LClassDecl]
   }
   deriving (Show, Eq)
 
-type LCDecl = Located CDecl
+type LClassDecl = Located ClassDecl
 
-data CDecl
-  = SigCD !Ident LTypeAnno
-  | DefCD LDef
+data ClassDecl
+  = ClassDeclSig ![Ident] LTypeAnno
+  | ClassDeclDef LDef
   deriving (Show, Eq)
 
 type LDef = Located Def
@@ -62,34 +62,37 @@ type LDef = Located Def
 data Def
   = Def
   { defBind :: Bind,
-    defBody :: LExpr,
-    defWhereBinds :: [LCDecl]
+    defBody :: Rhs,
+    defWhereBinds :: [LClassDecl]
   }
   deriving (Show, Eq)
 
 type LExpr = Located Expr
 
+data Rhs = Expr LExpr | Guarded [LGuard]
+  deriving (Show, Eq)
+
 data Expr
-  = LitE !Lit
-  | VarE !Ident
-  | AppE LExpr LExpr
-  | LamE [LPattern] LExpr
-  | LetE Bind LExpr LExpr
-  | UnaryE !LUnaryOp LExpr
-  | BinaryE !LBinaryOp LExpr LExpr
-  | IfE LExpr LExpr LExpr
-  | MatchE LExpr [(LPattern, LExpr)]
-  | ListE [LExpr]
-  | TupleE [LExpr]
-  | RecordE (Maybe Ident) [(Ident, LExpr)]
-  | RecordAccessE LExpr Ident
-  | RecordUpdateE LExpr [(Ident, LExpr)]
-  | UnitE
+  = Lit !Lit
+  | Var !Ident
+  | App LExpr LExpr
+  | Lam [LPattern] LExpr
+  | Let Bind LExpr LExpr
+  | Unary !LUnaryOp LExpr
+  | Binary !LBinaryOp LExpr LExpr
+  | If LExpr LExpr LExpr
+  | Match LExpr [(LPattern, LExpr)]
+  | List [LExpr]
+  | Tuple [LExpr]
+  | Record (Maybe Ident) [(Ident, LExpr)]
+  | RecordAccess LExpr Ident
+  | RecordUpdate LExpr [(Ident, LExpr)]
+  | Unit
   deriving (Show, Eq)
 
 data Bind
-  = PatternB !LPattern
-  | FunB !Ident [LPattern]
+  = BindPattern !LPattern
+  | BindFun !Ident [LPattern]
   deriving (Show, Eq)
 
 data MatchGroup = MatchGroup
@@ -97,6 +100,8 @@ data MatchGroup = MatchGroup
     matchGroupAlts :: [(LPattern, LExpr)]
   }
   deriving (Show, Eq)
+
+type LGuard = Located Guard
 
 data Guard = Guard
   { guardPattern :: LPattern,
@@ -107,61 +112,61 @@ data Guard = Guard
 type LUnaryOp = Located UnaryOp
 
 data UnaryOp
-  = NegUO
+  = UnaryOpNeg
   deriving (Show, Eq)
 
-unOpName :: UnaryOp -> Text
-unOpName NegUO = "neg"
+unaryOpName :: UnaryOp -> Text
+unaryOpName UnaryOpNeg = "neg"
 
 type LBinaryOp = Located BinaryOp
 
 data BinaryOp
-  = AddBO
-  | SubBO
-  | MulBO
-  | DivBO
-  | ModBO
-  | EqBO
-  | NeqBO
+  = BinaryOpAdd
+  | BinaryOpSub
+  | BinaryOpMul
+  | BinaryOpDiv
+  | BinaryOpMod
+  | BinaryOpEq
+  | BinaryOpNeq
   deriving (Show, Eq)
 
-binOpName :: BinaryOp -> Text
-binOpName AddBO = "add"
-binOpName SubBO = "sub"
-binOpName MulBO = "mul"
-binOpName DivBO = "div"
-binOpName ModBO = "mod"
-binOpName EqBO = "eq"
-binOpName NeqBO = "neq"
+binaryOpName :: BinaryOp -> Text
+binaryOpName BinaryOpAdd = "add"
+binaryOpName BinaryOpSub = "sub"
+binaryOpName BinaryOpMul = "mul"
+binaryOpName BinaryOpDiv = "div"
+binaryOpName BinaryOpMod = "mod"
+binaryOpName BinaryOpEq = "eq"
+binaryOpName BinaryOpNeq = "neq"
 
 type LTypeAnno = Located TypeAnno
 
 data TypeAnno
-  = VarTA !Ident
-  | IdentTA !Ident
-  | FunTA !LTypeAnno !LTypeAnno
-  | ListTA !LTypeAnno
-  | TupleTA [LTypeAnno]
-  | UnitTA
+  = TypeAnnoVar !Ident
+  | TypeAnnoIdent !Ident
+  | TypeAnnoFun !LTypeAnno !LTypeAnno
+  | TypeAnnoList !LTypeAnno
+  | TypeAnnoTuple [LTypeAnno]
+  | TypeAnnoUnit
   deriving (Show, Eq)
 
 type LPattern = Located Pattern
 
 data Pattern
-  = WildcardP
-  | LitP !Lit
-  | IdentP !Ident
-  | ConsP !Ident [LPattern]
-  | AsP !Ident LPattern
-  | ListP [LPattern]
-  | TupleP [LPattern]
-  | UnitP
+  = PatternWildcard
+  | PatternLit !Lit
+  | PatternIdent !Ident
+  | PatternCons !Ident [LPattern]
+  | PatternAs !Ident LPattern
+  | PatternList [LPattern]
+  | PatternTuple [LPattern]
+  | PatternUnit
   deriving (Show, Eq)
 
 newtype Ident = Ident (Located Text) deriving (Show, Eq, Ord)
 
 data Lit
-  = IntL Integer
-  | BoolL !Bool
-  | StringL !Text
+  = Int Integer
+  | Bool !Bool
+  | String !Text
   deriving (Show, Eq)
