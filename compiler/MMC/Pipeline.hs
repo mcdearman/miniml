@@ -7,10 +7,10 @@ import qualified Data.Map as Map
 import Data.Text (Text, pack, unpack)
 import Data.Text.Lazy (toStrict)
 import Debug.Trace (trace)
+import MMC.Common (InputMode (InputModeFile))
+import MMC.Parser (parseMML)
 import Text.Megaparsec (errorBundlePretty)
 import Text.Pretty.Simple (pShow)
-import MMC.Parser (parseMML)
-import MMC.Common (InputMode(InputModeFile))
 
 data PipelineEnv = PipelineEnv
   { src :: Text,
@@ -35,12 +35,3 @@ runPipeline mode src = do
     Left err -> pure $ pack $ "Parser error: " ++ errorBundlePretty err
     Right p -> do
       pure $ toStrict $ pShow p
-
--- case tokenize src of
---   Left err -> pure $ pack $ "Lexer error: " ++ errorBundlePretty err
---   Right ts -> pure $ toStrict $ pShow ts
-
--- Right ts -> trace (unpack . toStrict $ (pShow ts)) $ case parseStream ts of
---   Left err -> pure $ pack $ "Parser error: " ++ errorBundlePretty err
---   Right p -> do
---     putStrLn $ pShow p

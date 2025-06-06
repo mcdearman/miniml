@@ -46,9 +46,10 @@ parseMML InputModeInteractive = Text.Megaparsec.parse interactive ""
 
 module' :: Text -> Parser Prog
 module' fileName = do
-  ds <- withLoc $ many decl
+  ds <- withLoc $ many decl <* eof
   pure $ Located (Module fileName (unLoc ds)) (getLoc ds)
 
+interactive :: Parser Prog
 interactive = undefined
 
 -- interactive :: Parser Prog
@@ -73,7 +74,7 @@ interactive = undefined
 -- (Module "main") <$> DeclClassDecl <$> ClassDeclBind <$> (RhsExpr <$> expr)
 
 decl :: Parser LDecl
-decl = withLoc $ choice [DeclClassDecl <$> classDecl]
+decl = withLoc $ DeclClassDecl <$> classDecl
 
 classDecl :: Parser LClassDecl
 classDecl = withLoc $ ClassDeclSig <$> sig <|> ClassDeclBind <$> bind
@@ -217,7 +218,7 @@ pattern' = withLoc $ choice [wildcard, litP, identP, consP, listP, unitP]
     wildcard = char '_' $> PatternWildcard
     litP = PatternLit <$> lit
     identP = PatternIdent <$> lowerCaseIdent
-    consP = PatternCons <$> (upperCaseIdent <* char '@') <*> some pattern'
+    consP = PatternCons <$> upperCaseIdent <*> some pattern'
     listP = PatternList <$> brackets (pattern' `sepEndBy` char ',')
     unitP = unit $> PatternUnit
 

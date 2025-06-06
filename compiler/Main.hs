@@ -59,5 +59,5 @@ main = do
   -- putStrLn "Welcome to the miniML REPL!"
   -- runInputT settings (repl defaultPipelineEnv)
   let src = "x = 1"
-  let (out, _) = runState (runPipeline (InputModeFile "test.mml") (pack src)) defaultPipelineEnv
+  let (out, _) = runState (runPipeline (InputModeFile "main") (pack src)) defaultPipelineEnv
   putStrLn $ unpack out
