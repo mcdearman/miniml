@@ -1,4 +1,4 @@
-module TMC.Rename where
+module MMC.Rename where
 
 import qualified AST as A
 import Common

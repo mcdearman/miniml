@@ -1,6 +1,6 @@
 module MMC.Common
   ( InputMode (..),
-    Pretty,
+    Pretty (..),
     Result (..),
     Loc (..),
     defaultLoc,
@@ -12,6 +12,7 @@ module MMC.Common
 where
 
 import Data.Text (Text, pack)
+import GHC.Exts (Int#)
 
 data InputMode
   = InputModeFile
@@ -72,4 +73,4 @@ instance (Pretty a) => Pretty (Located a) where
 instance Functor Located where
   fmap f (Located v s) = Located (f v) s
 
-newtype Unique = Id Int deriving (Show, Eq, Ord)
+data Unique = Id Int deriving (Show, Eq, Ord)

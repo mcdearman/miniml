@@ -1,11 +1,11 @@
-module TMC.Ty where
+module MMC.Ty (Ty (..), TyVar (..), Typed (..)) where
 
-import Common
 import Data.Map
 import qualified Data.Map as Map
 import Data.Set
 import qualified Data.Set as Set
 import Data.Text (pack, unpack)
+import MMC.Common
 
 data Ty
   = TyInt
@@ -13,7 +13,7 @@ data Ty
   | TyChar
   | TyString
   | TyUnit
-  | TyVar (Spanned TyVar)
+  | TyVar (Located TyVar)
   | TyArrow Ty Ty
   | TyList Ty
   | TyArray Ty
@@ -38,7 +38,7 @@ instance Pretty Ty where
   pretty (TyRecord fs) = pack $ "{" ++ unwords (fmap (\(n, t) -> n ++ ": " ++ show t) fs) ++ "}"
   pretty (TyCon n ts) = pack $ n ++ " " ++ unwords (fmap show ts)
 
-freeVars :: Ty -> Set (Spanned TyVar)
+freeVars :: Ty -> Set (Located TyVar)
 freeVars (TyVar v) = Set.singleton v
 freeVars (TyArrow t1 t2) = freeVars t1 `Set.union` freeVars t2
 freeVars (TyList t) = freeVars t
@@ -54,11 +54,11 @@ applySubst s (TyArray t) = TyArray (applySubst s t)
 applySubst s (TyTuple ts) = TyTuple (fmap (applySubst s) ts)
 applySubst _ t = t
 
-type Subst = Map (Spanned TyVar) Ty
+type Subst = Map (Located TyVar) Ty
 
 newtype TyVar = VarId Unique deriving (Show, Eq, Ord)
 
 instance Pretty TyVar where
   pretty (VarId (Id i)) = pack $ "t" ++ show i
 
-data Typed a = Typed (Spanned a) Ty deriving (Show, Eq)
+data Typed a = Typed a Ty deriving (Show, Eq)

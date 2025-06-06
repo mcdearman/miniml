@@ -23,10 +23,12 @@ executable miniML
     other-modules: 
         MMC.AST
         MMC.Common
+        MMC.Kind
         MMC.Parser
         MMC.Pipeline
         MMC.Symbol
         MMC.Token
+        MMC.Ty
     default-extensions: 
         OverloadedStrings
         MagicHash
