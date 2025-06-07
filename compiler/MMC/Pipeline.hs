@@ -7,6 +7,7 @@ import qualified Data.Map as Map
 import Data.Text (Text, pack, unpack)
 import Data.Text.Lazy (toStrict)
 import Debug.Trace (trace)
+import Error.Diagnose
 import MMC.Common (InputMode (InputModeFile))
 import MMC.Parser (parseMML)
 import Text.Megaparsec (errorBundlePretty)

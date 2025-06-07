@@ -231,7 +231,7 @@ brackets = between (lexeme $ char '[') (lexeme $ char ']')
 braces :: Parser a -> Parser a
 braces = between (lexeme $ char '{') (lexeme $ char '}')
 
-{-# INLINEABLE lowerCaseIdent #-}
+-- {-# INLINEABLE lowerCaseIdent #-}
 lowerCaseIdent :: Parser Ident
 lowerCaseIdent = try $ do
   name <- withLoc $ pack <$> ((:) <$> identStartChar <*> many identChar)
@@ -264,53 +264,53 @@ lowerCaseIdent = try $ do
         "do"
       ]
 
-{-# INLINEABLE upperCaseIdent #-}
+-- {-# INLINEABLE upperCaseIdent #-}
 upperCaseIdent :: Parser Ident
 upperCaseIdent = Ident <$> (withLoc $ pack <$> ((:) <$> upperChar <*> many alphaNumChar))
 
 scn :: Parser ()
 scn = L.space space1 lineComment empty
 
-{-# INLINE sc #-}
+-- {-# INLINE sc #-}
 sc :: Parser ()
 sc = L.space (void $ some (char ' ' <|> char '\t')) lineComment empty
 
 lineComment :: Parser ()
 lineComment = L.skipLineComment "--"
 
-{-# INLINE lexeme #-}
+-- {-# INLINE lexeme #-}
 lexeme :: Parser a -> Parser a
 lexeme = L.lexeme sc
 
-{-# INLINE symbol #-}
+-- {-# INLINE symbol #-}
 symbol :: Text -> Parser Text
 symbol = L.symbol sc
 
-{-# INLINE octal #-}
+-- {-# INLINE octal #-}
 octal :: Parser Integer
 octal = try (char '0' *> char' 'o') *> L.octal
 
-{-# INLINE hexadecimal #-}
+-- {-# INLINE hexadecimal #-}
 hexadecimal :: Parser Integer
 hexadecimal = try (char '0' >> char' 'x') >> L.hexadecimal
 
-{-# INLINE int #-}
+-- {-# INLINE int #-}
 int :: Parser Integer
 int = lexeme $ choice [octal, hexadecimal, L.decimal]
 
-{-# INLINE bool #-}
+-- {-# INLINE bool #-}
 bool :: Parser Bool
 bool = lexeme $ choice [True <$ string "true", False <$ string "false"]
 
-{-# INLINE str #-}
+-- {-# INLINE str #-}
 str :: Parser Text
 str = lexeme $ char '\"' *> (pack <$> manyTill L.charLiteral (char '\"'))
 
-{-# INLINE unit #-}
+-- {-# INLINE unit #-}
 unit :: Parser ()
 unit = symbol "()" $> ()
 
-{-# INLINE lit #-}
+-- {-# INLINE lit #-}
 lit :: Parser Lit
 lit =
   choice
@@ -319,75 +319,75 @@ lit =
       String <$> str
     ]
 
-{-# INLINE kwModule #-}
+-- {-# INLINE kwModule #-}
 kwModule :: Parser ()
 kwModule = symbol "module" $> () <?> "module"
 
-{-# INLINE kwImport #-}
+-- {-# INLINE kwImport #-}
 kwImport :: Parser ()
 kwImport = symbol "import" $> () <?> "import"
 
-{-# INLINE kwAs #-}
+-- {-# INLINE kwAs #-}
 kwAs :: Parser ()
 kwAs = symbol "as" $> () <?> "as"
 
-{-# INLINE kwLet #-}
+-- {-# INLINE kwLet #-}
 kwLet :: Parser ()
 kwLet = symbol "let" $> () <?> "let"
 
-{-# INLINE kwIn #-}
+-- {-# INLINE kwIn #-}
 kwIn :: Parser ()
 kwIn = symbol "in" $> () <?> "in"
 
-{-# INLINE kwWhere #-}
+-- {-# INLINE kwWhere #-}
 kwWhere :: Parser ()
 kwWhere = string "where" $> () <?> "where"
 
-{-# INLINE kwIf #-}
+-- {-# INLINE kwIf #-}
 kwIf :: Parser ()
 kwIf = symbol "if" $> () <?> "if"
 
-{-# INLINE kwThen #-}
+-- {-# INLINE kwThen #-}
 kwThen :: Parser ()
 kwThen = symbol "then" $> () <?> "then"
 
-{-# INLINE kwElse #-}
+-- {-# INLINE kwElse #-}
 kwElse :: Parser ()
 kwElse = symbol "else" $> () <?> "else"
 
-{-# INLINE kwMatch #-}
+-- {-# INLINE kwMatch #-}
 kwMatch :: Parser ()
 kwMatch = symbol "match" $> () <?> "match"
 
-{-# INLINE kwWith #-}
+-- {-# INLINE kwWith #-}
 kwWith :: Parser ()
 kwWith = string "with" $> () <?> "with"
 
-{-# INLINE kwRecord #-}
+-- {-# INLINE kwRecord #-}
 kwRecord :: Parser ()
 kwRecord = symbol "record" $> () <?> "record"
 
-{-# INLINE kwData #-}
+-- {-# INLINE kwData #-}
 kwData :: Parser ()
 kwData = symbol "data" $> () <?> "data"
 
-{-# INLINE kwType #-}
+-- {-# INLINE kwType #-}
 kwType :: Parser ()
 kwType = symbol "type" $> () <?> "type"
 
-{-# INLINE kwClass #-}
+-- {-# INLINE kwClass #-}
 kwClass :: Parser ()
 kwClass = symbol "class" $> () <?> "class"
 
-{-# INLINE kwInstance #-}
+-- {-# INLINE kwInstance #-}
 kwInstance :: Parser ()
 kwInstance = symbol "impl" $> () <?> "impl"
 
-{-# INLINE kwDo #-}
+-- {-# INLINE kwDo #-}
 kwDo :: Parser ()
 kwDo = string "do" $> () <?> "do"
 
-{-# INLINE withLoc #-}
+-- {-# INLINE withLoc #-}
 withLoc :: Parser a -> Parser (Located a)
 withLoc p = do
   start <- getOffset
