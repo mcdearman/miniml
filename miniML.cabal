@@ -41,6 +41,8 @@ executable miniML
         TypeFamilies
     build-depends:    
         base,
+        unordered-containers,
+        intern,
         megaparsec,
         diagnose,
         optics,
