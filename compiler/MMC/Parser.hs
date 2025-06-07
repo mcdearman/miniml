@@ -101,7 +101,7 @@ expr = makeExprParser apply operatorTable
     lambda = Lam <$> (char '\\' *> some pattern') <* symbol "->" <*> expr
 
     let' :: Parser Expr
-    let' = Let <$> some bind <* "in" <*> expr
+    let' = Let <$> (kwLet *> some bind) <* kwIn <*> expr
 
     if' :: Parser Expr
     if' = If <$> (kwIf *> expr) <* kwThen <*> expr <* kwElse <*> expr
@@ -141,7 +141,7 @@ expr = makeExprParser apply operatorTable
             if',
             match,
             list,
-            tuple <|> simple,
+            try tuple <|> simple,
             record
           ]
 
@@ -166,7 +166,7 @@ bind = withLoc $ funBind <|> patternBind
     where' = option [] (kwWhere *> some classDecl)
 
 guard :: Parser LGuard
-guard = withLoc $ Guard <$> pattern' <* symbol "|" <*> expr
+guard = withLoc . try $ Guard <$> pattern' <* symbol "|" <*> expr
 
 operatorTable :: [[Operator Parser LExpr]]
 operatorTable =
