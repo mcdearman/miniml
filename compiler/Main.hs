@@ -61,3 +61,7 @@ main = do
   let src = "x = 1"
   let (out, _) = runState (runPipeline (InputModeFile "main") (pack src)) defaultPipelineEnv
   putStrLn $ unpack out
+
+
+
+

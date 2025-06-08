@@ -49,6 +49,7 @@ executable miniML
         optics,
         parser-combinators,
         text,
+        prettyprinter,
         pretty-simple,
         array,
         haskeline,

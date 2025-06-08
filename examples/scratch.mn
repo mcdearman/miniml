@@ -105,6 +105,12 @@ def fib n =
     else loop b (a + b) (i - 1)
   in loop 0 1 n
 
+fib : Int -> Int
+fib n = go n 0 1
+  where
+    go 0 a _ = a
+    go i a b = go (i - 1) b (a + b)
+
 -- pattern match
 def fib n = 
   match n
