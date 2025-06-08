@@ -1,15 +1,11 @@
-{-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
-
 module Main where
 
 import Control.Monad.State (runState)
 import Data.Text (Text, pack, unpack)
 import Data.Text.Lazy (toStrict)
 import Data.Void (Void)
-import Error.Diagnose (defaultStyle, printDiagnostic, stderr)
-import Error.Diagnose.Compat.Megaparsec (HasHints (..), errorDiagnosticFromBundle)
-import Error.Diagnose.Diagnostic (prettyDiagnostic)
+import Error.Diagnose (addFile, defaultStyle, printDiagnostic, stderr)
+import Error.Diagnose.Compat.Megaparsec (errorDiagnosticFromBundle)
 import MMC.Common (InputMode (InputModeFile, InputModeInteractive))
 import MMC.Pipeline
 import System.Console.Haskeline
@@ -64,16 +60,17 @@ collectLines acc = do
     Just input -> collectLines (acc ++ input ++ "\n")
 
 main :: IO ()
-main = do
-  -- putStrLn "Welcome to the miniML REPL!"
-  -- runInputT settings (repl defaultPipelineEnv)
-  let src = "x = 1"
+main = run "x = |"
+
+-- putStrLn "Welcome to the miniML REPL!"
+-- runInputT settings (repl defaultPipelineEnv)
+
+run :: String -> IO ()
+run src = do
   let (out, _) = runState (runPipeline (InputModeFile "main") (pack src)) defaultPipelineEnv
   case out of
     Left e ->
       let diag = errorDiagnosticFromBundle Nothing ("Parse error on input" :: Text) Nothing e
-       in printDiagnostic stderr True True 2 defaultStyle diag
-    Right prog -> putStrLn $ unpack (toStrict (pShow prog))
-
-instance HasHints Void msg where
-  hints _ = mempty
+          diag' = addFile diag "main" src
+       in printDiagnostic stderr True True 2 defaultStyle diag'
+    Right prog -> putStrLn $ unpack . toStrict $ pShow prog

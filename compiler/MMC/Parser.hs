@@ -1,3 +1,6 @@
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+
 module MMC.Parser where
 
 import Control.Applicative (empty, optional, (<|>))
@@ -9,6 +12,7 @@ import qualified Data.Set as Set
 import Data.Text (Text, pack, unpack)
 import Data.Void
 import Data.Word (Word8)
+import Error.Diagnose.Compat.Megaparsec (HasHints (..))
 import MMC.AST
 import MMC.Common
 import Text.Megaparsec
@@ -39,6 +43,9 @@ import Text.Megaparsec.Debug (MonadParsecDbg (dbg))
 import Prelude hiding (getLoc)
 
 type Parser = Parsec Void Text
+
+instance HasHints Void msg where
+  hints _ = mempty
 
 parseMML :: InputMode -> Text -> Either (ParseErrorBundle Text Void) Prog
 parseMML (InputModeFile fileName) = Text.Megaparsec.parse (module' fileName) ""
