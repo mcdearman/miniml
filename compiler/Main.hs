@@ -60,7 +60,7 @@ collectLines acc = do
     Just input -> collectLines (acc ++ input ++ "\n")
 
 main :: IO ()
-main = run "x = |"
+main = run "x : Int\nx = 1"
 
 -- putStrLn "Welcome to the miniML REPL!"
 -- runInputT settings (repl defaultPipelineEnv)

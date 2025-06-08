@@ -48,12 +48,12 @@ instance HasHints Void msg where
   hints _ = mempty
 
 parseMML :: InputMode -> Text -> Either (ParseErrorBundle Text Void) Prog
-parseMML (InputModeFile fileName) = Text.Megaparsec.parse (module' fileName) ""
-parseMML InputModeInteractive = Text.Megaparsec.parse interactive ""
+parseMML (InputModeFile fileName) = Text.Megaparsec.parse (module' fileName) (unpack fileName)
+parseMML InputModeInteractive = Text.Megaparsec.parse interactive "interactive"
 
 module' :: Text -> Parser Prog
 module' fileName = do
-  ds <- withLoc $ many (decl <* scn) <* eof
+  ds <- withLoc $ many (L.nonIndented scn decl) <* eof
   pure $ Located (Module fileName (unLoc ds)) (getLoc ds)
 
 interactive :: Parser Prog
