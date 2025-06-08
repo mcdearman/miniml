@@ -1,4 +1,4 @@
-module MMC.Parser (parseMML) where
+module MMC.Parser where
 
 import Control.Applicative (empty, optional, (<|>))
 import Control.Monad (void)
@@ -234,7 +234,7 @@ braces = between (lexeme $ char '{') (lexeme $ char '}')
 -- {-# INLINEABLE lowerCaseIdent #-}
 lowerCaseIdent :: Parser Ident
 lowerCaseIdent = try $ do
-  name <- withLoc $ pack <$> ((:) <$> identStartChar <*> many identChar)
+  name <- withLoc $ pack <$> ((:) <$> identStartChar <*> many identChar) <* sc
   let !sv = unLoc name
   if sv `elem` keywords
     then fail $ "keyword " ++ unpack sv ++ " cannot be used in place of identifier"
@@ -266,7 +266,7 @@ lowerCaseIdent = try $ do
 
 -- {-# INLINEABLE upperCaseIdent #-}
 upperCaseIdent :: Parser Ident
-upperCaseIdent = Ident <$> (withLoc $ pack <$> ((:) <$> upperChar <*> many alphaNumChar))
+upperCaseIdent = Ident <$> (withLoc $ pack <$> ((:) <$> upperChar <*> many alphaNumChar)) <* sc
 
 scn :: Parser ()
 scn = L.space space1 lineComment empty

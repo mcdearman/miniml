@@ -12,7 +12,6 @@ module MMC.Common
 where
 
 import Data.Text (Text, pack)
-import GHC.Exts (Int#)
 
 data InputMode
   = InputModeFile Text
