@@ -46,6 +46,7 @@ executable miniML
         intern,
         megaparsec,
         diagnose,
+        wcwidth,
         optics,
         parser-combinators,
         text,
