@@ -46,7 +46,7 @@ parseMML InputModeInteractive = Text.Megaparsec.parse interactive ""
 
 module' :: Text -> Parser Prog
 module' fileName = do
-  ds <- withLoc $ many decl <* eof
+  ds <- withLoc $ many (decl <* scn) <* eof
   pure $ Located (Module fileName (unLoc ds)) (getLoc ds)
 
 interactive :: Parser Prog

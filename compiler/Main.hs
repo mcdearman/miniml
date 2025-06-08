@@ -67,7 +67,7 @@ main :: IO ()
 main = do
   -- putStrLn "Welcome to the miniML REPL!"
   -- runInputT settings (repl defaultPipelineEnv)
-  let src = "f : Int -> Int\nf x = x + 1"
+  let src = "x = 1"
   let (out, _) = runState (runPipeline (InputModeFile "main") (pack src)) defaultPipelineEnv
   case out of
     Left e ->
