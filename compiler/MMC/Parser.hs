@@ -89,7 +89,9 @@ classDecl = withLoc $ ClassDeclSig <$> sig <|> ClassDeclBind <$> bind
 sig :: Parser LSig
 sig =
   withLoc . try $
-    Sig <$> (lowerCaseIdent `sepBy1` char ',') <* symbol ":" <*> many lowerCaseIdent <*> typeAnno
+    Sig <$> (lowerCaseIdent `sepBy1` char ',') <* symbol ":" <*> tyVars <*> typeAnno
+  where
+    tyVars = try (some lowerCaseIdent <* char '.') <|> pure []
 
 rhs :: Parser Rhs
 rhs = choice [RhsExpr <$> expr, RhsGuard <$> some guard]
