@@ -117,12 +117,14 @@ expr = makeExprParser apply operatorTable
 
     match :: Parser Expr
     match =
-      indentBlock scn $ do
-        kwMatch
-        scrut <- expr
-        kwWith
-        pure $ L.IndentSome Nothing (cont scrut) alt
+      L.nonIndented scn (indentBlock scn p)
       where
+        p = do
+          kwMatch
+          scrut <- expr
+          kwWith
+          pure $ L.IndentSome Nothing (cont scrut) alt
+
         alt :: Parser (LPattern, LExpr)
         alt = ((,) <$> pattern' <*> (symbol "->" *> expr))
 
@@ -155,12 +157,14 @@ expr = makeExprParser apply operatorTable
           ]
 
     cons :: Parser LExpr
-    cons = withLoc $ Cons <$> upperCaseIdent <*> many atom
+    cons = try $ withLoc $ Cons <$> upperCaseIdent <*> many atom
 
     apply :: Parser LExpr
-    apply = do
-      fargs <- some atom
-      pure $ foldl1 (\f a -> Located (App f a) (getLoc f <> getLoc a)) fargs
+    apply = cons <|> apply'
+      where
+        apply' = do
+          fargs <- some atom
+          pure $ foldl1 (\f a -> Located (App f a) (getLoc f <> getLoc a)) fargs
 
 bind :: Parser LBind
 bind = withLoc $ funBind <|> patternBind
