@@ -154,6 +154,9 @@ expr = makeExprParser apply operatorTable
             record
           ]
 
+    cons :: Parser LExpr
+    cons = withLoc $ Cons <$> upperCaseIdent <*> many atom
+
     apply :: Parser LExpr
     apply = do
       fargs <- some atom

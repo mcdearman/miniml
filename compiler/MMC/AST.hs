@@ -110,6 +110,7 @@ data Expr
   | Match LExpr [(LPattern, LExpr)]
   | List [LExpr]
   | Tuple [LExpr]
+  | Cons Ident [LExpr]
   | Record (Maybe Ident) [(Ident, LExpr)]
   | RecordAccess LExpr Ident
   | RecordUpdate LExpr [(Ident, LExpr)]
