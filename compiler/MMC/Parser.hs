@@ -115,9 +115,14 @@ expr = makeExprParser apply operatorTable
     if' :: Parser Expr
     if' = If <$> (kwIf *> expr) <* kwThen <*> expr <* kwElse <*> expr
 
-    match :: Parser Expr
-    match =
-      L.nonIndented scn (indentBlock scn p)
+    matchWithSemis :: Parser Expr
+    matchWithSemis = Match <$> (kwMatch *> expr) <* kwWith <*> braces (sepEndBy1 alt (char ';' <* scn))
+      where
+        alt :: Parser (LPattern, LExpr)
+        alt = ((,) <$> pattern' <*> (symbol "->" *> expr))
+
+    matchWithIndent :: Parser Expr
+    matchWithIndent = try $ L.nonIndented scn (indentBlock scn p)
       where
         p = do
           kwMatch
@@ -150,7 +155,8 @@ expr = makeExprParser apply operatorTable
           [ let',
             lambda,
             if',
-            match,
+            matchWithIndent,
+            matchWithSemis,
             list,
             tuple,
             simple,
@@ -381,7 +387,7 @@ kwMatch = symbol "match" $> () <?> "match"
 
 -- {-# INLINE kwWith #-}
 kwWith :: Parser ()
-kwWith = string "with" $> () <?> "with"
+kwWith = symbol "with" $> () <?> "with"
 
 -- {-# INLINE kwRecord #-}
 kwRecord :: Parser ()
