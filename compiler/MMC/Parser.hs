@@ -94,7 +94,7 @@ sig =
     tyVars = try (some lowerCaseIdent <* charL '.') <|> pure []
 
 rhs :: Parser Rhs
-rhs = choice [RhsExpr <$> expr, RhsGuard <$> some guard]
+rhs = choice [RhsGuard <$> some guard, RhsExpr <$> expr]
 
 expr :: Parser LExpr
 expr = makeExprParser apply operatorTable
@@ -119,15 +119,13 @@ expr = makeExprParser apply operatorTable
     matchWithSemis = Match <$> (kwMatch *> expr) <* kwWith <*> braces (sepEndBy1 alt (char ';' <* scn))
       where
         alt :: Parser (LPattern, LExpr)
-        alt = ((,) <$> pattern' <*> (symbol "->" *> expr))
+        alt = ((,) <$> pattern' <*> (symbol "->" *> expr)) <* sc
 
     matchWithIndent :: Parser Expr
-    matchWithIndent = try $ L.nonIndented scn (indentBlock scn p)
+    matchWithIndent = try $ indentBlock scn p
       where
         p = do
-          kwMatch
-          scrut <- expr
-          kwWith
+          scrut <- kwMatch *> expr <* kwWith
           pure $ L.IndentSome Nothing (cont scrut) alt
 
         alt :: Parser (LPattern, LExpr)
@@ -367,7 +365,7 @@ kwIn = symbol "in" $> () <?> "in"
 
 -- {-# INLINE kwWhere #-}
 kwWhere :: Parser ()
-kwWhere = string "where" $> () <?> "where"
+kwWhere = symbol "where" $> () <?> "where"
 
 -- {-# INLINE kwIf #-}
 kwIf :: Parser ()
@@ -411,7 +409,7 @@ kwInstance = symbol "impl" $> () <?> "impl"
 
 -- {-# INLINE kwDo #-}
 kwDo :: Parser ()
-kwDo = string "do" $> () <?> "do"
+kwDo = symbol "do" $> () <?> "do"
 
 -- {-# INLINE withLoc #-}
 withLoc :: Parser a -> Parser (Located a)
