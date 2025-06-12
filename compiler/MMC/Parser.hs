@@ -39,7 +39,7 @@ import Text.Megaparsec
 import Text.Megaparsec.Char (alphaNumChar, char, char', lowerChar, space1, string, upperChar)
 import Text.Megaparsec.Char.Lexer (indentBlock)
 import qualified Text.Megaparsec.Char.Lexer as L
-import Text.Megaparsec.Debug (MonadParsecDbg (dbg))
+import Text.Megaparsec.Debug (MonadParsecDbg (dbg), dbg')
 import Prelude hiding (getLoc)
 
 type Parser = Parsec Void Text
@@ -89,9 +89,9 @@ classDecl = withLoc $ ClassDeclSig <$> sig <|> ClassDeclBind <$> bind
 sig :: Parser LSig
 sig =
   withLoc . try $
-    Sig <$> (lowerCaseIdent `sepBy1` char ',') <* symbol ":" <*> tyVars <*> typeAnno
+    Sig <$> (lowerCaseIdent `sepBy1` (charL ',')) <* charL ':' <*> tyVars <*> typeAnno
   where
-    tyVars = try (some lowerCaseIdent <* char '.') <|> pure []
+    tyVars = try (some lowerCaseIdent <* charL '.') <|> pure []
 
 rhs :: Parser Rhs
 rhs = choice [RhsExpr <$> expr, RhsGuard <$> some guard]
@@ -132,16 +132,16 @@ expr = makeExprParser apply operatorTable
         cont scr alts = pure $ Match scr alts
 
     list :: Parser Expr
-    list = List <$> brackets (expr `sepEndBy` char ',')
+    list = List <$> brackets (expr `sepEndBy` charL ',')
 
     tuple :: Parser Expr
-    tuple = Tuple <$> try (parens ((:) <$> (expr <* char ',')) <*> expr `sepEndBy1` char ',')
+    tuple = Tuple <$> try (parens $ (:) <$> (expr <* charL ',') <*> expr `sepEndBy1` charL ',')
 
     record :: Parser Expr
     record =
       Record
         <$> optional upperCaseIdent
-        <*> braces (((,) <$> lowerCaseIdent <*> (char '=' *> expr)) `sepEndBy1` char ',')
+        <*> braces (((,) <$> lowerCaseIdent <*> (charL '=' *> expr)) `sepEndBy1` charL ',')
 
     atom :: Parser LExpr
     atom =
@@ -152,7 +152,8 @@ expr = makeExprParser apply operatorTable
             if',
             match,
             list,
-            try tuple <|> simple,
+            tuple,
+            simple,
             record
           ]
 
@@ -170,19 +171,19 @@ bind :: Parser LBind
 bind = withLoc $ funBind <|> patternBind
   where
     patternBind :: Parser Bind
-    patternBind = BindPattern <$> pattern' <* symbol "=" <*> rhs <*> where'
+    patternBind = BindPattern <$> pattern' <* charL '=' <*> rhs <*> where'
 
     funBind :: Parser Bind
     funBind = try $ BindFun <$> lowerCaseIdent <*> some alt <*> where'
 
     alt :: Parser LAlt
-    alt = withLoc $ Alt <$> (some pattern') <* symbol "=" <*> rhs
+    alt = withLoc $ Alt <$> (some pattern') <* charL '=' <*> rhs
 
     where' :: Parser [LClassDecl]
     where' = option [] (kwWhere *> some classDecl)
 
 guard :: Parser LGuard
-guard = withLoc . try $ Guard <$> pattern' <* symbol "|" <*> expr
+guard = withLoc . try $ Guard <$> pattern' <* charL '|' <*> expr
 
 operatorTable :: [[Operator Parser LExpr]]
 operatorTable =
@@ -226,26 +227,26 @@ typeAnno = arrowType <|> baseType
     listType = TypeAnnoList <$> brackets typeAnno
     tupleType =
       TypeAnnoTuple
-        <$> try (parens ((:) <$> (typeAnno <* char ',')) <*> typeAnno `sepEndBy1` char ',')
+        <$> try (parens ((:) <$> (typeAnno <* charL ',')) <*> typeAnno `sepEndBy1` charL ',')
 
 pattern' :: Parser LPattern
 pattern' = withLoc $ choice [wildcard, litP, identP, consP, listP, unitP]
   where
-    wildcard = char '_' $> PatternWildcard
+    wildcard = charL '_' $> PatternWildcard
     litP = PatternLit <$> lit
     identP = PatternIdent <$> lowerCaseIdent
     consP = PatternCons <$> upperCaseIdent <*> some pattern'
-    listP = PatternList <$> brackets (pattern' `sepEndBy` char ',')
+    listP = PatternList <$> brackets (pattern' `sepEndBy` charL ',')
     unitP = unit $> PatternUnit
 
 parens :: Parser a -> Parser a
-parens = between (lexeme $ char '(') (lexeme $ char ')')
+parens = between (charL '(') (charL ')')
 
 brackets :: Parser a -> Parser a
-brackets = between (lexeme $ char '[') (lexeme $ char ']')
+brackets = between (charL '[') (charL ']')
 
 braces :: Parser a -> Parser a
-braces = between (lexeme $ char '{') (lexeme $ char '}')
+braces = between (charL '{') (charL '}')
 
 -- {-# INLINEABLE lowerCaseIdent #-}
 lowerCaseIdent :: Parser Ident
@@ -297,6 +298,9 @@ lineComment = L.skipLineComment "--"
 -- {-# INLINE lexeme #-}
 lexeme :: Parser a -> Parser a
 lexeme = L.lexeme sc
+
+charL :: Char -> Parser Char
+charL c = lexeme (char c)
 
 -- {-# INLINE symbol #-}
 symbol :: Text -> Parser Text

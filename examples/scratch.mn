@@ -96,7 +96,12 @@ def fib (n : Int) : Int =
 def lcm (a : Int) (b : Int) : Int =
   a * b / gcd a b
 
-def lcm a b = a * b / gcd a b
+gcd : Int -> Int -> Int
+gcd a 0 = a
+gcd a b = gcd b (a % b)
+
+lcm : Int -> Int -> Int
+lcm a b = a * b / gcd a b
 
 -- tail recursive fib
 def fib n = 
@@ -105,24 +110,32 @@ def fib n =
     else loop b (a + b) (i - 1)
   in loop 0 1 n
 
+@inline(always)
 fib : Int -> Int
-fib n = go n 0 1
+fib n = fib' n 0 1
   where
-    go 0 a _ = a
-    go i a b = go (i - 1) b (a + b)
-
--- pattern match
-def fib n = 
-  match n
-  | 0 -> 0
-  | 1 -> 1
-  | n -> fib (n - 1) + fib (n - 2)
+    @inline(never)
+    fib' 0 a _ = a
+    fib' i a b = go (i - 1) b (a + b)
 
 def fact n =
   let loop acc n =
     if n = 0 then acc
     else loop (acc * n) (n - 1)
   in loop 1 n
+
+-- naive recursive factorial
+fact : Int -> Int
+fact 0 = 1
+fact n = fact (n - 1) * n
+
+@inline(always)
+fact : Int -> Int
+fact n = fact' n 1
+  where
+    @inline(never)
+    fact' 0 acc = acc
+    fact' n acc = fact' (n - 1) (acc * n)
 
 def map a b. (f : a -> b) (xs : [a]) : [b] =
   match xs with
