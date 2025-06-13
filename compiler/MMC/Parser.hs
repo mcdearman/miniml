@@ -39,7 +39,6 @@ import Text.Megaparsec
 import Text.Megaparsec.Char (alphaNumChar, char, char', lowerChar, space1, string, upperChar)
 import Text.Megaparsec.Char.Lexer (indentBlock)
 import qualified Text.Megaparsec.Char.Lexer as L
-import Text.Megaparsec.Debug (MonadParsecDbg (dbg), dbg')
 import Prelude hiding (getLoc)
 
 type Parser = Parsec Void Text
@@ -115,11 +114,11 @@ expr = makeExprParser apply operatorTable
     if' :: Parser Expr
     if' = If <$> (kwIf *> expr) <* kwThen <*> expr <* kwElse <*> expr
 
+    alt :: Parser (LPattern, LExpr)
+    alt = ((,) <$> pattern' <*> (symbol "->" *> expr)) <* sc
+
     matchWithSemis :: Parser Expr
     matchWithSemis = Match <$> (kwMatch *> expr) <* kwWith <*> braces (sepEndBy1 alt (char ';' <* scn))
-      where
-        alt :: Parser (LPattern, LExpr)
-        alt = ((,) <$> pattern' <*> (symbol "->" *> expr)) <* sc
 
     matchWithIndent :: Parser Expr
     matchWithIndent = try $ indentBlock scn p
@@ -127,9 +126,6 @@ expr = makeExprParser apply operatorTable
         p = do
           scrut <- kwMatch *> expr <* kwWith
           pure $ L.IndentSome Nothing (cont scrut) alt
-
-        alt :: Parser (LPattern, LExpr)
-        alt = ((,) <$> pattern' <*> (symbol "->" *> expr))
 
         cont :: LExpr -> [(LPattern, LExpr)] -> Parser Expr
         cont scr alts = pure $ Match scr alts
