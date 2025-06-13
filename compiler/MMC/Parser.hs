@@ -19,6 +19,7 @@ import Text.Megaparsec
   ( MonadParsec (eof, getParserState, lookAhead, notFollowedBy, takeWhile1P, token, try),
     ParseErrorBundle,
     Parsec,
+    Pos,
     State (stateInput),
     Stream (take1_),
     between,
@@ -120,15 +121,25 @@ expr = makeExprParser apply operatorTable
     matchWithSemis :: Parser Expr
     matchWithSemis = Match <$> (kwMatch *> expr) <* kwWith <*> braces (sepEndBy1 alt (char ';' <* scn))
 
-    matchWithIndent :: Parser Expr
-    matchWithIndent = try $ indentBlock scn p
-      where
-        p = do
-          scrut <- kwMatch *> expr <* kwWith
-          pure $ L.IndentSome Nothing (cont scrut) alt
+    -- matchWithIndent :: Parser Expr
+    -- matchWithIndent = try $ indentBlock scn p
+    --   where
+    --     p = do
+    --       baseCol <- L.indentLevel
+    --       scrut <- kwMatch *> expr <* kwWith
+    --       pure $ L.IndentSome (Just baseCol) (cont scrut) alt
 
-        cont :: LExpr -> [(LPattern, LExpr)] -> Parser Expr
-        cont scr alts = pure $ Match scr alts
+    --     cont :: LExpr -> [(LPattern, LExpr)] -> Parser Expr
+    --     cont scr alts = pure $ Match scr alts
+    matchWithIndent :: Pos -> Parser Expr
+    matchWithIndent ref =
+      try $
+        snd
+          <$> ( indented ref $ do
+                  scrut <- kwMatch *> expr <* kwWith
+                  alts <- many (aligned ref alt)
+                  pure $ Match scrut alts
+              )
 
     list :: Parser Expr
     list = List <$> brackets (expr `sepEndBy` charL ',')
@@ -149,7 +160,7 @@ expr = makeExprParser apply operatorTable
           [ let',
             lambda,
             if',
-            matchWithIndent,
+            -- matchWithIndent,
             matchWithSemis,
             list,
             tuple,
@@ -406,6 +417,12 @@ kwInstance = symbol "impl" $> () <?> "impl"
 -- {-# INLINE kwDo #-}
 kwDo :: Parser ()
 kwDo = symbol "do" $> () <?> "do"
+
+indented :: Pos -> Parser a -> Parser (Pos, a)
+indented ref p = (,) <$> L.indentGuard sc GT ref <*> p
+
+aligned :: Pos -> Parser a -> Parser a
+aligned ref p = L.indentGuard sc EQ ref *> p
 
 -- {-# INLINE withLoc #-}
 withLoc :: Parser a -> Parser (Located a)
