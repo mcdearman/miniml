@@ -25,6 +25,7 @@ executable miniML
         MMC.AST
         MMC.Common
         MMC.Kind
+        MMC.Lexer
         MMC.Parser
         MMC.Pipeline
         MMC.Symbol
