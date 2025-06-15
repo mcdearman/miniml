@@ -80,7 +80,6 @@ tokenL =
         TokUnderscore <$ charL '_'
       ]
 
--- [a-z][a-zA-Z0-9'_]
 {-# INLINEABLE lowerCaseIdent #-}
 lowerCaseIdent :: Lexer Token
 lowerCaseIdent = try $ do
@@ -113,28 +112,25 @@ lowerCaseIdent = try $ do
         "do"
       ]
 
--- [A-Z][a-zA-Z0-9']*
 {-# INLINEABLE upperCaseIdent #-}
 upperCaseIdent :: Lexer Token
 upperCaseIdent = TokUpperCaseIdent <$> (pack <$> ((:) <$> upperChar <*> many alphaNumChar)) <* sc
 
--- [!$%&*+./<=>?@\|\\\^-z~:]+
 {-# INLINEABLE opIdent #-}
 opIdent :: Lexer Token
-opIdent = try $ TokOpIdent . pack <$> ((:) <$> opStartChar <*> some (satisfy isOpChar) <* sc)
+opIdent = try $ TokOpIdent . pack <$> choice [startEq, startNotEq] <* sc
   where
-    opStartChar = oneOf ("!$%&*+./<=>?@|\\~:" :: String)
+    opStartChar = oneOf ("!$%&*+./<>?@|\\~:" ++ ['^' .. 'z'] :: String)
+    startEq = (:) <$> char '=' <*> some opChar
+    startNotEq = (:) <$> opStartChar <*> many opChar
 
--- :[!$%&*+./<=>?@\|\\\^-z~:]
 {-# INLINEABLE conOpIdent #-}
 conOpIdent :: Lexer Token
-conOpIdent = try $ TokConOpIdent . pack <$> ((:) <$> char ':' <*> some (satisfy isOpChar)) <* sc
+conOpIdent = try $ TokConOpIdent . pack <$> ((:) <$> char ':' <*> some opChar) <* sc
 
--- conOpIdent = try $ TokConOpIdent . pack <$> liftA2 (:) (char ':') (some (satisfy isOpChar) <* sc)
-
-{-# INLINEABLE isOpChar #-}
-isOpChar :: Char -> Bool
-isOpChar c = c `elem` ("!$%&*+./<=>?@|\\~:" :: String) || c `elem` ['^' .. 'z']
+{-# INLINEABLE opChar #-}
+opChar :: Lexer Char
+opChar = oneOf ("!$%&*+./<=>?@|\\~:" ++ ['^' .. 'z'] :: String)
 
 sc :: Lexer ()
 sc = L.space (void $ some (char ' ' <|> char '\t')) lineComment empty
