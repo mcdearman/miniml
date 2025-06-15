@@ -15,6 +15,7 @@ import Error.Diagnose
 import Error.Diagnose.Compat.Megaparsec (HasHints (..), errorDiagnosticFromBundle)
 import MMC.AST (Prog)
 import MMC.Common (InputMode (InputModeFile))
+import MMC.Lexer (tokenize)
 import MMC.Parser (parseMML)
 import Text.Megaparsec (errorBundlePretty)
 import Text.Megaparsec.Error (ParseErrorBundle)
