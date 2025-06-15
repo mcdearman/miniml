@@ -17,7 +17,6 @@ data Token
   | TokInt Integer
   | TokString Text
   | TokChar Char
-  | TokBang
   | TokLParen
   | TokRParen
   | TokLBrace

@@ -1,6 +1,6 @@
 module MMC.Lexer (tokenize) where
 
-import Control.Applicative (empty, optional, (<|>))
+import Control.Applicative (empty, liftA, optional, (<|>))
 import Control.Monad (void)
 import Data.Text (Text, pack, unpack)
 import Data.Void (Void)
@@ -14,6 +14,7 @@ import Text.Megaparsec
     getOffset,
     many,
     manyTill,
+    oneOf,
     option,
     parse,
     satisfy,
@@ -51,12 +52,11 @@ tokenL =
         TokDo <$ symbol "do" <?> "do",
         upperCaseIdent,
         lowerCaseIdent,
-        opIdent,
         conOpIdent,
+        opIdent,
         int,
         str,
         charT,
-        TokBang <$ charL '!',
         TokLParen <$ charL '(',
         TokRParen <$ charL ')',
         TokLBrace <$ charL '{',
@@ -121,12 +121,16 @@ upperCaseIdent = TokUpperCaseIdent <$> (pack <$> ((:) <$> upperChar <*> many alp
 -- [!$%&*+./<=>?@\|\\\^-z~:]+
 {-# INLINEABLE opIdent #-}
 opIdent :: Lexer Token
-opIdent = try $ TokOpIdent <$> pack <$> some (satisfy isOpChar) <* sc
+opIdent = try $ TokOpIdent . pack <$> ((:) <$> opStartChar <*> some (satisfy isOpChar) <* sc)
+  where
+    opStartChar = oneOf ("!$%&*+./<=>?@|\\~:" :: String)
 
 -- :[!$%&*+./<=>?@\|\\\^-z~:]
 {-# INLINEABLE conOpIdent #-}
 conOpIdent :: Lexer Token
-conOpIdent = try $ TokConOpIdent <$> pack <$> ((:) <$> char ':' *> some (satisfy isOpChar)) <* sc
+conOpIdent = try $ TokConOpIdent . pack <$> ((:) <$> char ':' <*> some (satisfy isOpChar)) <* sc
+
+-- conOpIdent = try $ TokConOpIdent . pack <$> liftA2 (:) (char ':') (some (satisfy isOpChar) <* sc)
 
 {-# INLINEABLE isOpChar #-}
 isOpChar :: Char -> Bool

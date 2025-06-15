@@ -17,6 +17,7 @@ import MMC.AST (Prog)
 import MMC.Common (InputMode (InputModeFile))
 import MMC.Lexer (tokenize)
 import MMC.Parser (parseMML)
+import MMC.Token (LToken)
 import Text.Megaparsec (errorBundlePretty)
 import Text.Megaparsec.Error (ParseErrorBundle)
 import Text.Pretty.Simple (pShow)
@@ -36,19 +37,8 @@ defaultPipelineEnv =
 
 type Pipeline = State PipelineEnv
 
-runPipeline :: InputMode -> Text -> Pipeline (Either (ParseErrorBundle Text Void) Prog)
+runPipeline :: InputMode -> Text -> Pipeline (Either (ParseErrorBundle Text Void) [LToken])
 runPipeline mode src = do
   PipelineEnv {src = _, flags = f} <- get
   put $ PipelineEnv {src = src, flags = f}
-  pure $ parseMML mode src
-
--- case parseMML mode src of
--- Left e -> do
---   let diag = errorDiagnosticFromBundle Nothing ("Parse error on input" :: Text) Nothing e
---    in printDiagnostic $ prettyDiagnostic True 2 diag
---   pure $ error ""
--- Right p -> do
---   pure $ p
-
--- instance HasHints Void msg where
---   hints _ = mempty
+  pure $ tokenize src
