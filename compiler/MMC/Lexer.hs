@@ -120,8 +120,8 @@ upperCaseIdent = TokUpperCaseIdent <$> (pack <$> ((:) <$> upperChar <*> many alp
 opIdent :: Lexer Token
 opIdent = try $ TokOpIdent . pack <$> choice [startSpecial, startNotEq] <* sc
   where
-    opStartChar = oneOf ("!$%&*+/<>?@|\\~:" ++ ['^' .. 'z'] :: String)
-    startSpecial = try $ (:) <$> oneOf ['=', '.'] <*> some opChar
+    opStartChar = oneOf ("!$%&*+/<>?~:" ++ ['^' .. '`'] :: String)
+    startSpecial = try $ (:) <$> oneOf ['=', '.', '@', '|'] <*> some opChar
     startNotEq = (:) <$> opStartChar <*> many opChar
 
 {-# INLINEABLE conOpIdent #-}
