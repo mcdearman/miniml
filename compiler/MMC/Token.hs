@@ -33,6 +33,7 @@ data Token
   | TokColon
   | TokSemi
   | TokComma
+  | TokPeriod
   | TokEq
   | TokArrow
   | TokFatArrow

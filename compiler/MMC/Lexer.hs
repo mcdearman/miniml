@@ -49,11 +49,39 @@ tokenL =
         TokClass <$ symbol "class" <?> "class",
         TokInstance <$ symbol "instance" <?> "instance",
         TokDo <$ symbol "do" <?> "do",
+        upperCaseIdent,
+        lowerCaseIdent,
+        opIdent,
+        conOpIdent,
         int,
-        str
+        str,
+        charT,
+        TokBang <$ charL '!',
+        TokLParen <$ charL '(',
+        TokRParen <$ charL ')',
+        TokLBrace <$ charL '{',
+        TokRBrace <$ charL '}',
+        TokLBracket <$ charL '[',
+        TokRBracket <$ charL ']',
+        TokPlus <$ charL '+',
+        TokMinus <$ charL '-',
+        TokStar <$ charL '*',
+        TokSlash <$ charL '/',
+        TokBackSlash <$ charL '\\',
+        TokPercent <$ charL '%',
+        TokColon <$ charL ':',
+        TokSemi <$ charL ';',
+        TokComma <$ charL ',',
+        TokPeriod <$ charL '.',
+        TokEq <$ charL '=',
+        TokArrow <$ string "->",
+        TokFatArrow <$ string "=>",
+        TokBar <$ charL '|',
+        TokUnderscore <$ charL '_'
       ]
 
--- {-# INLINEABLE lowerCaseIdent #-}
+-- [a-z][a-zA-Z0-9'_]
+{-# INLINEABLE lowerCaseIdent #-}
 lowerCaseIdent :: Lexer Token
 lowerCaseIdent = try $ do
   name <- pack <$> ((:) <$> identStartChar <*> many identChar) <* sc
@@ -85,25 +113,39 @@ lowerCaseIdent = try $ do
         "do"
       ]
 
+-- [A-Z][a-zA-Z0-9']*
 {-# INLINEABLE upperCaseIdent #-}
 upperCaseIdent :: Lexer Token
 upperCaseIdent = TokUpperCaseIdent <$> (pack <$> ((:) <$> upperChar <*> many alphaNumChar)) <* sc
 
--- {-# INLINE sc #-}
+-- [!$%&*+./<=>?@\|\\\^-z~:]+
+{-# INLINEABLE opIdent #-}
+opIdent :: Lexer Token
+opIdent = try $ TokOpIdent <$> pack <$> some (satisfy isOpChar) <* sc
+
+-- :[!$%&*+./<=>?@\|\\\^-z~:]
+{-# INLINEABLE conOpIdent #-}
+conOpIdent :: Lexer Token
+conOpIdent = try $ TokConOpIdent <$> pack <$> ((:) <$> char ':' *> some (satisfy isOpChar)) <* sc
+
+{-# INLINEABLE isOpChar #-}
+isOpChar :: Char -> Bool
+isOpChar c = c `elem` ("!$%&*+./<=>?@|\\~:" :: String) || c `elem` ['^' .. 'z']
+
 sc :: Lexer ()
 sc = L.space (void $ some (char ' ' <|> char '\t')) lineComment empty
 
 lineComment :: Lexer ()
 lineComment = L.skipLineComment "--"
 
-{-# INLINE lexeme #-}
+-- {-# INLINE lexeme #-}
 lexeme :: Lexer a -> Lexer a
 lexeme = L.lexeme sc
 
 charL :: Char -> Lexer Char
 charL c = lexeme (char c)
 
-{-# INLINE symbol #-}
+-- {-# INLINE symbol #-}
 symbol :: Text -> Lexer Text
 symbol = L.symbol sc
 
@@ -122,6 +164,10 @@ int = TokInt <$> lexeme (choice [octal, hexadecimal, L.decimal])
 {-# INLINE str #-}
 str :: Lexer Token
 str = TokString <$> lexeme (char '\"' *> (pack <$> manyTill L.charLiteral (char '\"')))
+
+{-# INLINE charT #-}
+charT :: Lexer Token
+charT = TokChar <$> lexeme (char '\'' *> L.charLiteral <* char '\'')
 
 {-# INLINE withLoc #-}
 withLoc :: Lexer a -> Lexer (Located a)
