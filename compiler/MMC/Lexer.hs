@@ -33,7 +33,14 @@ tokenL :: Lexer LToken
 tokenL =
   withLoc $
     choice
-      [ TokModule <$ symbol "module" <?> "module",
+      [ upperCaseIdent,
+        lowerCaseIdent,
+        conOpIdent,
+        opIdent,
+        int,
+        str,
+        charT,
+        TokModule <$ symbol "module" <?> "module",
         TokImport <$ symbol "import" <?> "import",
         TokAs <$ symbol "as" <?> "as",
         TokLet <$ symbol "let" <?> "let",
@@ -50,13 +57,6 @@ tokenL =
         TokClass <$ symbol "class" <?> "class",
         TokInstance <$ symbol "instance" <?> "instance",
         TokDo <$ symbol "do" <?> "do",
-        upperCaseIdent,
-        lowerCaseIdent,
-        conOpIdent,
-        opIdent,
-        int,
-        str,
-        charT,
         TokLParen <$ charL '(',
         TokRParen <$ charL ')',
         TokLBrace <$ charL '{',
@@ -120,8 +120,8 @@ upperCaseIdent = TokUpperCaseIdent <$> (pack <$> ((:) <$> upperChar <*> many alp
 opIdent :: Lexer Token
 opIdent = try $ TokOpIdent . pack <$> choice [startSpecial, startNotEq] <* sc
   where
-    opStartChar = oneOf ("!$%&*+/<>?~:" ++ ['^' .. '`'] :: String)
-    startSpecial = try $ (:) <$> oneOf ['=', '.', '@', '|'] <*> some opChar
+    opStartChar = oneOf ("!$%&*+/<>?~" ++ ['^' .. '`'] :: String)
+    startSpecial = try $ (:) <$> oneOf ['=', '.', '@', '|', ':'] <*> some opChar
     startNotEq = (:) <$> opStartChar <*> many opChar
 
 {-# INLINEABLE conOpIdent #-}
