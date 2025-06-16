@@ -2,7 +2,6 @@ module MMC.Lexer (tokenize) where
 
 import Control.Applicative (empty, liftA, optional, (<|>))
 import Control.Monad (void)
-import Data.Char (isSpace)
 import Data.Text (Text, pack, unpack)
 import qualified Data.Text as T
 import Data.Void (Void)
@@ -34,8 +33,8 @@ tokenL :: Lexer LToken
 tokenL =
   withLoc $
     choice
-      [ whitespace,
-        newline,
+      [ newline,
+        whitespace,
         upperCaseIdent,
         lowerCaseIdent,
         conOpIdent,
@@ -121,7 +120,7 @@ upperCaseIdent = TokUpperCaseIdent <$> (pack <$> ((:) <$> upperChar <*> many alp
 
 {-# INLINEABLE opIdent #-}
 opIdent :: Lexer Token
-opIdent = try $ TokOpIdent . pack <$> choice [startSpecial, startNotEq]
+opIdent = try $ TokOpIdent <$> choice [startSpecial, startNotEq]
   where
     opStartChar = oneOf ("!$%&*+/<>?~" ++ ['^' .. '`'] :: String)
     startSpecial = try $ T.cons <$> oneOf ['=', '.', '@', '|', ':'] <*> takeWhile1P Nothing isOpChar
@@ -129,23 +128,21 @@ opIdent = try $ TokOpIdent . pack <$> choice [startSpecial, startNotEq]
 
 {-# INLINEABLE conOpIdent #-}
 conOpIdent :: Lexer Token
--- conOpIdent = try $ TokConOpIdent . pack <$> ((:) <$> char ':' <*> unpack <$> (takeWhile1P Nothing isOpChar))
-conOpIdent = try $ TokConOpIdent <$> T.cons <$> char ':' <*> takeWhile1P Nothing isOpChar
-
---   start <- char ':'
---   rest <- takeWhile1P Nothing isOpChar
---   let name = T.cons start rest
---   pure $ TokConOpIdent name
+conOpIdent = try $ TokConOpIdent <$> (T.cons <$> char ':' <*> takeWhile1P Nothing isOpChar)
 
 {-# INLINEABLE isOpChar #-}
 isOpChar :: Char -> Bool
 isOpChar c = c `elem` ("!$%&*+./<=>?@|\\~:" ++ ['^' .. 'z'] :: String)
 
 newline :: Lexer Token
-newline = TokNewline <$ char '\n'
+newline = try $ TokNewline <$ oneOf ['\n', '\r']
 
 whitespace :: Lexer Token
 whitespace = TokWhitespace <$> (T.length <$> takeWhile1P Nothing isSpace)
+  where
+    isSpace ' ' = True
+    isSpace '\t' = True
+    isSpace _ = False
 
 lineComment :: Lexer ()
 lineComment = L.skipLineComment "--"
