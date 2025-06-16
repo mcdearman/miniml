@@ -2,12 +2,14 @@ module MMC.Lexer (tokenize) where
 
 import Control.Applicative (empty, liftA, optional, (<|>))
 import Control.Monad (void)
+import Data.Char (isSpace)
 import Data.Text (Text, pack, unpack)
+import qualified Data.Text as T
 import Data.Void (Void)
 import MMC.Common (Loc (..), Located (..), unLoc)
 import MMC.Token (LToken, Token (..))
 import Text.Megaparsec
-  ( MonadParsec (eof, getParserState, lookAhead, notFollowedBy, takeWhile1P, token, try),
+  ( MonadParsec (eof, getParserState, lookAhead, notFollowedBy, takeWhile1P, takeWhileP, token, try),
     ParseErrorBundle,
     Parsec,
     choice,
@@ -17,7 +19,6 @@ import Text.Megaparsec
     oneOf,
     option,
     parse,
-    satisfy,
     some,
     (<?>),
   )
@@ -33,57 +34,59 @@ tokenL :: Lexer LToken
 tokenL =
   withLoc $
     choice
-      [ upperCaseIdent,
+      [ whitespace,
+        newline,
+        upperCaseIdent,
         lowerCaseIdent,
         conOpIdent,
         opIdent,
         int,
         str,
         charT,
-        TokModule <$ symbol "module" <?> "module",
-        TokImport <$ symbol "import" <?> "import",
-        TokAs <$ symbol "as" <?> "as",
-        TokLet <$ symbol "let" <?> "let",
-        TokIn <$ symbol "in" <?> "in",
-        TokWhere <$ symbol "where" <?> "where",
-        TokIf <$ symbol "if" <?> "if",
-        TokThen <$ symbol "then" <?> "then",
-        TokElse <$ symbol "else" <?> "else",
-        TokMatch <$ symbol "match" <?> "match",
-        TokWith <$ symbol "with" <?> "with",
-        TokRecord <$ symbol "record" <?> "record",
-        TokData <$ symbol "data" <?> "data",
-        TokType <$ symbol "type" <?> "type",
-        TokClass <$ symbol "class" <?> "class",
-        TokInstance <$ symbol "instance" <?> "instance",
-        TokDo <$ symbol "do" <?> "do",
-        TokLParen <$ charL '(',
-        TokRParen <$ charL ')',
-        TokLBrace <$ charL '{',
-        TokRBrace <$ charL '}',
-        TokLBracket <$ charL '[',
-        TokRBracket <$ charL ']',
-        TokPlus <$ charL '+',
-        TokMinus <$ charL '-',
-        TokStar <$ charL '*',
-        TokSlash <$ charL '/',
-        TokBackSlash <$ charL '\\',
-        TokPercent <$ charL '%',
-        TokColon <$ charL ':',
-        TokSemi <$ charL ';',
-        TokComma <$ charL ',',
-        TokPeriod <$ charL '.',
-        TokEq <$ charL '=',
+        TokModule <$ string "module" <?> "module",
+        TokImport <$ string "import" <?> "import",
+        TokAs <$ string "as" <?> "as",
+        TokLet <$ string "let" <?> "let",
+        TokIn <$ string "in" <?> "in",
+        TokWhere <$ string "where" <?> "where",
+        TokIf <$ string "if" <?> "if",
+        TokThen <$ string "then" <?> "then",
+        TokElse <$ string "else" <?> "else",
+        TokMatch <$ string "match" <?> "match",
+        TokWith <$ string "with" <?> "with",
+        TokRecord <$ string "record" <?> "record",
+        TokData <$ string "data" <?> "data",
+        TokType <$ string "type" <?> "type",
+        TokClass <$ string "class" <?> "class",
+        TokInstance <$ string "instance" <?> "instance",
+        TokDo <$ string "do" <?> "do",
+        TokLParen <$ char '(',
+        TokRParen <$ char ')',
+        TokLBrace <$ char '{',
+        TokRBrace <$ char '}',
+        TokLBracket <$ char '[',
+        TokRBracket <$ char ']',
+        TokPlus <$ char '+',
+        TokMinus <$ char '-',
+        TokStar <$ char '*',
+        TokSlash <$ char '/',
+        TokBackSlash <$ char '\\',
+        TokPercent <$ char '%',
+        TokColon <$ char ':',
+        TokSemi <$ char ';',
+        TokComma <$ char ',',
+        TokPeriod <$ char '.',
+        TokEq <$ char '=',
         TokArrow <$ string "->",
         TokFatArrow <$ string "=>",
-        TokBar <$ charL '|',
-        TokUnderscore <$ charL '_'
+        TokBar <$ char '|',
+        TokUnderscore <$ char '_'
       ]
 
 {-# INLINEABLE lowerCaseIdent #-}
 lowerCaseIdent :: Lexer Token
 lowerCaseIdent = try $ do
-  name <- pack <$> ((:) <$> identStartChar <*> many identChar) <* sc
+  name <- pack <$> ((:) <$> identStartChar <*> many identChar)
   if name `elem` keywords
     then fail $ "keyword " ++ unpack name ++ " cannot be used in place of identifier"
     else pure $ TokLowerCaseIdent name
@@ -114,40 +117,38 @@ lowerCaseIdent = try $ do
 
 {-# INLINEABLE upperCaseIdent #-}
 upperCaseIdent :: Lexer Token
-upperCaseIdent = TokUpperCaseIdent <$> (pack <$> ((:) <$> upperChar <*> many alphaNumChar)) <* sc
+upperCaseIdent = TokUpperCaseIdent <$> (pack <$> ((:) <$> upperChar <*> many alphaNumChar))
 
 {-# INLINEABLE opIdent #-}
 opIdent :: Lexer Token
-opIdent = try $ TokOpIdent . pack <$> choice [startSpecial, startNotEq] <* sc
+opIdent = try $ TokOpIdent . pack <$> choice [startSpecial, startNotEq]
   where
     opStartChar = oneOf ("!$%&*+/<>?~" ++ ['^' .. '`'] :: String)
-    startSpecial = try $ (:) <$> oneOf ['=', '.', '@', '|', ':'] <*> some opChar
-    startNotEq = (:) <$> opStartChar <*> many opChar
+    startSpecial = try $ T.cons <$> oneOf ['=', '.', '@', '|', ':'] <*> takeWhile1P Nothing isOpChar
+    startNotEq = T.cons <$> opStartChar <*> takeWhileP Nothing isOpChar
 
 {-# INLINEABLE conOpIdent #-}
 conOpIdent :: Lexer Token
-conOpIdent = try $ TokConOpIdent . pack <$> ((:) <$> char ':' <*> some opChar) <* sc
+-- conOpIdent = try $ TokConOpIdent . pack <$> ((:) <$> char ':' <*> unpack <$> (takeWhile1P Nothing isOpChar))
+conOpIdent = try $ TokConOpIdent <$> T.cons <$> char ':' <*> takeWhile1P Nothing isOpChar
 
-{-# INLINEABLE opChar #-}
-opChar :: Lexer Char
-opChar = oneOf ("!$%&*+./<=>?@|\\~:" ++ ['^' .. 'z'] :: String)
+--   start <- char ':'
+--   rest <- takeWhile1P Nothing isOpChar
+--   let name = T.cons start rest
+--   pure $ TokConOpIdent name
 
-sc :: Lexer ()
-sc = L.space (void $ some (char ' ' <|> char '\t')) lineComment empty
+{-# INLINEABLE isOpChar #-}
+isOpChar :: Char -> Bool
+isOpChar c = c `elem` ("!$%&*+./<=>?@|\\~:" ++ ['^' .. 'z'] :: String)
+
+newline :: Lexer Token
+newline = TokNewline <$ char '\n'
+
+whitespace :: Lexer Token
+whitespace = TokWhitespace <$> (T.length <$> takeWhile1P Nothing isSpace)
 
 lineComment :: Lexer ()
 lineComment = L.skipLineComment "--"
-
--- {-# INLINE lexeme #-}
-lexeme :: Lexer a -> Lexer a
-lexeme = L.lexeme sc
-
-charL :: Char -> Lexer Char
-charL c = lexeme (char c)
-
--- {-# INLINE symbol #-}
-symbol :: Text -> Lexer Text
-symbol = L.symbol sc
 
 {-# INLINE octal #-}
 octal :: Lexer Integer
@@ -159,15 +160,15 @@ hexadecimal = try $ char '0' *> char' 'x' *> L.hexadecimal
 
 {-# INLINE int #-}
 int :: Lexer Token
-int = TokInt <$> lexeme (choice [octal, hexadecimal, L.decimal])
+int = TokInt <$> choice [octal, hexadecimal, L.decimal]
 
 {-# INLINE str #-}
 str :: Lexer Token
-str = TokString <$> lexeme (char '\"' *> (pack <$> manyTill L.charLiteral (char '\"')))
+str = TokString <$> (char '\"' *> (pack <$> manyTill L.charLiteral (char '\"')))
 
 {-# INLINE charT #-}
 charT :: Lexer Token
-charT = TokChar <$> lexeme (char '\'' *> L.charLiteral <* char '\'')
+charT = TokChar <$> (char '\'' *> L.charLiteral <* char '\'')
 
 {-# INLINE withLoc #-}
 withLoc :: Lexer a -> Lexer (Located a)
