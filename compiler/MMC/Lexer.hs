@@ -132,7 +132,7 @@ conOpIdent = try $ TokConOpIdent <$> (T.cons <$> char ':' <*> takeWhile1P Nothin
 
 {-# INLINEABLE isOpChar #-}
 isOpChar :: Char -> Bool
-isOpChar c = c `elem` ("!$%&*+./<=>?@|\\~:" ++ ['^' .. 'z'] :: String)
+isOpChar c = c `elem` ("!$%&*+./<=>?@|\\~:" ++ ['^' .. '`'] :: String)
 
 newline :: Lexer Token
 newline = try $ TokNewline <$ oneOf ['\n', '\r']
