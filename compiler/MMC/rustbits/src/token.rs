@@ -30,7 +30,7 @@ impl Token {
 }
 
 #[derive(Logos, Debug, Clone, PartialEq)]
-pub enum TokenKind {
+pub enum TokenKind<'a> {
     Eof,
     #[regex(r"--.*")]
     Comment,
@@ -43,20 +43,18 @@ pub enum TokenKind {
         priority = 3
     )]
     Int(i64),
-    #[regex(
-        r"([0-9]*[.])?[0-9]+", 
-        |lex| lex.slice().parse().ok(),
-        priority = 2
-    )]
-    Real(f64),
-    #[regex(
-        r"-?((0b[0-1]+)|(0o[0-7]+)|(0x[0-9a-fA-F]+)|([1-9]\d*|0))(/-?((0b[0-1]+)|(0o[0-7]+)|(0x[0-9a-fA-F]+)|([1-9]\d*|0)))",
-        |lex| lex.slice().parse().ok())]
-    Rational(Rational64),
-    #[regex(r"true|false", |lex| lex.slice().parse().ok())]
-    Bool(bool),
+    // #[regex(
+    //     r"([0-9]*[.])?[0-9]+", 
+    //     |lex| lex.slice().parse().ok(),
+    //     priority = 2
+    // )]
+    // Real(f64),
+    // #[regex(
+    //     r"-?((0b[0-1]+)|(0o[0-7]+)|(0x[0-9a-fA-F]+)|([1-9]\d*|0))(/-?((0b[0-1]+)|(0o[0-7]+)|(0x[0-9a-fA-F]+)|([1-9]\d*|0)))",
+    //     |lex| lex.slice().parse().ok())]
+    // Rational(Rational64),
     #[regex(r#""(\\.|[^"\\])*""#, |lex| InternedString::from(lex.slice()))]
-    String(InternedString),
+    String(&'a str),
     #[regex(r"'(\\.|[^'\\])'", |lex| lex.slice().chars().nth(1))]
     Char(char),
     #[regex(r"[a-z][a-zA-Z0-9'_]*", |lex| InternedString::from(lex.slice()), priority = 2)]
@@ -97,26 +95,12 @@ pub enum TokenKind {
     Not,
     #[token("=")]
     Eq,
-    #[token("!=")]
-    Neq,
-    #[token("<")]
-    Lt,
-    #[token(">")]
-    Gt,
-    #[token("<=")]
-    Leq,
-    #[token(">=")]
-    Geq,
     #[token("!")]
     Bang,
     #[token(",")]
     Comma,
     #[token(".")]
     Period,
-    #[token("..")]
-    DoublePeriod,
-    #[token("..=")]
-    DoublePeriodEq,
     #[token(":")]
     Colon,
     #[token(";")]
@@ -137,10 +121,6 @@ pub enum TokenKind {
     Hash,
     #[token("|")]
     Bar,
-    #[token("<|")]
-    LPipe,
-    #[token("|>")]
-    RPipe,
     #[token("@")]
     At,
     #[token("`")]
