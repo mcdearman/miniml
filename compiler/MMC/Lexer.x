@@ -15,6 +15,7 @@ tokens :-
   "--".*                         ;
   let                            { \s -> TokLet }
   in                             { \s -> TokIn }
+  match                         { \s -> TokMatch }
 --   $digit+                        { \s -> Int (read s) }
 --   [\=\+\-\*\/\(\)]               { \s -> Sym (head s) }
 --   $alpha [$alpha $digit \_ \']*  { \s -> Var s }
