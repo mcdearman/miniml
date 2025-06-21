@@ -17,7 +17,7 @@ import MMC.AST (Prog)
 import MMC.Common (InputMode (InputModeFile))
 import MMC.Lexer (tokenize)
 import MMC.Parser (parseMML)
-import MMC.Token (LToken)
+import MMC.Token (LToken, Token)
 import Text.Megaparsec (errorBundlePretty)
 import Text.Megaparsec.Error (ParseErrorBundle)
 import Text.Pretty.Simple (pShow)
@@ -37,8 +37,14 @@ defaultPipelineEnv =
 
 type Pipeline = State PipelineEnv
 
-runPipeline :: InputMode -> Text -> Pipeline (Either (ParseErrorBundle Text Void) [LToken])
+-- runPipeline :: InputMode -> Text -> Pipeline (Either (ParseErrorBundle Text Void) [LToken])
+-- runPipeline mode src = do
+--   PipelineEnv {src = _, flags = f} <- get
+--   put $ PipelineEnv {src = src, flags = f}
+--   pure $ tokenize src
+
+runPipeline :: InputMode -> Text -> Pipeline [Token]
 runPipeline mode src = do
   PipelineEnv {src = _, flags = f} <- get
   put $ PipelineEnv {src = src, flags = f}
-  pure $ tokenize src
+  pure $ (tokenize . unpack) src

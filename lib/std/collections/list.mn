@@ -117,8 +117,6 @@ take n ls
   | 0 < n = unsafeTake n ls
   | otherwise = []
   where
-    -- A version of take that takes the whole list if given an argument
-    -- less than 1
     @inline(never)
     unsafeTake : Nat -> [a] -> [a]
     unsafeTake !_ [] = []
@@ -165,8 +163,8 @@ splitAt n ls
         (xs', xs'') = splitAt' (m - 1) xs
 
 @pub
-span : (a -> Bool) -> [a] -> ([a], [a])
-span _ xs@[] = (xs, xs)
+span : (a -> bool) -> [a] -> ([a], [a])
+span _ [] = ([], [])
 span p xs@(x::xs')
   | p x = let (ys,zs) = span p xs' in (x::ys,zs)
   | otherwise = ([],xs)

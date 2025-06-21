@@ -21,6 +21,8 @@ common warnings
 executable miniML
     import:           warnings
     main-is:          Main.hs
+    build-tool-depends:
+      alex:alex >= 3.2
     other-modules: 
         MMC.AST
         MMC.Common

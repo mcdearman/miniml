@@ -35,8 +35,9 @@ data Token
   | TokComma
   | TokPeriod
   | TokEq
-  | TokArrow
-  | TokFatArrow
+  | TokRArrow
+  | TokLArrow
+  | TokLFatArrow
   | TokBar
   | TokUnderscore
   | TokModule

@@ -67,10 +67,13 @@ main = run "x = match y with\n  1 -> True\n  2 -> False"
 
 run :: String -> IO ()
 run src = do
-  let (out, _) = runState (runPipeline (InputModeFile "main") (pack src)) defaultPipelineEnv
-  case out of
-    Left e ->
-      let diag = errorDiagnosticFromBundle Nothing ("Parse error on input" :: Text) Nothing e
-          diag' = addFile diag "main" src
-       in printDiagnostic stderr True True 2 defaultStyle diag'
-    Right prog -> putStrLn $ unpack . toStrict $ pShow prog
+  let out = runState (runPipeline (InputModeFile "main") (pack src)) defaultPipelineEnv
+  putStrLn $ unpack . toStrict $ pShow (fst out)
+
+-- let (out, _) = runState (runPipeline (InputModeFile "main") (pack src)) defaultPipelineEnv
+-- case out of
+--   Left e ->
+--     let diag = errorDiagnosticFromBundle Nothing ("Parse error on input" :: Text) Nothing e
+--         diag' = addFile diag "main" src
+--      in printDiagnostic stderr True True 2 defaultStyle diag'
+--   Right prog -> putStrLn $ unpack . toStrict $ pShow prog

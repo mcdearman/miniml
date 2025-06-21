@@ -1,0 +1,10 @@
+[package]
+name = "miniml-compiler-rustbits"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+env = "1.0.1"
+env_logger = "0.11.8"
+libc = "0.2.172"
+logos = "0.15.0"
