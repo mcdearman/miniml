@@ -122,7 +122,7 @@ upperCaseIdent = TokUpperCaseIdent <$> (pack <$> ((:) <$> upperChar <*> many alp
 {-# INLINEABLE opIdent #-}
 opIdent :: Lexer Token
 opIdent = try $ do
-  sym <- choice [startSpecial, startNotEq]
+  sym <- choice [startSpecial, startNotEq] <* notFollowedBy (oneOf ['=', '.', '@', '|', ':', '-'])
   if sym `elem` reservedSymbols
     then fail $ "symbol " ++ unpack sym ++ " cannot be used in place of identifier"
     else pure $ TokOpIdent sym
