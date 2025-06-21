@@ -168,8 +168,8 @@ splitAt n ls
 span : (a -> Bool) -> [a] -> ([a], [a])
 span _ xs@[] = (xs, xs)
 span p xs@(x::xs')
-         | p x = let (ys,zs) = span p xs' in (x::ys,zs)
-         | otherwise = ([],xs)
+  | p x = let (ys,zs) = span p xs' in (x::ys,zs)
+  | otherwise = ([],xs)
 
 @pub
 intersperse : a -> [a] -> [a]
