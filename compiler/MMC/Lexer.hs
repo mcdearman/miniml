@@ -65,6 +65,7 @@ tokenL =
       TokRBrace <$ char '}',
       TokLBracket <$ char '[',
       TokRBracket <$ char ']',
+      TokBang <$ char '!',
       TokPlus <$ char '+',
       TokLArrow <$ string "->",
       TokMinus <$ char '-',
@@ -135,7 +136,8 @@ opIdent = try $ do
     reservedSymbols =
       [ "->",
         "=>",
-        "<-"
+        "<-",
+        "!"
       ]
 
 {-# INLINEABLE conOpIdent #-}
@@ -148,6 +150,12 @@ isOpChar c = c `elem` ("!$%&*+./<=>?@|\\~:" ++ ['^' .. '`'] :: String)
 
 newline :: Lexer Token
 newline = try $ TokNewline <$ oneOf ['\n', '\r']
+
+scn :: Lexer ()
+scn = L.space (void $ oneOf ['\n', '\r']) lineComment empty
+
+sc :: Lexer ()
+sc = L.space space1 lineComment empty
 
 whitespace :: Lexer Token
 whitespace = TokWhitespace <$> (T.length <$> takeWhile1P Nothing isSpace)

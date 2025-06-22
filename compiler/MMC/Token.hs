@@ -24,6 +24,7 @@ data Token
   | TokRBrace
   | TokLBracket
   | TokRBracket
+  | TokBang
   | TokPlus
   | TokMinus
   | TokStar
