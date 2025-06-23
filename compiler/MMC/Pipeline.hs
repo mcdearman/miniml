@@ -37,8 +37,8 @@ defaultPipelineEnv =
 
 type Pipeline = State PipelineEnv
 
-runPipeline :: InputMode -> Text -> Pipeline (Either (ParseErrorBundle Text Void) [LToken])
+runPipeline :: InputMode -> Text -> Pipeline [Token]
 runPipeline mode src = do
   PipelineEnv {src = _, flags = f} <- get
   put $ PipelineEnv {src = src, flags = f}
-  pure $ tokenize src
+  pure $ tokenize (unpack src)
