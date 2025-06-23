@@ -48,6 +48,7 @@ executable miniML
         TypeFamilies
     build-depends:    
         base,
+        bytestring,
         unordered-containers,
         intern,
         megaparsec,
