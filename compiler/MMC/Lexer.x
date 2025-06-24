@@ -23,7 +23,7 @@ tokens :-
 --   $digit+                        { \s -> Int (read s) }
 --   [\=\+\-\*\/\(\)]               { \s -> Sym (head s) }
 --   $alpha [$alpha $digit \_ \']*  { \s -> Var s }
-  . .                            { \p bs -> TokError ()  }
+  .+                              { \p bs -> TokError  }
 
 {
 tokenize :: ByteString -> [Token]

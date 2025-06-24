@@ -6,7 +6,7 @@ import MMC.Common (Located)
 type LToken = Located Token
 
 data Token
-  = TokError Text
+  = TokError
   | TokEOF
   | TokWhitespace Int
   | TokNewline
