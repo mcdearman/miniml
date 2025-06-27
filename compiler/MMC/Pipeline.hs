@@ -1,7 +1,7 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 
-module MMC.Pipeline (PipelineEnv (..), defaultPipelineEnv, Pipeline, runPipeline) where
+module MMC.Pipeline (PipelineEnv (..), defaultPipelineEnv, PipelineState, runPipeline) where
 
 import Control.Monad.State (MonadState (get, put), State)
 import Data.ByteString.Lazy (ByteString)
@@ -38,7 +38,7 @@ defaultPipelineEnv =
       flags = []
     }
 
-type Pipeline = State PipelineEnv
+type PipelineState = State PipelineEnv
 
 data CompilerError
   = ParseError (ParseErrorBundle Text Void)
@@ -46,7 +46,7 @@ data CompilerError
   | OtherError String
   deriving (Show)
 
-runPipeline :: InputMode -> Text -> Pipeline (Either CompilerError [Token])
+runPipeline :: InputMode -> Text -> PipelineState (Either (ParseErrorBundle Text Void) [LToken])
 runPipeline mode src = do
   PipelineEnv {src = _, flags = f} <- get
   put $ PipelineEnv {src = src, flags = f}
