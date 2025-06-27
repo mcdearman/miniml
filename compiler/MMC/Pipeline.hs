@@ -40,8 +40,14 @@ defaultPipelineEnv =
 
 type Pipeline = State PipelineEnv
 
-runPipeline :: InputMode -> Text -> Pipeline [Token]
+data CompilerError
+  = ParseError (ParseErrorBundle Text Void)
+  | LexerError String
+  | OtherError String
+  deriving (Show)
+
+runPipeline :: InputMode -> Text -> Pipeline (Either CompilerError [Token])
 runPipeline mode src = do
   PipelineEnv {src = _, flags = f} <- get
   put $ PipelineEnv {src = src, flags = f}
-  pure $ tokenize $ ByteString.fromStrict $ encodeUtf8 src
+  pure $ tokenize src

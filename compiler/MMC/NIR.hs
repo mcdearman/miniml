@@ -1,4 +1,4 @@
-module TMC.NIR where
+module MMC.NIR where
 
 import Common (Spanned, Unique)
 import Data.Array (Array)
