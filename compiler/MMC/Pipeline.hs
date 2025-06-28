@@ -43,7 +43,6 @@ type PipelineState = State PipelineEnv
 data CompilerError
   = ParseError (ParseErrorBundle Text Void)
   | LexerError String
-  | OtherError String
   deriving (Show)
 
 runPipeline :: InputMode -> Text -> PipelineState (Either (ParseErrorBundle Text Void) [LToken])
