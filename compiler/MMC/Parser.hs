@@ -121,6 +121,21 @@ expr = makeExprParser apply operatorTable
     match :: Parser Expr
     match = Match <$> (kwMatch *> expr) <* kwWith <*> braces (sepEndBy1 alt (char ';' <* scn))
 
+    matchWithIndent :: Parser Expr
+    matchWithIndent = try $ L.nonIndented scn (indentBlock scn p)
+      where
+        p = do
+          kwMatch
+          scrut <- expr
+          kwWith
+          pure $ L.IndentSome Nothing (cont scrut) alt
+
+        alt :: Parser (LPattern, LExpr)
+        alt = ((,) <$> pattern' <*> (symbol "->" *> expr))
+
+        cont :: LExpr -> [(LPattern, LExpr)] -> Parser Expr
+        cont scr alts = pure $ Match scr alts
+
     list :: Parser Expr
     list = List <$> brackets (expr `sepEndBy` charL ',')
 
@@ -140,6 +155,7 @@ expr = makeExprParser apply operatorTable
           [ let',
             lambda,
             if',
+            -- matchWithIndent,
             match,
             list,
             tuple,
@@ -274,6 +290,12 @@ lowerCaseIdent = try $ do
 -- {-# INLINEABLE upperCaseIdent #-}
 upperCaseIdent :: Parser Ident
 upperCaseIdent = Ident <$> (withLoc $ pack <$> ((:) <$> upperChar <*> many alphaNumChar)) <* sc
+
+indented :: Pos -> Parser a -> Parser (Pos, a)
+indented ref p = (,) <$> L.indentGuard sc GT ref <*> p
+
+aligned :: Pos -> Parser a -> Parser a
+aligned ref p = L.indentGuard sc EQ ref *> p
 
 scn :: Parser ()
 scn = L.space space1 lineComment empty
