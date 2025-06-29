@@ -35,6 +35,7 @@ executable miniML
         MMC.Pipeline
         MMC.Symbol
         MMC.Token
+        MMC.TokenTree
         MMC.Ty
     default-extensions: 
         OverloadedStrings

@@ -1,17 +1,16 @@
 module MMC.Symbol (Symbol (..), Entry (..), SymbolTable (..)) where
 
+import Data.HashMap.Strict (HashMap)
 import Data.Text (Text)
 import MMC.Common (Unique)
 import MMC.Ty (Ty)
-import GHC.Exts (Int#)
-import Data.HashMap.Strict (HashMap)
 
 data Symbol = Symbol {symId :: !Unique}
   deriving (Show, Eq, Ord)
 
 data Entry = Entry
   { entryName :: !Text,
-    entryScope :: Int,
+    entryScope :: !Int,
     entryType :: Ty
   }
   deriving (Show, Eq)

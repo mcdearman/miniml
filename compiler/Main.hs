@@ -77,3 +77,5 @@ run src = do
 --         diag' = addFile diag "main" src
 --      in printDiagnostic stderr True True 2 defaultStyle diag'
 --   Right prog -> putStrLn $ unpack . toStrict $ pShow prog
+
+-- sieve of Eratosthenes

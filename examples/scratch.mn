@@ -110,6 +110,12 @@ def fib n =
     else loop b (a + b) (i - 1)
   in loop 0 1 n
 
+@pub
+@inline(never)
+sieve :: [Int] -> [Int]
+sieve [] = []
+sieve (p : xs) = p : sieve [x | x <- xs, x `mod` p /= 0]
+
 @inline(always)
 fib : Int -> Int
 fib n = fib' n 0 1
