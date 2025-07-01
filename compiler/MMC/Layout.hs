@@ -10,3 +10,4 @@ data LayoutError = LayoutError Text deriving (Show, Eq)
 layout :: [LToken] -> [Int] -> Either LayoutError [LTokenTree]
 layout ts [0] = undefined
 layout _ [] = error "layout stack underflow"
+layout _ _ = undefined

@@ -8,7 +8,7 @@ type LTokenTree = Located TokenTree
 data TokenTree
   = TokTreeAtom (LAtom)
   | TokTreeDelim LDelim [TokenTree]
-  deriving (Show, Eq)
+  deriving (Show, Eq, Ord)
 
 type LDelim = Located Delim
 
@@ -16,7 +16,7 @@ data Delim
   = DelimParen
   | DelimBrace
   | DelimBracket
-  deriving (Show, Eq)
+  deriving (Show, Eq, Ord)
 
 type LAtom = Located Atom
 
