@@ -8,6 +8,8 @@ import MMC.TokenTree (LTokenTree)
 data LayoutError = LayoutError Text deriving (Show, Eq)
 
 layout :: [LToken] -> [Int] -> Either LayoutError [LTokenTree]
-layout ts [0] = undefined
-layout _ [] = error "layout stack underflow"
-layout _ _ = undefined
+layout ts stack = layout' ts stack [0]
+  where
+    layout' ts [0] = undefined
+    layout' _ [] = error "layout stack underflow"
+    layout' _ _ = undefined
