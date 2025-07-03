@@ -14,7 +14,7 @@ $digit = 0-9
 $alpha = [a-zA-Z]
 $lower = [_a-z]
 $upper = [A-Z]
-$nonWhite = \S
+$nonWhite = [^\s]
 
 tokens :-
 
