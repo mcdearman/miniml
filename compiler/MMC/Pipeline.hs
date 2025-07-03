@@ -45,8 +45,8 @@ data CompilerError
   | LexerError String
   deriving (Show)
 
-runPipeline :: InputMode -> Text -> PipelineState (Either (ParseErrorBundle Text Void) [LToken])
+runPipeline :: InputMode -> Text -> PipelineState [LToken]
 runPipeline mode src = do
   PipelineEnv {src = _, flags = f} <- get
   put $ PipelineEnv {src = src, flags = f}
-  pure $ tokenize src
+  pure $ tokenize $ ByteString.fromStrict $ encodeUtf8 src
