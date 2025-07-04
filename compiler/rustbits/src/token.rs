@@ -1,36 +1,12 @@
 use logos::Logos;
 use std::fmt::Display;
 
-#[derive(Debug, Clone, PartialEq)]
-pub struct Token {
-    kind: TokenKind,
-    span: Span,
-}
+use crate::common::{Loc, Located};
 
-impl Token {
-    #[inline(always)]
-    pub fn new(kind: TokenKind, span: Span) -> Self {
-        Self { kind, span }
-    }
-
-    #[inline(always)]
-    pub fn kind(&self) -> &TokenKind {
-        &self.kind
-    }
-
-    #[inline(always)]
-    pub fn span(&self) -> Span {
-        self.span
-    }
-
-    #[inline(always)]
-    pub fn text<'src>(&self, src: &'src str) -> &'src str {
-        &src[self.span]
-    }
-}
+pub type LToken = Located<Token>;
 
 #[derive(Logos, Debug, Clone, PartialEq)]
-pub enum TokenKind {
+pub enum Token {
     Eof,
     #[regex(r"--.*")]
     Comment,
@@ -184,9 +160,9 @@ pub enum TokenKind {
     Error,
 }
 
-impl Display for TokenKind {
+impl Display for Token {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        use TokenKind::*;
+        use Token::*;
         match self {
             Eof => write!(f, "Eof"),
             Comment => write!(f, "Comment"),
@@ -261,4 +237,9 @@ impl Display for TokenKind {
             Error => write!(f, "Error"),
         }
     }
+}
+
+#[inline(always)]
+pub fn token_text<'src>(loc: Loc, src: &'src str) -> &'src str {
+    &src[loc]
 }

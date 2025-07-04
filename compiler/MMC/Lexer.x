@@ -14,7 +14,7 @@ $digit = 0-9
 $alpha = [a-zA-Z]
 $lower = [_a-z]
 $upper = [A-Z]
-@nonWhite = [\S]
+$nonWhite = [^$white]
 
 tokens :-
 
@@ -25,7 +25,7 @@ tokens :-
 --   $digit+                        { \s -> Int (read s) }
 --   [\=\+\-\*\/\(\)]               { \s -> Sym (head s) }
 --   $alpha [$alpha $digit \_ \']*  { \s -> Var s }
- @nonWhite+                      { \p bs -> Located TokError (makeLoc p bs) }
+ $nonWhite+                      { \p bs -> Located TokError (makeLoc p bs) }
 
 {
 makeLoc :: AlexPosn -> ByteString -> Loc
