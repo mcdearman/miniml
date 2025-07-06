@@ -10,15 +10,20 @@ import qualified Data.Text as T
 
 %wrapper "posn-bytestring"
 
-$digit = 0-9      
+$digit = [0-9]
+$octdig = [0-7]
+$hexdig = [0-9A-Fa-f]      
 $alpha = [a-zA-Z]
 $lower = [_a-z]
 $upper = [A-Z]
 $nonWhite = [^$white]
+$whitespace = [ \t\f\v]
+@newline = \n | \r
 
 tokens :-
 
-  $white+                        ;
+  $whitespace+                   { \p bs -> Located TokWhitespace (makeLoc p bs) } 
+  @newline                       { \p bs -> Located TokNewline (makeLoc p bs) }
   "--".*                         ;
   module                         { \p bs -> Located TokModule (makeLoc p bs) }
   import                         { \p bs -> Located TokImport (makeLoc p bs) }
@@ -38,18 +43,24 @@ tokens :-
   instance                       { \p bs -> Located TokInstance (makeLoc p bs) }
   do                             { \p bs -> Located TokDo (makeLoc p bs) }
 
-  [\(]                           { \p bs -> Located TokLParen (makeLoc p bs) }
-  [\)]                           { \p bs -> Located TokRParen (makeLoc p bs) }
-  [\{]                           { \p bs -> Located TokLBrace (makeLoc p bs) }
-  [\}]                           { \p bs -> Located TokRBrace (makeLoc p bs) }
-  [\[]                           { \p bs -> Located TokLBracket (makeLoc p bs) }
-  [\]]                           { \p bs -> Located TokRBracket (makeLoc p bs) }
-  [\!]
-  [\.]                           { \p bs -> Located TokPeriod (makeLoc p bs) }
-  [\,]                           { \p bs -> Located TokComma (makeLoc p bs) }
-  [\;]                           { \p bs -> Located TokSemi (makeLoc p bs) }
-  [\:]                           { \p bs -> Located TokColon (makeLoc p bs) }
-  [\=]                           { \p bs -> Located TokEq (makeLoc p bs) }
+  "("                            { \p bs -> Located TokLParen (makeLoc p bs) }
+  ")"                            { \p bs -> Located TokRParen (makeLoc p bs) }
+  "{"                            { \p bs -> Located TokLBrace (makeLoc p bs) }
+  "}"                            { \p bs -> Located TokRBrace (makeLoc p bs) }
+  "["                            { \p bs -> Located TokLBracket (makeLoc p bs) }
+  "]"                            { \p bs -> Located TokRBracket (makeLoc p bs) }
+  "!"                            { \p bs -> Located TokBang (makeLoc p bs) }
+  [\\]                           { \p bs -> Located TokBackSlash (makeLoc p bs) }
+  ":"                            { \p bs -> Located TokColon (makeLoc p bs) }
+  ";"                            { \p bs -> Located TokSemi (makeLoc p bs) }
+  ","                            { \p bs -> Located TokComma (makeLoc p bs) }
+  "."                            { \p bs -> Located TokPeriod (makeLoc p bs) }
+  "="                            { \p bs -> Located TokEq (makeLoc p bs) }
+  "<-"                           { \p bs -> Located TokLArrow (makeLoc p bs) }
+  "->"                           { \p bs -> Located TokRArrow (makeLoc p bs) }
+  "=>"                           { \p bs -> Located TokLFatArrow (makeLoc p bs) }
+  "|"                            { \p bs -> Located TokBar (makeLoc p bs) }
+  "_"                            { \p bs -> Located TokUnderscore (makeLoc p bs) }
 --   $digit+                        { \s -> Int (read s) }
 --   [\=\+\-\*\/\(\)]               { \s -> Sym (head s) }
 --   $alpha [$alpha $digit \_ \']*  { \s -> Var s }

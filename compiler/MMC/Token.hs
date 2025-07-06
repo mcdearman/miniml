@@ -8,7 +8,7 @@ type LToken = Located Token
 data Token
   = TokError
   | TokEOF
-  | TokWhitespace Int
+  | TokWhitespace
   | TokNewline
   | TokComment
   | TokUpperCaseIdent Text
@@ -26,14 +26,13 @@ data Token
   | TokRBracket
   | TokBang
   | TokBackSlash
-  | TokPercent
   | TokColon
   | TokSemi
   | TokComma
   | TokPeriod
   | TokEq
-  | TokRArrow
   | TokLArrow
+  | TokRArrow
   | TokLFatArrow
   | TokBar
   | TokUnderscore
