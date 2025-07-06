@@ -25,10 +25,6 @@ data Token
   | TokLBracket
   | TokRBracket
   | TokBang
-  | TokPlus
-  | TokMinus
-  | TokStar
-  | TokSlash
   | TokBackSlash
   | TokPercent
   | TokColon
