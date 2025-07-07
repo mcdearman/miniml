@@ -7,7 +7,6 @@ type LToken = Located Token
 
 data Token
   = TokError
-  | TokEOF
   | TokWhitespace
   | TokNewline
   | TokComment
