@@ -18,12 +18,12 @@ $lower = [_a-z]
 $upper = [A-Z]
 $nonWhite = [^$white]
 $whitespace = [ \t\f\v]
-@newline = \n | \r
+$newline = [\n\r]
 
 tokens :-
 
   $whitespace+                   { \p bs -> Located TokWhitespace (makeLoc p bs) } 
-  @newline                       { \p bs -> Located TokNewline (makeLoc p bs) }
+  $newline                       { \p bs -> Located TokNewline (makeLoc p bs) }
   "--".*                         ;
   module                         { \p bs -> Located TokModule (makeLoc p bs) }
   import                         { \p bs -> Located TokImport (makeLoc p bs) }
@@ -61,12 +61,16 @@ tokens :-
   "=>"                           { \p bs -> Located TokLFatArrow (makeLoc p bs) }
   "|"                            { \p bs -> Located TokBar (makeLoc p bs) }
   "_"                            { \p bs -> Located TokUnderscore (makeLoc p bs) }
+  ""
 --   $digit+                        { \s -> Int (read s) }
 --   [\=\+\-\*\/\(\)]               { \s -> Sym (head s) }
 --   $alpha [$alpha $digit \_ \']*  { \s -> Var s }
  $nonWhite                      { \p bs -> Located TokError (makeLoc p bs) }
 
 {
+parseOctal :: ByteString -> Integer
+parseOctal bs = 
+
 makeLoc :: AlexPosn -> ByteString -> Loc
 makeLoc (AlexPn start _ _) bs = Loc start end
   where 
