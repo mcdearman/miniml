@@ -1,7 +1,11 @@
 module Main where
 
 import Control.Monad.State (runState)
+import Data.ByteString.Lazy (ByteString)
+import qualified Data.ByteString.Lazy as BL
+import qualified Data.Char as Char
 import Data.Text (Text, pack, unpack)
+import qualified Data.Text.Encoding as BL
 import Data.Text.Lazy (toStrict)
 import Data.Void (Void)
 import Error.Diagnose (addFile, defaultStyle, printDiagnostic, stderr)
@@ -51,7 +55,6 @@ getMultilineInput acc = do
     Nothing -> pure Nothing
     Just fl -> collectLines (acc ++ fl ++ "\n")
 
-
 collectLines :: String -> InputT IO (Maybe String)
 collectLines acc = do
   minput <- getInputLine ""
@@ -80,3 +83,9 @@ run src = do
 --   Right prog -> putStrLn $ unpack . toStrict $ pShow prog
 
 -- sieve of Eratosthenes
+
+parseOctal :: ByteString -> Integer
+parseOctal = foldl' step 0 . str 
+  where
+    str bs = unpack $ BL.decodeUtf8' bs
+    step a c = a * 8 + fromIntegral (Char.digitToInt c)

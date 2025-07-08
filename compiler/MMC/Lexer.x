@@ -2,10 +2,11 @@
 module MMC.Lexer (tokenize) where
 import MMC.Token
 import MMC.Common (Located (..), Loc (..))
-import           Data.ByteString.Lazy (ByteString)
+import Data.ByteString.Lazy (ByteString)
 import qualified Data.ByteString.Lazy as BL
 import qualified Data.Text.Encoding as TE
 import qualified Data.Text as T
+import qualified Data.Char as Char
 }
 
 %wrapper "posn-bytestring"
@@ -81,8 +82,10 @@ miniml :-
   $nonWhite                       { \p bs -> Located TokError (makeLoc p bs) }
 
 {
--- parseOctal :: ByteString -> Integer
--- parseOctal bs = 
+parseOctal :: ByteString -> Integer
+parseOctal = foldl' step 0 . BL.unpack
+  where
+    step a c = a * 8 + fromIntegral (Char.digitToInt c) 
 
 makeLoc :: AlexPosn -> ByteString -> Loc
 makeLoc (AlexPn start _ _) bs = Loc start end
