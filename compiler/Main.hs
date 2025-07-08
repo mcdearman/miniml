@@ -51,6 +51,7 @@ getMultilineInput acc = do
     Nothing -> pure Nothing
     Just fl -> collectLines (acc ++ fl ++ "\n")
 
+
 collectLines :: String -> InputT IO (Maybe String)
 collectLines acc = do
   minput <- getInputLine ""

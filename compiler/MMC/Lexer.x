@@ -10,6 +10,7 @@ import qualified Data.Text as T
 
 %wrapper "posn-bytestring"
 
+$unispace = \x05
 $digit = [0-9]
 $octdig = [0-7]
 $hexdig = [0-9A-Fa-f]      
@@ -17,12 +18,19 @@ $alpha = [a-zA-Z]
 $lower = [_a-z]
 $upper = [A-Z]
 $nonWhite = [^$white]
-$whitespace = [ \t\f\v]
-$newline = [\n\r]
+$whitespace = [\ $unispace\t\v]
+$newline = [\n\r\f]
+$identChar = [$alpha $digit \_ \']
+$opChar = [\!\$\%\&\*\+\.\/\<\=\>\?\@\|\\\~\:\^-\`]
 
-tokens :-
+@lowerCaseIdent = $lower $identChar*
+@upperCaseIdent = $upper $identChar*
+@opIdent = $opChar+
+@conOpIdent = ":" $opChar+
 
-  $whitespace+                   { \p bs -> Located TokWhitespace (makeLoc p bs) } 
+miniml :-
+
+  $whitespace+                   ;
   $newline                       { \p bs -> Located TokNewline (makeLoc p bs) }
   "--".*                         ;
   module                         { \p bs -> Located TokModule (makeLoc p bs) }
@@ -61,15 +69,20 @@ tokens :-
   "=>"                           { \p bs -> Located TokLFatArrow (makeLoc p bs) }
   "|"                            { \p bs -> Located TokBar (makeLoc p bs) }
   "_"                            { \p bs -> Located TokUnderscore (makeLoc p bs) }
-  ""
+
+  @lowerCaseIdent                { \p bs -> Located (TokLowerCaseIdent ((TE.decodeUtf8 . BL.toStrict) bs)) (makeLoc p bs) }
+  @upperCaseIdent                { \p bs -> Located (TokUpperCaseIdent ((TE.decodeUtf8 . BL.toStrict) bs)) (makeLoc p bs) }
+  @conOpIdent                    { \p bs -> Located (TokConOpIdent ((TE.decodeUtf8 . BL.toStrict) bs)) (makeLoc p bs) }
+  @opIdent                       { \p bs -> Located (TokOpIdent ((TE.decodeUtf8 . BL.toStrict) bs)) (makeLoc p bs) }
+
 --   $digit+                        { \s -> Int (read s) }
 --   [\=\+\-\*\/\(\)]               { \s -> Sym (head s) }
 --   $alpha [$alpha $digit \_ \']*  { \s -> Var s }
- $nonWhite                      { \p bs -> Located TokError (makeLoc p bs) }
+  $nonWhite                       { \p bs -> Located TokError (makeLoc p bs) }
 
 {
-parseOctal :: ByteString -> Integer
-parseOctal bs = 
+-- parseOctal :: ByteString -> Integer
+-- parseOctal bs = 
 
 makeLoc :: AlexPosn -> ByteString -> Loc
 makeLoc (AlexPn start _ _) bs = Loc start end

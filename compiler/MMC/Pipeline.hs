@@ -5,7 +5,7 @@ module MMC.Pipeline (PipelineEnv (..), defaultPipelineEnv, PipelineState, runPip
 
 import Control.Monad.State (MonadState (get, put), State)
 import Data.ByteString.Lazy (ByteString)
-import qualified Data.ByteString.Lazy as ByteString
+import qualified Data.ByteString.Lazy as BL
 import Data.Function ((&))
 import Data.Map
 import qualified Data.Map as Map
@@ -49,4 +49,4 @@ runPipeline :: InputMode -> Text -> PipelineState [LToken]
 runPipeline mode src = do
   PipelineEnv {src = _, flags = f} <- get
   put $ PipelineEnv {src = src, flags = f}
-  pure $ tokenize $ ByteString.fromStrict $ encodeUtf8 src
+  pure $ tokenize $ BL.fromStrict $ encodeUtf8 src
