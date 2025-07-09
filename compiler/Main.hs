@@ -82,8 +82,6 @@ run src = do
 --      in printDiagnostic stderr True True 2 defaultStyle diag'
 --   Right prog -> putStrLn $ unpack . toStrict $ pShow prog
 
--- sieve of Eratosthenes
-
 parseOctal :: ByteString -> Integer
 parseOctal = foldl' step 0 . str 
   where
