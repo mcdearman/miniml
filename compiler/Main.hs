@@ -82,8 +82,8 @@ run src = do
 --      in printDiagnostic stderr True True 2 defaultStyle diag'
 --   Right prog -> putStrLn $ unpack . toStrict $ pShow prog
 
-parseOctal :: ByteString -> Integer
-parseOctal = foldl' step 0 . str 
+parseRadix :: Integer -> ByteString -> Integer
+parseRadix r bs = foldl' step 0 (str bs)
   where
     str bs = unpack $ BL.decodeUtf8' bs
-    step a c = a * 8 + fromIntegral (Char.digitToInt c)
+    step a c = a * r + fromIntegral (Char.digitToInt c)
