@@ -125,7 +125,7 @@ fib n = loop n 0 1
     loop i a b = loop (i - 1) b (a + b)
 
 fibs : [Integer]
-fibs = 0 :: 1 :: zipWith (+) fibs (tail fibs)
+fibs = 0 :: 1 :: zipWith (+) fibs (drop 1 fibs)
 
 def fact n =
   let loop acc n =
