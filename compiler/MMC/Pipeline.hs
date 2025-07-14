@@ -4,6 +4,7 @@
 module MMC.Pipeline (PipelineEnv (..), defaultPipelineEnv, PipelineState, runPipeline) where
 
 import Control.Monad.State (MonadState (get, put), State)
+import Data.Bifunctor (Bifunctor (first))
 import Data.ByteString.Lazy (ByteString)
 import qualified Data.ByteString.Lazy as BL
 import Data.Function ((&))
@@ -40,13 +41,8 @@ defaultPipelineEnv =
 
 type PipelineState = State PipelineEnv
 
-data CompilerError
-  = ParseError (ParseErrorBundle Text Void)
-  | LexerError String
-  deriving (Show)
-
-runPipeline :: InputMode -> Text -> PipelineState [LToken]
+runPipeline :: InputMode -> Text -> PipelineState (Either (ParseErrorBundle Text Void) [LToken])
 runPipeline mode src = do
   PipelineEnv {src = _, flags = f} <- get
   put $ PipelineEnv {src = src, flags = f}
-  pure $ tokenize $ BL.fromStrict $ encodeUtf8 src
+  pure $ tokenize src

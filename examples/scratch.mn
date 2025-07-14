@@ -112,9 +112,9 @@ def fib n =
 
 @pub
 @inline(never)
-sieve :: [Int] -> [Int]
+sieve : [Int] -> [Int]
 sieve [] = []
-sieve (p : xs) = p : sieve [x | x <- xs, x `mod` p /= 0]
+sieve (p :: xs) = p :: sieve [x | x <- xs, x `mod` p > 0]
 
 @inline(always)
 fib : Int -> Int
@@ -136,7 +136,7 @@ def fact n =
 -- naive recursive factorial
 fact : Int -> Int
 fact 0 = 1
-fact n = fact (n - 1) * n
+fact n = n * fact (n - 1)
 
 @inline(always)
 fact : Int -> Int
