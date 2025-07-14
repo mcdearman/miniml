@@ -1,6 +1,6 @@
 module Main where
 
-import Control.Monad.State (runState, evalState)
+import Control.Monad.State (evalState, runState)
 import Data.ByteString.Lazy (ByteString)
 import qualified Data.ByteString.Lazy as BL
 import qualified Data.Char as Char
@@ -72,13 +72,7 @@ main = run "x = match y with\n  1 -> True\n  2 -> False"
 run :: String -> IO ()
 run src = do
   let out = evalState (runPipeline (InputModeFile "main") (pack src)) defaultPipelineEnv
-  case out of
-    Left e -> do
-      let diag = errorDiagnosticFromBundle Nothing ("Parse error on input" :: Text) Nothing e
-          diag' = addFile diag "main" src
-      printDiagnostic stderr True True 2 defaultStyle diag'
-    Right tokens -> do
-      putStrLn $ unpack . toStrict $ pShow tokens
+  putStrLn $ unpack . toStrict $ pShow out
 
 -- let (out, _) = runState (runPipeline (InputModeFile "main") (pack src)) defaultPipelineEnv
 -- case out of
