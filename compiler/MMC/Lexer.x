@@ -32,8 +32,8 @@ $opChar = [\!\$\%\&\*\+\.\/\<\=\>\?\@\|\\\~\:\^-\`]
 miniml :-
 
   $whitespace+                   ;
-  $newline                       { \p bs -> Located TokNewline (makeLoc p bs) }
   "--".*                         ;
+  $newline                       { \p bs -> Located TokNewline (makeLoc p bs) }
   module                         { \p bs -> Located TokModule (makeLoc p bs) }
   import                         { \p bs -> Located TokImport (makeLoc p bs) }
   as                             { \p bs -> Located TokAs (makeLoc p bs) }
