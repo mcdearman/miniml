@@ -88,19 +88,19 @@ foldr1 f (x::xs) = foldr f x xs
 foldr1 f [] = error "foldr1: empty list"
 
 @pub
-all? : (a -> Bool) -> [a] -> Bool
-all? f [] = true
-all? f (x::xs) = f x && all? f xs
+all : (a -> Bool) -> [a] -> Bool
+all f [] = true
+all f (x::xs) = f x && all? f xs
 
 @pub
-any? : (a -> Bool) -> [a] -> Bool
-any? f [] = false
-any? f (x::xs) = f x || any? f xs
+any : (a -> Bool) -> [a] -> Bool
+any f [] = false
+any f (x::xs) = f x || any? f xs
 
 @pub
-elem? : a -> [a] -> Bool
-elem? x [] = false
-elem? x (y::ys) = if x == y then true else elem? x ys
+elem : a -> [a] -> Bool
+elem x [] = false
+elem x (y::ys) = if x == y then true else elem? x ys
 
 @pub
 sum : Num a => [a] -> a 
