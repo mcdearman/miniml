@@ -5,6 +5,7 @@ import MMC.Common (Located (..), Loc (..))
 import Data.ByteString.Lazy (ByteString)
 import qualified Data.ByteString.Lazy as BL
 import qualified Data.Text.Encoding as TE
+-- import Data.Text.Encoding (decodeUtf8')
 import qualified Data.Text as T
 import qualified Data.Char as Char
 }
@@ -12,7 +13,9 @@ import qualified Data.Char as Char
 %wrapper "posn-bytestring"
 
 $unispace = \x05
+$nonzero = [1-9]
 $digit = [0-9]
+$bindig = [01]
 $octdig = [0-7]
 $hexdig = [0-9A-Fa-f]      
 $alpha = [a-zA-Z]
@@ -28,6 +31,11 @@ $opChar = [\!\$\%\&\*\+\.\/\<\=\>\?\@\|\\\~\:\^-\`]
 @upperCaseIdent = $upper $identChar*
 @opIdent = $opChar+
 @conOpIdent = ":" $opChar+
+
+@binary = "0b" $bindig+
+@octal = "0o" $octdig+
+@hexadecimal = "0x" $hexdig+
+@decimal = ($nonzero $digit* | "0")
 
 miniml :-
 
@@ -76,16 +84,20 @@ miniml :-
   @conOpIdent                    { \p bs -> Located (TokConOpIdent ((TE.decodeUtf8 . BL.toStrict) bs)) (makeLoc p bs) }
   @opIdent                       { \p bs -> Located (TokOpIdent ((TE.decodeUtf8 . BL.toStrict) bs)) (makeLoc p bs) }
 
---   $digit+                        { \s -> Int (read s) }
---   [\=\+\-\*\/\(\)]               { \s -> Sym (head s) }
---   $alpha [$alpha $digit \_ \']*  { \s -> Var s }
-  $nonWhite                       { \p bs -> Located TokError (makeLoc p bs) }
+  @decimal                       { \p bs -> Located (TokInt (parseRadix 10 bs)) (makeLoc p bs) }
+  @binary                        { \p bs -> Located (TokInt (parseRadix 2 bs)) (makeLoc p bs) }
+  @octal                         { \p bs -> Located (TokInt (parseRadix 8 bs)) (makeLoc p bs) }
+  @hexadecimal                   { \p bs -> Located (TokInt (parseRadix 16 bs)) (makeLoc p bs) }
+
+  $nonWhite                      { \p bs -> Located TokError (makeLoc p bs) }
 
 {
--- parseOctal :: ByteString -> Integer
--- parseOctal = foldl' step 0 . BL.unpack
---   where
---     step a c = a * 8 + fromIntegral (Char.digitToInt c) 
+parseRadix :: (Integral a) => a -> ByteString -> a
+parseRadix r bs = case TE.decodeUtf8' (BL.toStrict bs) of
+  Left _ -> error "Invalid UTF-8 input"
+  Right s -> foldl' step 0 (T.unpack s)
+  where
+    step a c = a * r + fromIntegral (Char.digitToInt c)
 
 makeLoc :: AlexPosn -> ByteString -> Loc
 makeLoc (AlexPn start _ _) bs = Loc start end
