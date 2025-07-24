@@ -82,9 +82,7 @@ main = run "x = match y with\n  1 -> True\n  2 -> False"
 -- putStrLn "Welcome to the miniML REPL!"
 -- runInputT settings (repl defaultPipelineEnv)
 
-parseRadix :: (Integral a) => a -> ByteString -> a
-parseRadix r bs = case decodeUtf8' (BL.toStrict bs) of
-  Left _ -> error "Invalid UTF-8 input"
-  Right s -> foldl' step 0 (unpack s)
+parseRadix :: (Integral a) => a -> String -> a
+parseRadix r = foldl' step 0
   where
     step a c = a * r + fromIntegral (Char.digitToInt c)

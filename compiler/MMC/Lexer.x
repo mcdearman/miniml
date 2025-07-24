@@ -8,6 +8,7 @@ import qualified Data.Text.Encoding as TE
 -- import Data.Text.Encoding (decodeUtf8')
 import qualified Data.Text as T
 import qualified Data.Char as Char
+import Data.List (stripPrefix)
 }
 
 %wrapper "posn-bytestring"
@@ -79,23 +80,34 @@ miniml :-
   "|"                            { \p bs -> Located TokBar (makeLoc p bs) }
   "_"                            { \p bs -> Located TokUnderscore (makeLoc p bs) }
 
-  @lowerCaseIdent                { \p bs -> Located (TokLowerCaseIdent ((TE.decodeUtf8 . BL.toStrict) bs)) (makeLoc p bs) }
-  @upperCaseIdent                { \p bs -> Located (TokUpperCaseIdent ((TE.decodeUtf8 . BL.toStrict) bs)) (makeLoc p bs) }
-  @conOpIdent                    { \p bs -> Located (TokConOpIdent ((TE.decodeUtf8 . BL.toStrict) bs)) (makeLoc p bs) }
-  @opIdent                       { \p bs -> Located (TokOpIdent ((TE.decodeUtf8 . BL.toStrict) bs)) (makeLoc p bs) }
+  @lowerCaseIdent                { \p bs -> Located (TokLowerCaseIdent (bsToText bs)) (makeLoc p bs) }
+  @upperCaseIdent                { \p bs -> Located (TokUpperCaseIdent (bsToText bs)) (makeLoc p bs) }
+  @conOpIdent                    { \p bs -> Located (TokConOpIdent (bsToText bs)) (makeLoc p bs) }
+  @opIdent                       { \p bs -> Located (TokOpIdent (bsToText bs)) (makeLoc p bs) }
 
-  @decimal                       { \p bs -> Located (TokInt (parseRadix 10 bs)) (makeLoc p bs) }
-  @binary                        { \p bs -> Located (TokInt (parseRadix 2 bs)) (makeLoc p bs) }
-  @octal                         { \p bs -> Located (TokInt (parseRadix 8 bs)) (makeLoc p bs) }
-  @hexadecimal                   { \p bs -> Located (TokInt (parseRadix 16 bs)) (makeLoc p bs) }
+  @decimal                       { \p bs -> Located (TokInt (parseRadix 10 (bsToString bs))) (makeLoc p bs) }
+  @binary                        { \p bs -> Located (TokInt (parseRadix 2 (bsToString bs))) (makeLoc p bs) }
+  @octal                         { \p bs -> Located (TokInt (parseRadix 8 (bsToString bs))) (makeLoc p bs) }
+  @hexadecimal                   { \p bs -> Located (TokInt (parseRadix 16 (bsToString bs))) (makeLoc p bs) }
 
   $nonWhite                      { \p bs -> Located TokError (makeLoc p bs) }
 
 {
-parseRadix :: (Integral a) => a -> ByteString -> a
-parseRadix r bs = case TE.decodeUtf8' (BL.toStrict bs) of
-  Left _ -> error "Invalid UTF-8 input"
-  Right s -> foldl' step 0 (T.unpack s)
+makeInt :: (Integral a) => a -> ByteString -> Token
+makeInt 10 bs = (TokInt (parseRadix 10 (bsToString bs)))
+makeInt 2 bs = (TokInt (parseRadix 2 (stripPrefix "0b" (bsToString bs))))
+makeInt r _ = error "Unsupported radix" ++ show r
+
+{-# INLINE bsToText #-}
+bsToText :: ByteString -> T.Text
+bsToText = TE.decodeUtf8 . BL.toStrict
+
+{-# INLINE bsToString #-}
+bsToString :: ByteString -> String
+bsToString = T.unpack . bsToText
+
+parseRadix :: (Integral a) => a -> String -> a
+parseRadix r = foldl' step 0
   where
     step a c = a * r + fromIntegral (Char.digitToInt c)
 
