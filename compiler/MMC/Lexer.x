@@ -6,9 +6,9 @@ import Data.ByteString.Lazy (ByteString)
 import qualified Data.ByteString.Lazy as BL
 import qualified Data.Text.Encoding as TE
 -- import Data.Text.Encoding (decodeUtf8')
+import Data.Text (Text, stripPrefix)
 import qualified Data.Text as T
 import qualified Data.Char as Char
-import Data.List (stripPrefix)
 }
 
 %wrapper "posn-bytestring"
@@ -94,8 +94,8 @@ miniml :-
 
 {
 makeInt :: (Integral a) => a -> ByteString -> Token
-makeInt 10 bs = (TokInt (parseRadix 10 (bsToString bs)))
-makeInt 2 bs = (TokInt (parseRadix 2 (stripPrefix "0b" (bsToString bs))))
+makeInt 10 bs = (TokInt (parseRadix 10 (bsToText bs)))
+makeInt 2 bs = (TokInt (parseRadix 2 (stripPrefix "0b" (bsToText bs))))
 makeInt r _ = error "Unsupported radix" ++ show r
 
 {-# INLINE bsToText #-}
@@ -106,7 +106,7 @@ bsToText = TE.decodeUtf8 . BL.toStrict
 bsToString :: ByteString -> String
 bsToString = T.unpack . bsToText
 
-parseRadix :: (Integral a) => a -> String -> a
+parseRadix :: (Integral a) => a -> Text -> a
 parseRadix r = foldl' step 0
   where
     step a c = a * r + fromIntegral (Char.digitToInt c)
