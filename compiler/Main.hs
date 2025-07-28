@@ -95,13 +95,13 @@ main = run "x = match y with\n  1 -> True\n  2 -> False"
 -- makeInt 2 bs = (TokInt (parseRadix 2 (stripPrefix "0b" (bsToText bs))))
 -- makeInt r _ = error "Unsupported radix" ++ show r
 
--- {-# INLINE bsToText #-}
--- bsToText :: ByteString -> T.Text
--- bsToText = TE.decodeUtf8 . BL.toStrict
+{-# INLINE bsToText #-}
+bsToText :: ByteString -> T.Text
+bsToText = TE.decodeUtf8 . BL.toStrict
 
--- {-# INLINE bsToString #-}
--- bsToString :: ByteString -> String
--- bsToString = T.unpack . bsToText
+{-# INLINE bsToString #-}
+bsToString :: ByteString -> String
+bsToString = T.unpack . bsToText
 
 parseRadix :: (Integral a) => a -> Text -> a
 parseRadix r = T.foldl' step 0
