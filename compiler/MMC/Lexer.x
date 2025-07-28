@@ -1,11 +1,11 @@
 {
 module MMC.Lexer (tokenize) where
 import MMC.Token
+import Data.Maybe (fromMaybe)
 import MMC.Common (Located (..), Loc (..))
 import Data.ByteString.Lazy (ByteString)
 import qualified Data.ByteString.Lazy as BL
 import qualified Data.Text.Encoding as TE
--- import Data.Text.Encoding (decodeUtf8')
 import Data.Text (Text, stripPrefix)
 import qualified Data.Text as T
 import qualified Data.Char as Char
@@ -85,26 +85,24 @@ miniml :-
   @conOpIdent                    { \p bs -> Located (TokConOpIdent (bsToText bs)) (makeLoc p bs) }
   @opIdent                       { \p bs -> Located (TokOpIdent (bsToText bs)) (makeLoc p bs) }
 
-  @decimal                       { \p bs -> Located (TokInt (parseRadix 10 (bsToString bs))) (makeLoc p bs) }
-  @binary                        { \p bs -> Located (TokInt (parseRadix 2 (bsToString bs))) (makeLoc p bs) }
-  @octal                         { \p bs -> Located (TokInt (parseRadix 8 (bsToString bs))) (makeLoc p bs) }
-  @hexadecimal                   { \p bs -> Located (TokInt (parseRadix 16 (bsToString bs))) (makeLoc p bs) }
+  @decimal                       { \p bs -> Located (makeInt 10 bs) (makeLoc p bs) }
+  @binary                        { \p bs -> Located (makeInt 2 bs) (makeLoc p bs) }
+  @octal                         { \p bs -> Located (makeInt 8 bs) (makeLoc p bs) }
+  @hexadecimal                   { \p bs -> Located (makeInt 16 bs) (makeLoc p bs) }
 
   $nonWhite                      { \p bs -> Located TokError (makeLoc p bs) }
 
 {
-makeInt :: (Integral a) => a -> ByteString -> Token
+makeInt :: (Integral a, Show a) => a -> ByteString -> Token
 makeInt 10 bs = (TokInt (parseRadix 10 (bsToText bs)))
-makeInt 2 bs = (TokInt (parseRadix 2 (stripPrefix "0b" (bsToText bs))))
-makeInt r _ = error "Unsupported radix" ++ show r
+makeInt 2 bs = (TokInt (parseRadix 2 (fromMaybe (error "Invalid binary literal") (stripPrefix "0b" (bsToText bs)))))
+makeInt 8 bs = (TokInt (parseRadix 8 (fromMaybe (error "Invalid octal literal") (stripPrefix "0o" (bsToText bs)))))
+makeInt 16 bs = (TokInt (parseRadix 16 (fromMaybe (error "Invalid hex literal") (stripPrefix "0x" (bsToText bs)))))
+makeInt r _ = error $ "Unsupported radix" ++ show r
 
 {-# INLINE bsToText #-}
-bsToText :: ByteString -> T.Text
+bsToText :: ByteString -> Text
 bsToText = TE.decodeUtf8 . BL.toStrict
-
-{-# INLINE bsToString #-}
-bsToString :: ByteString -> String
-bsToString = T.unpack . bsToText
 
 parseRadix :: (Integral a) => a -> Text -> a
 parseRadix r = T.foldl' step 0

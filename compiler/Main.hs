@@ -4,11 +4,11 @@ import Control.Monad.State (evalState, runState)
 import Data.ByteString.Lazy (ByteString)
 import qualified Data.ByteString.Lazy as BL
 import qualified Data.Char as Char
-import Data.Text (Text, pack, unpack)
+import Data.Maybe (fromMaybe)
+import Data.Text (Text, pack, stripPrefix, unpack)
 import qualified Data.Text as T
-import Data.Text.Encoding (decodeUtf8')
+import Data.Text.Encoding (decodeUtf8, decodeUtf8')
 import Data.Text.Lazy (toStrict)
-import qualified Data.Text.Lazy.Encoding as TE
 import Data.Void (Void)
 import Error.Diagnose (addFile, defaultStyle, printDiagnostic, stderr)
 import Error.Diagnose.Compat.Megaparsec (errorDiagnosticFromBundle)
@@ -90,14 +90,14 @@ main = run "x = match y with\n  1 -> True\n  2 -> False"
 --   where
 --     step a c = a * r + fromIntegral (Char.digitToInt c)
 
--- makeInt :: (Integral a) => a -> ByteString -> Token
--- makeInt 10 bs = (TokInt (parseRadix 10 (bsToText bs)))
--- makeInt 2 bs = (TokInt (parseRadix 2 (stripPrefix "0b" (bsToText bs))))
--- makeInt r _ = error "Unsupported radix" ++ show r
+makeInt :: (Integral a, Show a) => a -> ByteString -> Token
+makeInt 10 bs = (TokInt (parseRadix 10 (bsToText bs)))
+makeInt 2 bs = (TokInt (parseRadix 2 (fromMaybe (error "Invalid binary literal") (stripPrefix "0b" (bsToText bs)))))
+makeInt r _ = error $ "Unsupported radix" ++ show r
 
 {-# INLINE bsToText #-}
-bsToText :: ByteString -> T.Text
-bsToText = TE.decodeUtf8 . BL.toStrict
+bsToText :: ByteString -> Text
+bsToText = decodeUtf8 . BL.toStrict
 
 {-# INLINE bsToString #-}
 bsToString :: ByteString -> String
