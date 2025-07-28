@@ -104,6 +104,6 @@ main = run "x = match y with\n  1 -> True\n  2 -> False"
 -- bsToString = T.unpack . bsToText
 
 parseRadix :: (Integral a) => a -> Text -> a
-parseRadix r = foldl' step 0
+parseRadix r = T.foldl' step 0
   where
     step a c = a * r + fromIntegral (Char.digitToInt c)
