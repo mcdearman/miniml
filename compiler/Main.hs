@@ -1,15 +1,8 @@
 module Main where
 
 import Control.Monad.State (evalState, runState)
-import Data.ByteString.Lazy (ByteString)
-import qualified Data.ByteString.Lazy as BL
-import qualified Data.Char as Char
-import Data.Maybe (fromMaybe)
-import Data.Text (Text, pack, stripPrefix, unpack)
-import qualified Data.Text as T
-import Data.Text.Encoding (decodeUtf8, decodeUtf8')
+import Data.Text (Text, pack, unpack)
 import Data.Text.Lazy (toStrict)
-import Data.Void (Void)
 import Error.Diagnose (addFile, defaultStyle, printDiagnostic, stderr)
 import Error.Diagnose.Compat.Megaparsec (errorDiagnosticFromBundle)
 import MMC.Common (InputMode (InputModeFile, InputModeInteractive))
@@ -84,26 +77,3 @@ main = run "x = match y with\n  1 -> True\n  2 -> False"
 
 -- putStrLn "Welcome to the miniML REPL!"
 -- runInputT settings (repl defaultPipelineEnv)
-
--- parseRadix :: (Integral a) => a -> String -> a
--- parseRadix r = foldl' step 0
---   where
---     step a c = a * r + fromIntegral (Char.digitToInt c)
-
-makeInt :: (Integral a, Show a) => a -> ByteString -> Token
-makeInt 10 bs = (TokInt (parseRadix 10 (bsToText bs)))
-makeInt 2 bs = (TokInt (parseRadix 2 (fromMaybe (error "Invalid binary literal") (stripPrefix "0b" (bsToText bs)))))
-makeInt r _ = error $ "Unsupported radix" ++ show r
-
-{-# INLINE bsToText #-}
-bsToText :: ByteString -> Text
-bsToText = decodeUtf8 . BL.toStrict
-
-{-# INLINE bsToString #-}
-bsToString :: ByteString -> String
-bsToString = T.unpack . bsToText
-
-parseRadix :: (Integral a) => a -> Text -> a
-parseRadix r = T.foldl' step 0
-  where
-    step a c = a * r + fromIntegral (Char.digitToInt c)
