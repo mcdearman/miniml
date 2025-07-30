@@ -95,9 +95,9 @@ miniml :-
 {
 makeInt :: (Integral a, Show a) => a -> ByteString -> Token
 makeInt 10 bs = (TokInt (parseRadix 10 (bsToText bs)))
-makeInt 2 bs = (TokInt (parseRadix 2 (fromMaybe (error "Invalid binary literal") (stripPrefix "0b" (bsToText bs)))))
-makeInt 8 bs = (TokInt (parseRadix 8 (fromMaybe (error "Invalid octal literal") (stripPrefix "0o" (bsToText bs)))))
-makeInt 16 bs = (TokInt (parseRadix 16 (fromMaybe (error "Invalid hex literal") (stripPrefix "0x" (bsToText bs)))))
+makeInt 2 bs = (TokInt (parseRadix 2 (T.drop 2 (bsToText bs))))
+makeInt 8 bs = (TokInt (parseRadix 8 (T.drop 2 (bsToText bs))))
+makeInt 16 bs = (TokInt (parseRadix 16 (T.drop 2 (bsToText bs))))
 makeInt r _ = error $ "Unsupported radix" ++ show r
 
 {-# INLINE bsToText #-}
