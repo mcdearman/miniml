@@ -95,10 +95,14 @@ miniml :-
 {
 makeInt :: (Integral a, Show a) => a -> ByteString -> Token
 makeInt 10 bs = (TokInt (parseRadix 10 (bsToText bs)))
-makeInt 2 bs = (TokInt (parseRadix 2 (T.drop 2 (bsToText bs))))
-makeInt 8 bs = (TokInt (parseRadix 8 (T.drop 2 (bsToText bs))))
-makeInt 16 bs = (TokInt (parseRadix 16 (T.drop 2 (bsToText bs))))
+makeInt 2 bs = (TokInt (parseRadix 2 (stripIntPrefix bs)))
+makeInt 8 bs = (TokInt (parseRadix 8 (stripIntPrefix bs)))
+makeInt 16 bs = (TokInt (parseRadix 16 (stripIntPrefix bs)))
 makeInt r _ = error $ "Unsupported radix" ++ show r
+
+{-# INLINE stripIntPrefix #-}
+stripIntPrefix :: ByteString -> Text
+stripIntPrefix bs = T.drop 2 (bsToText bs)
 
 {-# INLINE bsToText #-}
 bsToText :: ByteString -> Text
