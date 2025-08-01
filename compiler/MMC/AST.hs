@@ -9,6 +9,8 @@ module MMC.AST
     ClassDef (..),
     LClassDecl,
     ClassDecl (..),
+    LInstanceDecl,
+    InstanceDecl (..),
     LSig,
     Sig (..),
     Rhs (..),
@@ -53,6 +55,7 @@ data Decl
   | DeclExport !Ident
   | DeclClassDecl LClassDecl
   | DeclClassDef LClassDef
+  | DeclInstanceDecl LInstanceDecl
   | DeclRecordDef LRecordDef
   deriving (Show, Eq)
 
@@ -81,6 +84,16 @@ type LClassDecl = Located ClassDecl
 data ClassDecl
   = ClassDeclSig LSig
   | ClassDeclBind LBind
+  deriving (Show, Eq)
+
+type LInstanceDecl = Located InstanceDecl
+
+data InstanceDecl = InstanceDecl
+  { instanceClass :: !Ident,
+    instanceTypeParams :: ![Ident],
+    instanceTypeAnno :: LTypeAnno,
+    instanceDecls :: [LClassDecl]
+  }
   deriving (Show, Eq)
 
 type LSig = Located Sig
