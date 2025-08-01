@@ -10,10 +10,22 @@ data Symbol = Symbol {symId :: !Unique}
 
 data Entry = Entry
   { entryName :: !Text,
+    entrySort :: !EntrySort,
     entryScope :: !Int,
     entryType :: Ty
   }
   deriving (Show, Eq)
+
+data EntrySort
+  = EntrySortType
+  | EntrySortValue
+  | EntrySortData
+  | EntrySortConstructor
+  | EntrySortFunction
+  | EntrySortModule
+  | EntrySortClass
+  | EntrySortInstance
+  deriving (Show, Eq, Ord)
 
 data SymbolTable
   = SymbolTable
