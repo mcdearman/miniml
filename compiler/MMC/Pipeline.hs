@@ -1,8 +1,9 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 
-module MMC.Pipeline (PipelineEnv (..), defaultPipelineEnv, PipelineState, runPipeline) where
+module MMC.Pipeline (PipelineEnv (..), defaultPipelineEnv, runPipeline) where
 
+import Control.Monad.Reader (ReaderT)
 import Control.Monad.State (MonadState (get, put), State)
 import Data.Bifunctor (Bifunctor (first))
 import Data.ByteString.Lazy (ByteString)
@@ -18,7 +19,7 @@ import Debug.Trace (trace)
 import Error.Diagnose
 import Error.Diagnose.Compat.Megaparsec (HasHints (..), errorDiagnosticFromBundle)
 import MMC.AST (Prog)
-import MMC.Common (InputMode (InputModeFile))
+import MMC.Common (InputMode (InputModeFile), Loc)
 import MMC.Lexer (tokenize)
 import MMC.Parser (parseMML)
 import MMC.Token (LToken, Token)
@@ -28,20 +29,26 @@ import Text.Pretty.Simple (pShow)
 
 data PipelineEnv = PipelineEnv
   { src :: Text,
-    flags :: [Text]
+    flags :: [Text],
+    errors :: [CompilerError]
   }
   deriving (Show)
+
+data CompilerError
+  = LexerError Loc
+  | ParserError (ParseErrorBundle Text Void)
 
 defaultPipelineEnv :: PipelineEnv
 defaultPipelineEnv =
   PipelineEnv
     { src = "",
-      flags = []
+      flags = [],
+      errors = []
     }
 
-type PipelineState = State PipelineEnv
+type PipelineM = ReaderT PipelineEnv IO
 
-runPipeline :: InputMode -> Text -> PipelineState [LToken]
+runPipeline :: InputMode -> Text -> PipelineM [LToken]
 runPipeline mode src = do
   PipelineEnv {src = _, flags = f} <- get
   put $ PipelineEnv {src = src, flags = f}
