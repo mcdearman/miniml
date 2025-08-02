@@ -3,7 +3,7 @@
 
 module MMC.Pipeline (PipelineEnv (..), defaultPipelineEnv, runPipeline) where
 
-import Control.Monad.Reader (ReaderT)
+import Control.Monad.Reader (MonadReader (ask), ReaderT)
 import Control.Monad.State (MonadState (get, put), State)
 import Data.Bifunctor (Bifunctor (first))
 import Data.ByteString.Lazy (ByteString)
@@ -32,11 +32,12 @@ data PipelineEnv = PipelineEnv
     flags :: [Text],
     errors :: [CompilerError]
   }
-  deriving (Show)
+  deriving (Show, Eq)
 
 data CompilerError
   = LexerError Loc
   | ParserError (ParseErrorBundle Text Void)
+  deriving (Show, Eq)
 
 defaultPipelineEnv :: PipelineEnv
 defaultPipelineEnv =
@@ -50,6 +51,5 @@ type PipelineM = ReaderT PipelineEnv IO
 
 runPipeline :: InputMode -> Text -> PipelineM [LToken]
 runPipeline mode src = do
-  PipelineEnv {src = _, flags = f} <- get
-  put $ PipelineEnv {src = src, flags = f}
+  PipelineEnv {src = _, flags = f} <- ask
   pure $ tokenize $ BL.fromStrict $ encodeUtf8 src
