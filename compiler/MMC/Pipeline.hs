@@ -3,6 +3,9 @@
 
 module MMC.Pipeline (PipelineEnv (..), defaultPipelineEnv, runPipeline) where
 
+-- import Effectful.Concurrent.STM (TVar, newTVarIO)
+
+import Control.Concurrent.STM (TVar, newTVarIO)
 import Control.Monad.Reader (MonadReader (ask), ReaderT)
 import Control.Monad.State (MonadState (get, put), State)
 import Data.Bifunctor (Bifunctor (first))
@@ -16,7 +19,6 @@ import Data.Text.Encoding (encodeUtf8)
 import Data.Text.Lazy (toStrict)
 import Data.Void (Void)
 import Debug.Trace (trace)
-import Effectful.Concurrent.STM (TVar)
 import Error.Diagnose
 import Error.Diagnose.Compat.Megaparsec (HasHints (..), errorDiagnosticFromBundle)
 import MMC.AST (Prog)
@@ -29,7 +31,7 @@ import Text.Megaparsec.Error (ParseErrorBundle)
 import Text.Pretty.Simple (pShow)
 
 data PipelineEnv = PipelineEnv
-  { src :: TVar Text,
+  { src :: Text,
     flags :: [Text],
     errors :: TVar [CompilerError]
   }
@@ -40,13 +42,15 @@ data CompilerError
   | ParserError (ParseErrorBundle Text Void)
   deriving (Show, Eq)
 
-defaultPipelineEnv :: PipelineEnv
-defaultPipelineEnv =
-  PipelineEnv
-    { src = "",
-      flags = [],
-      errors = []
-    }
+defaultPipelineEnv :: Text -> IO PipelineEnv
+defaultPipelineEnv src = do
+  errVar <- newTVarIO []
+  pure
+    PipelineEnv
+      { src = src,
+        flags = [],
+        errors = errVar
+      }
 
 type PipelineM = ReaderT PipelineEnv IO
 

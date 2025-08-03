@@ -1,5 +1,6 @@
 module Main where
 
+import Control.Monad.Reader (ReaderT (runReaderT))
 import Control.Monad.State (evalState, runState)
 import Data.Text (Text, pack, unpack)
 import Data.Text.Lazy (toStrict)
@@ -10,7 +11,6 @@ import MMC.Pipeline
 import MMC.Token (Token (..))
 import System.Console.Haskeline
 import Text.Pretty.Simple (pShow)
-import Control.Monad.Reader (ReaderT(runReaderT))
 
 settings :: Settings IO
 settings = defaultSettings {historyFile = Just ".repl_history"}
@@ -62,7 +62,9 @@ collectLines acc = do
 
 run :: String -> IO ()
 run src = do
-  out <- runReaderT (runPipeline (InputModeFile "main") (pack src)) defaultPipelineEnv
+  let src' = pack src
+  env <- defaultPipelineEnv src'
+  out <- runReaderT (runPipeline (InputModeFile "main") src') env
   putStrLn $ unpack . toStrict $ pShow out
 
 -- let (out, _) = runState (runPipeline (InputModeFile "main") (pack src)) defaultPipelineEnv
