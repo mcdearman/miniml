@@ -16,6 +16,7 @@ import Data.Text.Encoding (encodeUtf8)
 import Data.Text.Lazy (toStrict)
 import Data.Void (Void)
 import Debug.Trace (trace)
+import Effectful.Concurrent.STM (TVar)
 import Error.Diagnose
 import Error.Diagnose.Compat.Megaparsec (HasHints (..), errorDiagnosticFromBundle)
 import MMC.AST (Prog)
@@ -28,11 +29,11 @@ import Text.Megaparsec.Error (ParseErrorBundle)
 import Text.Pretty.Simple (pShow)
 
 data PipelineEnv = PipelineEnv
-  { src :: Text,
+  { src :: TVar Text,
     flags :: [Text],
-    errors :: [CompilerError]
+    errors :: TVar [CompilerError]
   }
-  deriving (Show, Eq)
+  deriving (Eq)
 
 data CompilerError
   = LexerError Loc

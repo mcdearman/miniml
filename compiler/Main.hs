@@ -62,7 +62,7 @@ collectLines acc = do
 
 run :: String -> IO ()
 run src = do
-  let out = runReaderT (runPipeline (InputModeFile "main") (pack src)) defaultPipelineEnv
+  out <- runReaderT (runPipeline (InputModeFile "main") (pack src)) defaultPipelineEnv
   putStrLn $ unpack . toStrict $ pShow out
 
 -- let (out, _) = runState (runPipeline (InputModeFile "main") (pack src)) defaultPipelineEnv
