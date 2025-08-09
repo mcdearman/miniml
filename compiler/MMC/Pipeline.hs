@@ -3,17 +3,11 @@
 
 module MMC.Pipeline (PipelineEnv (..), defaultPipelineEnv, runPipeline) where
 
--- import Effectful.Concurrent.STM (TVar, newTVarIO)
-
 import Control.Concurrent.STM (TVar, newTVarIO)
 import Control.Monad.Reader (MonadReader (ask), ReaderT)
 import Control.Monad.State (MonadState (get, put), State)
-import Data.Bifunctor (Bifunctor (first))
 import Data.ByteString.Lazy (ByteString)
 import qualified Data.ByteString.Lazy as BL
-import Data.Function ((&))
-import Data.Map
-import qualified Data.Map as Map
 import Data.Text (Text, pack, unpack)
 import Data.Text.Encoding (encodeUtf8)
 import Data.Text.Lazy (toStrict)
