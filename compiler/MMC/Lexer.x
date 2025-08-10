@@ -93,16 +93,16 @@ miniml :-
   $nonWhite                      { \p bs -> Located TokError (makeLoc p bs) }
 
 {
-makeInt :: (Integral a, Show a) => a -> ByteString -> Token
-makeInt 10 bs = (TokInt (parseRadix 10 (bsToText bs)))
-makeInt 2 bs = (TokInt (parseRadix 2 (stripIntPrefix bs)))
-makeInt 8 bs = (TokInt (parseRadix 8 (stripIntPrefix bs)))
-makeInt 16 bs = (TokInt (parseRadix 16 (stripIntPrefix bs)))
+makeInt :: Int -> ByteString -> Token
+makeInt 10 bs = TokInt $ parseRadix 10 $ bsToText bs
+makeInt 2 bs = TokInt $ parseRadix 2 $ stripIntPrefix bs
+makeInt 8 bs = TokInt $ parseRadix 8 $ stripIntPrefix bs
+makeInt 16 bs = TokInt $ parseRadix 16 $ stripIntPrefix bs
 makeInt r _ = error $ "Unsupported radix" ++ show r
 
 {-# INLINE stripIntPrefix #-}
 stripIntPrefix :: ByteString -> Text
-stripIntPrefix bs = T.drop 2 (bsToText bs)
+stripIntPrefix bs = T.drop 2 $ bsToText bs
 
 {-# INLINE bsToText #-}
 bsToText :: ByteString -> Text
@@ -111,12 +111,12 @@ bsToText = TE.decodeUtf8 . BL.toStrict
 parseRadix :: (Integral a) => a -> Text -> a
 parseRadix r = T.foldl' step 0
   where
-    step a c = a * r + fromIntegral (Char.digitToInt c)
+    step a c = a * r + (fromIntegral $ Char.digitToInt c)
 
 makeLoc :: AlexPosn -> ByteString -> Loc
 makeLoc (AlexPn start _ _) bs = Loc start end
   where 
-    end = start + ((fromIntegral . BL.length) bs)
+    end = start + (fromIntegral $ BL.length bs)
 
 posnOffset :: AlexPosn -> Int
 posnOffset (AlexPn o _ _) = o

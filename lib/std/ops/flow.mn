@@ -6,4 +6,4 @@ x |> f = f x
 (<|) : (a -> b) -> a -> b
 f <| x = f x
 
-infixl 9 |>, <|
+infixl 9 (|>), (<|)
