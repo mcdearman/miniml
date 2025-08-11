@@ -6,7 +6,7 @@ record Trie a {
 def empty : Trie a = { value = None, children = Map.empty }
 
 def insert (s : String) (v : a) (t : Trie a) : Trie a =
-  match s with
+  match s with:
     "" -> { t with value = Some v }
     (c::cs) -> 
     let child = 
