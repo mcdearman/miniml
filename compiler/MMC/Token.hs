@@ -8,6 +8,8 @@ type LToken = Located Token
 data Token
   = TokError
   | TokNewline
+  | TokIndent Int
+  | TokDedent Int
   | TokComment
   | TokUpperCaseIdent Text
   | TokLowerCaseIdent Text

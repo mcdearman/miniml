@@ -64,7 +64,7 @@ run :: String -> IO ()
 run src = do
   let src' = pack src
   env <- defaultPipelineEnv src'
-  out <- runReaderT (runPipeline (InputModeFile "main") src') env
+  out <- runReaderT (runPipeline src') env
   putStrLn $ unpack . toStrict $ pShow out
 
 -- let (out, _) = runState (runPipeline (InputModeFile "main") (pack src)) defaultPipelineEnv

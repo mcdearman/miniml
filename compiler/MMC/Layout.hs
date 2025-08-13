@@ -7,6 +7,13 @@ import MMC.TokenTree (LTokenTree)
 
 data LayoutError = LayoutError Text deriving (Show, Eq)
 
+insertIndents :: [LToken] -> [LToken]
+insertIndents = go 0
+  where
+    go _ [] = []
+    go n (t:ts) = case t of
+
+
 layout :: [LToken] -> [Int] -> Either LayoutError [LTokenTree]
 layout ts stack = layout' ts stack [0]
   where

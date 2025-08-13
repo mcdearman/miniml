@@ -16,7 +16,7 @@ import Debug.Trace (trace)
 import Error.Diagnose
 import Error.Diagnose.Compat.Megaparsec (HasHints (..), errorDiagnosticFromBundle)
 import MMC.AST (Prog)
-import MMC.Common (InputMode (InputModeFile), Loc)
+import MMC.Common (InputMode (InputModeFile, InputModeInteractive), Loc)
 import MMC.Lexer (tokenize)
 import MMC.Parser (parseMML)
 import MMC.Token (LToken, Token)
@@ -27,7 +27,8 @@ import Text.Pretty.Simple (pShow)
 data PipelineEnv = PipelineEnv
   { src :: Text,
     flags :: [Text],
-    errors :: TVar [CompilerError]
+    errors :: TVar [CompilerError],
+    mode :: InputMode
   }
   deriving (Eq)
 
@@ -43,12 +44,13 @@ defaultPipelineEnv src = do
     PipelineEnv
       { src = src,
         flags = [],
-        errors = errVar
+        errors = errVar,
+        mode = InputModeInteractive
       }
 
 type PipelineM = ReaderT PipelineEnv IO
 
-runPipeline :: InputMode -> Text -> PipelineM [LToken]
-runPipeline mode src = do
-  PipelineEnv {src = _, flags = f} <- ask
+runPipeline :: Text -> PipelineM [LToken]
+runPipeline src = do
+  -- PipelineEnv {src = _, flags = f} <- ask
   pure $ tokenize $ BL.fromStrict $ encodeUtf8 src
