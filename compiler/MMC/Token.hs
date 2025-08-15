@@ -6,7 +6,7 @@ import MMC.Common (Located)
 type LRawTok = Located RawTok
 
 data RawTok
-  = RawTokIndent Int
+  = RawTokRef Int
   | RawTokSentinel Int
   | RawTokToken Token
 

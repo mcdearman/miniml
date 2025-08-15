@@ -73,3 +73,6 @@ instance Functor Located where
   fmap f (Located v s) = Located (f v) s
 
 data Unique = Id Int deriving (Show, Eq, Ord)
+
+locToLineCol :: [Text] -> Loc -> (Int, Int)
+locToLineCol lines (Loc start end) = undefined
