@@ -2,19 +2,18 @@ module MMC.Layout (layout, LayoutError) where
 
 import Data.Text (Text)
 import MMC.Common (Loc (..), Located (..))
-import MMC.Token (LToken, Token (..))
+import MMC.Token
 import MMC.TokenTree (LTokenTree)
 
 data LayoutError = LayoutError Text deriving (Show, Eq)
 
-insertIndents :: [LToken] -> [LToken]
+insertIndents :: [LToken] -> [LRawTok]
 insertIndents = go 0
   where
     go _ [] = []
-    go n (t:ts) = case t of
+    go n (t : ts) = case t of {}
 
-
-layout :: [LToken] -> [Int] -> Either LayoutError [LTokenTree]
+layout :: [LRawTok] -> [Int] -> Either LayoutError [LToken]
 layout ts stack = layout' ts stack [0]
   where
     layout' ts [0] = undefined

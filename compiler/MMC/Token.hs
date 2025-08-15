@@ -8,7 +8,6 @@ type LRawTok = Located RawTok
 data RawTok
   = RawTokIndent Int
   | RawTokSentinel Int
-  | RawTokDedent Int
   | RawTokToken Token
 
 type LToken = Located Token
