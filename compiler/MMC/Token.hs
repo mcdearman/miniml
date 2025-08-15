@@ -1,15 +1,21 @@
-module MMC.Token (Token (..), LToken) where
+module MMC.Token (LRawTok, RawTok (..), Token (..), LToken) where
 
 import Data.Text (Text)
 import MMC.Common (Located)
+
+type LRawTok = Located RawTok
+
+data RawTok
+  = RawTokIndent Int
+  | RawTokSentinel Int
+  | RawTokDedent Int
+  | RawTokToken Token
 
 type LToken = Located Token
 
 data Token
   = TokError
   | TokNewline
-  | TokIndent Int
-  | TokDedent Int
   | TokComment
   | TokUpperCaseIdent Text
   | TokLowerCaseIdent Text
