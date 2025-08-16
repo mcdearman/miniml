@@ -48,6 +48,7 @@ executable miniML
         BangPatterns
         PatternSynonyms
         TypeFamilies
+        OrPatterns
     build-depends:    
         base,
         bytestring,

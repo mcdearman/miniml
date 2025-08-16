@@ -10,7 +10,7 @@ data LayoutError = LayoutError Text deriving (Show, Eq)
 insertIndents :: [LToken] -> [LRawTok]
 insertIndents [] = []
 insertIndents (t : t' : ts) = case unLoc t of
-  tok | tok `elem` [TokLet, TokDo, TokWhere, TokMatch] -> case t' of
+ (TokLet; TokDo; TokWhere; TokMatch) -> case t' of
     Located TokLBrace l -> insertIndents (t' : ts)
     Located t'' l -> (Located (RawTokRef n) l) : insertIndents (t' : ts)
   _ -> insertIndents (t' : ts)
