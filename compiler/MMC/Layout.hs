@@ -9,12 +9,12 @@ data LayoutError = LayoutError Text deriving (Show, Eq)
 
 insertIndents :: [LToken] -> [LRawTok]
 insertIndents [] = []
-insertIndents (t : t' : ts) = case unLoc t of
-  TokLet; TokDo; TokWhere; TokMatch -> case t' of
-    Located TokLBrace l -> insertIndents (t' : ts)
-    Located t'' l -> (Located (RawTokRef n) l) : insertIndents (t' : ts)
-  _ -> insertIndents (t' : ts)
-insertIndents (t : t' : ts) = (Located (RawTokRef n) l) : insertIndents ts
+insertIndents (herald : ref : c : ts) = case unLoc herald of
+  TokLet; TokDo; TokWhere; TokMatch -> case ref of
+    Located TokLBrace l -> insertIndents (ref : ts)
+    Located t l -> (Located (RawTokRef n) l) : insertIndents (ref : ts)
+  _ -> insertIndents (ref : ts)
+-- insertIndents (t : t' : ts) = (Located (RawTokRef n) l) : insertIndents ts
 
 layout :: [LRawTok] -> [Int] -> Either LayoutError [LToken]
 layout ts stack = layout' ts stack [0]
@@ -22,3 +22,6 @@ layout ts stack = layout' ts stack [0]
     layout' ts [0] = undefined
     layout' _ [] = error "layout stack underflow"
     layout' _ _ = undefined
+
+foo :: Bool -> Bool -> [Int]
+foo p q = [case () of _ | p, q -> 0, 42]
