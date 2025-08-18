@@ -14,6 +14,7 @@ insertIndents (herald : ref : c : ts) = case unLoc herald of
     Located TokLBrace l -> insertIndents (ref : ts)
     Located t l -> (Located (RawTokRef n) l) : insertIndents (ref : ts)
   _ -> insertIndents (ref : ts)
+
 -- insertIndents (t : t' : ts) = (Located (RawTokRef n) l) : insertIndents ts
 
 layout :: [LRawTok] -> [Int] -> Either LayoutError [LToken]
@@ -22,6 +23,3 @@ layout ts stack = layout' ts stack [0]
     layout' ts [0] = undefined
     layout' _ [] = error "layout stack underflow"
     layout' _ _ = undefined
-
-foo :: Bool -> Bool -> [Int]
-foo p q = [case () of _ | p, q -> 0, 42]
