@@ -33,11 +33,6 @@ data PipelineEnv = PipelineEnv
   }
   deriving (Eq)
 
--- data CompilerError
---   = LexerError Loc
---   | LayoutError Text
---   | ParserError (ParseErrorBundle Text Void)
---   deriving (Show, Eq)
 class HasDiagnostic e where
   toDiagnostic :: e -> Diagnostic Void
 
