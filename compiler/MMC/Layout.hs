@@ -1,33 +1,47 @@
 module MMC.Layout (layout, LayoutError) where
 
+import Control.Monad.Reader (MonadReader (ask))
+import Control.Monad.Reader.Class (asks)
 import Data.Text (Text)
 import qualified Data.Text as T
-import MMC.Common (Loc (..), Located (..), unLoc)
+import Error.Diagnose (Diagnostic (..))
+import MMC.Common (LineIndex, Loc (..), Located (..), unLoc)
+import MMC.Pipeline (HasDiagnostic (..), PipelineEnv (..), PipelineM)
 import MMC.Token
 import MMC.TokenTree (LTokenTree)
 
 data LayoutError = LayoutError Text deriving (Show, Eq)
 
+instance HasDiagnostic LayoutError where
+  toDiagnostic (LayoutError msg) = undefined
+
 -- let: x = 1
 --      y = 2
 --  in x + y
 
-insertIndents :: [LToken] -> [LRawTok]
-insertIndents [] = []
-insertIndents (herald : c : ref : ts) = case unLoc herald of
-  TokLet; TokDo; TokWhere; TokMatch -> case c of
-    Located TokLBrace _ -> insertIndents (ref : ts)
-    Located TokColon l -> undefined
-    _ -> undefined
-  -- (Located (RawTokRef n) l) : insertIndents (ref : ts)
-  _ -> insertIndents (ref : ts)
-insertIndents _ = error "insertIndents: unexpected token structure"
+runLayout :: [LToken] -> PipelineM [LToken]
+runLayout tokens = do
+  index <- asks lineIndex
+  let indented = insertIndents tokens index
+      (errs, layoutTokens) = layout indented index [0]
+  pure layoutTokens
 
--- insertIndents (t : t' : ts) = (Located (RawTokRef n) l) : insertIndents ts
-
-layout :: [LRawTok] -> [Int] -> Either LayoutError [LToken]
-layout ts stack = layout' ts stack [0]
+layout :: [LRawTok] -> LineIndex -> [Int] -> ([LayoutError], [LToken])
+layout ts index stack = layout' ts stack [0]
   where
     layout' ts [0] = undefined
     layout' _ [] = error "layout stack underflow"
     layout' _ _ = undefined
+
+insertIndents :: [LToken] -> LineIndex -> [LRawTok]
+insertIndents [] index = []
+insertIndents (herald : c : ref : ts) index = case unLoc herald of
+  TokLet; TokDo; TokWhere; TokMatch -> case c of
+    Located TokLBrace _ -> insertIndents (ref : ts) index
+    Located TokColon l -> undefined
+    _ -> undefined
+  -- (Located (RawTokRef n) l) : insertIndents (ref : ts)
+  _ -> insertIndents (ref : ts) index
+insertIndents _ _ = error "insertIndents: unexpected token structure"
+
+-- insertIndents (t : t' : ts) = (Located (RawTokRef n) l) : insertIndents ts

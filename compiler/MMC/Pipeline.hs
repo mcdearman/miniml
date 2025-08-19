@@ -1,7 +1,7 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 
-module MMC.Pipeline (PipelineEnv (..), defaultPipelineEnv, runPipeline) where
+module MMC.Pipeline (PipelineEnv (..), defaultPipelineEnv, runPipeline, PipelineM, HasDiagnostic (..)) where
 
 import Control.Concurrent.STM (TVar, newTVarIO)
 import Control.Monad.Reader (MonadReader (ask), ReaderT)
@@ -27,16 +27,19 @@ import Text.Pretty.Simple (pShow)
 data PipelineEnv = PipelineEnv
   { src :: !Text,
     flags :: ![Text],
-    errors :: TVar [CompilerError],
+    errors :: TVar [Diagnostic Void],
     mode :: !InputMode,
     lineIndex :: !LineIndex
   }
   deriving (Eq)
 
-data CompilerError
-  = LexerError Loc
-  | ParserError (ParseErrorBundle Text Void)
-  deriving (Show, Eq)
+-- data CompilerError
+--   = LexerError Loc
+--   | LayoutError Text
+--   | ParserError (ParseErrorBundle Text Void)
+--   deriving (Show, Eq)
+class HasDiagnostic e where
+  toDiagnostic :: e -> Diagnostic Void
 
 defaultPipelineEnv :: Text -> IO PipelineEnv
 defaultPipelineEnv src = do
