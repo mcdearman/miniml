@@ -16,7 +16,7 @@ import Debug.Trace (trace)
 import Error.Diagnose
 import Error.Diagnose.Compat.Megaparsec (HasHints (..), errorDiagnosticFromBundle)
 import MMC.AST (Prog)
-import MMC.Common (InputMode (InputModeFile, InputModeInteractive), Loc)
+import MMC.Common (InputMode (InputModeFile, InputModeInteractive), LineIndex, Loc, buildLineIndex)
 import MMC.Lexer (tokenize)
 import MMC.Parser (parseMML)
 import MMC.Token (LToken, Token)
@@ -25,10 +25,11 @@ import Text.Megaparsec.Error (ParseErrorBundle)
 import Text.Pretty.Simple (pShow)
 
 data PipelineEnv = PipelineEnv
-  { src :: Text,
-    flags :: [Text],
+  { src :: !Text,
+    flags :: ![Text],
     errors :: TVar [CompilerError],
-    mode :: InputMode
+    mode :: !InputMode,
+    lineIndex :: !LineIndex
   }
   deriving (Eq)
 
@@ -45,7 +46,8 @@ defaultPipelineEnv src = do
       { src = src,
         flags = [],
         errors = errVar,
-        mode = InputModeInteractive
+        mode = InputModeInteractive,
+        lineIndex = buildLineIndex src
       }
 
 type PipelineM = ReaderT PipelineEnv IO

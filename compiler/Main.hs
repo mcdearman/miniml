@@ -65,7 +65,7 @@ run src = do
   let src' = pack src
   env <- defaultPipelineEnv src'
   out <- runReaderT (runPipeline src') env
-  putStrLn $ unpack . toStrict $ pShow out
+  putStrLn . unpack . toStrict $ pShow out
 
 -- let (out, _) = runState (runPipeline (InputModeFile "main") (pack src)) defaultPipelineEnv
 -- case out of

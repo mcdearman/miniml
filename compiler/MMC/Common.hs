@@ -8,10 +8,16 @@ module MMC.Common
     unLoc,
     getLoc,
     Unique (..),
+    LineIndex (..),
+    buildLineIndex,
+    offsetToLineCol,
   )
 where
 
+import Data.Maybe (fromMaybe)
 import Data.Text (Text, pack)
+import qualified Data.Text as T
+import qualified Data.Vector.Unboxed as U
 
 data InputMode
   = InputModeFile Text
@@ -74,5 +80,19 @@ instance Functor Located where
 
 data Unique = Id Int deriving (Show, Eq, Ord)
 
-locToLineCol :: [Text] -> Loc -> (Int, Int)
-locToLineCol lines (Loc start end) = undefined
+data LineIndex
+  = LineIndex {lineStarts :: !(U.Vector Int)}
+  deriving (Show, Eq)
+
+buildLineIndex :: Text -> LineIndex
+buildLineIndex txt = LineIndex (U.fromList (0 : scan txt))
+  where
+    scan t = [i + 1 | (i, c) <- zip [0 ..] (T.unpack t), c == '\n']
+
+offsetToLineCol :: LineIndex -> Int -> (Int, Int)
+offsetToLineCol (LineIndex starts) off =
+  let i = U.findIndexR (<= off) starts
+      idx = fromMaybe 0 i
+      lineStart = starts U.! idx
+      col = off - lineStart + 1
+   in (idx + 1, col)
