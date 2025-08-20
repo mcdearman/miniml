@@ -27,14 +27,14 @@ import Text.Pretty.Simple (pShow)
 data PipelineEnv = PipelineEnv
   { src :: !Text,
     flags :: ![Text],
-    errors :: TVar [Diagnostic Void],
     mode :: !InputMode,
-    lineIndex :: !LineIndex
+    lineIndex :: !LineIndex,
+    errors :: TVar [Diagnostic Text]
   }
   deriving (Eq)
 
 class HasDiagnostic e where
-  toDiagnostic :: e -> Diagnostic Void
+  toDiagnostic :: e -> Diagnostic Text
 
 defaultPipelineEnv :: Text -> IO PipelineEnv
 defaultPipelineEnv src = do
@@ -43,9 +43,9 @@ defaultPipelineEnv src = do
     PipelineEnv
       { src = src,
         flags = [],
-        errors = errVar,
         mode = InputModeInteractive,
-        lineIndex = buildLineIndex src
+        lineIndex = buildLineIndex src,
+        errors = errVar
       }
 
 type PipelineM = ReaderT PipelineEnv IO
