@@ -50,6 +50,7 @@ executable miniML
         PatternSynonyms
         TypeFamilies
         OrPatterns
+        MultilineStrings
     build-depends:    
         base,
         bytestring,
