@@ -1,22 +1,17 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 
-module MMC.Pipeline (PipelineEnv (..), defaultPipelineEnv, runPipeline, PipelineM, HasDiagnostic (..)) where
+module MMC.Pipeline (runPipeline) where
 
-import Control.Concurrent.STM (TVar, newTVarIO)
-import Control.Monad.Reader (MonadReader (ask), ReaderT)
-import Control.Monad.State (MonadState (get, put), State)
+import Control.Monad.Reader (ReaderT (runReaderT))
 import Data.ByteString.Lazy (ByteString)
 import qualified Data.ByteString.Lazy as BL
 import Data.Text (Text, pack, unpack)
 import Data.Text.Encoding (encodeUtf8)
 import Data.Text.Lazy (toStrict)
-import Data.Void (Void)
-import Debug.Trace (trace)
-import Error.Diagnose
-import Error.Diagnose.Compat.Megaparsec (HasHints (..), errorDiagnosticFromBundle)
 import MMC.AST (Prog)
-import MMC.Common (InputMode (InputModeFile, InputModeInteractive), LineIndex, Loc, buildLineIndex)
+import MMC.Build (PipelineEnv, PipelineM)
+import MMC.Common
 import MMC.Lexer (tokenize)
 import MMC.Parser (parseMML)
 import MMC.Token (LToken, Token)
@@ -24,33 +19,10 @@ import Text.Megaparsec (errorBundlePretty)
 import Text.Megaparsec.Error (ParseErrorBundle)
 import Text.Pretty.Simple (pShow)
 
-data PipelineEnv = PipelineEnv
-  { src :: !Text,
-    flags :: ![Text],
-    mode :: !InputMode,
-    lineIndex :: !LineIndex,
-    errors :: TVar [Diagnostic Text]
-  }
-  deriving (Eq)
+runPipeline :: PipelineEnv -> Text -> IO [LToken]
+runPipeline env src = do
+  let ts = tokenize $ BL.fromStrict $ encodeUtf8 src
+  -- pure $ runReaderT () env
+  pure ts
 
-class HasDiagnostic e where
-  toDiagnostic :: e -> Diagnostic Text
-
-defaultPipelineEnv :: Text -> IO PipelineEnv
-defaultPipelineEnv src = do
-  errVar <- newTVarIO []
-  pure
-    PipelineEnv
-      { src = src,
-        flags = [],
-        mode = InputModeInteractive,
-        lineIndex = buildLineIndex src,
-        errors = errVar
-      }
-
-type PipelineM = ReaderT PipelineEnv IO
-
-runPipeline :: Text -> PipelineM [LToken]
-runPipeline src = do
-  -- PipelineEnv {src = _, flags = f} <- ask
-  pure $ tokenize $ BL.fromStrict $ encodeUtf8 src
+-- putStrLn . unpack . toStrict $ pShow out

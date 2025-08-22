@@ -1,14 +1,9 @@
 module Main where
 
-import Control.Monad.Reader (ReaderT (runReaderT))
-import Control.Monad.State (evalState, runState)
-import Data.Text (Text, pack, unpack)
+import Data.Text (pack, unpack)
 import Data.Text.Lazy (toStrict)
-import Error.Diagnose (addFile, defaultStyle, printDiagnostic, stderr)
-import Error.Diagnose.Compat.Megaparsec (errorDiagnosticFromBundle)
-import MMC.Common (InputMode (InputModeFile, InputModeInteractive))
+import MMC.Build (defaultPipelineEnv)
 import MMC.Pipeline
-import MMC.Token (Token (..))
 import System.Console.Haskeline
 import Text.Pretty.Simple (pShow)
 
@@ -64,7 +59,7 @@ run :: String -> IO ()
 run src = do
   let src' = pack src
   env <- defaultPipelineEnv src'
-  out <- runReaderT (runPipeline src') env
+  out <- runPipeline env src'
   putStrLn . unpack . toStrict $ pShow out
 
 -- let (out, _) = runState (runPipeline (InputModeFile "main") (pack src)) defaultPipelineEnv
@@ -80,4 +75,3 @@ main = run "x = match y with\n  1 -> True\n  2 -> False"
 
 -- putStrLn "Welcome to the miniML REPL!"
 -- runInputT settings (repl defaultPipelineEnv)
-
