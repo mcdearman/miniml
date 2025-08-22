@@ -1,28 +1,46 @@
 {-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 
-module MMC.Pipeline (runPipeline) where
+module MMC.Pipeline (HasDiagnostic (..), PipelineEnv (..), defaultPipelineEnv, PipelineM (..)) where
 
-import Control.Monad.Reader (ReaderT (runReaderT))
-import Data.ByteString.Lazy (ByteString)
+import Control.Concurrent.STM (TVar, newTVarIO)
+import Control.Monad.Reader (MonadReader (ask), ReaderT)
+import Control.Monad.State
 import qualified Data.ByteString.Lazy as BL
-import Data.Text (Text, pack, unpack)
+import Data.Text (Text)
 import Data.Text.Encoding (encodeUtf8)
-import Data.Text.Lazy (toStrict)
-import MMC.AST (Prog)
-import MMC.Build (PipelineEnv, PipelineM)
-import MMC.Common
+import Error.Diagnose (Diagnostic)
+import MMC.Common (InputMode (..), LineIndex (..), buildLineIndex)
 import MMC.Lexer (tokenize)
-import MMC.Parser (parseMML)
-import MMC.Token (LToken, Token)
-import Text.Megaparsec (errorBundlePretty)
-import Text.Megaparsec.Error (ParseErrorBundle)
-import Text.Pretty.Simple (pShow)
-
-runPipeline :: PipelineEnv -> Text -> IO [LToken]
-runPipeline env src = do
-  let ts = tokenize $ BL.fromStrict $ encodeUtf8 src
-  -- pure $ runReaderT () env
-  pure ts
+import MMC.Token (LToken)
 
 -- putStrLn . unpack . toStrict $ pShow out
+data PipelineEnv = PipelineEnv
+  { src :: !Text,
+    flags :: ![Text],
+    mode :: !InputMode,
+    lineIndex :: !LineIndex,
+    errors :: TVar [Diagnostic Text]
+  }
+  deriving (Eq)
+
+class HasDiagnostic e where
+  toDiagnostic :: e -> Diagnostic Text
+
+defaultPipelineEnv :: Text -> IO PipelineEnv
+defaultPipelineEnv src = do
+  errVar <- newTVarIO []
+  pure
+    PipelineEnv
+      { src = src,
+        flags = [],
+        mode = InputModeInteractive,
+        lineIndex = buildLineIndex src,
+        errors = errVar
+      }
+
+-- type PipelineM = ReaderT PipelineEnv IO
+
+newtype PipelineM a = PipelineM {runPipelineM :: ReaderT PipelineEnv IO a}
+  deriving (Functor, Applicative, Monad, MonadIO, MonadReader PipelineEnv)

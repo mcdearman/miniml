@@ -29,6 +29,7 @@ executable miniML
         MMC.AST
         MMC.Build
         MMC.Common
+        MMC.Driver
         MMC.Kind
         MMC.Layout
         MMC.Lexer

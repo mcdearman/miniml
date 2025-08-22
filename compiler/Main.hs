@@ -2,7 +2,7 @@ module Main where
 
 import Data.Text (pack, unpack)
 import Data.Text.Lazy (toStrict)
-import MMC.Build (defaultPipelineEnv)
+import MMC.Driver (runDriver)
 import MMC.Pipeline
 import System.Console.Haskeline
 import Text.Pretty.Simple (pShow)
@@ -59,7 +59,7 @@ run :: String -> IO ()
 run src = do
   let src' = pack src
   env <- defaultPipelineEnv src'
-  out <- runPipeline env src'
+  out <- runDriver env src'
   putStrLn . unpack . toStrict $ pShow out
 
 -- let (out, _) = runState (runPipeline (InputModeFile "main") (pack src)) defaultPipelineEnv
