@@ -40,12 +40,21 @@ import Text.Megaparsec
 import Text.Megaparsec.Char (alphaNumChar, char, char', lowerChar, space1, string, upperChar)
 import Text.Megaparsec.Char.Lexer (indentBlock)
 import qualified Text.Megaparsec.Char.Lexer as L
+import Text.Megaparsec.Debug (dbg)
+import Text.Megaparsec.Error (errorBundlePretty)
+import Text.Pretty.Simple (pPrint, pShow)
 import Prelude hiding (getLoc)
 
 type Parser = Parsec Void Text
 
 instance HasHints Void msg where
   hints _ = mempty
+
+-- only here to make cabal repl easier
+runParse :: Text -> IO ()
+runParse input = case parseMML (InputModeFile "Main") input of
+  Left err -> error $ errorBundlePretty err
+  Right prog -> pPrint prog
 
 parseMML :: InputMode -> Text -> Either (ParseErrorBundle Text Void) Prog
 parseMML (InputModeFile fileName) = Text.Megaparsec.parse (module' fileName) (unpack fileName)
@@ -89,7 +98,7 @@ classDecl = withLoc $ ClassDeclSig <$> sig <|> ClassDeclBind <$> bind
 sig :: Parser LSig
 sig =
   withLoc . try $
-    Sig <$> (lowerCaseIdent `sepBy1` (charL ',')) <* charL ':' <*> tyVars <*> typeAnno
+    Sig <$> (lowerCaseIdent `sepBy1` charL ',') <* charL ':' <*> tyVars <*> typeAnno
   where
     tyVars = try (some lowerCaseIdent <* charL '.') <|> pure []
 
@@ -131,7 +140,7 @@ expr = makeExprParser apply operatorTable
           pure $ L.IndentSome Nothing (cont scrut) alt
 
         alt :: Parser (LPattern, LExpr)
-        alt = ((,) <$> pattern' <*> (symbol "->" *> expr))
+        alt = (,) <$> pattern' <*> (symbol "->" *> expr)
 
         cont :: LExpr -> [(LPattern, LExpr)] -> Parser Expr
         cont scr alts = pure $ Match scr alts
@@ -183,7 +192,7 @@ bind = withLoc $ funBind <|> patternBind
     funBind = try $ BindFun <$> lowerCaseIdent <*> some alt <*> where'
 
     alt :: Parser LAlt
-    alt = withLoc $ Alt <$> (some pattern') <* charL '=' <*> rhs
+    alt = withLoc $ Alt <$> some pattern' <* charL '=' <*> rhs
 
     where' :: Parser [LClassDecl]
     where' = option [] (kwWhere *> some classDecl)
@@ -289,7 +298,7 @@ lowerCaseIdent = try $ do
 
 -- {-# INLINEABLE upperCaseIdent #-}
 upperCaseIdent :: Parser Ident
-upperCaseIdent = Ident <$> (withLoc $ pack <$> ((:) <$> upperChar <*> many alphaNumChar)) <* sc
+upperCaseIdent = Ident <$> withLoc (pack <$> ((:) <$> upperChar <*> many alphaNumChar)) <* sc
 
 indented :: Pos -> Parser a -> Parser (Pos, a)
 indented ref p = (,) <$> L.indentGuard sc GT ref <*> p
