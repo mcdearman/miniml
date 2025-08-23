@@ -1,4 +1,4 @@
-module MMC.AST
+module MMC.Syn.AST
   ( Prog,
     Module (..),
     LDecl,

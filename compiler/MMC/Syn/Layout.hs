@@ -1,4 +1,4 @@
-module MMC.Layout (layout, LayoutError) where
+module MMC.Syn.Layout (layout, LayoutError) where
 
 import Control.Monad.Reader (MonadReader (ask))
 import Control.Monad.Reader.Class (asks)
@@ -7,8 +7,8 @@ import qualified Data.Text as T
 import Error.Diagnose (Diagnostic (..))
 import MMC.Common (LineIndex, Loc (..), Located (..), unLoc)
 import MMC.Pipeline (HasDiagnostic (..), PipelineEnv (..), PipelineM)
-import MMC.Token
-import MMC.TokenTree (LTokenTree)
+import MMC.Syn.Token
+import MMC.Syn.TokenTree (LTokenTree)
 
 data LayoutError = LayoutError Text deriving (Show, Eq)
 

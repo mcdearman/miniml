@@ -1,6 +1,6 @@
 {
-module MMC.Lexer (tokenize) where
-import MMC.Token
+module MMC.Syn.Lexer (tokenize) where
+import MMC.Syn.Token
 import Data.Maybe (fromMaybe)
 import MMC.Common (Located (..), Loc (..))
 import Data.ByteString.Lazy (ByteString)

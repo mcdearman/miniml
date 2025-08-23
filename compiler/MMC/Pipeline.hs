@@ -12,8 +12,8 @@ import Data.Text (Text)
 import Data.Text.Encoding (encodeUtf8)
 import Error.Diagnose (Diagnostic)
 import MMC.Common (InputMode (..), LineIndex (..), buildLineIndex)
-import MMC.Lexer (tokenize)
-import MMC.Token (LToken)
+import MMC.Syn.Lexer (tokenize)
+import MMC.Syn.Token (LToken)
 
 -- putStrLn . unpack . toStrict $ pShow out
 data PipelineEnv = PipelineEnv

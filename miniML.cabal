@@ -26,18 +26,20 @@ executable miniML
     import:           warnings
     main-is:          Main.hs
     other-modules: 
-        MMC.AST
+        MMC.Syn.AST
+        MMC.Syn.GreenNode
+        MMC.Syn.Layout
+        MMC.Syn.Lexer
+        MMC.Syn.Parser
+        MMC.Syn.SyntaxKind
+        MMC.Syn.Token
+        MMC.Syn.TokenTree
         MMC.Build
         MMC.Common
         MMC.Driver
         MMC.Kind
-        MMC.Layout
-        MMC.Lexer
-        MMC.Parser
         MMC.Pipeline
         MMC.Symbol
-        MMC.Token
-        MMC.TokenTree
         MMC.Ty
     default-extensions: 
         OverloadedStrings

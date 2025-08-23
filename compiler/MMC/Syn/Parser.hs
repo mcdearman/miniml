@@ -1,7 +1,6 @@
-module MMC.Parser where
+module MMC.Syn.Parser where
 
 import Data.Text (Text)
 import Data.Void
-import MMC.AST
 import MMC.Common
-import MMC.Token
+import MMC.Syn.Token

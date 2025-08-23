@@ -1,4 +1,4 @@
-module MMC.Token (LRawTok, RawTok (..), Token (..), LToken) where
+module MMC.Syn.Token (LRawTok, RawTok (..), Token (..), LToken) where
 
 import Data.Text (Text)
 import MMC.Common (Located)

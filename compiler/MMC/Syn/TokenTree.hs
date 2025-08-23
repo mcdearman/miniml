@@ -1,4 +1,4 @@
-module MMC.TokenTree (LTokenTree, TokenTree (..), LDelim, Delim (..), LAtom, Atom (..)) where
+module MMC.Syn.TokenTree (LTokenTree, TokenTree (..), LDelim, Delim (..), LAtom, Atom (..)) where
 
 import Data.Text (Text)
 import MMC.Common (Located)
@@ -9,7 +9,6 @@ data TokenTree
   = TokTreeAtom (LAtom)
   | TokTreeDelim LDelim [TokenTree]
   deriving (Show, Eq, Ord)
-
 type LDelim = Located Delim
 
 data Delim
