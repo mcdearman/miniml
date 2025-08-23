@@ -433,5 +433,4 @@ withLoc :: Parser a -> Parser (Located a)
 withLoc p = do
   start <- getOffset
   x <- p
-  end <- getOffset
-  pure $ Located x (Loc start end)
+  Located x . Loc start <$> getOffset

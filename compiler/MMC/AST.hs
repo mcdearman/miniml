@@ -175,13 +175,13 @@ data BinaryOp
   deriving (Show, Eq)
 
 binaryOpName :: BinaryOp -> Text
-binaryOpName BinaryOpAdd = "add"
-binaryOpName BinaryOpSub = "sub"
-binaryOpName BinaryOpMul = "mul"
-binaryOpName BinaryOpDiv = "div"
-binaryOpName BinaryOpMod = "mod"
-binaryOpName BinaryOpEq = "eq"
-binaryOpName BinaryOpNeq = "neq"
+binaryOpName BinaryOpAdd = "+"
+binaryOpName BinaryOpSub = "-"
+binaryOpName BinaryOpMul = "*"
+binaryOpName BinaryOpDiv = "/"
+binaryOpName BinaryOpMod = "%"
+binaryOpName BinaryOpEq = "=="
+binaryOpName BinaryOpNeq = "!="
 
 type LTypeAnno = Located TypeAnno
 
