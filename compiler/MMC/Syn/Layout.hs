@@ -5,7 +5,8 @@ import Control.Monad.Reader.Class (asks)
 import Data.Text (Text)
 import qualified Data.Text as T
 import Error.Diagnose (Diagnostic (..))
-import MMC.Common (LineIndex, Loc (..), Located (..), unLoc)
+import MMC.Common (Loc (..), Located (..), unLoc)
+import MMC.Common.LineIndex (LineIndex)
 import MMC.Pipeline (HasDiagnostic (..), PipelineEnv (..), PipelineM)
 import MMC.Syn.Token
 import MMC.Syn.TokenTree (LTokenTree)

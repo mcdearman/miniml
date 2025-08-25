@@ -26,6 +26,8 @@ executable miniML
     import:           warnings
     main-is:          Main.hs
     other-modules: 
+        MMC.Common.LineIndex
+        MMC.Static.Scc
         MMC.Syn.AST
         MMC.Syn.GreenNode
         MMC.Syn.Layout
