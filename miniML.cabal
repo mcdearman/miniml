@@ -34,6 +34,7 @@ executable miniML
         MMC.Syn.Lexer
         MMC.Syn.Parser
         MMC.Syn.SyntaxKind
+        MMC.Syn.SyntaxNode
         MMC.Syn.Token
         MMC.Syn.TokenTree
         MMC.Build
@@ -54,6 +55,7 @@ executable miniML
         PatternSynonyms
         TypeFamilies
         OrPatterns
+        ViewPatterns
         MultilineStrings
     build-depends:    
         base,
