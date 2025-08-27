@@ -1,18 +1,15 @@
-module MMC.Syn.Token (LRawTok, RawTok (..), Token (..), LToken) where
+module MMC.Syn.Token (Token (..)) where
 
 import Data.Text (Text)
-import MMC.Common (Located)
+import MMC.Common (Loc)
 
-type LRawTok = Located RawTok
+data Token = Token
+  { tokenKind :: TokenKind,
+    tokenLoc :: Loc
+  }
+  deriving (Show, Eq, Ord)
 
-data RawTok
-  = RawTokRef Int
-  | RawTokSentinel Int
-  | RawTokToken Token
-
-type LToken = Located Token
-
-data Token
+data TokenKind
   = TokError
   | TokNewline
   | TokComment
