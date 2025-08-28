@@ -1,11 +1,10 @@
 module MMC.Syn.Token (Token (..), TokenKind (..)) where
 
-import Data.Text (Text)
 import MMC.Common (Loc)
 
 data Token = Token
-  { tokenKind :: TokenKind,
-    tokenLoc :: Loc
+  { tokenKind :: !TokenKind,
+    tokenLoc :: !Loc
   }
   deriving (Show, Eq, Ord)
 
