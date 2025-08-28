@@ -14,7 +14,7 @@ import Error.Diagnose (Diagnostic)
 import MMC.Common (InputMode (..))
 import MMC.Common.LineIndex (LineIndex, buildLineIndex)
 import MMC.Syn.Lexer (tokenize)
-import MMC.Syn.Token (LToken)
+import MMC.Syn.Token (Token)
 
 -- putStrLn . unpack . toStrict $ pShow out
 data PipelineEnv = PipelineEnv

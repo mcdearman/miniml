@@ -1,4 +1,4 @@
-module MMC.Syn.Token (Token (..)) where
+module MMC.Syn.Token (Token (..), TokenKind (..)) where
 
 import Data.Text (Text)
 import MMC.Common (Loc)
@@ -10,49 +10,50 @@ data Token = Token
   deriving (Show, Eq, Ord)
 
 data TokenKind
-  = TokError
-  | TokNewline
-  | TokComment
-  | TokUpperCaseIdent Text
-  | TokLowerCaseIdent Text
-  | TokOpIdent Text
-  | TokConOpIdent Text
-  | TokInt Integer
-  | TokString Text
-  | TokChar Char
-  | TokLParen
-  | TokRParen
-  | TokLBrace
-  | TokRBrace
-  | TokLBracket
-  | TokRBracket
-  | TokBang
-  | TokBackSlash
-  | TokColon
-  | TokSemi
-  | TokComma
-  | TokPeriod
-  | TokEq
-  | TokLArrow
-  | TokRArrow
-  | TokLFatArrow
-  | TokBar
-  | TokUnderscore
-  | TokModule
-  | TokImport
-  | TokAs
-  | TokLet
-  | TokIn
-  | TokWhere
-  | TokIf
-  | TokThen
-  | TokElse
-  | TokMatch
-  | TokWith
-  | TokRecord
-  | TokData
-  | TokType
-  | TokClass
-  | TokInstance
-  | TokDo
+  = TokenKindError
+  | TokenKindWhitespace
+  | TokenKindNewline
+  | TokenKindComment
+  | TokenKindUpperCaseIdent Text
+  | TokenKindLowerCaseIdent Text
+  | TokenKindOpIdent Text
+  | TokenKindConOpIdent Text
+  | TokenKindInt Integer
+  | TokenKindString Text
+  | TokenKindChar Char
+  | TokenKindLParen
+  | TokenKindRParen
+  | TokenKindLBrace
+  | TokenKindRBrace
+  | TokenKindLBracket
+  | TokenKindRBracket
+  | TokenKindBang
+  | TokenKindBackSlash
+  | TokenKindColon
+  | TokenKindSemi
+  | TokenKindComma
+  | TokenKindPeriod
+  | TokenKindEq
+  | TokenKindLArrow
+  | TokenKindRArrow
+  | TokenKindLFatArrow
+  | TokenKindBar
+  | TokenKindUnderscore
+  | TokenKindModule
+  | TokenKindImport
+  | TokenKindAs
+  | TokenKindLet
+  | TokenKindIn
+  | TokenKindWhere
+  | TokenKindIf
+  | TokenKindThen
+  | TokenKindElse
+  | TokenKindMatch
+  | TokenKindWith
+  | TokenKindRecord
+  | TokenKindData
+  | TokenKindType
+  | TokenKindClass
+  | TokenKindInstance
+  | TokenKindDo
   deriving (Show, Eq, Ord)

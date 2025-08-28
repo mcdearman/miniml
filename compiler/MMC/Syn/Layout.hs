@@ -17,7 +17,7 @@ instance HasDiagnostic LayoutError where
   toDiagnostic (LayoutError msg) = undefined
 
 data Event
-  = EventTok !LToken
+  = EventTok !Token
   | EventStartGroup !Delim
   | EventCloseGroup !Delim
   | EventRef !Int
