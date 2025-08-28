@@ -85,7 +85,7 @@ lowerCaseIdent = try $ do
   name <- pack <$> ((:) <$> identStartChar <*> many identChar)
   if name `elem` keywords
     then fail $ "keyword " ++ unpack name ++ " cannot be used in place of identifier"
-    else pure $ TokenKindLowerCaseIdent name
+    else pure TokenKindLowerCaseIdent
   where
     identStartChar = lowerChar <|> char '_'
     identChar = alphaNumChar <|> char '_' <|> char '\''
@@ -113,7 +113,7 @@ lowerCaseIdent = try $ do
 
 {-# INLINEABLE upperCaseIdent #-}
 upperCaseIdent :: Lexer TokenKind
-upperCaseIdent = TokenKindUpperCaseIdent . pack <$> ((:) <$> upperChar <*> many alphaNumChar)
+upperCaseIdent = TokenKindUpperCaseIdent <$ ((:) <$> upperChar <*> many alphaNumChar)
 
 {-# INLINEABLE opIdent #-}
 opIdent :: Lexer TokenKind
@@ -121,7 +121,7 @@ opIdent = try $ do
   sym <- choice [startSpecial, startNotEq] <* notFollowedBy (oneOf ['=', '.', '@', '|', ':', '-'])
   if sym `elem` reservedSymbols
     then fail $ "symbol " ++ unpack sym ++ " cannot be used in place of identifier"
-    else pure $ TokenKindOpIdent sym
+    else pure TokenKindOpIdent
   where
     opStartChar = oneOf ("!$%&*+/<>?~" ++ ['^' .. '`'] :: String)
     startSpecial = try $ T.cons <$> oneOf ['=', '.', '@', '|', ':'] <*> takeWhile1P Nothing isOpChar
@@ -137,7 +137,7 @@ opIdent = try $ do
 
 {-# INLINEABLE conOpIdent #-}
 conOpIdent :: Lexer TokenKind
-conOpIdent = try $ TokenKindConOpIdent <$> (T.cons <$> char ':' <*> takeWhile1P Nothing isOpChar)
+conOpIdent = try $ TokenKindConOpIdent <$ (T.cons <$> char ':' <*> takeWhile1P Nothing isOpChar)
 
 {-# INLINEABLE isOpChar #-}
 isOpChar :: Char -> Bool
@@ -164,15 +164,15 @@ hexadecimal = try $ char '0' *> char' 'x' *> L.hexadecimal
 
 {-# INLINE int #-}
 int :: Lexer TokenKind
-int = TokenKindInt <$> choice [octal, hexadecimal, L.decimal]
+int = TokenKindInt <$ choice [octal, hexadecimal, L.decimal]
 
 {-# INLINE str #-}
 str :: Lexer TokenKind
-str = TokenKindString <$> (char '\"' *> (pack <$> manyTill L.charLiteral (char '\"')))
+str = TokenKindString <$ (char '\"' *> (pack <$> manyTill L.charLiteral (char '\"')))
 
 {-# INLINE charT #-}
 charT :: Lexer TokenKind
-charT = TokenKindChar <$> (char '\'' *> L.charLiteral <* char '\'')
+charT = TokenKindChar <$ (char '\'' *> L.charLiteral <* char '\'')
 
 {-# INLINE tokenL #-}
 tokenL :: Lexer Token

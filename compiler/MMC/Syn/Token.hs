@@ -14,13 +14,13 @@ data TokenKind
   | TokenKindWhitespace
   | TokenKindNewline
   | TokenKindComment
-  | TokenKindUpperCaseIdent Text
-  | TokenKindLowerCaseIdent Text
-  | TokenKindOpIdent Text
-  | TokenKindConOpIdent Text
-  | TokenKindInt Integer
-  | TokenKindString Text
-  | TokenKindChar Char
+  | TokenKindUpperCaseIdent
+  | TokenKindLowerCaseIdent
+  | TokenKindOpIdent
+  | TokenKindConOpIdent
+  | TokenKindInt
+  | TokenKindString
+  | TokenKindChar
   | TokenKindLParen
   | TokenKindRParen
   | TokenKindLBrace
