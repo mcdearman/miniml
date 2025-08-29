@@ -18,7 +18,7 @@ common warnings
       -Werror=incomplete-uni-patterns 
       -Wno-unused-do-bind
     --   -f+megaparsec-compat
-    --   -fllvm  
+      -fllvm  
     --   -haddock
     --   -ddump-simpl -ddump-cmm -ddump-stg-final -ddump-to-file -dsuppress-all
 
@@ -63,6 +63,7 @@ executable miniML
         unordered-containers,
         intern,
         megaparsec,
+        flatparse,
         diagnose,
         wcwidth,
         optics,
