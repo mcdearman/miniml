@@ -1,20 +1,15 @@
 module MMC.Syn.Lexer (tokenize) where
 
-import Control.Applicative (empty, liftA, optional, (<|>))
-import Control.Monad (void)
 import Data.ByteString (ByteString)
 import qualified Data.ByteString as BS
-import Data.Text (Text, pack, unpack)
-import qualified Data.Text as T
-import Data.Void (Void)
+import Data.Text (Text)
 import Error.Diagnose (Diagnostic)
-import qualified FlatParse.Basic as FP
 import MMC.Common (Loc (..), Located (..), unLoc)
 import MMC.Syn.Token (Token (..), TokenKind (..))
 
 -- type Lexer = Parsec Void Text
 
-tokenize :: Text -> ([Diagnostic Text], [Token])
+tokenize :: ByteString -> ([Diagnostic Text], [Token])
 tokenize = undefined
 
 -- tokenize = (parse . many) tokenL ""

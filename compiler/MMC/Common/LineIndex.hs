@@ -5,18 +5,21 @@ module MMC.Common.LineIndex
   )
 where
 
+import Data.ByteString (ByteString)
+import qualified Data.ByteString as B
 import Data.Text (Text)
-import qualified Data.Text as T
 import qualified Data.Vector.Unboxed as U
 
 data LineIndex
   = LineIndex {lineStarts :: !(U.Vector Int)}
   deriving (Show, Eq)
 
-buildLineIndex :: Text -> LineIndex
-buildLineIndex txt = LineIndex (U.fromList (0 : scan txt))
-  where
-    scan t = [i + 1 | (i, c) <- zip [0 ..] (T.unpack t), c == '\n']
+buildLineIndex :: ByteString -> LineIndex
+buildLineIndex bs = LineIndex . U.fromList $ 0 : map (+ 1) (B.elemIndices 0x0A bs)
+
+-- buildLineIndex src = LineIndex (U.fromList (0 : scan src))
+--   where
+--     scan t = [i + 1 | (i, c) <- zip [0 ..] t, c == '\n']
 
 offsetToLineCol :: LineIndex -> Int -> (Int, Int)
 offsetToLineCol (LineIndex starts) !offset =

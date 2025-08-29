@@ -1,6 +1,8 @@
 module Main where
 
+import Data.ByteString (ByteString)
 import Data.Text (pack, unpack)
+import Data.Text.Encoding (encodeUtf8)
 import Data.Text.Lazy (toStrict)
 import MMC.Driver (runDriver)
 import MMC.Pipeline
@@ -55,11 +57,10 @@ collectLines acc = do
     Just "" -> pure $ Just (init acc)
     Just input -> collectLines (acc ++ input ++ "\n")
 
-run :: String -> IO ()
+run :: ByteString -> IO ()
 run src = do
-  let src' = pack src
-  env <- defaultPipelineEnv src'
-  out <- runDriver env src'
+  env <- defaultPipelineEnv src
+  out <- runDriver env src
   putStrLn . unpack . toStrict $ pShow out
 
 -- let (out, _) = runState (runPipeline (InputModeFile "main") (pack src)) defaultPipelineEnv

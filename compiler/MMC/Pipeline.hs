@@ -7,6 +7,7 @@ module MMC.Pipeline (HasDiagnostic (..), PipelineEnv (..), defaultPipelineEnv, P
 import Control.Concurrent.STM (TVar, newTVarIO)
 import Control.Monad.Reader (MonadReader (ask), ReaderT)
 import Control.Monad.State
+import Data.ByteString (ByteString)
 import qualified Data.ByteString.Lazy as BL
 import Data.Text (Text)
 import Data.Text.Encoding (encodeUtf8)
@@ -18,7 +19,7 @@ import MMC.Syn.Token (Token)
 
 -- putStrLn . unpack . toStrict $ pShow out
 data PipelineEnv = PipelineEnv
-  { src :: !Text,
+  { src :: !ByteString,
     flags :: ![Text],
     mode :: !InputMode,
     lineIndex :: !LineIndex,
@@ -29,7 +30,7 @@ data PipelineEnv = PipelineEnv
 class HasDiagnostic e where
   toDiagnostic :: e -> Diagnostic Text
 
-defaultPipelineEnv :: Text -> IO PipelineEnv
+defaultPipelineEnv :: ByteString -> IO PipelineEnv
 defaultPipelineEnv src = do
   errVar <- newTVarIO []
   pure

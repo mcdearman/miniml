@@ -6,8 +6,9 @@ import Data.Text.Encoding (encodeUtf8)
 import MMC.Pipeline (PipelineEnv)
 import MMC.Syn.Lexer (tokenize)
 import MMC.Syn.Token (Token)
+import Data.ByteString (ByteString)
 
-runDriver :: PipelineEnv -> Text -> IO [Token]
+runDriver :: PipelineEnv -> ByteString -> IO [Token]
 runDriver env src = do
   let (es, ts) = tokenize src
   -- pure $ runReaderT () env
