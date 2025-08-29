@@ -7,29 +7,14 @@ import qualified Data.ByteString as BS
 import Data.Text (Text, pack, unpack)
 import qualified Data.Text as T
 import Data.Void (Void)
+import Error.Diagnose (Diagnostic)
 import qualified FlatParse.Basic as FP
 import MMC.Common (Loc (..), Located (..), unLoc)
 import MMC.Syn.Token (Token (..), TokenKind (..))
-import Text.Megaparsec
-  ( MonadParsec (eof, getParserState, lookAhead, notFollowedBy, takeWhile1P, takeWhileP, token, try),
-    ParseErrorBundle,
-    Parsec,
-    choice,
-    getOffset,
-    many,
-    manyTill,
-    oneOf,
-    option,
-    parse,
-    some,
-    (<?>),
-  )
-import Text.Megaparsec.Char (alphaNumChar, char, char', lowerChar, space1, string, upperChar)
-import qualified Text.Megaparsec.Char.Lexer as L
 
 -- type Lexer = Parsec Void Text
 
-tokenize :: Text -> Either (ParseErrorBundle Text Void) [Token]
+tokenize :: Text -> ([Diagnostic Text], [Token])
 tokenize = undefined
 
 -- tokenize = (parse . many) tokenL ""

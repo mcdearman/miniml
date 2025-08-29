@@ -9,8 +9,6 @@ import MMC.Syn.Token (Token)
 
 runDriver :: PipelineEnv -> Text -> IO [Token]
 runDriver env src = do
-  let ts = case tokenize src of
-        Left err -> error (show err)
-        Right tokens -> tokens
+  let (es, ts) = tokenize src
   -- pure $ runReaderT () env
   pure ts
