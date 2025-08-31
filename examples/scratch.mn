@@ -134,7 +134,7 @@ def map f xs = match xs with {
   (x::xs) -> f x :: map f xs
 }
 
-def foldl f acc xs =
+def foldl(f: (a, b) -> a, acc: a, xs: [b]) -> a =
   match xs with
   | [] -> acc
   | (x :: xs) -> foldl f (f acc x) xs
