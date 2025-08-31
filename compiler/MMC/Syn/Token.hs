@@ -13,8 +13,8 @@ data TokenKind
   | TokenKindWhitespace
   | TokenKindNewline
   | TokenKindComment
-  | TokenKindUpperCaseIdent
-  | TokenKindLowerCaseIdent
+  | TokenKindUppercaseIdent
+  | TokenKindLowercaseIdent
   | TokenKindOpIdent
   | TokenKindConOpIdent
   | TokenKindInt

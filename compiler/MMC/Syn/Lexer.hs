@@ -7,7 +7,16 @@ import Error.Diagnose (Diagnostic)
 import MMC.Common (Loc (..), Located (..), unLoc)
 import MMC.Syn.Token (Token (..), TokenKind (..))
 
--- type Lexer = Parsec Void Text
+data DiagCode
+  = DUnexpectedByte -- generic catch-all
+  | DUnterminatedString
+  | DUnterminatedChar
+  | DUnterminatedComment
+  | DInvalidEscape
+  | DInvalidNumericDigit
+  | DExpectedDigitsAfterPrefix -- e.g. "0x"
+  | DInvalidUtf8
+  deriving (Enum, Bounded, Eq)
 
 tokenize :: ByteString -> ([Diagnostic Text], [Token])
 tokenize = undefined
