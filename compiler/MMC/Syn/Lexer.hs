@@ -1,5 +1,7 @@
 module MMC.Syn.Lexer (tokenize) where
 
+import Control.Applicative (many)
+import Control.Monad.State (MonadState (get), State, runState)
 import Data.ByteString (ByteString)
 import qualified Data.ByteString as BS
 import Data.Text (Text)
@@ -18,8 +20,36 @@ data DiagCode
   | DInvalidUtf8
   deriving (Enum, Bounded, Eq)
 
-tokenize :: ByteString -> ([Diagnostic Text], [Token])
-tokenize = undefined
+data Lexer = Lexer
+  { src :: ByteString,
+    pos :: Int,
+    diags :: [Diagnostic Text]
+  }
+
+type LexerState = State Lexer
+
+tokenize :: ByteString -> ([Token], [Diagnostic Text])
+tokenize src = let (ts, l) = runState scanTokens initL in (ts, diags l)
+  where
+    initL = Lexer {src = src, pos = 0, diags = []}
+
+scanTokens :: LexerState [Token]
+scanTokens = do
+  done <- isEof
+  if done
+    then pure []
+    else do
+      t <- scanToken
+      ts <- scanTokens
+      pure (t : ts)
+
+isEof :: LexerState Bool
+isEof = do
+  l <- get
+  pure $ pos l >= BS.length (src l)
+
+scanToken :: LexerState Token
+scanToken = undefined
 
 -- tokenize = (parse . many) tokenL ""
 
