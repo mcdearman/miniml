@@ -1,10 +1,10 @@
 module MMC.Syn.Token (Token (..), TokenKind (..)) where
 
-import MMC.Common (Loc)
+import MMC.Utils.Span (Span)
 
 data Token = Token
   { tokenKind :: !TokenKind,
-    tokenLoc :: !Loc
+    tokenLoc :: !Span
   }
   deriving (Show, Eq, Ord)
 

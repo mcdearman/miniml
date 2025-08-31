@@ -12,10 +12,9 @@ import qualified Data.ByteString.Lazy as BL
 import Data.Text (Text)
 import Data.Text.Encoding (encodeUtf8)
 import Error.Diagnose (Diagnostic)
-import MMC.Common (InputMode (..))
-import MMC.Common.LineIndex (LineIndex, buildLineIndex)
 import MMC.Syn.Lexer (tokenize)
 import MMC.Syn.Token (Token)
+import MMC.Utils.LineIndex (LineIndex, buildLineIndex)
 
 -- putStrLn . unpack . toStrict $ pShow out
 data PipelineEnv = PipelineEnv

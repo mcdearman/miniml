@@ -5,11 +5,10 @@ import Control.Monad.Reader.Class (asks)
 import Data.Text (Text)
 import qualified Data.Text as T
 import Error.Diagnose (Diagnostic (..))
-import MMC.Common (Loc (..), Located (..), unLoc)
-import MMC.Common.LineIndex (LineIndex)
 import MMC.Pipeline (HasDiagnostic (..), PipelineEnv (..), PipelineM)
 import MMC.Syn.Token
-import MMC.Syn.TokenTree (Delim, LTokenTree)
+import MMC.Syn.TokenTree (Delim)
+import MMC.Utils.LineIndex (LineIndex)
 
 data LayoutError = LayoutError Text deriving (Show, Eq)
 

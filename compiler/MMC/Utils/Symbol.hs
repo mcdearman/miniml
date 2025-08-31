@@ -1,9 +1,9 @@
-module MMC.Symbol (Symbol (..), Entry (..), SymbolTable (..)) where
+module MMC.Utils.Symbol (Symbol (..), Entry (..), SymbolTable (..)) where
 
 import Data.HashMap.Strict (HashMap)
 import Data.Text (Text)
-import MMC.Common (Unique)
-import MMC.Ty (Ty)
+-- import MMC.Typing.Ty (Ty)
+import MMC.Utils.Unique (Unique)
 
 data Symbol = Symbol {symId :: !Unique}
   deriving (Show, Eq, Ord)
@@ -11,8 +11,8 @@ data Symbol = Symbol {symId :: !Unique}
 data Entry = Entry
   { entryName :: !Text,
     entrySort :: !EntrySort,
-    entryScope :: !Int,
-    entryType :: Ty
+    entryScope :: !Int
+    -- entryType :: Ty
   }
   deriving (Show, Eq)
 

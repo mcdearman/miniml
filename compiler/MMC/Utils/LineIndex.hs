@@ -1,4 +1,4 @@
-module MMC.Common.LineIndex
+module MMC.Utils.LineIndex
   ( LineIndex (..),
     buildLineIndex,
     offsetToLineCol,

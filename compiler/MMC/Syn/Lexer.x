@@ -36,11 +36,12 @@ $opChar = [\!\$\%\&\*\+\.\/\<\=\>\?\@\|\\\~\:\^-\`]
 @octal = "0o" $octdig+
 @hexadecimal = "0x" $hexdig+
 @decimal = ($nonzero $digit* | "0")
+@int = @binary | @octal | @hexadecimal | @decimal
 
 miniml :-
 
-  $whitespace+                   ;
-  "--".*                         ;
+  $whitespace+                   { \p bs -> Token TokenKindWhitespace (makeLoc p bs) }
+  "--".*                         { \p bs -> Token TokenKindComment (makeLoc p bs) }
   $newline                       { \p bs -> Token TokenKindNewline (makeLoc p bs) }
   module                         { \p bs -> Token TokenKindModule (makeLoc p bs) }
   import                         { \p bs -> Token TokenKindImport (makeLoc p bs) }
@@ -79,39 +80,16 @@ miniml :-
   "|"                            { \p bs -> Token TokenKindBar (makeLoc p bs) }
   "_"                            { \p bs -> Token TokenKindUnderscore (makeLoc p bs) }
 
-  @lowerCaseIdent                { \p bs -> Token (TokenKindLowerCaseIdent <$ bsToText bs) (makeLoc p bs) }
-  @upperCaseIdent                { \p bs -> Token (TokenKindUpperCaseIdent <$ bsToText bs) (makeLoc p bs) }
-  @conOpIdent                    { \p bs -> Token (TokenKindConOpIdent <$ bsToText bs) (makeLoc p bs) }
-  @opIdent                       { \p bs -> Token (TokenKindOpIdent <$ bsToText bs) (makeLoc p bs) }
+  @lowerCaseIdent                { \p bs -> Token (TokenKindLowercaseIdent) (makeLoc p bs) }
+  @upperCaseIdent                { \p bs -> Token (TokenKindUppercaseIdent) (makeLoc p bs) }
+  @conOpIdent                    { \p bs -> Token (TokenKindConOpIdent) (makeLoc p bs) }
+  @opIdent                       { \p bs -> Token (TokenKindOpIdent) (makeLoc p bs) }
 
-  @decimal                       { \p bs -> Token (makeInt 10 bs) (makeLoc p bs) }
-  @binary                        { \p bs -> Token (makeInt 2 bs) (makeLoc p bs) }
-  @octal                         { \p bs -> Token (makeInt 8 bs) (makeLoc p bs) }
-  @hexadecimal                   { \p bs -> Token (makeInt 16 bs) (makeLoc p bs) }
+  @int                           { \p bs -> Token TokenKindInt (makeLoc p bs) }
 
   $nonWhite                      { \p bs -> Token TokenKindError (makeLoc p bs) }
 
 {
-makeInt :: Int -> ByteString -> Token
-makeInt 10 bs = TokenKindInt <$ parseRadix 10 $ bsToText bs
-makeInt 2 bs = TokenKindInt <$ parseRadix 2 $ stripIntPrefix bs
-makeInt 8 bs = TokenKindInt <$ parseRadix 8 $ stripIntPrefix bs
-makeInt 16 bs = TokenKindInt <$ parseRadix 16 $ stripIntPrefix bs
-makeInt r _ = error $ "Unsupported radix" ++ show r
-
-{-# INLINE stripIntPrefix #-}
-stripIntPrefix :: ByteString -> Text
-stripIntPrefix bs = T.drop 2 $ bsToText bs
-
-{-# INLINE bsToText #-}
-bsToText :: ByteString -> Text
-bsToText = TE.decodeUtf8 . BL.toStrict
-
-parseRadix :: (Integral a) => a -> Text -> a
-parseRadix r = T.foldl' step 0
-  where
-    step a c = a * r + (fromIntegral $ Char.digitToInt c)
-
 makeLoc :: AlexPosn -> ByteString -> Loc
 makeLoc (AlexPn start _ _) bs = Loc start end
   where 

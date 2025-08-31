@@ -38,9 +38,9 @@ module MMC.Syn.AST
 where
 
 import Data.Text (Text)
-import MMC.Common (Located)
+import MMC.Utils.Span (Spanned)
 
-type Prog = Located Module
+type Prog = Spanned Module
 
 data Module = Module
   { moduleName :: !Text,
@@ -48,7 +48,7 @@ data Module = Module
   }
   deriving (Show, Eq)
 
-type LDecl = Located Decl
+type LDecl = Spanned Decl
 
 data Decl
   = DeclImport ![Ident]
@@ -59,7 +59,7 @@ data Decl
   | DeclRecordDef LRecordDef
   deriving (Show, Eq)
 
-type LRecordDef = Located RecordDef
+type LRecordDef = Spanned RecordDef
 
 data RecordDef = RecordDef
   { recordName :: !Ident,
@@ -68,7 +68,7 @@ data RecordDef = RecordDef
   }
   deriving (Show, Eq)
 
-type LClassDef = Located ClassDef
+type LClassDef = Spanned ClassDef
 
 data ClassDef
   = ClassDef
@@ -79,14 +79,14 @@ data ClassDef
   }
   deriving (Show, Eq)
 
-type LClassDecl = Located ClassDecl
+type LClassDecl = Spanned ClassDecl
 
 data ClassDecl
   = ClassDeclSig LSig
   | ClassDeclBind LBind
   deriving (Show, Eq)
 
-type LInstanceDecl = Located InstanceDecl
+type LInstanceDecl = Spanned InstanceDecl
 
 data InstanceDecl = InstanceDecl
   { instanceClass :: !Ident,
@@ -96,7 +96,7 @@ data InstanceDecl = InstanceDecl
   }
   deriving (Show, Eq)
 
-type LSig = Located Sig
+type LSig = Spanned Sig
 
 data Sig = Sig
   { sigNames :: ![Ident],
@@ -108,7 +108,7 @@ data Sig = Sig
 data Rhs = RhsExpr LExpr | RhsGuard [LGuard]
   deriving (Show, Eq)
 
-type LExpr = Located Expr
+type LExpr = Spanned Expr
 
 data Expr
   = Lit !Lit
@@ -130,14 +130,14 @@ data Expr
   | Unit
   deriving (Show, Eq)
 
-type LBind = Located Bind
+type LBind = Spanned Bind
 
 data Bind
   = BindPattern !LPattern Rhs [LClassDecl]
   | BindFun !Ident [LAlt] [LClassDecl]
   deriving (Show, Eq)
 
-type LAlt = Located Alt
+type LAlt = Spanned Alt
 
 data Alt = Alt
   { altPatterns :: [LPattern],
@@ -145,7 +145,7 @@ data Alt = Alt
   }
   deriving (Show, Eq)
 
-type LGuard = Located Guard
+type LGuard = Spanned Guard
 
 data Guard = Guard
   { guardPattern :: LPattern,
@@ -153,7 +153,7 @@ data Guard = Guard
   }
   deriving (Show, Eq)
 
-type LUnaryOp = Located UnaryOp
+type LUnaryOp = Spanned UnaryOp
 
 data UnaryOp
   = UnaryOpNeg
@@ -162,7 +162,7 @@ data UnaryOp
 unaryOpName :: UnaryOp -> Text
 unaryOpName UnaryOpNeg = "neg"
 
-type LBinaryOp = Located BinaryOp
+type LBinaryOp = Spanned BinaryOp
 
 data BinaryOp
   = BinaryOpAdd
@@ -183,7 +183,7 @@ binaryOpName BinaryOpMod = "%"
 binaryOpName BinaryOpEq = "=="
 binaryOpName BinaryOpNeq = "!="
 
-type LTypeAnno = Located TypeAnno
+type LTypeAnno = Spanned TypeAnno
 
 data TypeAnno
   = TypeAnnoVar !Ident
@@ -194,7 +194,7 @@ data TypeAnno
   | TypeAnnoUnit
   deriving (Show, Eq)
 
-type LPattern = Located Pattern
+type LPattern = Spanned Pattern
 
 data Pattern
   = PatternWildcard
@@ -207,7 +207,7 @@ data Pattern
   | PatternUnit
   deriving (Show, Eq)
 
-newtype Ident = Ident (Located Text) deriving (Show, Eq, Ord)
+newtype Ident = Ident (Spanned Text) deriving (Show, Eq, Ord)
 
 data Lit
   = Int Integer

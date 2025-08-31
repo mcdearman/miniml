@@ -1,24 +1,20 @@
-module MMC.Syn.TokenTree (LTokenTree, TokenTree (..), LDelim, Delim (..), LAtom, Atom (..)) where
+module MMC.Syn.TokenTree (TokenTree (..), Delim (..), Atom (..)) where
 
 import Data.Text (Text)
-import MMC.Common (Located)
-
-type LTokenTree = Located TokenTree
 
 data TokenTree
-  = TokTreeAtom (LAtom)
-  | TokTreeDelim LDelim [TokenTree]
+  = TokTreeAtom Atom
+  | TokTreeDelim Delim [TokenTree]
   deriving (Show, Eq, Ord)
 
-type LDelim = Located Delim
+data Origin = Original | SyntheticLayout | SyntheticMacro
+  deriving (Eq, Show)
 
 data Delim
   = DelimParen
   | DelimBrace
   | DelimBracket
   deriving (Show, Eq, Ord)
-
-type LAtom = Located Atom
 
 data Atom
   = AtomError
