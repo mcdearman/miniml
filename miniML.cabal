@@ -38,8 +38,8 @@ executable miniML
         MMC.Syn.TokenTree
         MMC.Build
         MMC.Driver
-        MMC.Kind
         MMC.Pipeline
+        MMC.Typing.Kind
         MMC.Typing.Ty
         MMC.Utils.LineIndex
         MMC.Utils.Span

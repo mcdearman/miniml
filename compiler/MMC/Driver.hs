@@ -8,11 +8,6 @@ import MMC.Pipeline (PipelineEnv)
 import MMC.Syn.Lexer (tokenize)
 import MMC.Syn.Token (Token)
 
-data InputMode
-  = InputModeFile Text
-  | InputModeInteractive
-  deriving (Show, Eq)
-
 runDriver :: PipelineEnv -> ByteString -> IO [Token]
 runDriver env src = do
   let ts = tokenize (BL.fromStrict src)

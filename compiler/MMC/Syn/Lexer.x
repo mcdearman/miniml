@@ -1,7 +1,7 @@
 {
 module MMC.Syn.Lexer (tokenize) where
 import MMC.Syn.Token
-import MMC.Common (Loc (..))
+import MMC.Utils.Span (Span (..))
 import Data.ByteString.Lazy (ByteString)
 import qualified Data.ByteString.Lazy as BL
 import qualified Data.Text.Encoding as TE
@@ -40,58 +40,58 @@ $opChar = [\!\$\%\&\*\+\.\/\<\=\>\?\@\|\\\~\:\^-\`]
 
 miniml :-
 
-  $whitespace+                   { \p bs -> Token TokenKindWhitespace (makeLoc p bs) }
-  "--".*                         { \p bs -> Token TokenKindComment (makeLoc p bs) }
-  $newline                       { \p bs -> Token TokenKindNewline (makeLoc p bs) }
-  module                         { \p bs -> Token TokenKindModule (makeLoc p bs) }
-  import                         { \p bs -> Token TokenKindImport (makeLoc p bs) }
-  as                             { \p bs -> Token TokenKindAs (makeLoc p bs) }
-  let                            { \p bs -> Token TokenKindLet (makeLoc p bs) }
-  in                             { \p bs -> Token TokenKindIn (makeLoc p bs) }
-  where                          { \p bs -> Token TokenKindWhere (makeLoc p bs) }
-  if                             { \p bs -> Token TokenKindIf (makeLoc p bs) }
-  then                           { \p bs -> Token TokenKindThen (makeLoc p bs) }
-  else                           { \p bs -> Token TokenKindElse (makeLoc p bs) }
-  match                          { \p bs -> Token TokenKindMatch (makeLoc p bs) }
-  with                           { \p bs -> Token TokenKindWith (makeLoc p bs) }
-  record                         { \p bs -> Token TokenKindRecord (makeLoc p bs) }
-  data                           { \p bs -> Token TokenKindData (makeLoc p bs) }
-  type                           { \p bs -> Token TokenKindType (makeLoc p bs) }
-  class                          { \p bs -> Token TokenKindClass (makeLoc p bs) }
-  instance                       { \p bs -> Token TokenKindInstance (makeLoc p bs) }
-  do                             { \p bs -> Token TokenKindDo (makeLoc p bs) }
+  $whitespace+                   { \p bs -> Token TokenKindWhitespace (makeSpan p bs) }
+  "--".*                         { \p bs -> Token TokenKindComment (makeSpan p bs) }
+  $newline                       { \p bs -> Token TokenKindNewline (makeSpan p bs) }
+  module                         { \p bs -> Token TokenKindModule (makeSpan p bs) }
+  import                         { \p bs -> Token TokenKindImport (makeSpan p bs) }
+  as                             { \p bs -> Token TokenKindAs (makeSpan p bs) }
+  let                            { \p bs -> Token TokenKindLet (makeSpan p bs) }
+  in                             { \p bs -> Token TokenKindIn (makeSpan p bs) }
+  where                          { \p bs -> Token TokenKindWhere (makeSpan p bs) }
+  if                             { \p bs -> Token TokenKindIf (makeSpan p bs) }
+  then                           { \p bs -> Token TokenKindThen (makeSpan p bs) }
+  else                           { \p bs -> Token TokenKindElse (makeSpan p bs) }
+  match                          { \p bs -> Token TokenKindMatch (makeSpan p bs) }
+  with                           { \p bs -> Token TokenKindWith (makeSpan p bs) }
+  record                         { \p bs -> Token TokenKindRecord (makeSpan p bs) }
+  data                           { \p bs -> Token TokenKindData (makeSpan p bs) }
+  type                           { \p bs -> Token TokenKindType (makeSpan p bs) }
+  class                          { \p bs -> Token TokenKindClass (makeSpan p bs) }
+  instance                       { \p bs -> Token TokenKindInstance (makeSpan p bs) }
+  do                             { \p bs -> Token TokenKindDo (makeSpan p bs) }
 
-  "("                            { \p bs -> Token TokenKindLParen (makeLoc p bs) }
-  ")"                            { \p bs -> Token TokenKindRParen (makeLoc p bs) }
-  "{"                            { \p bs -> Token TokenKindLBrace (makeLoc p bs) }
-  "}"                            { \p bs -> Token TokenKindRBrace (makeLoc p bs) }
-  "["                            { \p bs -> Token TokenKindLBracket (makeLoc p bs) }
-  "]"                            { \p bs -> Token TokenKindRBracket (makeLoc p bs) }
-  "!"                            { \p bs -> Token TokenKindBang (makeLoc p bs) }
-  [\\]                           { \p bs -> Token TokenKindBackSlash (makeLoc p bs) }
-  ":"                            { \p bs -> Token TokenKindColon (makeLoc p bs) }
-  ";"                            { \p bs -> Token TokenKindSemi (makeLoc p bs) }
-  ","                            { \p bs -> Token TokenKindComma (makeLoc p bs) }
-  "."                            { \p bs -> Token TokenKindPeriod (makeLoc p bs) }
-  "="                            { \p bs -> Token TokenKindEq (makeLoc p bs) }
-  "<-"                           { \p bs -> Token TokenKindLArrow (makeLoc p bs) }
-  "->"                           { \p bs -> Token TokenKindRArrow (makeLoc p bs) }
-  "=>"                           { \p bs -> Token TokenKindLFatArrow (makeLoc p bs) }
-  "|"                            { \p bs -> Token TokenKindBar (makeLoc p bs) }
-  "_"                            { \p bs -> Token TokenKindUnderscore (makeLoc p bs) }
+  "("                            { \p bs -> Token TokenKindLParen (makeSpan p bs) }
+  ")"                            { \p bs -> Token TokenKindRParen (makeSpan p bs) }
+  "{"                            { \p bs -> Token TokenKindLBrace (makeSpan p bs) }
+  "}"                            { \p bs -> Token TokenKindRBrace (makeSpan p bs) }
+  "["                            { \p bs -> Token TokenKindLBracket (makeSpan p bs) }
+  "]"                            { \p bs -> Token TokenKindRBracket (makeSpan p bs) }
+  "!"                            { \p bs -> Token TokenKindBang (makeSpan p bs) }
+  [\\]                           { \p bs -> Token TokenKindBackSlash (makeSpan p bs) }
+  ":"                            { \p bs -> Token TokenKindColon (makeSpan p bs) }
+  ";"                            { \p bs -> Token TokenKindSemi (makeSpan p bs) }
+  ","                            { \p bs -> Token TokenKindComma (makeSpan p bs) }
+  "."                            { \p bs -> Token TokenKindPeriod (makeSpan p bs) }
+  "="                            { \p bs -> Token TokenKindEq (makeSpan p bs) }
+  "<-"                           { \p bs -> Token TokenKindLArrow (makeSpan p bs) }
+  "->"                           { \p bs -> Token TokenKindRArrow (makeSpan p bs) }
+  "=>"                           { \p bs -> Token TokenKindLFatArrow (makeSpan p bs) }
+  "|"                            { \p bs -> Token TokenKindBar (makeSpan p bs) }
+  "_"                            { \p bs -> Token TokenKindUnderscore (makeSpan p bs) }
 
-  @lowerCaseIdent                { \p bs -> Token (TokenKindLowercaseIdent) (makeLoc p bs) }
-  @upperCaseIdent                { \p bs -> Token (TokenKindUppercaseIdent) (makeLoc p bs) }
-  @conOpIdent                    { \p bs -> Token (TokenKindConOpIdent) (makeLoc p bs) }
-  @opIdent                       { \p bs -> Token (TokenKindOpIdent) (makeLoc p bs) }
+  @lowerCaseIdent                { \p bs -> Token (TokenKindLowercaseIdent) (makeSpan p bs) }
+  @upperCaseIdent                { \p bs -> Token (TokenKindUppercaseIdent) (makeSpan p bs) }
+  @conOpIdent                    { \p bs -> Token (TokenKindConOpIdent) (makeSpan p bs) }
+  @opIdent                       { \p bs -> Token (TokenKindOpIdent) (makeSpan p bs) }
 
-  @int                           { \p bs -> Token TokenKindInt (makeLoc p bs) }
+  @int                           { \p bs -> Token TokenKindInt (makeSpan p bs) }
 
-  $nonWhite                      { \p bs -> Token TokenKindError (makeLoc p bs) }
+  $nonWhite                      { \p bs -> Token TokenKindError (makeSpan p bs) }
 
 {
-makeLoc :: AlexPosn -> ByteString -> Loc
-makeLoc (AlexPn start _ _) bs = Loc start end
+makeSpan :: AlexPosn -> ByteString -> Span
+makeSpan (AlexPn start _ _) bs = Span start end
   where 
     end = start + (fromIntegral $ BL.length bs)
 

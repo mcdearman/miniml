@@ -16,6 +16,11 @@ import MMC.Syn.Lexer (tokenize)
 import MMC.Syn.Token (Token)
 import MMC.Utils.LineIndex (LineIndex, buildLineIndex)
 
+data InputMode
+  = InputModeFile Text
+  | InputModeInteractive
+  deriving (Show, Eq)
+
 -- putStrLn . unpack . toStrict $ pShow out
 data PipelineEnv = PipelineEnv
   { src :: !ByteString,
