@@ -1,0 +1,110 @@
+<root> ::= <decl> (<ws>* <decl>)*
+
+<decl> ::= <let> | <typeDef> | <typeAlias>
+
+<typeAlias> ::= "type" <ws>+ <ident> <ws>+ "=" <ws>+ <typeHint>
+
+<typeDef> ::= "type" <ws>+ <ident> <ws>+ "=" <ws>+ (<sumType> | <recordType>)
+
+<sumType> ::= <sumTypeCase> (<ws>+ "|" <ws>+ <sumTypeCase>)*
+
+<sumTypeCase> ::= <ident> <ws>+ <sumTypeCaseHint>
+
+<sumTypeCaseHint> ::= <typeHint>+ 
+                    | "{" <ident> <ws>* ":" <ws>+ <typeHint> (<ws>* "," <ws>* <ident> <ws>* ":" <ws>+ <typeHint>)* ","? <ws>* "}"
+
+<recordType> ::= "{" <ws>* <ident> <ws>* ":" <ws>+ <typeHint> (<ws>* "," <ident> <ws>* ":" <ws>+ <typeHint>)* <ws>* "}"
+
+<let> ::= "let" <ws>+ <pat> <ws>+ "=" <ws>+ <expr>
+
+<expr> ::= <pair>
+
+<pair> ::= <or> <ws>+ "::" <ws>+ <or>
+
+<or> ::= <and> (<ws>+ "or" <ws>+ <and>)*
+
+<and> ::= <eq> (<ws>+ "and" <ws>+ <eq>)*
+
+<eq> ::= <cmp> (<ws>* ("=" | "!=") <ws>* <cmp>)*
+
+<cmp> ::= <term> (<ws>* (">" | ">=" | "<" | "<=") <ws>* <term>)*
+
+<term> ::= <factor> (<ws>* ("+" | "-") <ws>* <factor>)*
+
+<factor> ::= <pow> (<ws>* ("*" | "/" | "%") <ws>* <pow>)*
+
+<pow> ::= <unary> (<ws>* "^" <ws>* <unary>)*
+
+<unary> ::= <dot> | ("-" | "!") <unary>
+
+<dot> ::= <apply> "." <ident>
+
+<apply> ::= <atom> (<ws> <atom>)*
+
+<atom> ::= <ident>
+     | <lit>
+     | <if>
+     | <lambda>
+     | <letExpr>
+     | <fnExpr>
+     | "(" <ws>* <expr> <ws>* ")"
+
+<if> ::= "if" <ws>+ <expr> <ws>+ "then" <ws>+ <expr> <ws>+ "else" <ws>+ <expr>
+
+<lambda> ::= "\\" <pat>+ <ws>+ "->" <ws>+ <expr>
+
+<letExpr> ::= "let" <ws>+ <pat> <ws>+ "=" <ws>+ <expr> <ws>+ "in" <ws>+ <expr>
+
+<fnExpr> ::= "let" <ws>+ <ident> <ws>+ <pat>+ <ws>+ "=" <ws>+ <expr> <ws>+ "in" <ws>+ <expr>
+
+<recordExpr> ::= "{" <ws>* <ident> "=" <expr> <ws>* ("," <ws>* <ident> "=" <expr>)* <ws>* "}"
+
+<sumExpr> ::= <ident>
+
+<listExpr> ::= "[" <ws>* <expr> <ws>* ("," <ws>* <expr>)* <ws>* "]"
+
+<tupleExpr> ::= "(" <ws>* <expr> <ws>* ("," <ws>* <expr>)* <ws>* ")"
+
+<arrayExpr> ::= "#[" <ws>* <expr> <ws>* ("," <ws>* <expr>)* <ws>* "]"
+
+<match> ::= "match" <ws>+ <expr> <ws>+ "with" <ws>+ <matchCase>+
+
+<matchCase> ::= "|" <pat> <ws>+ "->" <ws>+ <expr>
+
+<pat> ::= <basePat> <ws>* ("::" <ws>* <pat>)?
+
+<basePat> ::= <wildcard>
+    | <lit>
+    | <ident>
+    | "[" <basePat> <ws>* ("," <ws>* <basePat>)* "]"
+    | "{" (<ident> <ws>+ "=" <ws>+ <basePat> ",")+ "}"
+    | <ident> <ws>+ <basePat>
+    | "(" <pat> ")"
+
+<typeHint> ::= <baseTypeHint> | (<baseTypeHint>+ <ws>+ "->" <ws>+ <baseTypeHint>)
+
+<baseTypeHint> ::= <ident>
+         | "(" <ws>* <typeHint> <ws>* "," <ws>* <typeHint> <ws>* ")"
+         | "[" <ws>* <typeHint> <ws>* "]"
+         | "(" <ws>* <typeHint> <ws>* ")"
+         | <unit>
+
+<ident> ::= <alpha> <alphaNum>*
+
+<lit> ::= <int> | <bool>
+
+<int> ::= "0" | [1-9] <digit>*
+
+<bool> ::= "true" | "false"
+
+<alphaNum> ::= <alpha> | <digit>
+
+<alpha> ::= [a-z] | [A-Z]
+
+<digit> ::= [0-9]
+
+<wildcard> ::= "_"
+
+<unit> ::= "()"
+
+<ws> ::= " " | "\t" | "\n" | "\r"

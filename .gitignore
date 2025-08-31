@@ -1,8 +1,9 @@
-dist-*
+/target
 .vscode
 .idea
 .DS_Store
 .repl_history
-target
-.repos
-*.OLD
+*.log
+src-old
+dist-*
+flamegraph.svg

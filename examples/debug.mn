@@ -1,0 +1,65 @@
+def f x = x + 1
+
+-- is printed with Debug as:
+
+Module @ 0..11
+  Def @ 0..11
+    name : f1 @ 0..1
+    args : x1 @ 2..3
+    body : Expr @ 6..11
+      value : Apply @ 6..11
+        fun  : add @ 6..7
+        args : x1 @ 10..11
+
+def map (f : a -> b) (xs : [a]) : [b] =
+  match xs with
+  | [] -> []
+  | (x::xs) -> f x :: map f xs
+
+-- is printed with Debug as:
+
+Module @ 0..92
+  Def @ 0..92 : (a -> b) -> [a] -> [b]
+    name: map @ 0..3
+    args: 
+      f1 @ 4..11 : a -> b,
+      xs1 @ 13..20 : [a]
+    body: Expr @ 23..92 : [b]
+      value: Match @ 23..92 : [b]
+        expr: xs @ 30..92 : [a]
+        cases: @ 34..92
+          Pattern @ 34..39 : [b]
+            value: List @ 34..36 : [b]
+          Expr @ 38..39 : [b]
+            value: List @ 38..39 : [b]
+          Pattern @ 41..49 : [b]
+            value: Pair @ 41..49 : [b]
+              x1 @ 42..43 : b
+              xs1 @ 46..49 : [b]
+          Expr @ 51..92 : [b]
+            value: Apply @ 51..92 : [b]
+              fun: Pair @ 51..53 : b -> [b] -> [b]
+              args: Apply @ 51..92 : [b]
+                fun: f1 @ 51..52 : a -> b
+                args: x1 @ 55..56 : a
+              args: Apply @ 51..92 : [b]
+                fun: map @ 51..54 : (a -> b) -> [a] -> [b]
+                args: 
+                  f1 @ 59..60 : a -> b,
+                  xs1 @ 62..63 : [a]
+
+def foldl (f : a -> b -> a) (acc : a) (xs : [b]) : a =
+  match xs with
+  | [] -> acc
+  | (x::xs) -> foldl f (f acc x) xs 
+
+Node
+  inner : Module
+    name : main22
+    imports : []
+    decls : Node
+      inner : Def
+        name : foldl
+        args
+
+

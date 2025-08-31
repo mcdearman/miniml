@@ -1,1 +1,0 @@
-module MMC.Syn.SyntaxNode where
