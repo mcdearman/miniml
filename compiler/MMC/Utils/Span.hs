@@ -1,7 +1,16 @@
-module MMC.Utils.Span where
+module MMC.Utils.Span (Span (..), toPair, slice) where
+
+import Data.ByteString (ByteString)
+import qualified Data.ByteString as BS
 
 data Span = Span {spanStart :: Int, spanEnd :: Int}
   deriving (Show, Eq, Ord)
+
+toPair :: Span -> (Int, Int)
+toPair (Span s e) = (s, e)
+
+slice :: Span -> ByteString -> ByteString
+slice (Span s e) bs = BS.take (e - s) (BS.drop s bs)
 
 -- instance Pretty Span where
 --   pretty (Loc s e) = pack $ show s <> ".." <> show e

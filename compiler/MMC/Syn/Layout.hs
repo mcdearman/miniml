@@ -2,6 +2,7 @@ module MMC.Syn.Layout (runLayout, LayoutError) where
 
 import Control.Monad.Reader (MonadReader (ask))
 import Control.Monad.Reader.Class (asks)
+import Data.ByteString (ByteString)
 import Data.Text (Text)
 import qualified Data.Text as T
 import Data.Text.Lazy (toStrict, unpack)
@@ -29,22 +30,21 @@ data Event
 
 runLayout :: [Token] -> PipelineM [Token]
 runLayout ts = do
-  index <- asks pipelineLineIndex
-  let es = generateEvents index ts
+  PipelineEnv {pipelineSrc = src, pipelineLineIndex = index} <- ask
+  let es = generateEvents src index ts
   trace (unpack $ pShow es) undefined
 
-generateEvents :: LineIndex -> [Token] -> [Event]
-generateEvents li = go
+generateEvents :: ByteString -> LineIndex -> [Token] -> [Event]
+generateEvents src li = go
   where
     go [] = []
-    go (t : c : r : ts') = case tokenKind t of
-      TokenKindLet; TokenKindDo; TokenKindWhere; TokenKindMatch -> case tokenKind c of
-        TokenKindLBrace -> EventTok t : go (c : ts')
+    go ts'@(kw : c : r : ts) | tokenIsLayoutKeyword src kw =
+      case tokenKind c of
+        TokenKindLBrace -> EventTok kw : go ts'
         TokenKindColon ->
           let (_, col) = offsetToLineCol li $ spanStart $ tokenSpan r
-           in EventTok t : EventSentinel col : go (c : r : ts')
-        _ -> EventTok t : go (c : r : ts')
-      _ -> EventTok t : go (c : r : ts')
+           in EventTok kw : EventSentinel col : go (r : ts)
+        _ -> EventTok kw : go (c : r : ts)
     go (t : ts') = EventTok t : go ts'
 
 -- let: x = 1
