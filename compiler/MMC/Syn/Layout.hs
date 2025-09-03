@@ -43,7 +43,7 @@ generateEvents src li = go
         TokenKindLBrace -> EventTok kw : go ts'
         TokenKindColon ->
           let (_, col) = offsetToLineCol li $ spanStart $ tokenSpan r
-           in EventTok kw : EventSentinel col : go (r : ts)
+           in EventTok kw : EventTok c : EventSentinel col : go (r : ts)
         _ -> EventTok kw : go (c : r : ts)
     go (t : ts') = EventTok t : go ts'
 
