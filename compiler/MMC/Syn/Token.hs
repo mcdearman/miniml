@@ -4,12 +4,13 @@ import MMC.Utils.Span (Span)
 
 data Token = Token
   { tokenKind :: !TokenKind,
-    tokenLoc :: !Span
+    tokenSpan :: !Span
   }
   deriving (Show, Eq, Ord)
 
 data TokenKind
   = TokenKindError
+  | TokenKindTab
   | TokenKindWhitespace
   | TokenKindNewline
   | TokenKindComment
@@ -27,6 +28,7 @@ data TokenKind
   | TokenKindLBracket
   | TokenKindRBracket
   | TokenKindBang
+  | TokenKindHash
   | TokenKindBackSlash
   | TokenKindColon
   | TokenKindSemi

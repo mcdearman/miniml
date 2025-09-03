@@ -1,14 +1,24 @@
-module MMC.Syn.TokenTree (TokenTree (..), Delim (..), Atom (..)) where
+module MMC.Syn.TokenTree (TokenTree (..), Delim (..), Punct (..)) where
 
-import Data.Text (Text)
+import MMC.Utils.Span (Span)
 
-data TokenTree
-  = TokTreeAtom Atom
-  | TokTreeDelim Delim [TokenTree]
+data TokenTree = TokenTree
+  { tokenTreeKind :: !TokenTreeKind,
+    tokenTreeSpan :: !Span,
+    tokenTreeOrigin :: !Origin
+  }
+  deriving (Show, Eq, Ord)
+
+data TokenTreeKind
+  = TokenTreeError
+  | TokenTreeGroup !Delim [TokenTree]
+  | TokenTreeIdent !Ident
+  | TokenTreePunct !Punct
+  | TokenTreeLiteral !Literal
   deriving (Show, Eq, Ord)
 
 data Origin = Original | SyntheticLayout | SyntheticMacro
-  deriving (Eq, Show)
+  deriving (Eq, Show, Ord)
 
 data Delim
   = DelimParen
@@ -16,48 +26,32 @@ data Delim
   | DelimBracket
   deriving (Show, Eq, Ord)
 
-data Atom
-  = AtomError
-  | AtomEOF
-  | AtomUpperCaseIdent Text
-  | AtomLowerCaseIdent Text
-  | AtomOpIdent Text
-  | AtomConOpIdent Text
-  | AtomInt Integer
-  | AtomString Text
-  | AtomChar Char
-  | AtomBang
-  | AtomPlus
-  | AtomMinus
-  | AtomStar
-  | AtomSlash
-  | AtomBackSlash
-  | AtomPercent
-  | AtomColon
-  | AtomSemi
-  | AtomComma
-  | AtomPeriod
-  | AtomEq
-  | AtomRArrow
-  | AtomLArrow
-  | AtomLFatArrow
-  | AtomBar
-  | AtomUnderscore
-  | AtomModule
-  | AtomImport
-  | AtomAs
-  | AtomLet
-  | AtomIn
-  | AtomWhere
-  | AtomIf
-  | AtomThen
-  | AtomElse
-  | AtomMatch
-  | AtomWith
-  | AtomRecord
-  | AtomData
-  | AtomType
-  | AtomClass
-  | AtomInstance
-  | AtomDo
+data Punct
+  = PunctBang
+  | PunctBackSlash
+  | PunctColon
+  | PunctSemi
+  | PunctComma
+  | PunctPeriod
+  | PunctEq
+  | PunctLArrow
+  | PunctRArrow
+  | PunctLFatArrow
+  | PunctBar
+  | PunctUnderscore
+  deriving (Show, Eq, Ord)
+
+data Ident
+  = IdentError
+  | IdentComment
+  | IdentUppercaseIdent
+  | IdentLowercaseIdent
+  | IdentOpIdent
+  | IdentConOpIdent
+  deriving (Show, Eq, Ord)
+
+data Literal
+  = LitInt
+  | LitString
+  | LitChar
   deriving (Show, Eq, Ord)

@@ -26,6 +26,9 @@ executable miniML
     import:           warnings
     main-is:          Main.hs
     other-modules: 
+        MMC.Build.Driver
+        MMC.Build.Effect
+        MMC.Build.Pipeline
         MMC.Static.Scc
         MMC.Syn.AST
         MMC.Syn.GreenNode
@@ -37,8 +40,6 @@ executable miniML
         MMC.Syn.Token
         MMC.Syn.TokenTree
         MMC.Build
-        MMC.Driver
-        MMC.Pipeline
         MMC.Typing.Kind
         MMC.Typing.Ty
         MMC.Utils.LineIndex

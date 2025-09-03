@@ -1,14 +1,18 @@
-module MMC.Syn.Layout (LayoutError) where
+module MMC.Syn.Layout (runLayout, LayoutError) where
 
 import Control.Monad.Reader (MonadReader (ask))
 import Control.Monad.Reader.Class (asks)
 import Data.Text (Text)
 import qualified Data.Text as T
+import Data.Text.Lazy (toStrict, unpack)
+import Debug.Trace (trace)
 import Error.Diagnose (Diagnostic (..))
-import MMC.Pipeline (HasDiagnostic (..), PipelineEnv (..), PipelineM)
+import MMC.Build.Effect (HasDiagnostic (..), PipelineEnv (..), PipelineM)
 import MMC.Syn.Token
 import MMC.Syn.TokenTree (Delim)
-import MMC.Utils.LineIndex (LineIndex)
+import MMC.Utils.LineIndex (LineIndex, offsetToLineCol)
+import MMC.Utils.Span (Span (..))
+import Text.Pretty.Simple (pShow)
 
 data LayoutError = LayoutError Text deriving (Show, Eq)
 
@@ -21,17 +25,31 @@ data Event
   | EventCloseGroup !Delim
   | EventRef !Int
   | EventSentinel !Int
+  deriving (Show, Eq)
+
+runLayout :: [Token] -> PipelineM [Token]
+runLayout ts = do
+  index <- asks pipelineLineIndex
+  let es = generateEvents index ts
+  trace (unpack $ pShow es) undefined
+
+generateEvents :: LineIndex -> [Token] -> [Event]
+generateEvents li = go
+  where
+    go [] = []
+    go (t : s : ts') = case tokenKind t of
+      TokenKindLet; TokenKindDo; TokenKindWhere; TokenKindMatch -> case tokenKind s of
+        TokenKindLBrace -> EventTok t : go (s : ts')
+        TokenKindColon ->
+          let (_, col) = offsetToLineCol li $ spanStart $ tokenSpan s
+           in EventTok t : EventSentinel col : go (s : ts')
+        _ -> EventTok t : go (s : ts')
+      _ -> EventTok t : go (s : ts')
+    go (t : ts') = EventTok t : go ts'
 
 -- let: x = 1
 --      y = 2
 --  in x + y
-
--- runLayout :: [LToken] -> PipelineM [LToken]
--- runLayout tokens = do
---   index <- asks lineIndex
---   let indented = insertIndents tokens index
---       (errs, layoutTokens) = layout indented index [0]
---   pure layoutTokens
 
 -- layout :: [LRawTok] -> LineIndex -> [Int] -> ([LayoutError], [LToken])
 -- layout ts index stack = layout' ts stack [0]

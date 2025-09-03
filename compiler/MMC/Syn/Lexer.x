@@ -22,7 +22,8 @@ $alpha = [a-zA-Z]
 $lower = [_a-z]
 $upper = [A-Z]
 $nonWhite = [^$white]
-$whitespace = [\ $unispace\t\v]
+$tab = \t
+$whitespace = [\ $unispace\v]
 $newline = [\n\r\f]
 $identChar = [$alpha $digit \_ \']
 $opChar = [\!\$\%\&\*\+\.\/\<\=\>\?\@\|\\\~\:\^-\`]
@@ -40,26 +41,27 @@ $opChar = [\!\$\%\&\*\+\.\/\<\=\>\?\@\|\\\~\:\^-\`]
 
 miniml :-
 
+  $tab                           { \p bs -> Token TokenKindTab (makeSpan p bs) }
   $whitespace+                   { \p bs -> Token TokenKindWhitespace (makeSpan p bs) }
   "--".*                         { \p bs -> Token TokenKindComment (makeSpan p bs) }
   $newline                       { \p bs -> Token TokenKindNewline (makeSpan p bs) }
-  module                         { \p bs -> Token TokenKindModule (makeSpan p bs) }
-  import                         { \p bs -> Token TokenKindImport (makeSpan p bs) }
-  as                             { \p bs -> Token TokenKindAs (makeSpan p bs) }
-  let                            { \p bs -> Token TokenKindLet (makeSpan p bs) }
-  in                             { \p bs -> Token TokenKindIn (makeSpan p bs) }
-  where                          { \p bs -> Token TokenKindWhere (makeSpan p bs) }
-  if                             { \p bs -> Token TokenKindIf (makeSpan p bs) }
-  then                           { \p bs -> Token TokenKindThen (makeSpan p bs) }
-  else                           { \p bs -> Token TokenKindElse (makeSpan p bs) }
-  match                          { \p bs -> Token TokenKindMatch (makeSpan p bs) }
-  with                           { \p bs -> Token TokenKindWith (makeSpan p bs) }
-  record                         { \p bs -> Token TokenKindRecord (makeSpan p bs) }
-  data                           { \p bs -> Token TokenKindData (makeSpan p bs) }
-  type                           { \p bs -> Token TokenKindType (makeSpan p bs) }
-  class                          { \p bs -> Token TokenKindClass (makeSpan p bs) }
-  instance                       { \p bs -> Token TokenKindInstance (makeSpan p bs) }
-  do                             { \p bs -> Token TokenKindDo (makeSpan p bs) }
+  -- module                         { \p bs -> Token TokenKindModule (makeSpan p bs) }
+  -- import                         { \p bs -> Token TokenKindImport (makeSpan p bs) }
+  -- as                             { \p bs -> Token TokenKindAs (makeSpan p bs) }
+  -- let                            { \p bs -> Token TokenKindLet (makeSpan p bs) }
+  -- in                             { \p bs -> Token TokenKindIn (makeSpan p bs) }
+  -- where                          { \p bs -> Token TokenKindWhere (makeSpan p bs) }
+  -- if                             { \p bs -> Token TokenKindIf (makeSpan p bs) }
+  -- then                           { \p bs -> Token TokenKindThen (makeSpan p bs) }
+  -- else                           { \p bs -> Token TokenKindElse (makeSpan p bs) }
+  -- match                          { \p bs -> Token TokenKindMatch (makeSpan p bs) }
+  -- with                           { \p bs -> Token TokenKindWith (makeSpan p bs) }
+  -- record                         { \p bs -> Token TokenKindRecord (makeSpan p bs) }
+  -- data                           { \p bs -> Token TokenKindData (makeSpan p bs) }
+  -- type                           { \p bs -> Token TokenKindType (makeSpan p bs) }
+  -- class                          { \p bs -> Token TokenKindClass (makeSpan p bs) }
+  -- instance                       { \p bs -> Token TokenKindInstance (makeSpan p bs) }
+  -- do                             { \p bs -> Token TokenKindDo (makeSpan p bs) }
 
   "("                            { \p bs -> Token TokenKindLParen (makeSpan p bs) }
   ")"                            { \p bs -> Token TokenKindRParen (makeSpan p bs) }
@@ -68,6 +70,7 @@ miniml :-
   "["                            { \p bs -> Token TokenKindLBracket (makeSpan p bs) }
   "]"                            { \p bs -> Token TokenKindRBracket (makeSpan p bs) }
   "!"                            { \p bs -> Token TokenKindBang (makeSpan p bs) }
+  "#"                            { \p bs -> Token TokenKindHash (makeSpan p bs) }
   [\\]                           { \p bs -> Token TokenKindBackSlash (makeSpan p bs) }
   ":"                            { \p bs -> Token TokenKindColon (makeSpan p bs) }
   ";"                            { \p bs -> Token TokenKindSemi (makeSpan p bs) }
