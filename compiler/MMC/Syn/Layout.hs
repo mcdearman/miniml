@@ -37,14 +37,14 @@ generateEvents :: LineIndex -> [Token] -> [Event]
 generateEvents li = go
   where
     go [] = []
-    go (t : s : ts') = case tokenKind t of
-      TokenKindLet; TokenKindDo; TokenKindWhere; TokenKindMatch -> case tokenKind s of
-        TokenKindLBrace -> EventTok t : go (s : ts')
+    go (t : c : r : ts') = case tokenKind t of
+      TokenKindLet; TokenKindDo; TokenKindWhere; TokenKindMatch -> case tokenKind c of
+        TokenKindLBrace -> EventTok t : go (c : ts')
         TokenKindColon ->
-          let (_, col) = offsetToLineCol li $ spanStart $ tokenSpan s
-           in EventTok t : EventSentinel col : go (s : ts')
-        _ -> EventTok t : go (s : ts')
-      _ -> EventTok t : go (s : ts')
+          let (_, col) = offsetToLineCol li $ spanStart $ tokenSpan r
+           in EventTok t : EventSentinel col : go (c : r : ts')
+        _ -> EventTok t : go (c : r : ts')
+      _ -> EventTok t : go (c : r : ts')
     go (t : ts') = EventTok t : go ts'
 
 -- let: x = 1
