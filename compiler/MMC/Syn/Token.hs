@@ -5,17 +5,14 @@ module MMC.Syn.Token
     tokenIsTrivia,
     tokenIsKeyword,
     tokenIsLayoutKeyword,
-    tokenText,
   )
 where
 
 import Data.ByteString (ByteString)
-import MMC.Utils.Span (Span)
-import qualified MMC.Utils.Span as S
 
 data Token = Token
   { tokenKind :: !TokenKind,
-    tokenSpan :: !Span
+    tokenText :: !ByteString
   }
   deriving (Show, Eq, Ord)
 
@@ -51,28 +48,7 @@ data TokenKind
   | TokenKindLFatArrow
   | TokenKindBar
   | TokenKindUnderscore
-  deriving
-    ( -- | TokenKindModule
-      -- | TokenKindImport
-      -- | TokenKindAs
-      -- | TokenKindLet
-      -- | TokenKindIn
-      -- | TokenKindWhere
-      -- | TokenKindIf
-      -- | TokenKindThen
-      -- | TokenKindElse
-      -- | TokenKindMatch
-      -- | TokenKindWith
-      -- | TokenKindRecord
-      -- | TokenKindData
-      -- | TokenKindType
-      -- | TokenKindClass
-      -- | TokenKindInstance
-      -- | TokenKindDo
-      Show,
-      Eq,
-      Ord
-    )
+  deriving (Show, Eq, Ord)
 
 tokenIsTrivia :: Token -> Bool
 tokenIsTrivia = go . tokenKind
@@ -89,9 +65,9 @@ tokenIsSpace = go . tokenKind
     go TokenKindWhitespace = True
     go _ = False
 
-tokenIsKeyword :: ByteString -> Token -> Bool
-tokenIsKeyword src t
-  | tokenKind t == TokenKindLowercaseIdent = go $ tokenText src t
+tokenIsKeyword :: Token -> Bool
+tokenIsKeyword t
+  | tokenKind t == TokenKindLowercaseIdent = go $ tokenText t
   | otherwise = False
   where
     go "module" = True
@@ -112,9 +88,9 @@ tokenIsKeyword src t
     go "do" = True
     go _ = False
 
-tokenIsLayoutKeyword :: ByteString -> Token -> Bool
-tokenIsLayoutKeyword src t
-  | tokenKind t == TokenKindLowercaseIdent = go $ tokenText src t
+tokenIsLayoutKeyword :: Token -> Bool
+tokenIsLayoutKeyword t
+  | tokenKind t == TokenKindLowercaseIdent = go $ tokenText t
   | otherwise = False
   where
     go "let" = True
@@ -122,6 +98,3 @@ tokenIsLayoutKeyword src t
     go "do" = True
     go "with" = True
     go _ = False
-
-tokenText :: ByteString -> Token -> ByteString
-tokenText src t = S.slice (tokenSpan t) src

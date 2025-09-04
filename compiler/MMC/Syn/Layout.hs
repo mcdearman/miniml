@@ -38,7 +38,7 @@ generateEvents :: ByteString -> LineIndex -> [Token] -> [Event]
 generateEvents src li = go
   where
     go [] = []
-    go ts'@(kw : c : r : ts) | tokenIsLayoutKeyword src kw =
+    go ts'@(kw : c : r : ts) | tokenIsLayoutKeyword kw =
       case tokenKind c of
         TokenKindLBrace -> EventTok kw : go ts'
         TokenKindColon ->
