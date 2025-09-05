@@ -1,4 +1,34 @@
 module MMC.Syn.SyntaxKind where
 
 data SyntaxKind
-  = SyntaxKindModule
+  = SyntaxKindError
+  | SyntaxKindTab
+  | SyntaxKindWhitespace
+  | SyntaxKindNewline
+  | SyntaxKindComment
+  | SyntaxKindUppercaseIdent
+  | SyntaxKindLowercaseIdent
+  | SyntaxKindOpIdent
+  | SyntaxKindConOpIdent
+  | SyntaxKindInt
+  | SyntaxKindString
+  | SyntaxKindChar
+  | SyntaxKindLParen
+  | SyntaxKindRParen
+  | SyntaxKindLBrace
+  | SyntaxKindRBrace
+  | SyntaxKindLBracket
+  | SyntaxKindRBracket
+  | SyntaxKindBang
+  | SyntaxKindHash
+  | SyntaxKindBackSlash
+  | SyntaxKindColon
+  | SyntaxKindSemi
+  | SyntaxKindComma
+  | SyntaxKindPeriod
+  | SyntaxKindEq
+  | SyntaxKindLArrow
+  | SyntaxKindRArrow
+  | SyntaxKindLFatArrow
+  | SyntaxKindBar
+  | SyntaxKindUnderscore

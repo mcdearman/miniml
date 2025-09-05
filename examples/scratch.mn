@@ -138,6 +138,11 @@ fact : Int -> Int
 fact 0 = 1
 fact n = n * fact (n - 1)
 
+fact = go 1
+  where
+    go acc 0 = acc
+    go acc n = go (acc * n) (n - 1)
+
 @inline(always)
 fact : Int -> Int
 fact n = fact' n 1

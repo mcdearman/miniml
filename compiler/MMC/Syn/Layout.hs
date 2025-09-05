@@ -70,3 +70,4 @@ generateEvents src li = go
 -- insertIndents _ _ = error "insertIndents: unexpected token structure"
 
 -- insertIndents (t : t' : ts) = (Located (RawTokRef n) l) : insertIndents ts
+
