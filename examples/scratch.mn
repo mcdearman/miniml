@@ -296,8 +296,8 @@ data NomEmptyList a = a :| List a
 def (|>) : a b. a -> (a -> b) -> b
    x |> f = f x
 
-def compose : (b -> c) -> (a -> b) -> a -> c
-    compose f g x = f (g x)
+compose : (b -> c) -> (a -> b) -> a -> c
+compose f g x = f (g x)
 
 -- methods with pipe
 [1, 2, 3]
