@@ -35,17 +35,18 @@ runLayout ts = do
   trace (unpack $ pShow es) undefined
 
 generateEvents :: ByteString -> LineIndex -> [Token] -> [Event]
-generateEvents src li = go
-  where
-    go [] = []
-    go ts'@(kw : c : r : ts) | tokenIsLayoutKeyword kw =
-      case tokenKind c of
-        TokenKindLBrace -> EventTok kw : go ts'
-        TokenKindColon ->
-          let (_, col) = offsetToLineCol li $ spanStart $ tokenSpan r
-           in EventTok kw : EventTok c : EventSentinel col : go (r : ts)
-        _ -> EventTok kw : go (c : r : ts)
-    go (t : ts') = EventTok t : go ts'
+generateEvents src li = undefined
+
+-- where
+--   go [] = []
+--   go ts'@(kw : c : r : ts) | tokenIsLayoutKeyword kw =
+--     case tokenKind c of
+--       TokenKindLBrace -> EventTok kw : go ts'
+--       TokenKindColon ->
+--         let (_, col) = offsetToLineCol li $ spanStart $ tokenSpan r
+--          in EventTok kw : EventTok c : EventSentinel col : go (r : ts)
+--       _ -> EventTok kw : go (c : r : ts)
+--   go (t : ts') = EventTok t : go ts'
 
 -- let: x = 1
 --      y = 2
@@ -70,4 +71,3 @@ generateEvents src li = go
 -- insertIndents _ _ = error "insertIndents: unexpected token structure"
 
 -- insertIndents (t : t' : ts) = (Located (RawTokRef n) l) : insertIndents ts
-

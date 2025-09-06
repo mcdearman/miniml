@@ -33,7 +33,6 @@ executable miniML
         -- MMC.Syn.AST
         MMC.Syn.GreenNode
         MMC.Syn.Layout
-        MMC.Syn.Lexeme
         MMC.Syn.Lexer
         MMC.Syn.Parser
         MMC.Syn.SyntaxKind

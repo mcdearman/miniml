@@ -41,66 +41,41 @@ $opChar = [\!\$\%\&\*\+\.\/\<\=\>\?\@\|\\\~\:\^-\`]
 
 miniml :-
 
-  $tab                           { \p bs -> Token TokenKindTab (makeSpan p bs) }
-  $whitespace+                   { \p bs -> Token TokenKindWhitespace (makeSpan p bs) }
-  "--".*                         { \p bs -> Token TokenKindComment (makeSpan p bs) }
-  $newline                       { \p bs -> Token TokenKindNewline (makeSpan p bs) }
-  -- module                         { \p bs -> Token TokenKindModule (makeSpan p bs) }
-  -- import                         { \p bs -> Token TokenKindImport (makeSpan p bs) }
-  -- as                             { \p bs -> Token TokenKindAs (makeSpan p bs) }
-  -- let                            { \p bs -> Token TokenKindLet (makeSpan p bs) }
-  -- in                             { \p bs -> Token TokenKindIn (makeSpan p bs) }
-  -- where                          { \p bs -> Token TokenKindWhere (makeSpan p bs) }
-  -- if                             { \p bs -> Token TokenKindIf (makeSpan p bs) }
-  -- then                           { \p bs -> Token TokenKindThen (makeSpan p bs) }
-  -- else                           { \p bs -> Token TokenKindElse (makeSpan p bs) }
-  -- match                          { \p bs -> Token TokenKindMatch (makeSpan p bs) }
-  -- with                           { \p bs -> Token TokenKindWith (makeSpan p bs) }
-  -- record                         { \p bs -> Token TokenKindRecord (makeSpan p bs) }
-  -- data                           { \p bs -> Token TokenKindData (makeSpan p bs) }
-  -- type                           { \p bs -> Token TokenKindType (makeSpan p bs) }
-  -- class                          { \p bs -> Token TokenKindClass (makeSpan p bs) }
-  -- instance                       { \p bs -> Token TokenKindInstance (makeSpan p bs) }
-  -- do                             { \p bs -> Token TokenKindDo (makeSpan p bs) }
+  $tab                           { \p bs -> Token TokenKindTab (BL.toStrict bs) }
+  $whitespace+                   { \p bs -> Token TokenKindWhitespace (BL.toStrict bs) }
+  "--".*                         { \p bs -> Token TokenKindComment (BL.toStrict bs) }
+  $newline                       { \p bs -> Token TokenKindNewline (BL.toStrict bs) }
 
-  "("                            { \p bs -> Token TokenKindLParen (makeSpan p bs) }
-  ")"                            { \p bs -> Token TokenKindRParen (makeSpan p bs) }
-  "{"                            { \p bs -> Token TokenKindLBrace (makeSpan p bs) }
-  "}"                            { \p bs -> Token TokenKindRBrace (makeSpan p bs) }
-  "["                            { \p bs -> Token TokenKindLBracket (makeSpan p bs) }
-  "]"                            { \p bs -> Token TokenKindRBracket (makeSpan p bs) }
-  "!"                            { \p bs -> Token TokenKindBang (makeSpan p bs) }
-  "#"                            { \p bs -> Token TokenKindHash (makeSpan p bs) }
-  [\\]                           { \p bs -> Token TokenKindBackSlash (makeSpan p bs) }
-  ":"                            { \p bs -> Token TokenKindColon (makeSpan p bs) }
-  ";"                            { \p bs -> Token TokenKindSemi (makeSpan p bs) }
-  ","                            { \p bs -> Token TokenKindComma (makeSpan p bs) }
-  "."                            { \p bs -> Token TokenKindPeriod (makeSpan p bs) }
-  "="                            { \p bs -> Token TokenKindEq (makeSpan p bs) }
-  "<-"                           { \p bs -> Token TokenKindLArrow (makeSpan p bs) }
-  "->"                           { \p bs -> Token TokenKindRArrow (makeSpan p bs) }
-  "=>"                           { \p bs -> Token TokenKindLFatArrow (makeSpan p bs) }
-  "|"                            { \p bs -> Token TokenKindBar (makeSpan p bs) }
-  "_"                            { \p bs -> Token TokenKindUnderscore (makeSpan p bs) }
+  "("                            { \p bs -> Token TokenKindLParen (BL.toStrict bs) }
+  ")"                            { \p bs -> Token TokenKindRParen (BL.toStrict bs) }
+  "{"                            { \p bs -> Token TokenKindLBrace (BL.toStrict bs) }
+  "}"                            { \p bs -> Token TokenKindRBrace (BL.toStrict bs) }
+  "["                            { \p bs -> Token TokenKindLBracket (BL.toStrict bs) }
+  "]"                            { \p bs -> Token TokenKindRBracket (BL.toStrict bs) }
+  "!"                            { \p bs -> Token TokenKindBang (BL.toStrict bs) }
+  "#"                            { \p bs -> Token TokenKindHash (BL.toStrict bs) }
+  [\\]                           { \p bs -> Token TokenKindBackSlash (BL.toStrict bs) }
+  ":"                            { \p bs -> Token TokenKindColon (BL.toStrict bs) }
+  ";"                            { \p bs -> Token TokenKindSemi (BL.toStrict bs) }
+  ","                            { \p bs -> Token TokenKindComma (BL.toStrict bs) }
+  "."                            { \p bs -> Token TokenKindPeriod (BL.toStrict bs) }
+  "="                            { \p bs -> Token TokenKindEq (BL.toStrict bs) }
+  "<-"                           { \p bs -> Token TokenKindLArrow (BL.toStrict bs) }
+  "->"                           { \p bs -> Token TokenKindRArrow (BL.toStrict bs) }
+  "=>"                           { \p bs -> Token TokenKindLFatArrow (BL.toStrict bs) }
+  "|"                            { \p bs -> Token TokenKindBar (BL.toStrict bs) }
+  "_"                            { \p bs -> Token TokenKindUnderscore (BL.toStrict bs) }
 
-  @lowerCaseIdent                { \p bs -> Token (TokenKindLowercaseIdent) (makeSpan p bs) }
-  @upperCaseIdent                { \p bs -> Token (TokenKindUppercaseIdent) (makeSpan p bs) }
-  @conOpIdent                    { \p bs -> Token (TokenKindConOpIdent) (makeSpan p bs) }
-  @opIdent                       { \p bs -> Token (TokenKindOpIdent) (makeSpan p bs) }
+  @lowerCaseIdent                { \p bs -> Token (TokenKindLowercaseIdent) (BL.toStrict bs) }
+  @upperCaseIdent                { \p bs -> Token (TokenKindUppercaseIdent) (BL.toStrict bs) }
+  @conOpIdent                    { \p bs -> Token (TokenKindConOpIdent) (BL.toStrict bs) }
+  @opIdent                       { \p bs -> Token (TokenKindOpIdent) (BL.toStrict bs) }
 
-  @int                           { \p bs -> Token TokenKindInt (makeSpan p bs) }
+  @int                           { \p bs -> Token TokenKindInt (BL.toStrict bs) }
 
-  $nonWhite                      { \p bs -> Token TokenKindError (makeSpan p bs) }
+  $nonWhite                      { \p bs -> Token TokenKindError (BL.toStrict bs) }
 
 {
-makeSpan :: AlexPosn -> ByteString -> Span
-makeSpan (AlexPn start _ _) bs = Span start end
-  where 
-    end = start + (fromIntegral $ BL.length bs)
-
-posnOffset :: AlexPosn -> Int
-posnOffset (AlexPn o _ _) = o
-
 tokenize :: ByteString -> [Token]
 tokenize = alexScanTokens
 }
