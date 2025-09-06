@@ -32,3 +32,4 @@ data SyntaxKind
   | SyntaxKindLFatArrow
   | SyntaxKindBar
   | SyntaxKindUnderscore
+  deriving (Show, Eq, Ord)

@@ -10,3 +10,4 @@ data GreenNode = GreenNode
     greenNodeChildren :: [Either Token GreenNode],
     greenNodeWidth :: Int
   }
+  deriving (Show, Eq, Ord)
