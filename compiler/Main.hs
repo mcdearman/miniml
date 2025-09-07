@@ -73,7 +73,7 @@ run src = do
 --   Right prog -> putStrLn $ unpack . toStrict $ pShow prog
 
 main :: IO ()
-main = run "x = match y with\n  1 -> True\n  2 -> False"
+main = run "'\\u00'"
 
 -- putStrLn "Welcome to the miniML REPL!"
 -- runInputT settings (repl defaultPipelineEnv)

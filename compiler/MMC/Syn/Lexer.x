@@ -30,15 +30,12 @@ $opChar     = [\!\$\%\&\*\+\.\/\<\=\>\?\@\|\\\~\:\^-\`]
 $bareScalar = [^\'\\\n\xD800-\xDFFF]
 $escSimple = [0\'\"\\nrtabfv] 
 
-$hex1    = $hexdig
-@hex2    = $hexdig $hexdig
-@escByte = \\x ($hex1 | @hex2)
+@escByte = \\x ($hexdig | $hexdig $hexdig)
 
 @u4      = $hexdig $hexdig $hexdig $hexdig
 @u8      = @u4 @u4
 @escUni4 = \\u @u4
 @escUni8 = \\U @u8
-
 
 @lowerCaseIdent = $lower $identChar*
 @upperCaseIdent = $upper $identChar*
