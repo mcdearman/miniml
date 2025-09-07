@@ -35,9 +35,7 @@ executable miniML
         MMC.Syn.Layout
         MMC.Syn.Lexer
         MMC.Syn.Parser
-        MMC.Syn.SyntaxKind
         MMC.Syn.SyntaxNode
-        MMC.Syn.Token
         MMC.Syn.TokenTree
         MMC.Build
         MMC.Typing.Kind

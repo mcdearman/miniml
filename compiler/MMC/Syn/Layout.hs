@@ -1,4 +1,4 @@
-module MMC.Syn.Layout (runLayout, LayoutError) where
+module MMC.Syn.Layout (LayoutError) where
 
 import Control.Monad.Reader (MonadReader (ask))
 import Control.Monad.Reader.Class (asks)
@@ -9,7 +9,7 @@ import Data.Text.Lazy (toStrict, unpack)
 import Debug.Trace (trace)
 import Error.Diagnose (Diagnostic (..))
 import MMC.Build.Effect (HasDiagnostic (..), PipelineEnv (..), PipelineM)
-import MMC.Syn.Token
+import MMC.Syn.GreenNode (Token)
 import MMC.Syn.TokenTree (Delim)
 import MMC.Utils.LineIndex (LineIndex, offsetToLineCol)
 import MMC.Utils.Span (Span (..))
@@ -27,6 +27,18 @@ data Event
   | EventRef !Int
   | EventSentinel !Int
   deriving (Show, Eq)
+
+data VTok
+  = VTok !Token
+  | VIndent !Int
+  | VDedent !Int
+  | VSemi !Int
+  deriving (Show, Eq)
+
+data LayoutCursor = LayoutCursor
+  { layoutTokens :: [Token],
+    layoutIndex :: LineIndex
+  }
 
 runLayout :: [Token] -> PipelineM [Token]
 runLayout ts = do
