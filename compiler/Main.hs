@@ -73,7 +73,7 @@ run src = do
 --   Right prog -> putStrLn $ unpack . toStrict $ pShow prog
 
 main :: IO ()
-main = run "'\\u00'"
+main = run "'\\u'"
 
 -- putStrLn "Welcome to the miniML REPL!"
 -- runInputT settings (repl defaultPipelineEnv)

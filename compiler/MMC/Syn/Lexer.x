@@ -30,12 +30,12 @@ $opChar     = [\!\$\%\&\*\+\.\/\<\=\>\?\@\|\\\~\:\^-\`]
 $bareScalar = [^\'\\\n\xD800-\xDFFF]
 $escSimple = [0\'\"\\nrtabfv] 
 
-@escByte = \\x ($hexdig | $hexdig $hexdig)
+@escByte = x ($hexdig | $hexdig $hexdig)
 
 @u4      = $hexdig $hexdig $hexdig $hexdig
 @u8      = @u4 @u4
-@escUni4 = \\u @u4
-@escUni8 = \\U @u8
+@escUni4 = u @u4
+@escUni8 = U @u8
 
 @lowerCaseIdent = $lower $identChar*
 @upperCaseIdent = $upper $identChar*
@@ -47,8 +47,9 @@ $escSimple = [0\'\"\\nrtabfv]
 @hexadecimal = "0x" $hexdig+
 @decimal     = ($nonzero $digit* | "0")
 @int         = @binary | @octal | @hexadecimal | @decimal
+@esc = \\ ( $escSimple | @escByte | @escUni4 | @escUni8 )
 
-@char = \' ( $bareScalar | \\$escSimple | @escByte | @escUni4 | @escUni8 ) \'
+@char = \' ( $bareScalar | @esc ) \'
 
 miniml :-
 
