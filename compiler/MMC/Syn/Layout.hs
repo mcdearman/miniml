@@ -36,8 +36,11 @@ data VTok
   deriving (Show, Eq)
 
 data LayoutCursor = LayoutCursor
-  { layoutTokens :: [Token],
-    layoutIndex :: LineIndex
+  { tokens :: [Token],
+    index :: LineIndex,
+    stack :: [Int],
+    offset :: Int,
+    col :: Int
   }
 
 runLayout :: [Token] -> PipelineM [Token]

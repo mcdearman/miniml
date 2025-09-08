@@ -4,10 +4,10 @@ import Data.ByteString (ByteString)
 import MMC.Utils.Unique (Unique)
 
 data GreenNode = GreenNode
-  { greenNodeId :: Unique,
-    greenNodeKind :: SyntaxKind,
+  { greenNodeId :: !Unique,
+    greenNodeKind :: !SyntaxKind,
     greenNodeChildren :: [Either Token GreenNode],
-    greenNodeWidth :: Int
+    greenNodeWidth :: !Int
   }
   deriving (Show, Eq, Ord)
 

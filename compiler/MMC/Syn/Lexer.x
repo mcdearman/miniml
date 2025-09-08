@@ -9,7 +9,7 @@ import qualified Data.Text as T
 import qualified Data.Char as Char
 }
 
-%wrapper "posn-bytestring"
+%wrapper "basic-bytestring"
 
 $unispace   = \x05
 $nonzero    = [1-9]
@@ -27,6 +27,7 @@ $newline    = [\n\r\f]
 $identChar  = [$alpha $digit \_ \']
 $opChar     = [\!\$\%\&\*\+\.\/\<\=\>\?\@\|\\\~\:\^-\`]
 
+$strBare    = [^\"\\\n\xD800-\xDFFF]
 $bareScalar = [^\'\\\n\xD800-\xDFFF]
 $escSimple = [0\'\"\\nrtabfv] 
 
@@ -47,46 +48,49 @@ $escSimple = [0\'\"\\nrtabfv]
 @hexadecimal = "0x" $hexdig+
 @decimal     = ($nonzero $digit* | "0")
 @int         = @binary | @octal | @hexadecimal | @decimal
-@esc = \\ ( $escSimple | @escByte | @escUni4 | @escUni8 )
 
-@char = \' ( $bareScalar | @esc ) \'
+@esc     = \\ ( $escSimple | @escByte | @escUni4 | @escUni8 )
+@char    = \' ( $bareScalar | @esc ) \'
+@strChar = ( $strBare | $escSimple | @escByte | @escUni4 | @escUni8 )
+@string  = \" @strChar* \"
 
 miniml :-
 
-  $tab                           { \p bs -> Token SyntaxKindTab (BL.toStrict bs) }
-  $whitespace+                   { \p bs -> Token SyntaxKindWhitespace (BL.toStrict bs) }
-  "--".*                         { \p bs -> Token SyntaxKindComment (BL.toStrict bs) }
-  $newline                       { \p bs -> Token SyntaxKindNewline (BL.toStrict bs) }
+  $tab                           { \bs -> Token SyntaxKindTab (BL.toStrict bs) }
+  $whitespace+                   { \bs -> Token SyntaxKindWhitespace (BL.toStrict bs) }
+  "--".*                         { \bs -> Token SyntaxKindComment (BL.toStrict bs) }
+  $newline                       { \bs -> Token SyntaxKindNewline (BL.toStrict bs) }
 
-  "("                            { \p bs -> Token SyntaxKindLParen (BL.toStrict bs) }
-  ")"                            { \p bs -> Token SyntaxKindRParen (BL.toStrict bs) }
-  "{"                            { \p bs -> Token SyntaxKindLBrace (BL.toStrict bs) }
-  "}"                            { \p bs -> Token SyntaxKindRBrace (BL.toStrict bs) }
-  "["                            { \p bs -> Token SyntaxKindLBracket (BL.toStrict bs) }
-  "]"                            { \p bs -> Token SyntaxKindRBracket (BL.toStrict bs) }
-  "!"                            { \p bs -> Token SyntaxKindBang (BL.toStrict bs) }
-  "#"                            { \p bs -> Token SyntaxKindHash (BL.toStrict bs) }
-  [\\]                           { \p bs -> Token SyntaxKindBackSlash (BL.toStrict bs) }
-  ":"                            { \p bs -> Token SyntaxKindColon (BL.toStrict bs) }
-  ";"                            { \p bs -> Token SyntaxKindSemi (BL.toStrict bs) }
-  ","                            { \p bs -> Token SyntaxKindComma (BL.toStrict bs) }
-  "."                            { \p bs -> Token SyntaxKindPeriod (BL.toStrict bs) }
-  "="                            { \p bs -> Token SyntaxKindEq (BL.toStrict bs) }
-  "<-"                           { \p bs -> Token SyntaxKindLArrow (BL.toStrict bs) }
-  "->"                           { \p bs -> Token SyntaxKindRArrow (BL.toStrict bs) }
-  "=>"                           { \p bs -> Token SyntaxKindLFatArrow (BL.toStrict bs) }
-  "|"                            { \p bs -> Token SyntaxKindBar (BL.toStrict bs) }
-  "_"                            { \p bs -> Token SyntaxKindUnderscore (BL.toStrict bs) }
+  "("                            { \bs -> Token SyntaxKindLParen (BL.toStrict bs) }
+  ")"                            { \bs -> Token SyntaxKindRParen (BL.toStrict bs) }
+  "{"                            { \bs -> Token SyntaxKindLBrace (BL.toStrict bs) }
+  "}"                            { \bs -> Token SyntaxKindRBrace (BL.toStrict bs) }
+  "["                            { \bs -> Token SyntaxKindLBracket (BL.toStrict bs) }
+  "]"                            { \bs -> Token SyntaxKindRBracket (BL.toStrict bs) }
+  "!"                            { \bs -> Token SyntaxKindBang (BL.toStrict bs) }
+  "#"                            { \bs -> Token SyntaxKindHash (BL.toStrict bs) }
+  [\\]                           { \bs -> Token SyntaxKindBackSlash (BL.toStrict bs) }
+  ":"                            { \bs -> Token SyntaxKindColon (BL.toStrict bs) }
+  ";"                            { \bs -> Token SyntaxKindSemi (BL.toStrict bs) }
+  ","                            { \bs -> Token SyntaxKindComma (BL.toStrict bs) }
+  "."                            { \bs -> Token SyntaxKindPeriod (BL.toStrict bs) }
+  "="                            { \bs -> Token SyntaxKindEq (BL.toStrict bs) }
+  "<-"                           { \bs -> Token SyntaxKindLArrow (BL.toStrict bs) }
+  "->"                           { \bs -> Token SyntaxKindRArrow (BL.toStrict bs) }
+  "=>"                           { \bs -> Token SyntaxKindLFatArrow (BL.toStrict bs) }
+  "|"                            { \bs -> Token SyntaxKindBar (BL.toStrict bs) }
+  "_"                            { \bs -> Token SyntaxKindUnderscore (BL.toStrict bs) }
 
-  @lowerCaseIdent                { \p bs -> Token (SyntaxKindLowercaseIdent) (BL.toStrict bs) }
-  @upperCaseIdent                { \p bs -> Token (SyntaxKindUppercaseIdent) (BL.toStrict bs) }
-  @conOpIdent                    { \p bs -> Token (SyntaxKindConOpIdent) (BL.toStrict bs) }
-  @opIdent                       { \p bs -> Token (SyntaxKindOpIdent) (BL.toStrict bs) }
+  @lowerCaseIdent                { \bs -> Token (SyntaxKindLowercaseIdent) (BL.toStrict bs) }
+  @upperCaseIdent                { \bs -> Token (SyntaxKindUppercaseIdent) (BL.toStrict bs) }
+  @conOpIdent                    { \bs -> Token (SyntaxKindConOpIdent) (BL.toStrict bs) }
+  @opIdent                       { \bs -> Token (SyntaxKindOpIdent) (BL.toStrict bs) }
 
-  @int                           { \p bs -> Token SyntaxKindInt (BL.toStrict bs) }
-  @char                          { \p bs -> Token SyntaxKindChar (BL.toStrict bs) }
+  @int                           { \bs -> Token SyntaxKindInt (BL.toStrict bs) }
+  @char                          { \bs -> Token SyntaxKindChar (BL.toStrict bs) }
+  @string                        { \bs -> Token SyntaxKindString (BL.toStrict bs) }
 
-  $nonWhite                      { \p bs -> Token SyntaxKindError (BL.toStrict bs) }
+  $nonWhite                      { \bs -> Token SyntaxKindError (BL.toStrict bs) }
 
 {
 tokenize :: ByteString -> [Token]
