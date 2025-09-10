@@ -1,4 +1,4 @@
-module MMC.Syn.Layout (runLayout) where
+module MMC.Syn.Layout where
 
 import Control.Monad.Reader (MonadReader (ask))
 import Control.Monad.Reader.Class (asks)
@@ -62,8 +62,8 @@ bump li = do
 -- layout li offset (t : c : ts) []
 --   | isLayoutHerald t c =
 --       let (_, col) = offsetToLineCol li offset
---        in VIndent col : layout li (c : ts) [0]
--- layout li _ (t : ts) (0 : ms) | tokenKind t == SyntaxKindRBrace = VTok t : layout li ts ms
+--        in VIndent col : layout li col (c : ts) [col]
+-- layout li col (t : ts) (0 : ms) | tokenKind t == SyntaxKindRBrace = VTok t : layout li ts ms
 -- layout _ _ (t : ts) ms | tokenKind t == SyntaxKindRBrace = error "unmatched right brace"
 -- layout li _ (t : ts) ms | tokenKind t == SyntaxKindLBrace = VTok t : layout li ts (0 : ms)
 -- layout li _ (t : ts) (m : ms) | m /= 0 = VDedent m : layout li (t : ts) ms
@@ -71,6 +71,6 @@ bump li = do
 -- layout _ _ [] [] = []
 -- layout li _ [] (m : ms) | m /= 0 = VDedent m : layout li [] ms
 
--- -- layout _ _ _ = undefined
--- isLayoutHerald :: Token -> Token -> Bool
--- isLayoutHerald t c = isLayoutKeyword t && tokenKind c == SyntaxKindColon
+-- layout _ _ _ = undefined
+isLayoutHerald :: Token -> Token -> Bool
+isLayoutHerald t c = isLayoutKeyword t && tokenKind c == SyntaxKindColon
