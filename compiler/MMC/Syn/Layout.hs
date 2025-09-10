@@ -1,25 +1,16 @@
-module MMC.Syn.Layout (LayoutError) where
+module MMC.Syn.Layout (runLayout) where
 
 import Control.Monad.Reader (MonadReader (ask))
 import Control.Monad.Reader.Class (asks)
-import Control.Monad.State (State)
+import Control.Monad.State (MonadState (get, put), evalStateT)
+import Control.Monad.State.Lazy
 import Data.ByteString (ByteString)
-import Data.Text (Text)
-import qualified Data.Text as T
 import Data.Text.Lazy (toStrict, unpack)
 import Debug.Trace (trace)
-import Error.Diagnose (Diagnostic (..))
 import MMC.Build.Effect (HasDiagnostic (..), PipelineEnv (..), PipelineM)
-import MMC.Syn.GreenNode (Token)
+import MMC.Syn.GreenNode (SyntaxKind (..), Token (..), isLayoutKeyword, tokenLength)
 import MMC.Syn.TokenTree (Delim)
 import MMC.Utils.LineIndex (LineIndex, offsetToLineCol)
-import MMC.Utils.Span (Span (..))
-import Text.Pretty.Simple (pShow)
-
-data LayoutError = LayoutError Text deriving (Show, Eq)
-
-instance HasDiagnostic LayoutError where
-  toDiagnostic (LayoutError msg) = undefined
 
 data Event
   = EventTok !Token
@@ -36,29 +27,50 @@ data VTok
   | VSemi !Int
   deriving (Show, Eq)
 
-data LayoutCursor = LayoutCursor
-  { tokens :: [Token],
-    index :: LineIndex,
-    stack :: [Int],
-    offset :: Int,
-    col :: Int
-  }
-
--- runLayout :: [Token] -> PipelineM [VTok]
--- runLayout ts = do
---   PipelineEnv {pipelineSrc = src, pipelineLineIndex = index} <- ask
---   let cursor = LayoutCursor {tokens = ts, index = index, stack = [0], offset = 0, col = 0}
---   undefined
-
 -- let: x = 1
 --      y = 2
 --  in x + y
 
-type LayoutS = State LayoutCursor
+data Cursor = Cursor
+  { tokens :: [Token],
+    stack :: [Int],
+    offset :: !Int,
+    col :: !Int
+  }
 
-layout :: LayoutCursor -> LayoutS VTok
-layout c = layout' (tokens c) [0]
-  where
-    layout' ts [0] = undefined
-    layout' _ [] = error "layout stack underflow"
-    layout' _ _ = undefined
+type LayoutM = State Cursor
+
+runLayout :: [Token] -> PipelineM [VTok]
+runLayout ts = do
+  li <- asks pipelineLineIndex
+  pure $ evalState (layout li) (Cursor ts [] 0 1)
+
+layout :: LineIndex -> LayoutM [VTok]
+layout li = undefined
+
+bump :: LineIndex -> LayoutM VTok
+bump li = do
+  Cursor ts stack offset col <- get
+  case ts of
+    [] -> error "no more tokens"
+    (t : ts') -> do
+      put $ Cursor ts' stack (offset + tokenLength t) (col + 1)
+      pure $ VTok t
+
+-- layout :: LineIndex -> Int -> [Token] -> [Int] -> [VTok]
+-- --  L ({n} : ts) [] = {  :  (L ts [n]) if n > 0 (Note 1)
+-- layout li offset (t : c : ts) []
+--   | isLayoutHerald t c =
+--       let (_, col) = offsetToLineCol li offset
+--        in VIndent col : layout li (c : ts) [0]
+-- layout li _ (t : ts) (0 : ms) | tokenKind t == SyntaxKindRBrace = VTok t : layout li ts ms
+-- layout _ _ (t : ts) ms | tokenKind t == SyntaxKindRBrace = error "unmatched right brace"
+-- layout li _ (t : ts) ms | tokenKind t == SyntaxKindLBrace = VTok t : layout li ts (0 : ms)
+-- layout li _ (t : ts) (m : ms) | m /= 0 = VDedent m : layout li (t : ts) ms
+-- layout li _ (t : ts) ms = VTok t : layout li ts ms
+-- layout _ _ [] [] = []
+-- layout li _ [] (m : ms) | m /= 0 = VDedent m : layout li [] ms
+
+-- -- layout _ _ _ = undefined
+-- isLayoutHerald :: Token -> Token -> Bool
+-- isLayoutHerald t c = isLayoutKeyword t && tokenKind c == SyntaxKindColon

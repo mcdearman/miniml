@@ -1,6 +1,17 @@
-module MMC.Syn.GreenNode where
+module MMC.Syn.GreenNode
+  ( GreenNode (..),
+    Token (..),
+    SyntaxKind (..),
+    tokenLength,
+    isTrivia,
+    isSpace,
+    isKeyword,
+    isLayoutKeyword,
+  )
+where
 
 import Data.ByteString (ByteString)
+import qualified Data.ByteString as ByteString
 import MMC.Utils.Unique (Unique)
 
 data GreenNode = GreenNode
@@ -50,6 +61,9 @@ data SyntaxKind
   | SyntaxKindBar
   | SyntaxKindUnderscore
   deriving (Show, Eq, Ord)
+
+tokenLength :: Token -> Int
+tokenLength = ByteString.length . tokenText
 
 isTrivia :: Token -> Bool
 isTrivia = go . tokenKind
