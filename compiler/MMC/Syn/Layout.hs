@@ -33,10 +33,12 @@ data VTok
 
 data Cursor = Cursor
   { tokens :: [Token],
-    stack :: [Int],
+    stack :: [Frame],
     offset :: !Int,
     col :: !Int
   }
+
+data Frame = Braced | Layout Int deriving (Show, Eq)
 
 type LayoutM = State Cursor
 
