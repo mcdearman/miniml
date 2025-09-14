@@ -30,7 +30,7 @@ executable miniML
         MMC.Build.Effect
         MMC.Build.Pipeline
         MMC.Static.Scc
-        -- MMC.Syn.AST
+        MMC.Syn.AST
         MMC.Syn.GreenNode
         MMC.Syn.Layout
         MMC.Syn.Lexer

@@ -29,7 +29,8 @@ data Token = Token
   deriving (Show, Eq, Ord)
 
 data SyntaxKind
-  = SyntaxKindError
+  = -- Tokens
+    SyntaxKindError
   | SyntaxKindTab
   | SyntaxKindWhitespace
   | SyntaxKindNewline
@@ -60,6 +61,14 @@ data SyntaxKind
   | SyntaxKindLFatArrow
   | SyntaxKindBar
   | SyntaxKindUnderscore
+  | -- Nodes
+    SyntaxKindModule
+  | SyntaxKindImportDecl
+  | SyntaxKindClassDecl
+  | SyntaxKindSig
+  | SyntaxKindBind
+  | SyntaxKindFunBind
+  | SyntaxKindPatBind
   deriving (Show, Eq, Ord)
 
 tokenLength :: Token -> Int
