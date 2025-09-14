@@ -15,8 +15,7 @@ import qualified Data.ByteString as ByteString
 import MMC.Utils.Unique (Unique)
 
 data GreenNode = GreenNode
-  { greenNodeId :: !Unique,
-    greenNodeKind :: !SyntaxKind,
+  { greenNodeKind :: !SyntaxKind,
     greenNodeChildren :: [Either Token GreenNode],
     greenNodeWidth :: !Int
   }
