@@ -14,9 +14,11 @@ class AstNode a where
 newtype Module = Module SyntaxNode
   deriving (Show, Eq)
 
+{-# INLINEABLE moduleName #-}
 moduleName :: Module -> Maybe UpperCaseIdent
 moduleName (Module node) = findMap (castToNode @UpperCaseIdent) (nodeChildren node)
 
+{-# INLINEABLE moduleDecls #-}
 moduleDecls :: Module -> [Decl]
 moduleDecls (Module node) = mapMaybe (castToNode @Decl) (nodeChildren node)
 
