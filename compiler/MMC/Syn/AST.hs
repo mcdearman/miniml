@@ -20,17 +20,11 @@ moduleName (Module node) = findMap (castToNode @UpperCaseIdent) (nodeChildren no
 moduleDecls :: Module -> [Decl]
 moduleDecls (Module node) = mapMaybe (castToNode @Decl) (nodeChildren node)
 
-pattern ModuleP :: UpperCaseIdent -> [Decl] -> ModuleView
-pattern ModuleP n ds <- ModuleView (moduleName -> n) (moduleDecls -> ds)
+pattern ModuleP :: Maybe UpperCaseIdent -> [Decl] -> Module
+pattern ModuleP name decls <-
+  (\m -> (moduleName m, moduleDecls m) -> (name, decls))
 
-data ModuleView = ModuleView
-  { mvName :: Maybe UpperCaseIdent,
-    mvDecls :: [Decl]
-  }
-  deriving (Show, Eq)
-
-moduleView :: Module -> ModuleView
-moduleView m = ModuleView (moduleName m) (moduleDecls m)
+{-# COMPLETE ModuleP #-}
 
 instance AstNode Module where
   castToNode :: SyntaxNode -> Maybe Module
