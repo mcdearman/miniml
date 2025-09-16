@@ -4,12 +4,16 @@
 module MMC.Syn.AST where
 
 import Data.Maybe (listToMaybe, mapMaybe)
-import MMC.Syn.GreenNode (SyntaxKind (..))
+import MMC.Syn.GreenNode (SyntaxKind (..), Token)
 import MMC.Syn.SyntaxNode (SyntaxNode, nodeChildren, nodeKind)
 
 class AstNode a where
   castToNode :: SyntaxNode -> Maybe a
   syntaxNode :: a -> SyntaxNode
+
+class AstToken a where
+  castToToken :: SyntaxNode -> Maybe a
+  syntaxToken :: a -> Token
 
 newtype Module = Module SyntaxNode
   deriving (Show, Eq)

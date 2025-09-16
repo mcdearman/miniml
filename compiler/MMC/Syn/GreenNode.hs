@@ -62,13 +62,58 @@ data SyntaxKind
   | SyntaxKindUnderscore
   | -- Nodes
     SyntaxKindModule
+  | SyntaxKindDecl
   | SyntaxKindImportDecl
+  | SyntaxKindRecordDef
+  | SyntaxKindClassDef
   | SyntaxKindClassDecl
+  | SyntaxKindClassDeclSig
+  | SyntaxKindClassDeclBind
+  | SyntaxKindInstanceDecl
   | SyntaxKindSig
+  | SyntaxKindRhs
+  | SyntaxKindRhsExpr
+  | SyntaxKindRhsGuard
+  | SyntaxKindExpr
+  | SyntaxKindExprLit
+  | SyntaxKindExprIdent
+  | SyntaxKindExprApp
+  | SyntaxKindExprLam
+  | SyntaxKindExprLet
+  | SyntaxKindExprDo
+  | SyntaxKindExprNeg
+  | SyntaxKindExprIf
+  | SyntaxKindExprMatch
+  | SyntaxKindExprList
+  | SyntaxKindExprTuple
+  | SyntaxKindExprCons
+  | SyntaxKindExprRecord
+  | SyntaxKindExprRecordAccess
+  | SyntaxKindExprRecordUpdate
+  | SyntaxKindExprUnit
   | SyntaxKindBind
   | SyntaxKindFunBind
   | SyntaxKindPatBind
+  | SyntaxKindAlt
+  | SyntaxKindGuard
+  | SyntaxKindAnno
+  | SyntaxKindAnnoVar
+  | SyntaxKindAnnoIdent
+  | SyntaxKindAnnoFun
+  | SyntaxKindAnnoList
+  | SyntaxKindAnnoTuple
+  | SyntaxKindAnnoRecord
+  | SyntaxKindAnnoUnit
   | SyntaxKindPattern
+  | SyntaxKindPatternWildcard
+  | SyntaxKindPatternLiteral
+  | SyntaxKindPatternIdent
+  | SyntaxKindPatternTuple
+  | SyntaxKindPatternCons
+  | SyntaxKindPatternAs
+  | SyntaxKindPatternList
+  | SyntaxKindPatternRecord
+  | SyntaxKindPatternUnit
   | SyntaxKindLiteral
   deriving (Show, Eq, Ord)
 
