@@ -69,7 +69,7 @@ data SyntaxKind
   | SyntaxKindFunBind
   | SyntaxKindPatBind
   | SyntaxKindPattern
-  | SyntaxKindLit
+  | SyntaxKindLiteral
   deriving (Show, Eq, Ord)
 
 tokenLength :: Token -> Int

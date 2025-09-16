@@ -122,56 +122,14 @@ instance AstNode LowerCaseIdent where
 
   syntaxNode (LowerCaseIdent node) = node
 
-data Lit
-  = LitInt IntLit
-  | LitChar CharLit
-  | LitString StringLit
-  deriving (Show, Eq)
+newtype Lit = Lit SyntaxNode deriving (Show, Eq, Ord)
 
 instance AstNode Lit where
   castToNode node = case nodeKind node of
-    SyntaxKindInt -> LitInt <$> castToNode @IntLit node
-    SyntaxKindChar -> LitChar <$> castToNode @CharLit node
-    SyntaxKindString -> LitString <$> castToNode @StringLit node
+    SyntaxKindLiteral -> Just (Lit node)
     _ -> Nothing
 
-  syntaxNode l = case l of
-    LitInt i -> syntaxNode i
-    LitChar c -> syntaxNode c
-    LitString s -> syntaxNode s
-
-newtype IntLit = IntLit SyntaxNode deriving (Show, Eq)
-
-instance AstNode IntLit where
-  castToNode :: SyntaxNode -> Maybe IntLit
-  castToNode node = case nodeKind node of
-    SyntaxKindInt -> Just (IntLit node)
-    _ -> Nothing
-
-  syntaxNode :: IntLit -> SyntaxNode
-  syntaxNode (IntLit node) = node
-
-newtype CharLit = CharLit SyntaxNode deriving (Show, Eq)
-
-instance AstNode CharLit where
-  castToNode :: SyntaxNode -> Maybe CharLit
-  castToNode node = case nodeKind node of
-    SyntaxKindChar -> Just (CharLit node)
-    _ -> Nothing
-
-  syntaxNode :: CharLit -> SyntaxNode
-  syntaxNode (CharLit node) = node
-
-newtype StringLit = StringLit SyntaxNode deriving (Show, Eq)
-
-instance AstNode StringLit where
-  castToNode :: SyntaxNode -> Maybe StringLit
-  castToNode node = case nodeKind node of
-    SyntaxKindString -> Just (StringLit node)
-    _ -> Nothing
-
-  syntaxNode :: StringLit -> SyntaxNode
-  syntaxNode (StringLit node) = node
+  syntaxNode (Lit n) = n
 
 -- Helpers
 findMap :: (a -> Maybe b) -> [a] -> Maybe b
