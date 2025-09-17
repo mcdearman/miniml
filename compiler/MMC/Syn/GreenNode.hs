@@ -70,6 +70,7 @@ data SyntaxKind
   | SyntaxKindClassDeclSig
   | SyntaxKindClassDeclBind
   | SyntaxKindInstanceDecl
+  | SyntaxKindRecordField
   | SyntaxKindSig
   | SyntaxKindRhs
   | SyntaxKindRhsExpr

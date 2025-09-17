@@ -43,23 +43,118 @@ instance AstNode Module where
 newtype ModuleDecls = ModuleDecls SyntaxNode deriving (Show, Eq)
 
 data Decl
-  = DeclImport ImportDecl
-  | DeclClassDecl ClassDecl
+  = DeclImport !ImportDecl
+  | DeclClassDecl !ClassDecl
+  | DeclClassDef !ClassDef
+  | DeclInstanceDecl !InstanceDecl
+  | DeclRecordDef !RecordDef
   deriving (Show, Eq)
 
 instance AstNode Decl where
-  castToNode node = undefined
+  castToNode node = case nodeKind node of
+    SyntaxKindImportDecl -> Just (DeclImport (ImportDecl node))
+    SyntaxKindClassDecl -> DeclClassDecl <$> castToNode @ClassDecl node
+    SyntaxKindClassDef -> Just (DeclClassDef (ClassDef node))
+    SyntaxKindInstanceDecl -> Just (DeclInstanceDecl (InstanceDecl node))
+    SyntaxKindRecordDef -> Just (DeclRecordDef (RecordDef node))
+    _ -> Nothing
 
   syntaxNode d = case d of
     DeclImport i -> syntaxNode i
     DeclClassDecl c -> syntaxNode c
+    DeclClassDef c -> syntaxNode c
+    DeclInstanceDecl i -> syntaxNode i
+    DeclRecordDef r -> syntaxNode r
 
 newtype ImportDecl = ImportDecl SyntaxNode deriving (Show, Eq)
 
 instance AstNode ImportDecl where
-  castToNode node = undefined
+  castToNode node = case nodeKind node of
+    SyntaxKindImportDecl -> Just (ImportDecl node)
+    _ -> Nothing
 
-  syntaxNode (ImportDecl node) = node
+  syntaxNode (ImportDecl n) = n
+
+newtype RecordDef = RecordDef SyntaxNode deriving (Show, Eq)
+
+{-# INLINEABLE recordDefName #-}
+recordDefName :: RecordDef -> Maybe Ident
+recordDefName (RecordDef n) = findMap (castToNode @Ident) (nodeChildren n)
+
+{-# INLINEABLE recordDefTypeParams #-}
+recordDefTypeParams :: RecordDef -> [Ident]
+recordDefTypeParams (RecordDef n) = mapMaybe (castToNode @Ident) (nodeChildren n)
+
+{-# INLINEABLE recordDefFields #-}
+recordDefFields :: RecordDef -> [RecordField]
+recordDefFields (RecordDef n) = mapMaybe (castToNode @RecordField) (nodeChildren n)
+
+pattern RecordDefP :: Maybe Ident -> [Ident] -> [RecordField] -> RecordDef
+pattern RecordDefP name typeParams fields <-
+  (\r -> (recordDefName r, recordDefTypeParams r, recordDefFields r) -> (name, typeParams, fields))
+
+{-# COMPLETE RecordDefP #-}
+
+instance AstNode RecordDef where
+  castToNode node = case nodeKind node of
+    SyntaxKindRecordDef -> Just (RecordDef node)
+    _ -> Nothing
+
+  syntaxNode (RecordDef n) = n
+
+newtype RecordField = RecordField SyntaxNode deriving (Show, Eq)
+
+{-# INLINEABLE recordFieldName #-}
+recordFieldName :: RecordField -> Maybe Ident
+recordFieldName (RecordField n) = findMap (castToNode @Ident) (nodeChildren n)
+
+{-# INLINEABLE recordFieldAnno #-}
+recordFieldAnno :: RecordField -> Maybe Anno
+recordFieldAnno (RecordField n) = findMap (castToNode @Anno) (nodeChildren n)
+
+pattern RecordFieldP :: Maybe Ident -> Maybe Anno -> RecordField
+pattern RecordFieldP name anno <-
+  (\f -> (recordFieldName f, recordFieldAnno f) -> (name, anno))
+
+{-# COMPLETE RecordFieldP #-}
+
+instance AstNode RecordField where
+  castToNode node = case nodeKind node of
+    SyntaxKindRecordField -> Just (RecordField node)
+    _ -> Nothing
+
+  syntaxNode (RecordField n) = n
+
+newtype ClassDef = ClassDef SyntaxNode deriving (Show, Eq)
+
+{-# INLINEABLE classDefName #-}
+classDefName :: ClassDef -> Maybe Ident
+classDefName (ClassDef n) = findMap (castToNode @Ident) (nodeChildren n)
+
+{-# INLINEABLE classDefSuperclasses #-}
+classDefSuperclasses :: ClassDef -> [Ident]
+classDefSuperclasses (ClassDef n) = mapMaybe (castToNode @Ident) (nodeChildren n)
+
+{-# INLINEABLE classDefTypeParams #-}
+classDefTypeParams :: ClassDef -> [Ident]
+classDefTypeParams (ClassDef n) = mapMaybe (castToNode @Ident) (nodeChildren n)
+
+{-# INLINEABLE classDefDecls #-}
+classDefDecls :: ClassDef -> [ClassDecl]
+classDefDecls (ClassDef n) = mapMaybe (castToNode @ClassDecl) (nodeChildren n)
+
+pattern ClassDefP :: Maybe Ident -> [Ident] -> [Ident] -> [ClassDecl] -> ClassDef
+pattern ClassDefP name superclasses typeParams decls <-
+  (\c -> (classDefName c, classDefSuperclasses c, classDefTypeParams c, classDefDecls c) -> (name, superclasses, typeParams, decls))
+
+{-# COMPLETE ClassDefP #-}
+
+instance AstNode ClassDef where
+  castToNode node = case nodeKind node of
+    SyntaxKindClassDef -> Just (ClassDef node)
+    _ -> Nothing
+
+  syntaxNode (ClassDef n) = n
 
 data ClassDecl
   = ClassDeclSig Sig
@@ -67,33 +162,125 @@ data ClassDecl
   deriving (Show, Eq)
 
 instance AstNode ClassDecl where
-  castToNode node = undefined
+  castToNode node = case nodeKind node of
+    SyntaxKindClassDeclSig -> Just (ClassDeclSig (Sig node))
+    SyntaxKindClassDeclBind -> ClassDeclBind <$> castToNode @Bind node
+    _ -> Nothing
 
   syntaxNode c = case c of
     ClassDeclSig s -> syntaxNode s
     ClassDeclBind b -> syntaxNode b
 
+newtype InstanceDecl = InstanceDecl SyntaxNode deriving (Show, Eq)
+
+{-# INLINEABLE instanceDeclClassName #-}
+instanceDeclClassName :: InstanceDecl -> Maybe Ident
+instanceDeclClassName (InstanceDecl n) = findMap (castToNode @Ident) (nodeChildren n)
+
+{-# INLINEABLE instanceDeclTypeParams #-}
+instanceDeclTypeParams :: InstanceDecl -> [Ident]
+instanceDeclTypeParams (InstanceDecl n) = mapMaybe (castToNode @Ident) (nodeChildren n)
+
+{-# INLINEABLE instanceDeclAnno #-}
+instanceDeclAnno :: InstanceDecl -> Maybe Anno
+instanceDeclAnno (InstanceDecl n) = findMap (castToNode @Anno) (nodeChildren n)
+
+{-# INLINEABLE instanceDeclClassDecls #-}
+instanceDeclClassDecls :: InstanceDecl -> [ClassDecl]
+instanceDeclClassDecls (InstanceDecl n) = mapMaybe (castToNode @ClassDecl) (nodeChildren n)
+
+pattern InstanceDeclP :: Maybe Ident -> [Ident] -> Maybe Anno -> [ClassDecl] -> InstanceDecl
+pattern InstanceDeclP className typeParams anno decls <-
+  (\i -> (instanceDeclClassName i, instanceDeclTypeParams i, instanceDeclAnno i, instanceDeclClassDecls i) -> (className, typeParams, anno, decls))
+
+{-# COMPLETE InstanceDeclP #-}
+
+instance AstNode InstanceDecl where
+  castToNode node = case nodeKind node of
+    SyntaxKindInstanceDecl -> Just (InstanceDecl node)
+    _ -> Nothing
+
+  syntaxNode (InstanceDecl n) = n
+
 newtype Sig = Sig SyntaxNode deriving (Show, Eq)
 
-instance AstNode Sig where
-  castToNode node = undefined
+{-# INLINEABLE sigNames #-}
+sigNames :: Sig -> [Ident]
+sigNames (Sig node) = mapMaybe (castToNode @Ident) (nodeChildren node)
 
-  syntaxNode (Sig node) = node
+{-# INLINEABLE sigTypeParams #-}
+sigTypeParams :: Sig -> [Ident]
+sigTypeParams (Sig node) = mapMaybe (castToNode @Ident) (nodeChildren node)
+
+{-# INLINEABLE sigAnno #-}
+sigAnno :: Sig -> Maybe Anno
+sigAnno (Sig node) = findMap (castToNode @Anno) (nodeChildren node)
+
+pattern SigP :: [Ident] -> [Ident] -> Maybe Anno -> Sig
+pattern SigP names typeParams anno <-
+  (\s -> (sigNames s, sigTypeParams s, sigAnno s) -> (names, typeParams, anno))
+
+{-# COMPLETE SigP #-}
+
+instance AstNode Sig where
+  castToNode node = case nodeKind node of
+    SyntaxKindSig -> Just (Sig node)
+    _ -> Nothing
+
+  syntaxNode (Sig n) = n
 
 data Expr
   = ExprLit !Lit
   | ExprIdent !Ident
   | ExprApp !AppExpr
+  | ExprLam !LamExpr
+  | ExprLet !LetExpr
+  | ExprNeg !Expr
+  | ExprIf !IfExpr
+  | ExprMatch !MatchExpr
+  | ExprList !ListExpr
+  | ExprTuple !TupleExpr
+  | ExprCons !ConsExpr
+  | ExprRecord !RecordExpr
+  | ExprRecordAccess !RecordAccessExpr
+  | ExprRecordUpdate !RecordUpdateExpr
   | ExprUnit !UnitExpr
   deriving (Show, Eq)
 
 instance AstNode Expr where
-  castToNode node = undefined
+  castToNode node = case nodeKind node of
+    SyntaxKindExprLit -> Just (ExprLit (Lit node))
+    SyntaxKindExprIdent -> Just (ExprIdent (Ident node))
+    SyntaxKindExprApp -> Just (ExprApp (AppExpr node))
+    SyntaxKindExprLam -> Just (ExprLam (LamExpr node))
+    SyntaxKindExprLet -> Just (ExprLet (LetExpr node))
+    SyntaxKindExprNeg -> ExprNeg <$> castToNode @Expr node
+    SyntaxKindExprIf -> Just (ExprIf (IfExpr node))
+    SyntaxKindExprMatch -> Just (ExprMatch (MatchExpr node))
+    SyntaxKindExprList -> Just (ExprList (ListExpr node))
+    SyntaxKindExprTuple -> Just (ExprTuple (TupleExpr node))
+    SyntaxKindExprCons -> Just (ExprCons (ConsExpr node))
+    SyntaxKindExprRecord -> Just (ExprRecord (RecordExpr node))
+    SyntaxKindExprRecordAccess -> Just (ExprRecordAccess (RecordAccessExpr node))
+    SyntaxKindExprRecordUpdate -> Just (ExprRecordUpdate (RecordUpdateExpr node))
+    SyntaxKindExprUnit -> Just (ExprUnit (UnitExpr node))
+    _ -> Nothing
 
   syntaxNode e = case e of
     ExprLit l -> syntaxNode l
     ExprIdent i -> syntaxNode i
     ExprApp a -> syntaxNode a
+    ExprLam l -> syntaxNode l
+    ExprLet l -> syntaxNode l
+    ExprNeg n -> syntaxNode n
+    ExprIf i -> syntaxNode i
+    ExprMatch m -> syntaxNode m
+    ExprList l -> syntaxNode l
+    ExprTuple t -> syntaxNode t
+    ExprCons c -> syntaxNode c
+    ExprRecord r -> syntaxNode r
+    ExprRecordAccess r -> syntaxNode r
+    ExprRecordUpdate r -> syntaxNode r
     ExprUnit u -> syntaxNode u
 
 newtype AppExpr = AppExpr SyntaxNode deriving (Show, Eq)
