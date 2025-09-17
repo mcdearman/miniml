@@ -91,9 +91,11 @@ data SyntaxKind
   | SyntaxKindExprRecordAccess
   | SyntaxKindExprRecordUpdate
   | SyntaxKindExprUnit
+  | SyntaxKindRecordLitField
+  | SyntaxKindMatchCase
   | SyntaxKindBind
-  | SyntaxKindFunBind
-  | SyntaxKindPatBind
+  | SyntaxKindBindFun
+  | SyntaxKindBindPat
   | SyntaxKindAlt
   | SyntaxKindGuard
   | SyntaxKindAnno
@@ -114,6 +116,7 @@ data SyntaxKind
   | SyntaxKindPatternList
   | SyntaxKindPatternRecord
   | SyntaxKindPatternUnit
+  | SyntaxKindIdent
   | SyntaxKindLiteral
   deriving (Show, Eq, Ord)
 
