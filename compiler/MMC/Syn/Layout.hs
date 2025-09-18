@@ -58,22 +58,22 @@ data VTok
 --       pure $ VTok t
 
 layout :: LineIndex -> [Token] -> [VTok]
-layout li ts = go li 0 ts []
+layout li ts = go ts 0 [1]
   where
-    go :: LineIndex -> Int -> [Token] -> [Int] -> [VTok]
+    go :: [Token] -> Int -> [Int] -> [VTok]
     --  L ({n} : ts) [] = {  :  (L ts [n]) if n > 0 (Note 1)
-    go li offset (t : c : ts) []
+    go (t : c : ts) o []
       | isLayoutHerald t c =
-          let (_, col) = offsetToLineCol li offset
-           in VIndent col : go li col (c : ts) [col]
-    go li col (t : ts) (0 : ms) | tokenKind t == SyntaxKindRBrace = VTok t : go li col ts ms
-    go _ _ (t : ts) ms | tokenKind t == SyntaxKindRBrace = error "unmatched right brace"
-    go li o (t : ts) ms | tokenKind t == SyntaxKindLBrace = VTok t : go li o ts (0 : ms)
-    go li o (t : ts) (m : ms) | m /= 0 = VDedent m : go li o (t : ts) ms
-    go li o (t : ts) ms = VTok t : go li o ts ms
-    go _ _ [] [] = []
-    go li o [] (m : ms) | m /= 0 = VDedent m : go li o [] ms
-    go _ _ _ _ = undefined
+          let (_, col) = offsetToLineCol li o
+           in VIndent col : go (c : ts) col [col]
+    go (t : ts) col (0 : ms) | tokenKind t == SyntaxKindRBrace = VTok t : go ts col ms
+    go (t : ts) _ ms | tokenKind t == SyntaxKindRBrace = error "unmatched right brace"
+    go (t : ts) o ms | tokenKind t == SyntaxKindLBrace = VTok t : go ts o (0 : ms)
+    go (t : ts) o (m : ms) | m /= 0 = VDedent m : go (t : ts) o ms
+    go (t : ts) o ms = VTok t : go ts o ms
+    go [] _ [] = []
+    go [] o (m : ms) | m /= 0 = VDedent m : go [] o ms
+    go _ _ _ = undefined
 
 isLayoutHerald :: Token -> Token -> Bool
 isLayoutHerald t c = isLayoutKeyword t && tokenKind c == SyntaxKindColon
