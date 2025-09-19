@@ -7,13 +7,11 @@ where
 
 import Data.ByteString (ByteString)
 import qualified Data.ByteString as B
-import Data.Text (Text)
 import qualified Data.Vector.Unboxed as U
 
-data LineIndex
-  = LineIndex {lineStarts :: !(U.Vector Int)}
-  deriving (Show, Eq)
+newtype LineIndex = LineIndex {lineStarts :: U.Vector Int} deriving (Show, Eq)
 
+{-# INLINE buildLineIndex #-}
 buildLineIndex :: ByteString -> LineIndex
 buildLineIndex bs = LineIndex . U.fromList $ 0 : map (+ 1) (B.elemIndices 0x0A bs)
 
@@ -21,8 +19,9 @@ buildLineIndex bs = LineIndex . U.fromList $ 0 : map (+ 1) (B.elemIndices 0x0A b
 --   where
 --     scan t = [i + 1 | (i, c) <- zip [0 ..] t, c == '\n']
 
+{-# INLINE offsetToLineCol #-}
 offsetToLineCol :: LineIndex -> Int -> (Int, Int)
-offsetToLineCol (LineIndex starts) !offset =
+offsetToLineCol (LineIndex !starts) !offset =
   let !i = binarySearch starts offset
       !lineStart = starts U.! i
       !col = offset - lineStart + 1

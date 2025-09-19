@@ -4,9 +4,9 @@ import MMC.Syn.GreenNode (GreenNode (..), SyntaxKind)
 import MMC.Utils.Unique (Unique)
 
 data SyntaxNode = SyntaxNode
-  { syntaxNodeOffset :: Int,
+  { syntaxNodeOffset :: !Int,
     syntaxNodeParent :: Maybe SyntaxNode,
-    syntaxNodeGreen :: GreenNode
+    syntaxNodeGreen :: !GreenNode
   }
   deriving (Show, Eq, Ord)
 
