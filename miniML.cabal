@@ -59,6 +59,7 @@ executable miniML
         MultilineStrings
     build-depends:    
         base,
+        primitive,
         bytestring,
         unordered-containers,
         intern,

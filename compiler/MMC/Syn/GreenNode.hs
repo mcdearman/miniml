@@ -1,44 +1,36 @@
-module MMC.Syn.GreenNode
-  ( GreenNode (..),
-    Token (..),
-    SyntaxKind (..),
-    tokenLength,
-    isTrivia,
-    isSpace,
-    isKeyword,
-    isLayoutKeyword,
-  )
-where
+module MMC.Syn.GreenNode where
 
 import Data.ByteString (ByteString)
 import qualified Data.ByteString as ByteString
+import Data.Primitive (PrimArray, SmallArray)
 import Data.Vector.Unboxed (Vector)
 import qualified Data.Vector.Unboxed as U
-import Data.Word (Word16)
+import Data.Word (Word16, Word8)
 import GHC.Exts (Word#)
 import MMC.Utils.Unique (Unique)
 
-data GreenNode = GreenNode
-  { greenNodeKind :: {-# UNPACK #-} !SyntaxKind,
-    greenNodeChildren :: Vector (Either Token GreenNode),
-    greenNodeWidth :: {-# UNPACK #-} !Int
+data GreenCtx = GreenCtx
+  { greenNodes :: !GreenNodes,
+    greenChildren :: !GreenChildren,
+    tokens :: !Tokens
   }
 
-instance Show GreenNode where
-  show (GreenNode kind children width) =
-    "GreenNode { kind = "
-      ++ show kind
-      ++ ", children = "
-      ++ show (U.toList children)
-      ++ ", width = "
-      ++ show width
-      ++ " }"
-
-data Token = Token
-  { tokenKind :: {-# UNPACK #-} !SyntaxKind,
-    tokenText :: !ByteString
+data GreenNodes = GreenNodes
+  { nodeKind :: !(PrimArray SyntaxKind),
+    nodeChildStart :: !(PrimArray Int),
+    nodeChildCount :: !(PrimArray Int),
+    nodeWidth :: !(PrimArray Int)
   }
-  deriving (Show, Eq, Ord)
+
+data GreenChildren = GreenChildren
+  { childTag :: !(PrimArray Word8),
+    childIx :: !(PrimArray Int)
+  }
+
+data Tokens = Tokens
+  { tokKind :: !(PrimArray SyntaxKind),
+    tokText :: !(SmallArray ByteString)
+  }
 
 newtype SyntaxKind = SyntaxKind Word16 deriving (Show, Eq, Ord)
 
@@ -217,54 +209,54 @@ pattern SyntaxKindClassDeclBind = SyntaxKind 38
 --   | SyntaxKindLiteral
 --   deriving (Show, Eq, Ord)
 
-tokenLength :: Token -> Int
-tokenLength = ByteString.length . tokenText
+-- tokenLength :: Token -> Int
+-- tokenLength = ByteString.length . tokenText
 
-isTrivia :: Token -> Bool
-isTrivia = go . tokenKind
-  where
-    go SyntaxKindWhitespace = True
-    go SyntaxKindNewline = True
-    go SyntaxKindTab = True
-    go SyntaxKindComment = True
-    go _ = False
+-- isTrivia :: Token -> Bool
+-- isTrivia = go . tokenKind
+--   where
+--     go SyntaxKindWhitespace = True
+--     go SyntaxKindNewline = True
+--     go SyntaxKindTab = True
+--     go SyntaxKindComment = True
+--     go _ = False
 
-isSpace :: Token -> Bool
-isSpace = go . tokenKind
-  where
-    go SyntaxKindWhitespace = True
-    go _ = False
+-- isSpace :: Token -> Bool
+-- isSpace = go . tokenKind
+--   where
+--     go SyntaxKindWhitespace = True
+--     go _ = False
 
-isKeyword :: Token -> Bool
-isKeyword t
-  | tokenKind t == SyntaxKindLowercaseIdent = go $ tokenText t
-  | otherwise = False
-  where
-    go "module" = True
-    go "import" = True
-    go "let" = True
-    go "in" = True
-    go "where" = True
-    go "if" = True
-    go "then" = True
-    go "else" = True
-    go "match" = True
-    go "with" = True
-    go "record" = True
-    go "data" = True
-    go "type" = True
-    go "class" = True
-    go "instance" = True
-    go "do" = True
-    go _ = False
+-- isKeyword :: Token -> Bool
+-- isKeyword t
+--   | tokenKind t == SyntaxKindLowercaseIdent = go $ tokenText t
+--   | otherwise = False
+--   where
+--     go "module" = True
+--     go "import" = True
+--     go "let" = True
+--     go "in" = True
+--     go "where" = True
+--     go "if" = True
+--     go "then" = True
+--     go "else" = True
+--     go "match" = True
+--     go "with" = True
+--     go "record" = True
+--     go "data" = True
+--     go "type" = True
+--     go "class" = True
+--     go "instance" = True
+--     go "do" = True
+--     go _ = False
 
-isLayoutKeyword :: Token -> Bool
-isLayoutKeyword t
-  | tokenKind t == SyntaxKindLowercaseIdent = go $ tokenText t
-  | otherwise = False
-  where
-    go "let" = True
-    go "where" = True
-    go "do" = True
-    go "with" = True
-    go _ = False
+-- isLayoutKeyword :: Token -> Bool
+-- isLayoutKeyword t
+--   | tokenKind t == SyntaxKindLowercaseIdent = go $ tokenText t
+--   | otherwise = False
+--   where
+--     go "let" = True
+--     go "where" = True
+--     go "do" = True
+--     go "with" = True
+--     go _ = False
