@@ -1,5 +1,8 @@
+{-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
+
 module MMC.Syn.GreenNode where
 
+import Data.Bits
 import Data.ByteString (ByteString)
 import qualified Data.ByteString as ByteString
 import Data.Primitive (PrimArray, SmallArray)
@@ -22,10 +25,38 @@ data GreenNodes = GreenNodes
     nodeWidth :: !(PrimArray Int)
   }
 
-data GreenChildren = GreenChildren
-  { childTag :: !(PrimArray Word8),
-    childIx :: !(PrimArray Int)
-  }
+type ChildWord = Word
+
+packTok :: TokenId -> ChildWord
+packTok (TokenId ix) = (fromIntegral ix `shiftL` 1) .|. 0
+
+packNode :: NodeId -> ChildWord
+packNode (NodeId ix) = (fromIntegral ix `shiftL` 1) .|. 1
+
+isNode :: ChildWord -> Bool
+isNode w = (w .&. 1) /= 0
+
+childIx :: ChildWord -> Int
+childIx w = fromIntegral (w `shiftR` 1)
+
+data ChildRef = CToken !TokenId | CNode !NodeId
+
+decodeChild :: ChildWord -> ChildRef
+decodeChild w
+  | isNode w = CNode (NodeId (childIx w))
+  | otherwise = CToken (TokenId (childIx w))
+
+pattern Child :: ChildRef -> ChildWord
+pattern Child cref <- (decodeChild -> cref)
+  where
+    Child (CToken (TokenId ix)) = packTok (TokenId ix)
+    Child (CNode (NodeId ix)) = packNode (NodeId ix)
+
+newtype NodeId = NodeId Int deriving (Show, Eq, Ord)
+
+newtype TokenId = TokenId Int deriving (Show, Eq, Ord)
+
+newtype GreenChildren = GreenChildren (PrimArray ChildWord)
 
 data Tokens = Tokens
   { tokKind :: !(PrimArray SyntaxKind),
