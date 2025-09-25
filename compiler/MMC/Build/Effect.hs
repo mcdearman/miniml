@@ -22,7 +22,7 @@ data PipelineEnv = PipelineEnv
     pipelineFlags :: ![Text],
     pipelineMode :: !InputMode,
     pipelineLineIndex :: !LineIndex,
-    pipelineErrors :: TVar [Diagnostic Text]
+    pipelineErrors :: !(TVar [Diagnostic Text])
   }
   deriving (Eq)
 
