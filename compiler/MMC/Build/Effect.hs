@@ -18,11 +18,11 @@ data InputMode
   deriving (Show, Eq)
 
 data PipelineEnv = PipelineEnv
-  { pipelineSrc :: !ByteString,
-    pipelineFlags :: ![Text],
-    pipelineMode :: !InputMode,
-    pipelineLineIndex :: !LineIndex,
-    pipelineErrors :: !(TVar [Diagnostic Text])
+  { pipelineSrc :: ByteString,
+    pipelineFlags :: [Text],
+    pipelineMode :: InputMode,
+    pipelineLineIndex :: LineIndex,
+    pipelineErrors :: TVar [Diagnostic Text]
   }
   deriving (Eq)
 

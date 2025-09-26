@@ -9,9 +9,9 @@ data Symbol = Symbol {symId :: !Unique}
   deriving (Show, Eq, Ord)
 
 data Entry = Entry
-  { entryName :: !Text,
-    entrySort :: !EntrySort,
-    entryScope :: !Int
+  { entryName :: Text,
+    entrySort :: EntrySort,
+    entryScope :: Int
     -- entryType :: Ty
   }
   deriving (Show, Eq)

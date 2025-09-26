@@ -13,16 +13,16 @@ import GHC.Exts (Word#)
 import MMC.Utils.Unique (Unique)
 
 data GreenCtx = GreenCtx
-  { greenNodes :: !GreenNodes,
-    greenChildren :: !GreenChildren,
-    tokens :: !Tokens
+  { greenNodes :: GreenNodes,
+    greenChildren :: GreenChildren,
+    tokens :: Tokens
   }
 
 data GreenNodes = GreenNodes
-  { nodeKind :: !(PrimArray SyntaxKind),
-    nodeChildStart :: !(PrimArray Int),
-    nodeChildCount :: !(PrimArray Int),
-    nodeWidth :: !(PrimArray Int)
+  { nodeKind :: PrimArray SyntaxKind,
+    nodeChildStart :: PrimArray Int,
+    nodeChildCount :: PrimArray Int,
+    nodeWidth :: PrimArray Int
   }
 
 type ChildWord = Word
@@ -39,7 +39,7 @@ isNode w = (w .&. 1) /= 0
 childIx :: ChildWord -> Int
 childIx w = fromIntegral (w `shiftR` 1)
 
-data ChildRef = CToken !TokenId | CNode !NodeId
+data ChildRef = CToken TokenId | CNode NodeId
 
 decodeChild :: ChildWord -> ChildRef
 decodeChild w
@@ -59,8 +59,8 @@ newtype TokenId = TokenId Int deriving (Show, Eq, Ord)
 newtype GreenChildren = GreenChildren (PrimArray ChildWord)
 
 data Tokens = Tokens
-  { tokKind :: !(PrimArray SyntaxKind),
-    tokText :: !(SmallArray ByteString)
+  { tokKind :: PrimArray SyntaxKind,
+    tokText :: SmallArray ByteString
   }
 
 newtype SyntaxKind = SyntaxKind Word16 deriving (Show, Eq, Ord)

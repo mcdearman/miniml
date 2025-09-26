@@ -3,18 +3,18 @@ module MMC.Syn.TokenTree (TokenTree (..), Delim (..), Punct (..)) where
 import MMC.Utils.Span (Span)
 
 data TokenTree = TokenTree
-  { tokenTreeKind :: !TokenTreeKind,
-    tokenTreeSpan :: !Span,
-    tokenTreeOrigin :: !Origin
+  { tokenTreeKind :: TokenTreeKind,
+    tokenTreeSpan :: Span,
+    tokenTreeOrigin :: Origin
   }
   deriving (Show, Eq, Ord)
 
 data TokenTreeKind
   = TokenTreeError
-  | TokenTreeGroup !Delim [TokenTree]
-  | TokenTreeIdent !Ident
-  | TokenTreePunct !Punct
-  | TokenTreeLiteral !Literal
+  | TokenTreeGroup Delim [TokenTree]
+  | TokenTreeIdent Ident
+  | TokenTreePunct Punct
+  | TokenTreeLiteral Literal
   deriving (Show, Eq, Ord)
 
 data Origin = Original | SyntheticLayout | SyntheticMacro

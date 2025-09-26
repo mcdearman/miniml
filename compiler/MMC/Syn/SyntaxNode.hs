@@ -4,9 +4,9 @@ module MMC.Syn.SyntaxNode where
 -- import MMC.Utils.Unique (Unique)
 
 -- data SyntaxNode = SyntaxNode
---   { syntaxNodeOffset :: !Int,
---     syntaxNodeParent :: Maybe SyntaxNode,
---     syntaxNodeGreen :: !GreenNode
+--   { syntaxNodeOffset :: Int,
+--     syntaxNodeParent :: ~(Maybe SyntaxNode),
+--     syntaxNodeGreen :: GreenNode
 --   }
 --   deriving (Show, Eq, Ord)
 

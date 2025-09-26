@@ -21,7 +21,7 @@ buildLineIndex bs = LineIndex . U.fromList $ 0 : map (+ 1) (B.elemIndices 0x0A b
 
 {-# INLINE offsetToLineCol #-}
 offsetToLineCol :: LineIndex -> Int -> (Int, Int)
-offsetToLineCol (LineIndex !starts) !offset =
+offsetToLineCol (LineIndex starts) !offset =
   let !i = binarySearch starts offset
       !lineStart = starts U.! i
       !col = offset - lineStart + 1
