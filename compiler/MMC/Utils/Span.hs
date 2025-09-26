@@ -3,7 +3,10 @@ module MMC.Utils.Span (Span (..), toPair, slice) where
 import Data.ByteString (ByteString)
 import qualified Data.ByteString as BS
 
-data Span = Span {spanStart :: Int, spanEnd :: Int}
+data Span = Span
+  { start :: {-# UNPACK #-} !Int,
+    end :: {-# UNPACK #-} !Int
+  }
   deriving (Show, Eq, Ord)
 
 toPair :: Span -> (Int, Int)
