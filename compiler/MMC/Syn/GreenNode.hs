@@ -13,36 +13,36 @@ import GHC.Exts (Word#)
 import MMC.Utils.Unique (Unique)
 
 data GreenCtx = GreenCtx
-  { greenNodes :: GreenNodes,
-    greenChildren :: GreenChildren,
-    tokens :: Tokens
+  { greenNodes :: !GreenNodes,
+    greenChildren :: !GreenChildren,
+    tokens :: !Tokens
   }
 
 data GreenNodes = GreenNodes
-  { nodeKind :: PrimArray SyntaxKind,
-    nodeChildStart :: PrimArray Int,
-    nodeChildCount :: PrimArray Int,
-    nodeWidth :: PrimArray Int
+  { nodeKind :: !(PrimArray SyntaxKind),
+    nodeChildStart :: !(PrimArray Int),
+    nodeChildCount :: !(PrimArray Int),
+    nodeWidth :: !(PrimArray Int)
   }
 
 type ChildWord = Word
 
 packTok :: TokenId -> ChildWord
-packTok (TokenId ix) = (fromIntegral ix `shiftL` 1) .|. 0
+packTok (TokenId !ix) = (fromIntegral ix `shiftL` 1) .|. 0
 
 packNode :: NodeId -> ChildWord
-packNode (NodeId ix) = (fromIntegral ix `shiftL` 1) .|. 1
+packNode (NodeId !ix) = (fromIntegral ix `shiftL` 1) .|. 1
 
 isNode :: ChildWord -> Bool
-isNode w = (w .&. 1) /= 0
+isNode !w = (w .&. 1) /= 0
 
 childIx :: ChildWord -> Int
-childIx w = fromIntegral (w `shiftR` 1)
+childIx !w = fromIntegral (w `shiftR` 1)
 
 data ChildRef = CToken TokenId | CNode NodeId
 
 decodeChild :: ChildWord -> ChildRef
-decodeChild w
+decodeChild !w
   | isNode w = CNode (NodeId (childIx w))
   | otherwise = CToken (TokenId (childIx w))
 
@@ -59,8 +59,8 @@ newtype TokenId = TokenId Int deriving (Show, Eq, Ord)
 newtype GreenChildren = GreenChildren (PrimArray ChildWord)
 
 data Tokens = Tokens
-  { tokKind :: PrimArray SyntaxKind,
-    tokText :: SmallArray ByteString
+  { tokKind :: !(PrimArray SyntaxKind),
+    tokText :: !(SmallArray ByteString)
   }
 
 newtype SyntaxKind = SyntaxKind Word16 deriving (Show, Eq, Ord)

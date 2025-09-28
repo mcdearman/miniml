@@ -46,7 +46,6 @@ executable miniML
         MMC.Utils.Unique
     default-extensions: 
         OverloadedStrings
-        StrictData
         MagicHash
         ScopedTypeVariables
         LambdaCase
