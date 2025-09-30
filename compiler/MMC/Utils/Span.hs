@@ -1,4 +1,4 @@
-module MMC.Utils.Span (Span (..), toPair, slice) where
+module MMC.Utils.Span (Span (..), toPair, slice, Spanned (..)) where
 
 import Data.ByteString (ByteString)
 import qualified Data.ByteString as BS
