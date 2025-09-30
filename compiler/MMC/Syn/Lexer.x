@@ -1,6 +1,6 @@
 {
 module MMC.Syn.Lexer (tokenize) where
-
+import MMC.Syn.GreenNode (Token (..), SyntaxKind (..))
 import Data.ByteString.Lazy (ByteString)
 import qualified Data.ByteString.Lazy as BL
 import qualified Data.Text.Encoding as TE

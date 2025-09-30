@@ -31,10 +31,11 @@ executable miniML
         MMC.Build.Pipeline
         MMC.Static.Scc
         MMC.Syn.AST
+        MMC.Syn.GreenNode
         MMC.Syn.Layout
         MMC.Syn.Lexer
         MMC.Syn.Parser
-        MMC.Syn.Token
+        MMC.Syn.SyntaxNode
         MMC.Syn.TokenTree
         MMC.Build
         MMC.Typing.Kind
