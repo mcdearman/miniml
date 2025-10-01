@@ -1,0 +1,18 @@
+// MiniML ungrammar
+// This specifies the structure of the MiniML concrete syntax tree.
+
+Prog = Decl*
+
+ModuleDecl = 
+  'module' ModuleName 'where' UseDecl* Attr* Decl*
+
+UseDecl =
+  'use' ModulePath ('as' ModuleAlias)?
+| 'use' ModulePath '(' UseList ')'
+| 'use' ModulePath 'hiding' '(' UseList ')'
+
+UseList = Ident (',' Ident)*
+
+
+
+  
