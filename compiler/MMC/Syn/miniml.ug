@@ -11,7 +11,23 @@ UseDecl =
 | 'use' ModulePath '(' UseList ')'
 | 'use' ModulePath 'hiding' '(' UseList ')'
 
-UseList = Ident (',' Ident)*
+UseList = 'ident' (',' 'ident')*
+
+Attr = 
+  '@' Meta
+
+Meta =
+  Path ('=' Expr | TokenTree)?
+
+Path =
+  (qualifier:Path '.')? segment:PathSegment
+
+PathSegment =
+  '.'? NameRef
+// | NameRef GenericArgList?
+// | NameRef ParamList RetType?
+// | '(' Path ('as' Path)? ')'
+
 
 
 
