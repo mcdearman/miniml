@@ -1,0 +1,4 @@
+[submodule "tools/Parsifal"]
+	path = tools/Parsifal
+	url = git@github.com:mcdearman/Parsifal.git
+	branch = main
