@@ -4,7 +4,16 @@
 Prog = Decl*
 
 ModuleDecl = 
-  'module' ModuleName 'where' UseDecl* Attr* Decl*
+  'module' ModuleName 'where' Attr* Decl*
+
+Decl = 
+  UseDecl
+| RecordDecl
+| ClassDef
+| ClassDecl
+| InstanceDecl
+
+Attr = '@' Meta
 
 UseDecl =
   'use' ModulePath ('as' ModuleAlias)?
@@ -12,9 +21,6 @@ UseDecl =
 | 'use' ModulePath 'hiding' '(' UseList ')'
 
 UseList = 'ident' (',' 'ident')*
-
-Attr = 
-  '@' Meta
 
 Meta =
   Path ('=' Expr | TokenTree)?
@@ -24,11 +30,6 @@ Path =
 
 PathSegment =
   '.'? NameRef
-// | NameRef GenericArgList?
-// | NameRef ParamList RetType?
-// | '(' Path ('as' Path)? ')'
+| '(' Path ('as' Path)? ')'
 
 
-
-
-  
