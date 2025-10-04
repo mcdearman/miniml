@@ -73,7 +73,7 @@ run src = do
 --   Right prog -> putStrLn $ unpack . toStrict $ pShow prog
 
 main :: IO ()
-main = run "'\\u'"
+main = run "let x = 42 in x + 1"
 
 -- putStrLn "Welcome to the miniML REPL!"
 -- runInputT settings (repl defaultPipelineEnv)
