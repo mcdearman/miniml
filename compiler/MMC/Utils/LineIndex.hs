@@ -15,10 +15,6 @@ newtype LineIndex = LineIndex {lineStarts :: U.Vector Int} deriving (Show, Eq)
 buildLineIndex :: ByteString -> LineIndex
 buildLineIndex bs = LineIndex . U.fromList $ 0 : map (+ 1) (B.elemIndices 0x0A bs)
 
--- buildLineIndex src = LineIndex (U.fromList (0 : scan src))
---   where
---     scan t = [i + 1 | (i, c) <- zip [0 ..] t, c == '\n']
-
 {-# INLINE offsetToLineCol #-}
 offsetToLineCol :: LineIndex -> Int -> (Int, Int)
 offsetToLineCol (LineIndex starts) !offset =

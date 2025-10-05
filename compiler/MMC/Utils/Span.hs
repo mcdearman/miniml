@@ -1,4 +1,4 @@
-module MMC.Utils.Span (Span (..), toPair, slice) where
+module MMC.Utils.Span (Span (..), toPair, slice, Spanned (..)) where
 
 import Data.ByteString (ByteString)
 import qualified Data.ByteString as BS
@@ -21,17 +21,8 @@ slice (Span s e) bs = BS.take (e - s) (BS.drop s bs)
 instance Semigroup Span where
   Span s1 e1 <> Span s2 e2 = Span (min s1 s2) (max e1 e2)
 
-data Spanned a = Spanned a Span
+data Spanned a = Spanned {unSpanned :: a, spanOf :: Span}
   deriving (Show, Eq, Ord)
-
-unSpan :: Spanned a -> a
-unSpan (Spanned v _) = v
-
-getSpan :: Spanned a -> Span
-getSpan (Spanned _ s) = s
-
--- instance (Pretty a) => Pretty (Spanned a) where
---   pretty (Located v s) = pretty v <> " @ " <> pretty s
 
 instance Functor Spanned where
   fmap f (Spanned v s) = Spanned (f v) s

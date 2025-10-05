@@ -1,6 +1,6 @@
 {
 module MMC.Syn.Lexer (tokenize) where
-import MMC.Syn.GreenNode (Token (..), SyntaxKind (..))
+import MMC.Syn.Token
 import Data.ByteString.Lazy (ByteString)
 import qualified Data.ByteString.Lazy as BL
 import qualified Data.Text.Encoding as TE
@@ -56,43 +56,71 @@ $escSimple = [0\'\"\\nrtabfv]
 
 miniml :-
 
-  $tab                           { \bs -> Token SyntaxKindTab (BL.toStrict bs) }
-  $whitespace+                   { \bs -> Token SyntaxKindWhitespace (BL.toStrict bs) }
-  "--".*                         { \bs -> Token SyntaxKindComment (BL.toStrict bs) }
-  $newline                       { \bs -> Token SyntaxKindNewline (BL.toStrict bs) }
+  $tab                           { \bs -> Token TokenKindTab (BL.toStrict bs) }
+  $whitespace+                   { \bs -> Token TokenKindWhitespace (BL.toStrict bs) }
+  "--".*                         { \bs -> Token TokenKindComment (BL.toStrict bs) }
+  $newline                       { \bs -> Token TokenKindNewline (BL.toStrict bs) }
 
-  "("                            { \bs -> Token SyntaxKindLParen (BL.toStrict bs) }
-  ")"                            { \bs -> Token SyntaxKindRParen (BL.toStrict bs) }
-  "{"                            { \bs -> Token SyntaxKindLBrace (BL.toStrict bs) }
-  "}"                            { \bs -> Token SyntaxKindRBrace (BL.toStrict bs) }
-  "["                            { \bs -> Token SyntaxKindLBracket (BL.toStrict bs) }
-  "]"                            { \bs -> Token SyntaxKindRBracket (BL.toStrict bs) }
-  "!"                            { \bs -> Token SyntaxKindBang (BL.toStrict bs) }
-  "#"                            { \bs -> Token SyntaxKindHash (BL.toStrict bs) }
-  [\\]                           { \bs -> Token SyntaxKindBackSlash (BL.toStrict bs) }
-  ":"                            { \bs -> Token SyntaxKindColon (BL.toStrict bs) }
-  ";"                            { \bs -> Token SyntaxKindSemi (BL.toStrict bs) }
-  ","                            { \bs -> Token SyntaxKindComma (BL.toStrict bs) }
-  "."                            { \bs -> Token SyntaxKindPeriod (BL.toStrict bs) }
-  "="                            { \bs -> Token SyntaxKindEq (BL.toStrict bs) }
-  "<-"                           { \bs -> Token SyntaxKindLArrow (BL.toStrict bs) }
-  "->"                           { \bs -> Token SyntaxKindRArrow (BL.toStrict bs) }
-  "=>"                           { \bs -> Token SyntaxKindLFatArrow (BL.toStrict bs) }
-  "|"                            { \bs -> Token SyntaxKindBar (BL.toStrict bs) }
-  "_"                            { \bs -> Token SyntaxKindUnderscore (BL.toStrict bs) }
+  "("                            { \bs -> Token TokenKindLParen (BL.toStrict bs) }
+  ")"                            { \bs -> Token TokenKindRParen (BL.toStrict bs) }
+  "{"                            { \bs -> Token TokenKindLBrace (BL.toStrict bs) }
+  "}"                            { \bs -> Token TokenKindRBrace (BL.toStrict bs) }
+  "["                            { \bs -> Token TokenKindLBracket (BL.toStrict bs) }
+  "]"                            { \bs -> Token TokenKindRBracket (BL.toStrict bs) }
+  "!"                            { \bs -> Token TokenKindBang (BL.toStrict bs) }
+  "#"                            { \bs -> Token TokenKindHash (BL.toStrict bs) }
+  [\\]                           { \bs -> Token TokenKindBackSlash (BL.toStrict bs) }
+  ":"                            { \bs -> Token TokenKindColon (BL.toStrict bs) }
+  ";"                            { \bs -> Token TokenKindSemi (BL.toStrict bs) }
+  ","                            { \bs -> Token TokenKindComma (BL.toStrict bs) }
+  "."                            { \bs -> Token TokenKindPeriod (BL.toStrict bs) }
+  "="                            { \bs -> Token TokenKindEq (BL.toStrict bs) }
+  "<-"                           { \bs -> Token TokenKindLArrow (BL.toStrict bs) }
+  "->"                           { \bs -> Token TokenKindRArrow (BL.toStrict bs) }
+  "=>"                           { \bs -> Token TokenKindLFatArrow (BL.toStrict bs) }
+  "|"                            { \bs -> Token TokenKindBar (BL.toStrict bs) }
+  "_"                            { \bs -> Token TokenKindUnderscore (BL.toStrict bs) }
 
-  @lowerCaseIdent                { \bs -> Token (SyntaxKindLowercaseIdent) (BL.toStrict bs) }
-  @upperCaseIdent                { \bs -> Token (SyntaxKindUppercaseIdent) (BL.toStrict bs) }
-  @conOpIdent                    { \bs -> Token (SyntaxKindConOpIdent) (BL.toStrict bs) }
-  @opIdent                       { \bs -> Token (SyntaxKindOpIdent) (BL.toStrict bs) }
+  @lowerCaseIdent                { \bs -> Token (TokenKindLowercaseIdent) (BL.toStrict bs) }
+  @upperCaseIdent                { \bs -> Token (TokenKindUppercaseIdent) (BL.toStrict bs) }
+  @conOpIdent                    { \bs -> Token (TokenKindConOpIdent) (BL.toStrict bs) }
+  @opIdent                       { \bs -> Token (TokenKindOpIdent) (BL.toStrict bs) }
 
-  @int                           { \bs -> Token SyntaxKindInt (BL.toStrict bs) }
-  @char                          { \bs -> Token SyntaxKindChar (BL.toStrict bs) }
-  @string                        { \bs -> Token SyntaxKindString (BL.toStrict bs) }
+  @int                           { \bs -> Token TokenKindInt (BL.toStrict bs) }
+  @char                          { \bs -> Token TokenKindChar (BL.toStrict bs) }
+  @string                        { \bs -> Token TokenKindString (BL.toStrict bs) }
 
-  $nonWhite                      { \bs -> Token SyntaxKindError (BL.toStrict bs) }
+  $nonWhite                      { \bs -> Token TokenKindError (BL.toStrict bs) }
 
 {
+makeInt :: Int -> ByteString -> TokenKind
+makeInt 10 bs = TokInt $ parseRadix 10 $ bsToText bs
+makeInt 2 bs = TokInt $ parseRadix 2 $ stripIntPrefix bs
+makeInt 8 bs = TokInt $ parseRadix 8 $ stripIntPrefix bs
+makeInt 16 bs = TokInt $ parseRadix 16 $ stripIntPrefix bs
+makeInt r _ = error $ "Unsupported radix" ++ show r
+
+{-# INLINE stripIntPrefix #-}
+stripIntPrefix :: ByteString -> Text
+stripIntPrefix bs = T.drop 2 $ bsToText bs
+
+{-# INLINE bsToText #-}
+bsToText :: ByteString -> Text
+bsToText = TE.decodeUtf8 . BL.toStrict
+
+parseRadix :: (Integral a) => a -> Text -> a
+parseRadix r = T.foldl' step 0
+  where
+    step a c = a * r + (fromIntegral $ Char.digitToInt c)
+
+makeLoc :: AlexPosn -> ByteString -> Loc
+makeLoc (AlexPn start _ _) bs = Loc start end
+  where 
+    end = start + (fromIntegral $ BL.length bs)
+
+posnOffset :: AlexPosn -> Int
+posnOffset (AlexPn o _ _) = o
+
 tokenize :: ByteString -> [Token]
 tokenize = alexScanTokens
 }
