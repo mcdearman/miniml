@@ -1,6 +1,14 @@
-module MMC.Syn.Token (Token (..), TokenKind (..)) where
+module MMC.Syn.Token
+  ( Token (..),
+    TokenKind (..),
+    isTrivia,
+    isSpace,
+    isKeyword,
+    isLayoutKeyword,
+  )
+where
 
-import Data.Text (Text)
+import Data.ByteString (ByteString)
 import MMC.Utils.Span (Span)
 
 data Token = Token {tokenKind :: TokenKind, tokenSpan :: !Span}
@@ -8,14 +16,16 @@ data Token = Token {tokenKind :: TokenKind, tokenSpan :: !Span}
 
 data TokenKind
   = TokenKindError
+  | TokenKindTab
   | TokenKindNewline
+  | TokenKindWhitespace
   | TokenKindComment
-  | TokenKindUpperCaseIdent Text
-  | TokenKindLowerCaseIdent Text
-  | TokenKindOpIdent Text
-  | TokenKindConOpIdent Text
+  | TokenKindUppercaseIdent ByteString
+  | TokenKindLowercaseIdent ByteString
+  | TokenKindOpIdent ByteString
+  | TokenKindConOpIdent ByteString
   | TokenKindInt Integer
-  | TokenKindString Text
+  | TokenKindString ByteString
   | TokenKindChar Char
   | TokenKindLParen
   | TokenKindRParen
@@ -24,6 +34,7 @@ data TokenKind
   | TokenKindLBracket
   | TokenKindRBracket
   | TokenKindBang
+  | TokenKindHash
   | TokenKindBackSlash
   | TokenKindColon
   | TokenKindSemi
@@ -35,21 +46,53 @@ data TokenKind
   | TokenKindLFatArrow
   | TokenKindBar
   | TokenKindUnderscore
-  | TokenKindModule
-  | TokenKindImport
-  | TokenKindAs
-  | TokenKindLet
-  | TokenKindIn
-  | TokenKindWhere
-  | TokenKindIf
-  | TokenKindThen
-  | TokenKindElse
-  | TokenKindMatch
-  | TokenKindWith
-  | TokenKindRecord
-  | TokenKindData
-  | TokenKindType
-  | TokenKindClass
-  | TokenKindInstance
-  | TokenKindDo
   deriving (Show, Eq, Ord)
+
+isTrivia :: Token -> Bool
+isTrivia = go . tokenKind
+  where
+    go TokenKindWhitespace = True
+    go TokenKindNewline = True
+    go TokenKindTab = True
+    go TokenKindComment = True
+    go _ = False
+
+isSpace :: Token -> Bool
+isSpace = go . tokenKind
+  where
+    go TokenKindWhitespace = True
+    go _ = False
+
+isKeyword :: Token -> Bool
+isKeyword t = case tokenKind t of
+  TokenKindLowercaseIdent txt -> go txt
+  _ -> False
+  where
+    go "module" = True
+    go "import" = True
+    go "let" = True
+    go "in" = True
+    go "where" = True
+    go "if" = True
+    go "then" = True
+    go "else" = True
+    go "match" = True
+    go "with" = True
+    go "record" = True
+    go "data" = True
+    go "type" = True
+    go "class" = True
+    go "instance" = True
+    go "do" = True
+    go _ = False
+
+isLayoutKeyword :: Token -> Bool
+isLayoutKeyword t = case tokenKind t of
+  TokenKindLowercaseIdent txt -> go txt
+  _ -> False
+  where
+    go "let" = True
+    go "where" = True
+    go "do" = True
+    go "with" = True
+    go _ = False

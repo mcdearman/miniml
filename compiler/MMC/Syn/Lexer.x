@@ -7,9 +7,10 @@ import qualified Data.Text.Encoding as TE
 import Data.Text (Text, stripPrefix)
 import qualified Data.Text as T
 import qualified Data.Char as Char
+import MMC.Utils.Span
 }
 
-%wrapper "basic-bytestring"
+%wrapper "posn-bytestring"
 
 $unispace   = \x05
 $nonzero    = [1-9]
@@ -47,7 +48,7 @@ $escSimple = [0\'\"\\nrtabfv]
 @octal       = "0o" $octdig+
 @hexadecimal = "0x" $hexdig+
 @decimal     = ($nonzero $digit* | "0")
-@int         = @binary | @octal | @hexadecimal | @decimal
+-- @int         = @binary | @octal | @hexadecimal | @decimal
 
 @esc     = \\ ( $escSimple | @escByte | @escUni4 | @escUni8 )
 @char    = \' ( $bareScalar | @esc ) \'
@@ -56,48 +57,51 @@ $escSimple = [0\'\"\\nrtabfv]
 
 miniml :-
 
-  $tab                           { \bs -> Token TokenKindTab (BL.toStrict bs) }
-  $whitespace+                   { \bs -> Token TokenKindWhitespace (BL.toStrict bs) }
-  "--".*                         { \bs -> Token TokenKindComment (BL.toStrict bs) }
-  $newline                       { \bs -> Token TokenKindNewline (BL.toStrict bs) }
+  $tab                           { \p bs -> Token TokenKindTab (makeSpan p bs) }
+  $whitespace+                   { \p bs -> Token TokenKindWhitespace (makeSpan p bs) }
+  "--".*                         { \p bs -> Token TokenKindComment (makeSpan p bs) }
+  $newline                       { \p bs -> Token TokenKindNewline (makeSpan p bs) }
 
-  "("                            { \bs -> Token TokenKindLParen (BL.toStrict bs) }
-  ")"                            { \bs -> Token TokenKindRParen (BL.toStrict bs) }
-  "{"                            { \bs -> Token TokenKindLBrace (BL.toStrict bs) }
-  "}"                            { \bs -> Token TokenKindRBrace (BL.toStrict bs) }
-  "["                            { \bs -> Token TokenKindLBracket (BL.toStrict bs) }
-  "]"                            { \bs -> Token TokenKindRBracket (BL.toStrict bs) }
-  "!"                            { \bs -> Token TokenKindBang (BL.toStrict bs) }
-  "#"                            { \bs -> Token TokenKindHash (BL.toStrict bs) }
-  [\\]                           { \bs -> Token TokenKindBackSlash (BL.toStrict bs) }
-  ":"                            { \bs -> Token TokenKindColon (BL.toStrict bs) }
-  ";"                            { \bs -> Token TokenKindSemi (BL.toStrict bs) }
-  ","                            { \bs -> Token TokenKindComma (BL.toStrict bs) }
-  "."                            { \bs -> Token TokenKindPeriod (BL.toStrict bs) }
-  "="                            { \bs -> Token TokenKindEq (BL.toStrict bs) }
-  "<-"                           { \bs -> Token TokenKindLArrow (BL.toStrict bs) }
-  "->"                           { \bs -> Token TokenKindRArrow (BL.toStrict bs) }
-  "=>"                           { \bs -> Token TokenKindLFatArrow (BL.toStrict bs) }
-  "|"                            { \bs -> Token TokenKindBar (BL.toStrict bs) }
-  "_"                            { \bs -> Token TokenKindUnderscore (BL.toStrict bs) }
+  "("                            { \p bs -> Token TokenKindLParen (makeSpan p bs) }
+  ")"                            { \p bs -> Token TokenKindRParen (makeSpan p bs) }
+  "{"                            { \p bs -> Token TokenKindLBrace (makeSpan p bs) }
+  "}"                            { \p bs -> Token TokenKindRBrace (makeSpan p bs) }
+  "["                            { \p bs -> Token TokenKindLBracket (makeSpan p bs) }
+  "]"                            { \p bs -> Token TokenKindRBracket (makeSpan p bs) }
+  "!"                            { \p bs -> Token TokenKindBang (makeSpan p bs) }
+  "#"                            { \p bs -> Token TokenKindHash (makeSpan p bs) }
+  [\\]                           { \p bs -> Token TokenKindBackSlash (makeSpan p bs) }
+  ":"                            { \p bs -> Token TokenKindColon (makeSpan p bs) }
+  ";"                            { \p bs -> Token TokenKindSemi (makeSpan p bs) }
+  ","                            { \p bs -> Token TokenKindComma (makeSpan p bs) }
+  "."                            { \p bs -> Token TokenKindPeriod (makeSpan p bs) }
+  "="                            { \p bs -> Token TokenKindEq (makeSpan p bs) }
+  "<-"                           { \p bs -> Token TokenKindLArrow (makeSpan p bs) }
+  "->"                           { \p bs -> Token TokenKindRArrow (makeSpan p bs) }
+  "=>"                           { \p bs -> Token TokenKindLFatArrow (makeSpan p bs) }
+  "|"                            { \p bs -> Token TokenKindBar (makeSpan p bs) }
+  "_"                            { \p bs -> Token TokenKindUnderscore (makeSpan p bs) }
 
-  @lowerCaseIdent                { \bs -> Token (TokenKindLowercaseIdent) (BL.toStrict bs) }
-  @upperCaseIdent                { \bs -> Token (TokenKindUppercaseIdent) (BL.toStrict bs) }
-  @conOpIdent                    { \bs -> Token (TokenKindConOpIdent) (BL.toStrict bs) }
-  @opIdent                       { \bs -> Token (TokenKindOpIdent) (BL.toStrict bs) }
+  @lowerCaseIdent                { \p bs -> Token (TokenKindLowercaseIdent $ BL.toStrict bs) (makeSpan p bs) }
+  @upperCaseIdent                { \p bs -> Token (TokenKindUppercaseIdent $ BL.toStrict bs) (makeSpan p bs) }
+  @conOpIdent                    { \p bs -> Token (TokenKindConOpIdent $ BL.toStrict bs) (makeSpan p bs) }
+  @opIdent                       { \p bs -> Token (TokenKindOpIdent $ BL.toStrict bs) (makeSpan p bs) }
 
-  @int                           { \bs -> Token TokenKindInt (BL.toStrict bs) }
-  @char                          { \bs -> Token TokenKindChar (BL.toStrict bs) }
-  @string                        { \bs -> Token TokenKindString (BL.toStrict bs) }
+  @decimal                       { \p bs -> Token (makeInt 10 bs) (makeSpan p bs) }
+  @binary                        { \p bs -> Token (makeInt 2 bs) (makeSpan p bs) }
+  @octal                         { \p bs -> Token (makeInt 8 bs) (makeSpan p bs) }
+  @hexadecimal                   { \p bs -> Token (makeInt 16 bs) (makeSpan p bs) }
+  @char                          { \p bs -> Token (TokenKindChar $ bToChar bs) (makeSpan p bs) }
+  @string                        { \p bs -> Token (TokenKindString $ BL.toStrict bs) (makeSpan p bs) }
 
-  $nonWhite                      { \bs -> Token TokenKindError (BL.toStrict bs) }
+  $nonWhite                      { \p bs -> Token TokenKindError (makeSpan p bs) }
 
 {
 makeInt :: Int -> ByteString -> TokenKind
-makeInt 10 bs = TokInt $ parseRadix 10 $ bsToText bs
-makeInt 2 bs = TokInt $ parseRadix 2 $ stripIntPrefix bs
-makeInt 8 bs = TokInt $ parseRadix 8 $ stripIntPrefix bs
-makeInt 16 bs = TokInt $ parseRadix 16 $ stripIntPrefix bs
+makeInt 10 bs = TokenKindInt $ parseRadix 10 $ bsToText bs
+makeInt 2 bs = TokenKindInt $ parseRadix 2 $ stripIntPrefix bs
+makeInt 8 bs = TokenKindInt $ parseRadix 8 $ stripIntPrefix bs
+makeInt 16 bs = TokenKindInt $ parseRadix 16 $ stripIntPrefix bs
 makeInt r _ = error $ "Unsupported radix" ++ show r
 
 {-# INLINE stripIntPrefix #-}
@@ -108,13 +112,17 @@ stripIntPrefix bs = T.drop 2 $ bsToText bs
 bsToText :: ByteString -> Text
 bsToText = TE.decodeUtf8 . BL.toStrict
 
+{-# INLINE bToChar #-}
+bToChar :: ByteString -> Char
+bToChar = Char.chr . fromIntegral . BL.head
+
 parseRadix :: (Integral a) => a -> Text -> a
 parseRadix r = T.foldl' step 0
   where
     step a c = a * r + (fromIntegral $ Char.digitToInt c)
 
-makeLoc :: AlexPosn -> ByteString -> Loc
-makeLoc (AlexPn start _ _) bs = Loc start end
+makeSpan :: AlexPosn -> ByteString -> Span
+makeSpan (AlexPn start _ _) bs = Span start end
   where 
     end = start + (fromIntegral $ BL.length bs)
 
