@@ -8,6 +8,7 @@ import Data.Text (Text, stripPrefix)
 import qualified Data.Text as T
 import qualified Data.Char as Char
 import MMC.Utils.Span
+import Data.Maybe (fromMaybe)
 }
 
 %wrapper "posn-bytestring"
@@ -114,7 +115,10 @@ bsToText = TE.decodeUtf8 . BL.toStrict
 
 {-# INLINE bToChar #-}
 bToChar :: ByteString -> Char
-bToChar = Char.chr . fromIntegral . BL.head
+bToChar = T.head . stripCharQuotes
+  where
+    stripCharQuotes :: ByteString -> Text
+    stripCharQuotes = fromMaybe (error "Invalid char literal") . stripPrefix "'" . T.init . bsToText
 
 parseRadix :: (Integral a) => a -> Text -> a
 parseRadix r = T.foldl' step 0
