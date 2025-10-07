@@ -105,15 +105,12 @@ makeInt 8 bs = TokenKindInt $ parseRadix 8 $ stripIntPrefix bs
 makeInt 16 bs = TokenKindInt $ parseRadix 16 $ stripIntPrefix bs
 makeInt r _ = error $ "Unsupported radix" ++ show r
 
-{-# INLINE stripIntPrefix #-}
 stripIntPrefix :: ByteString -> Text
 stripIntPrefix bs = T.drop 2 $ bsToText bs
 
-{-# INLINE bsToText #-}
 bsToText :: ByteString -> Text
 bsToText = TE.decodeUtf8 . BL.toStrict
 
-{-# INLINE bToChar #-}
 bToChar :: ByteString -> Char
 bToChar = T.head . stripCharQuotes
   where

@@ -5,7 +5,7 @@ import Data.Text (Text)
 -- import MMC.Typing.Ty (Ty)
 import MMC.Utils.Unique (Unique)
 
-data Symbol = Symbol {symId :: !Unique}
+newtype Symbol = Symbol {symId :: Unique}
   deriving (Show, Eq, Ord)
 
 data Entry = Entry

@@ -11,11 +11,9 @@ import qualified Data.Vector.Unboxed as U
 
 newtype LineIndex = LineIndex {lineStarts :: U.Vector Int} deriving (Show, Eq)
 
-{-# INLINE buildLineIndex #-}
 buildLineIndex :: ByteString -> LineIndex
 buildLineIndex bs = LineIndex . U.fromList $ 0 : map (+ 1) (B.elemIndices 0x0A bs)
 
-{-# INLINE offsetToLineCol #-}
 offsetToLineCol :: LineIndex -> Int -> (Int, Int)
 offsetToLineCol (LineIndex starts) !offset =
   let !i = binarySearch starts offset
@@ -23,7 +21,6 @@ offsetToLineCol (LineIndex starts) !offset =
       !col = offset - lineStart + 1
    in (i + 1, col)
 
-{-# INLINE binarySearch #-}
 binarySearch :: U.Vector Int -> Int -> Int
 binarySearch !v !x = go 0 (U.length v - 1)
   where
