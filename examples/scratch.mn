@@ -1,101 +1,3 @@
--- main data types:
-42b -- Byte
-42 -- Int
-1/2 -- Rational
-1.0 -- Real
-"hello" -- String
-'a' -- Char
-true -- Bool
-() -- Unit
-
--- Files are composed of declarations at the top level. In the notebook 
--- or repl, you can use expressions at the top level. You can think of 
--- this as a shorthand for `def main args = <expr>`. In files, the main 
--- function must be defined explicitly:
-main : Console () = do
-  printLn "Hello, world!"
-
--- Bindings are immutable.
-def x = 1
-
--- pattern bindings at the top level must be irrefutable
-def [a, b, c] = [1, 2, 3]
--- > ERROR: Pattern match is not exhaustive
-
-def (a, b, c) = (1, 2, 3) -- this is fine because the pattern is exhaustive
--- > a = 1, b = 2, c = 3
-
--- ints
-1
-
--- booleans
-true
-
--- Binary operators
-1 + 2 * 3^2 - 4 / 5 % 10
-
--- Unary operators
--1
--- > -1
-
-not true
--- > false
-
--- Boolean operators
-true and false or true
--- > true
-
--- Comparison
-1 < 2 and 2 <= 3 and 3 > 2 and 3 >= 2 and 2 = 2 and 2 != 3
-
--- if-then-else
-if 1 < 2 then 1 else 2
-
--- let-in
-let x = 1 in x + 1
-
--- function definition
-def f x = x + 1
-
--- this is equivalent to
-def f = \x -> x + 1
-
--- function expression
-let f x = x + 1 in f 1
-
--- function application
-f 1
-
--- closure
-\x -> x + 1
-
--- closure application
-(\x -> x + 1) 1
-
--- nested let
-let x = 1 in let y = 2 in x + y
-
--- recursion
-def fib n = 
-  if n <= 1 then n 
-  else fib (n - 1) + fib (n - 2) 
-
-def gcd a b = 
-  if b = 0 then a 
-  else gcd b (a % b)
-
--- with type annotations
-def gcd (a : Int) (b : Int) : Int =
-  if b = 0 then a 
-  else gcd b (a % b)
-
-def fib (n : Int) : Int =
-  if n <= 1 then n 
-  else fib (n - 1) + fib (n - 2)
-
-def lcm (a : Int) (b : Int) : Int =
-  a * b / gcd a b
-
 gcd : Int -> Int -> Int
 gcd a 0 = a
 gcd a b = gcd b (a % b)
@@ -103,126 +5,35 @@ gcd a b = gcd b (a % b)
 lcm : Int -> Int -> Int
 lcm a b = a * b / gcd a b
 
--- tail recursive fib
-def fib n = 
-  let loop a b i = 
-    if i = 0 then a 
-    else loop b (a + b) (i - 1)
-  in loop 0 1 n
-
 @pub
-@inline(never)
 sieve : [Int] -> [Int]
 sieve [] = []
 sieve (p :: xs) = p :: sieve [x | x <- xs, x `mod` p > 0]
 
-@inline(always)
 fib : Int -> Int
 fib n = loop n 0 1
   where
-    @inline(never)
     loop 0 a _ = a
     loop i a b = loop (i - 1) b (a + b)
 
 fibs : [Integer]
 fibs = 0 :: 1 :: zipWith (+) fibs (drop 1 fibs)
 
-def fact n =
-  let loop acc n =
-    if n = 0 then acc
-    else loop (acc * n) (n - 1)
-  in loop 1 n
-
 -- naive recursive factorial
 fact : Int -> Int
 fact 0 = 1
 fact n = n * fact (n - 1)
 
+fact : Int -> Int
 fact = go 1
   where
     go acc 0 = acc
     go acc n = go (acc * n) (n - 1)
 
-@inline(always)
-fact : Int -> Int
-fact n = fact' n 1
-  where
-    @inline(never)
-    fact' 0 acc = acc
-    fact' n acc = fact' (n - 1) (acc * n)
-
-def map a b. (f : a -> b) (xs : [a]) : [b] =
-  match xs with
-  | [] -> []
-  | (x::xs) -> f x :: map f xs
-
-pub def map f xs = 
-  match xs with
-    [] -> []
-    (x::xs) -> f x :: map f xs
-
--- with braces and semicolons
-def map f xs = match xs with {
-  [] -> [];
-  (x::xs) -> f x :: map f xs
-}
-
-def foldl f acc xs =
-  match xs with
-  | [] -> acc
-  | (x :: xs) -> foldl f (f acc x) xs
-
-pub def foldl : (a -> b -> a) -> a -> [b] -> a
-  | f acc []      = acc
-  | f acc (x::xs) = foldl f (f acc x) xs
-
-def foldl (f : a -> b -> a) (acc : a) (xs : [b]) : a =
-  match xs with
-    [] -> acc
-    (x::xs) -> foldl f (f acc x) xs
-
-def foldl : (a -> b -> a) -> a -> [b] -> a
-  | f acc [] = acc
-  | f acc (x::xs) = foldl f (f acc x) xs
-
-def foldl a b. (f : a -> b -> a) (acc: a) (xs : [b]) : a =
-  match xs with
-  | [] -> acc
-  | (x :: xs) -> foldl f (f acc x) xs
-
-def foldl f acc xs = match xs with
-  [] -> acc
-  (x::xs) -> foldl f (f acc x) xs
-
-def foldr f acc xs = 
-  match xs with
-  | [] -> acc
-  | (x::xs) -> f x (foldr f acc xs)
-
-def foldr a b. (f : a -> b -> b) (acc : b) (xs : [a]) : b =
-  match xs with
-  | [] -> acc
-  | (x :: xs) -> f x (foldr f acc xs)
-
-def foldr : a b. (a -> b -> b) -> b -> [a] -> b 
-  | f acc [] = acc
-  | f acc (x::xs) = f x (foldr f acc xs) 
-
-def binarySearch (cmp : a -> Ordering) (xs : [a]) (x : a) : Option Int -> 
-  let loop l r =
-    if l > r then None
-    else
-      let m = (l + r) / 2
-      match cmp x (xs !! m) with
-      | Ordering.Eq -> Some m
-      | Ordering.Lt -> loop l (m - 1)
-      | Ordering.Gt -> loop (m + 1) r
-  in loop 0 (len xs - 1)
-
 -- type alias
 type Point = (Int, Int)
 
--- structs
+-- records
 record Person { 
   name : String, 
   age : Int,
@@ -246,43 +57,33 @@ def bob = Person { name = "Bob", age = 25 }
 -- the `pub` keyword.
 @pub
 @derive(Debug, Show, Eq)
-record Person
-  @pub name : String
-  @pub age : Int
-
-@pub
-@derive(Debug, Show, Eq)
 record Person {
   @pub name : String,
-  @pub age : Int,
+  age : Int,
 }
 
--- We can define a constructor for the record. record constructors are just
--- functions with the same name as the record that take the same arguments as 
--- the record fields.
-pub def Person (name : String) (age : Int) : Person =
-  { name = name, age = age }
-  
--- We can use the constructor to create instances of the record.
-def charlie = Person "Charlie" 20
+-- or we can use `@pub(..)` on the record itself to make all fields public.
+@pub(..)
+@derive(Debug, Show, Eq)
+record Person {
+  name : String,
+  age : Int,
+}
 
 -- We can update record fields using the `with` keyword. This creates a new
 -- record with the specified fields updated.
-def alice = { name = "Alice", age = 30 }
-def alice' = { alice with age = 31 }
+alice = { name = "Alice", age = 30 }
+alice' = { alice with age = 31 }
 
 -- We can also update nested fields.
 record Address { city : String, zip : Int }
 record Person { name : String, age : Int, address : Address }
 
-def alice = { name = "Alice", age = 30, address = { city = "New York", zip = 10001 } }
-def alice' = { alice with address.city = "San Francisco" }
+alice = { name = "Alice", age = 30, address = { city = "New York", zip = 10001 } }
+alice' = { alice with address.city = "San Francisco" }
 
 -- sum types
 data Option a = None | Some a
-
--- sum type with effectful constructors
-data Foo a e = Bar a | Baz (a -> a ! e)
 
 data List a = Empty | Pair a (List a)
 
@@ -301,73 +102,7 @@ x |> f = f x
 (&) : (b -> c) -> (a -> b) -> a -> c
 f & g = \x -> f (g x)
 
--- methods with pipe
-[1, 2, 3]
-  |> into_iter
-  |> map (+ 1)
-  |> filter ((== 0) & (% 2))
-
 [1, 2, 3]
   |> map (+ 1)
   |> filter ((== 0) & (% 2))
   |> foldl' (+) 0
-
--- iterator comprehensions
-[for x in [1, 2, 3] if x % 2 = 0]
-
--- type classes
-class Eq a where
-  def eq : a -> a -> Bool
-
-instance Eq Int where
-  def eq = prim_int_eq
-
-instance Eq (Option a) where
-  def eq : Eq a => Option a -> Option a -> Bool
-    | None None = true 
-    | (Some x) (Some y) = eq x y
-    |  _ _ = false
-
-class Ord a <: Eq + PartialOrd where
-  def compare : a -> a -> Ordering
-
-class Add a b where
-  type Output = a
-  fn (+) : a -> b -> Output
-
-data Ordering = Lt | Eq | Gt
-
-class Eq a where
-  def (=) : a -> a -> Bool
-
-class PartialOrd a where
-  def partial_compare : a -> a -> Option Ordering
-
-  def (<) (x : a) (y : a) : Bool = 
-    match partial_compare x y with
-    | Some Lt -> true
-    | _ -> false
-
-  def (<=) (x : a) (y : a) : Bool =
-    match partial_compare x y with
-    | Some Lt -> true
-    | Some Eq -> true
-    | _ -> false
-
-  def (>) (x : a) (y : a) : Bool =
-    match partial_compare x y with
-    | Some Gt -> true
-    | _ -> false
-
-  def (>=) (x : a) (y : a) : Bool =
-    match partial_compare x y with
-    | Some Gt -> true
-    | Some Eq -> true
-    | _ -> false
-
-class (Eq a, PartialOrd a) => Ord a where
-  def (==) : a -> a -> Ordering
-  def (<) : a -> a -> Bool
-  def (<=) : a -> a -> Bool
-  def (>) : a -> a -> Bool
-  def (>=) : a -> a -> Bool
