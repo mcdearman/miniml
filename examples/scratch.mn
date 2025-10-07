@@ -293,23 +293,24 @@ data NonEmptyList a = NonEmpty a (List a)
 -- with infix constructors
 data NomEmptyList a = a :| List a
 
-def (|>) : a b. a -> (a -> b) -> b
-   x |> f = f x
+@infixr(5)
+(|>) : a -> (a -> b) -> b
+x |> f = f x
 
-compose : (b -> c) -> (a -> b) -> a -> c
-compose f g x = f (g x)
+-- function composition is represented by `&`
+(&) : (b -> c) -> (a -> b) -> a -> c
+f & g = \x -> f (g x)
 
 -- methods with pipe
 [1, 2, 3]
   |> into_iter
   |> map (+ 1)
-  |> filter ((= 0) ∘ (% 2))
+  |> filter ((== 0) & (% 2))
 
--- into_iter postfix operator
-[1, 2, 3]!
+[1, 2, 3]
   |> map (+ 1)
-  |> filter ((= 0) ∘ (% 2))
-  |> reduce (+)
+  |> filter ((== 0) & (% 2))
+  |> foldl' (+) 0
 
 -- iterator comprehensions
 [for x in [1, 2, 3] if x % 2 = 0]
