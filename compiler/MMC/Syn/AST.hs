@@ -7,8 +7,8 @@ module MMC.Syn.AST
     RecordDef (..),
     SClassDef,
     ClassDef (..),
-    SClassDecl,
-    ClassDecl (..),
+    SWhereDecl,
+    WhereDecl (..),
     SInstancDecl,
     InstanceDecl (..),
     SSig,
@@ -47,7 +47,7 @@ type SDecl = Spanned Decl
 data Decl
   = DeclImport ![Ident]
   | DeclExport !Ident
-  | DeclClassDecl SClassDecl
+  | DeclClassDecl SWhereDecl
   | DeclClassDef SClassDef
   | DeclInstanceDecl SInstancDecl
   | DeclRecordDef SRecordDef
@@ -77,7 +77,15 @@ type SClassDecl = Spanned ClassDecl
 
 data ClassDecl
   = ClassDeclSig SSig
-  | ClassDeclBind SBind
+  | ClassDeclBind FunBind
+  deriving (Show, Eq)
+
+type SWhereDecl = Spanned WhereDecl
+
+data WhereDecl = WhereDecl
+  { whereDeclSig :: SSig,
+    whereDeclBind :: SBind
+  }
   deriving (Show, Eq)
 
 type SInstancDecl = Spanned InstanceDecl
@@ -86,7 +94,7 @@ data InstanceDecl = InstanceDecl
   { instanceClass :: !Ident,
     instanceTypeParams :: ![Ident],
     instanceAnno :: SAnno,
-    instanceDecls :: [SClassDecl]
+    instanceDecls :: [SWhereDecl]
   }
   deriving (Show, Eq)
 
@@ -127,15 +135,29 @@ data Expr
 type SBind = Spanned Bind
 
 data Bind
-  = BindPat !SPat Rhs [SClassDecl]
-  | BindFun !Ident [SAlt] [SClassDecl]
+  = BindPat PatBind
+  | BindFun FunBind
+  deriving (Show, Eq)
+
+data PatBind = PatBind
+  { patBindPat :: SPat,
+    patBindRhs :: Rhs,
+    patBindWhereDecls :: [SWhereDecl]
+  }
+  deriving (Show, Eq)
+
+data FunBind = FunBind
+  { funName :: !Ident,
+    funAlts :: [SAlt],
+    funWhereDecls :: [SWhereDecl]
+  }
   deriving (Show, Eq)
 
 type SAlt = Spanned Alt
 
 data Alt = Alt
   { altPats :: [SPat],
-    altExpr :: Rhs
+    altRhs :: Rhs
   }
   deriving (Show, Eq)
 
@@ -152,8 +174,8 @@ type SAnno = Spanned Anno
 data Anno
   = AnnoVar !Ident
   | AnnoIdent !Ident
-  | AnnoFun !SAnno !SAnno
-  | AnnoList !SAnno
+  | AnnoFun SAnno SAnno
+  | AnnoList SAnno
   | AnnoTuple [SAnno]
   | AnnoUnit
   deriving (Show, Eq)
@@ -175,6 +197,6 @@ newtype Ident = Ident (Spanned Text) deriving (Show, Eq, Ord)
 
 data Lit
   = Int Integer
-  | Bool !Bool
   | String !Text
+  | Char !Char
   deriving (Show, Eq)

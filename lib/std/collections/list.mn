@@ -5,14 +5,12 @@ data List a = [] | a :: List a
 
 -- | `length` returns the length of a finite list as a `Nat`.
 @pub
-@inline(always)
 length : [a] -> Nat
 length = foldl' (\c _ -> c + 1) 0
 
 -- | `map` takes a function `f` and a list `xs` and returns the list of
 -- the results of applying `f` to each element of `xs`.
 @pub
-@inline(never)
 map : (a -> b) -> [a] -> [b]
 map f [] = []
 map f (x::xs) = f x :: map f xs
@@ -54,7 +52,6 @@ concatMap = concat >>> map
 (x::xs) ++ ys = x :: (xs ++ ys)
 
 @pub
-@inline(always)
 reverse : [a] -> [a]
 reverse = foldl' (flip (::)) []
 
@@ -109,7 +106,6 @@ product : Num a => [a] -> a
 product = foldl' (*) 1
 
 @pub
-@inline(always)
 take : Nat -> [a] -> [a]
 take n ls
   | 0 < n = unsafeTake n ls
@@ -122,7 +118,6 @@ take n ls
     unsafeTake m (x::xs) = x :: unsafeTake (m - 1) xs
 
 @pub
-@inline(always)
 drop : Nat -> [a] -> [a]
 drop n ls
   | n <= 0 = ls
@@ -175,6 +170,24 @@ intersperse x (y::ys) = y :: x :: intersperse x ys
 @pub
 intercalate : [a] -> [[a]] -> [a]
 intercalate = concat >>> intersperse
+
+instance ToStream [a] where:
+  type Elem [a] = a
+  toStream xs = Stream xs step
+    where
+      step [] = pure Done
+      step (y::ys) = pure (Yield y ys)
+
+instance FromStream [a] where:
+  type Elem [a] = a
+  fromStream (Stream s0 stp) = go s0
+    where
+      go s = do
+        r <- stp s
+        case r of
+          Yield a s' -> (a:) <$> go s'
+          Skip  s'   -> go s'
+          Done       -> pure []
 
 instance Functor [a] where:
   map f xs = foldr (fun x acc -> f x :: acc) [] xs
