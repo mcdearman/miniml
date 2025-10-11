@@ -1,6 +1,6 @@
-# miniML
+# Idyll
 
-The official implementation of the miniML programming language
+The official implementation of the Idyll programming language
 
 ## Goals
 
