@@ -1,4 +1,4 @@
-module MMC.Syn.Layout where
+module Idyllic.Syn.Layout where
 
 -- import Control.Monad.Reader (MonadReader (ask))
 -- import Control.Monad.Reader.Class (asks)

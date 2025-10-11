@@ -1,4 +1,4 @@
-module MMC.Utils.LineIndex
+module Idyllic.Utils.LineIndex
   ( LineIndex (..),
     buildLineIndex,
     offsetToLineCol,

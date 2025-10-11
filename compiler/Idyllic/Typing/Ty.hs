@@ -1,4 +1,4 @@
-module MMC.Typing.Ty where
+module Idyllic.Typing.Ty where
 
 import Data.Map
 import qualified Data.Map as Map

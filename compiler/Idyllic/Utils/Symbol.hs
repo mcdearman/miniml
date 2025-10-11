@@ -1,9 +1,9 @@
-module MMC.Utils.Symbol (Symbol (..), Entry (..), SymbolTable (..)) where
+module Idyllic.Utils.Symbol (Symbol (..), Entry (..), SymbolTable (..)) where
 
 import Data.HashMap.Strict (HashMap)
 import Data.Text (Text)
--- import MMC.Typing.Ty (Ty)
-import MMC.Utils.Unique (Unique)
+-- import Idyllic.Typing.Ty (Ty)
+import Idyllic.Utils.Unique (Unique)
 
 newtype Symbol = Symbol {symId :: Unique}
   deriving (Show, Eq, Ord)

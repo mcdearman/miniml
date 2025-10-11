@@ -1,4 +1,4 @@
-module MMC.Syn.Parser where
+module Idyllic.Syn.Parser where
 
 -- import Data.ByteString (ByteString)
 -- import Data.Vector (MVector, Vector)

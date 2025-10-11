@@ -1,6 +1,6 @@
 {-# LANGUAGE RankNTypes #-}
 
-module MMC.Build where
+module Idyllic.Build where
 
 import Control.Monad.State
 import Data.Hashable (Hashable)

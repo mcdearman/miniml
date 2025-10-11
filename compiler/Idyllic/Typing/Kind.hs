@@ -1,4 +1,4 @@
-module MMC.Typing.Kind where
+module Idyllic.Typing.Kind where
 
 data Kind
   = KindStar -- Type

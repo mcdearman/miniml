@@ -4,9 +4,9 @@ import Data.ByteString (ByteString)
 import Data.Text (pack, unpack)
 import Data.Text.Encoding (encodeUtf8)
 import Data.Text.Lazy (toStrict)
-import MMC.Build.Driver (runDriver)
-import MMC.Build.Effect (defaultPipelineEnv)
-import MMC.Build.Pipeline
+import Idyllic.Build.Driver (runDriver)
+import Idyllic.Build.Effect (defaultPipelineEnv)
+import Idyllic.Build.Pipeline
 import System.Console.Haskeline
 import Text.Pretty.Simple (pShow)
 

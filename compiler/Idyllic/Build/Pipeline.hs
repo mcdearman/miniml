@@ -1,4 +1,4 @@
-module MMC.Build.Pipeline (runPipeline) where
+module Idyllic.Build.Pipeline (runPipeline) where
 
 import Control.Concurrent.STM (TVar, newTVarIO)
 import Control.Monad.Reader (MonadReader (ask), ReaderT)
@@ -7,13 +7,13 @@ import Data.ByteString (ByteString)
 import qualified Data.ByteString.Lazy as BL
 import Data.Text (Text)
 import Data.Text.Encoding (encodeUtf8)
--- import MMC.Syn.Layout (runLayout)
+-- import Idyllic.Syn.Layout (runLayout)
 
 import Debug.Trace (trace)
 import Error.Diagnose (Diagnostic)
-import MMC.Build.Effect (InputMode, PipelineM)
-import MMC.Syn.Lexer (tokenize)
-import MMC.Utils.LineIndex (LineIndex, buildLineIndex)
+import Idyllic.Build.Effect (InputMode, PipelineM)
+import Idyllic.Syn.Lexer (tokenize)
+import Idyllic.Utils.LineIndex (LineIndex, buildLineIndex)
 import Text.Pretty.Simple (pPrint, pShow)
 
 runPipeline :: InputMode -> ByteString -> PipelineM ()

@@ -1,4 +1,4 @@
-module MMC.Syn.Token
+module Idyllic.Syn.Token
   ( Token (..),
     TokenKind (..),
     isTrivia,
@@ -9,7 +9,7 @@ module MMC.Syn.Token
 where
 
 import Data.ByteString (ByteString)
-import MMC.Utils.Span (Span)
+import Idyllic.Utils.Span (Span)
 
 data Token = Token {tokenKind :: TokenKind, tokenSpan :: !Span}
   deriving (Show, Eq, Ord)

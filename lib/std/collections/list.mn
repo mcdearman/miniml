@@ -190,22 +190,22 @@ instance FromStream [a] where:
           Done       -> pure []
 
 instance Functor [a] where:
-  map f xs = foldr (fun x acc -> f x :: acc) [] xs
-  (<$) x xs = map (fun _ -> x) xs
+  map f xs = foldr (\x acc -> f x :: acc) [] xs
+  (<$) x xs = map (\_ -> x) xs
   (<$>) f xs = map f xs
-  (<*>) fs xs = foldr (fun f acc -> map f xs ++ acc) [] fs
+  (<*>) fs xs = foldr (\f acc -> map f xs ++ acc) [] fs
 
 instance Applicative [a] where:
   pure x = [x]
-  (<*>) fs xs = foldr (fun f acc -> map f xs ++ acc) [] fs
-  (<$) x xs = map (fun _ -> x) xs
-  (<*>) fs xs = foldr (fun f acc -> map f xs ++ acc) [] fs
-  liftA2 f xs ys = foldr (fun x acc -> map (f x) ys ++ acc) [] xs
+  (<*>) fs xs = foldr (\f acc -> map f xs ++ acc) [] fs
+  (<$) x xs = map (\_ -> x) xs
+  (<*>) fs xs = foldr (\f acc -> map f xs ++ acc) [] fs
+  liftA2 f xs ys = foldr (\x acc -> map (f x) ys ++ acc) [] xs
 
 instance Monad [a] where:
-  (>>=) xs f = foldr (fun x acc -> map f x ++ acc) [] xs
-  (>>) xs ys = foldr (fun _ acc -> ys ++ acc) [] xs
-  join xs = foldr (fun x acc -> x ++ acc) [] xs
+  (>>=) xs f = foldr (\x acc -> map f x ++ acc) [] xs
+  (>>) xs ys = foldr (\_ acc -> ys ++ acc) [] xs
+  join xs = foldr (\x acc -> x ++ acc) [] xs
   fail msg = []
   zero = []
-  plus xs ys = foldr (fun x acc -> x ++ acc) ys xs
+  plus xs ys = foldr (\x acc -> x ++ acc) ys xs

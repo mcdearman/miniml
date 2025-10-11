@@ -1,6 +1,6 @@
-module MMC.Syn.TokenTree (TokenTree (..), Delim (..), Punct (..)) where
+module Idyllic.Syn.TokenTree (TokenTree (..), Delim (..), Punct (..)) where
 
-import MMC.Utils.Span (Span)
+import Idyllic.Utils.Span (Span)
 
 data TokenTree = TokenTree
   { tokenTreeKind :: TokenTreeKind,

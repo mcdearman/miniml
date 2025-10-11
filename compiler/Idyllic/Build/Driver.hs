@@ -1,9 +1,9 @@
-module MMC.Build.Driver (runDriver) where
+module Idyllic.Build.Driver (runDriver) where
 
 import Control.Monad.Reader (ReaderT (runReaderT))
 import Data.ByteString (ByteString)
-import MMC.Build.Effect (PipelineEnv (..))
-import MMC.Build.Pipeline (runPipeline)
+import Idyllic.Build.Effect (PipelineEnv (..))
+import Idyllic.Build.Pipeline (runPipeline)
 
 runDriver :: PipelineEnv -> ByteString -> IO ()
 runDriver env src = do

@@ -1,7 +1,7 @@
 cabal-version:      3.0
-name:               miniML
+name:               idyll
 version:            0.1.0.0
-synopsis:           The miniML programming language
+synopsis:           The Idyll programming language
 license:            BSD-3-Clause
 license-file:       LICENSE
 author:             Chris McDearman
@@ -26,23 +26,23 @@ executable miniML
     import:           warnings
     main-is:          Main.hs
     other-modules: 
-        MMC.Build.Driver
-        MMC.Build.Effect
-        MMC.Build.Pipeline
-        MMC.Static.Scc
-        MMC.Syn.AST
-        MMC.Syn.Layout
-        MMC.Syn.Lexer
-        MMC.Syn.Parser
-        MMC.Syn.Token
-        MMC.Syn.TokenTree
-        MMC.Build
-        MMC.Typing.Kind
-        MMC.Typing.Ty
-        MMC.Utils.LineIndex
-        MMC.Utils.Span
-        MMC.Utils.Symbol
-        MMC.Utils.Unique
+        Idyllic.Build.Driver
+        Idyllic.Build.Effect
+        Idyllic.Build.Pipeline
+        Idyllic.Static.Scc
+        Idyllic.Syn.AST
+        Idyllic.Syn.Layout
+        Idyllic.Syn.Lexer
+        Idyllic.Syn.Parser
+        Idyllic.Syn.Token
+        Idyllic.Syn.TokenTree
+        Idyllic.Build
+        Idyllic.Typing.Kind
+        Idyllic.Typing.Ty
+        Idyllic.Utils.LineIndex
+        Idyllic.Utils.Span
+        Idyllic.Utils.Symbol
+        Idyllic.Utils.Unique
     default-extensions: 
         OverloadedStrings
         MagicHash

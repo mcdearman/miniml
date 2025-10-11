@@ -1,4 +1,4 @@
-module MMC.Syn.AST
+module Idyllic.Syn.AST
   ( Prog,
     Module (..),
     SDecl,
@@ -32,7 +32,7 @@ module MMC.Syn.AST
 where
 
 import Data.Text (Text)
-import MMC.Utils.Span (Spanned)
+import Idyllic.Utils.Span (Spanned)
 
 type Prog = Spanned Module
 
