@@ -22,7 +22,7 @@ common warnings
     --   -haddock
     --   -ddump-simpl -ddump-cmm -ddump-stg-final -ddump-to-file -dsuppress-all
 
-executable miniML
+executable idyllic
     import:           warnings
     main-is:          Main.hs
     other-modules: 
