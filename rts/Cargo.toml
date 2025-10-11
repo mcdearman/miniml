@@ -1,5 +1,5 @@
 [package]
-name = "miniml-runtime"
+name = "idyll-rts"
 version = "0.1.0"
 edition = "2021"
 
