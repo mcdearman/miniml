@@ -62,6 +62,7 @@ executable idyllic
         bytestring,
         unordered-containers,
         intern,
+        megaparsec,
         diagnose,
         wcwidth,
         optics,
