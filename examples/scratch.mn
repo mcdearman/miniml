@@ -30,6 +30,11 @@ fact = go 1
     go acc 0 = acc
     go acc n = go (acc * n) (n - 1)
 
+ack : Int -> Int -> Int
+ack 0 n = n + 1
+ack m 0 = ack (m - 1) 1
+ack m n = ack (m - 1) (ack m (n - 1))
+
 -- type alias
 type Point = (Int, Int)
 
