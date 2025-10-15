@@ -30,6 +30,8 @@ executable idyllic
     Idyllic.Build.Driver
     Idyllic.Build.Effect
     Idyllic.Build.Pipeline
+    Idyllic.Rename.HIR
+    Idyllic.Rename.Resolver
     Idyllic.Static.Scc
     Idyllic.Syn.AST
     Idyllic.Syn.Layout
@@ -37,6 +39,7 @@ executable idyllic
     Idyllic.Syn.Parser
     Idyllic.Syn.Token
     Idyllic.Syn.TokenTree
+    Idyllic.Typing.Infer
     Idyllic.Typing.Kind
     Idyllic.Typing.Ty
     Idyllic.Utils.LineIndex

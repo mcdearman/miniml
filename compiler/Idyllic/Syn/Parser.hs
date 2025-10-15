@@ -1,19 +1,75 @@
 module Idyllic.Syn.Parser where
 
--- import Data.ByteString (ByteString)
--- import Data.Vector (MVector, Vector)
--- import MMC.Syn.GreenNode
+import Data.Text (Text, pack, unpack)
+import Data.Void
+import Idyllic.Syn.AST
+import Text.Megaparsec
+import Text.Megaparsec.Char
+import qualified Text.Megaparsec.Char.Lexer as L
 
--- data Parser = Parser
---   { src :: !ByteString,
---     tokens :: !(Vector Token),
---     fuel :: !Int,
---     events :: !(MVector Int Event)
---   }
+type Parser = Parsec Void Text
 
--- data Event = Open !SyntaxKind | Close | Advance deriving (Show, Eq)
+parseTerm :: Text -> Either (ParseErrorBundle Text Void) Expr
+parseTerm = runParser (sc *> exprParser <* eof) ""
 
--- newtype MarkOpened = MarkOpened Int deriving (Show, Eq)
+exprParser :: Parser Expr
+exprParser = app
+  where
+    int = ExprInt . fromInteger <$> lexeme L.decimal
+    var = ExprVar <$> ident
+    atom = int <|> let' <|> var <|> lam <|> parens exprParser
+    let' = try $ ExprLet <$> (symbol "let" *> bind) <*> (symbol "in" *> exprParser)
+    lam = symbol "\\" *> (flip (foldr ExprLam) <$> some ident <*> (symbol "->" *> exprParser))
+    app = foldl1 ExprApp <$> some atom
 
--- open :: Parser -> MarkOpened
--- open !p = undefined
+bind :: Parser Bind
+bind = funBind <|> nameBind
+  where
+    nameBind = BindName <$> (ident <* symbol "=") <*> exprParser
+    funBind = try $ BindFun <$> ident <*> some ident <* symbol "=" <*> exprParser
+
+parens :: Parser a -> Parser a
+parens = lexeme <$> between (char '(') (char ')')
+
+ident :: Parser Text
+ident = try $ lexeme $ do
+  name <- pack <$> ((:) <$> identStartChar <*> many identChar) <* sc
+  if name `elem` keywords
+    then fail $ "keyword " ++ unpack name ++ " cannot be used in place of identifier"
+    else pure name
+  where
+    identStartChar = lowerChar <|> char '_'
+    identChar = alphaNumChar <|> char '_' <|> char '\''
+
+    keywords :: [Text]
+    keywords =
+      [ "module",
+        "import",
+        "as",
+        "let",
+        "in",
+        "where",
+        "if",
+        "then",
+        "else",
+        "match",
+        "with",
+        "record",
+        "data",
+        "type",
+        "class",
+        "instance",
+        "do"
+      ]
+
+lexeme :: Parser a -> Parser a
+lexeme = L.lexeme sc
+
+symbol :: Text -> Parser Text
+symbol = L.symbol sc
+
+sc :: Parser ()
+sc = L.space space1 lineComment empty
+
+lineComment :: Parser ()
+lineComment = L.skipLineComment "--"

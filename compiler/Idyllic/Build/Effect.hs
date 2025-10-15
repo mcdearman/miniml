@@ -1,12 +1,10 @@
 {-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 
 module Idyllic.Build.Effect where
 
 import Control.Concurrent.STM (TVar, newTVarIO)
-import Control.Monad.Reader (MonadReader (ask), ReaderT)
-import Control.Monad.State
+import Control.Monad.Reader (ReaderT)
 import Data.ByteString (ByteString)
 import Data.Text (Text)
 import Error.Diagnose (Diagnostic)

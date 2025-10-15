@@ -5,7 +5,7 @@ import Data.Text (Text)
 -- import Idyllic.Typing.Ty (Ty)
 import Idyllic.Utils.Unique (Unique)
 
-newtype Symbol = Symbol {symId :: Unique}
+newtype Symbol = Symbol {symId :: Int}
   deriving (Show, Eq, Ord)
 
 data Entry = Entry
