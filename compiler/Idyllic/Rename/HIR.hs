@@ -5,9 +5,9 @@ import Idyllic.Utils.Span (Span)
 
 type NodeId = Int
 
-type Expr = HNode ExprKind
+type Expr = HirNode ExprKind
 
-data HNode a = HNode
+data HirNode a = HirNode
   { nodeId :: !NodeId,
     nodeKind :: a,
     nodeSpan :: !Span
