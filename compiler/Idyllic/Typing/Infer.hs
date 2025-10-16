@@ -6,8 +6,8 @@ module Idyllic.Typing.Infer where
 import Control.Monad.ST (ST, runST)
 import Data.Map (Map)
 import Data.STRef (STRef, modifySTRef', newSTRef, readSTRef, writeSTRef)
+import Idyllic.Rename.Symbol (Symbol)
 import Idyllic.Typing.Ty (ClosedTy (..), Level, Meta (..), Ty (..))
-import Idyllic.Utils.Symbol (Symbol)
 
 data TyError s
   = UnificationFail (Ty s) (Ty s)

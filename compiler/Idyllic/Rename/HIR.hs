@@ -1,8 +1,20 @@
 module Idyllic.Rename.HIR where
 
-import Idyllic.Utils.Symbol (Symbol)
+import Idyllic.Rename.Symbol (Symbol)
+import Idyllic.Utils.Span (Span)
 
-data Expr
+type NodeId = Int
+
+type Expr = HNode ExprKind
+
+data HNode a = HNode
+  { nodeId :: !NodeId,
+    nodeKind :: a,
+    nodeSpan :: !Span
+  }
+  deriving (Show, Eq, Ord)
+
+data ExprKind
   = ExprInt Int
   | ExprVar Symbol
   | ExprLet [Bind] Expr

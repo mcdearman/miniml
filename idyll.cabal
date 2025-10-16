@@ -30,8 +30,10 @@ executable idyllic
     Idyllic.Build.Driver
     Idyllic.Build.Effect
     Idyllic.Build.Pipeline
+    Idyllic.Core
     Idyllic.Rename.HIR
     Idyllic.Rename.Resolver
+    Idyllic.Rename.Symbol
     Idyllic.Static.Scc
     Idyllic.Syn.AST
     Idyllic.Syn.Layout
@@ -44,8 +46,6 @@ executable idyllic
     Idyllic.Typing.Ty
     Idyllic.Utils.LineIndex
     Idyllic.Utils.Span
-    Idyllic.Utils.Symbol
-    Idyllic.Utils.Unique
 
   default-extensions:
     BangPatterns

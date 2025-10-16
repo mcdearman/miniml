@@ -3,6 +3,7 @@ module Idyllic.Syn.Parser where
 import Data.Text (Text, pack, unpack)
 import Data.Void
 import Idyllic.Syn.AST
+import Idyllic.Utils.Span (Span (..), Spanned (..))
 import Text.Megaparsec
 import Text.Megaparsec.Char
 import qualified Text.Megaparsec.Char.Lexer as L
@@ -73,3 +74,9 @@ sc = L.space space1 lineComment empty
 
 lineComment :: Parser ()
 lineComment = L.skipLineComment "--"
+
+withSpan :: Parser a -> Parser (Spanned a)
+withSpan p = do
+  start <- getOffset
+  x <- p
+  Spanned x . Span start <$> getOffset
